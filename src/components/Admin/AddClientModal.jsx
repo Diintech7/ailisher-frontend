@@ -701,4 +701,5 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded }) => {
   );
 };
 
+
 export default AddClientModal;
