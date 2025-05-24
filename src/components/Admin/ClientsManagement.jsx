@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import AddClientModal from './AddClientModal'; // Import the AddClientModal component
 
 const ClientManagement = () => {
   const [clients, setClients] = useState([]);
@@ -24,6 +25,7 @@ const ClientManagement = () => {
   const [sortDirection, setSortDirection] = useState('asc');
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [loginLoading, setLoginLoading] = useState(null);
+  const [showAddClientModal, setShowAddClientModal] = useState(false); // State for modal visibility
 
   useEffect(() => {
     fetchClients();
@@ -122,7 +124,7 @@ const ClientManagement = () => {
                   document.cookie = "usertoken=${clientToken}; path=/; max-age=3600";
                   document.cookie = "user=${encodeURIComponent(JSON.stringify(clientData))}; path=/; max-age=3600";
                   // Redirect to client dashboard
-                  window.location.href = 'https://aipbfrontend.vercel.app/dashboard';
+                  window.location.href = 'https://www.ailisher.com/dashboard';
                 </script>
               </body>
             </html>
@@ -136,6 +138,11 @@ const ClientManagement = () => {
     } finally {
       setLoginLoading(null);
     }
+  };
+
+  // Handler for when a client is successfully added
+  const handleClientAdded = () => {
+    fetchClients(); // Refresh the client list
   };
 
   // Sort and filter clients
@@ -161,7 +168,10 @@ const ClientManagement = () => {
     <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800">Client Management</h1>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center">
+        <button 
+          className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center hover:bg-blue-700 transition-colors"
+          onClick={() => setShowAddClientModal(true)}
+        >
           <UserPlus size={16} className="mr-2" />
           Add New Client
         </button>
@@ -327,6 +337,13 @@ const ClientManagement = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Add Client Modal */}
+      <AddClientModal
+        isOpen={showAddClientModal}
+        onClose={() => setShowAddClientModal(false)}
+        onClientAdded={handleClientAdded}
+      />
     </div>
   );
 };
