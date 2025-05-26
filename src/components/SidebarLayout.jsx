@@ -10,6 +10,8 @@ const SidebarLayout = ({ onLogout, userRole }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [currentPath, setCurrentPath] = useState('/dashboard');
   const [username, setUsername] = useState('');
+  const [businessName, setBusinessName] = useState('');
+  const [businessLogo, setBusinessLogo] = useState('');
   const [showSettings, setShowSettings] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -21,19 +23,67 @@ const SidebarLayout = ({ onLogout, userRole }) => {
   useEffect(() => {
     if (userRole === 'admin') {
       setUsername('Administrator');
+      setBusinessName('AILisher');
       return;
     }
+
     const userCookie = Cookies.get('user');
     if (userCookie) {
       try {
         const userData = JSON.parse(userCookie);
+        console.log(userData)
         setUsername(userData.name || (userRole === 'client' ? 'Client' : 'User'));
+        
+        // For clients, try to get business info from stored user data
+        if (userRole === 'client') {
+          setBusinessName(userData.name || 'Client Dashboard');
+          setBusinessLogo(userData.businessLogo || '');
+        } else {
+          setBusinessName('AILisher');
+        }
       } catch (error) {
         console.error('Error parsing user data:', error);
         setUsername(userRole === 'client' ? 'Client' : 'User');
+        setBusinessName(userRole === 'client' ? 'Client Dashboard' : 'AILisher');
       }
     }
-  }, [userRole]);
+
+    // If we don't have business info in cookies for client, fetch from API
+    if (userRole === 'client' && (!businessName || businessName === 'Client Dashboard')) {
+      fetchClientInfo();
+    }
+  }, [userRole, businessName]);
+
+  const fetchClientInfo = async () => {
+    try {
+      const token = Cookies.get('usertoken');
+      const response = await fetch('https://aipbbackend.onrender.com/api/auth/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      console.log(response)
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.user) {
+          setBusinessName(data.user.businessName || 'Client Dashboard');
+          setBusinessLogo(data.user.businessLogo || '');
+          
+          // Update the user cookie with business info
+          const currentUserData = JSON.parse(Cookies.get('user') || '{}');
+          const updatedUserData = {
+            ...currentUserData,
+            businessName: data.user.businessName,
+            businessLogo: data.user.businessLogo
+          };
+          Cookies.set('user', JSON.stringify(updatedUserData), { expires: 7 });
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching client info:', error);
+    }
+  };
 
   const handleNavigate = (path) => {
     navigate(path);
@@ -70,6 +120,47 @@ const SidebarLayout = ({ onLogout, userRole }) => {
     ).join(' ');
   };
 
+  const renderLogo = () => {
+    // For clients with business logo
+    if (userRole === 'client' && businessLogo) {
+      return (
+        <img 
+          src={businessLogo} 
+          alt={`${businessName} Logo`} 
+          className="w-10 h-10 object-contain rounded-lg"
+          onError={(e) => {
+            // Fallback to default logo if business logo fails to load
+            e.target.style.display = 'none';
+            e.target.nextSibling.style.display = 'flex';
+          }}
+        />
+      );
+    }
+    
+    // Default AILisher logo or fallback
+    return (
+      <>
+        <img 
+          src="/logo.png" 
+          alt="AILisher Logo" 
+          className="w-10 h-10 object-contain"
+          onError={(e) => {
+            // Fallback if logo fails to load
+            e.target.style.display = 'none';
+            e.target.nextSibling.style.display = 'flex';
+          }}
+        />
+        <div className={`w-10 h-10 ${
+          userRole === 'client' ? 'bg-green-600' : 'bg-blue-600'
+        } rounded-full hidden items-center justify-center overflow-hidden`}>
+          <span className="text-white font-bold text-xl">
+            {userRole === 'client' ? businessName.charAt(0).toUpperCase() : 'AI'}
+          </span>
+        </div>
+      </>
+    );
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
       <div className={`bg-white shadow-lg transition-all duration-300 ease-in-out ${isExpanded ? 'w-64' : 'w-20'} relative`}>
@@ -78,23 +169,19 @@ const SidebarLayout = ({ onLogout, userRole }) => {
             className="flex items-center cursor-pointer"
             onClick={() => navigate(userRole === 'admin' ? '/admin/dashboard' : '/dashboard')}
           >
-            <img 
-              src="/logo.png" 
-              alt="AILisher Logo" 
-              className="w-10 h-10 object-contain"
-              onError={(e) => {
-                // Fallback if logo fails to load
-                e.target.style.display = 'none';
-                e.target.nextSibling.style.display = 'flex';
-              }}
-            />
-            <div className="w-10 h-10 bg-blue-600 rounded-full hidden items-center justify-center overflow-hidden">
-              <span className="text-white font-bold text-xl">AI</span>
-            </div>
+            {renderLogo()}
+            {/* Fallback div for business logo */}
+            {userRole === 'client' && businessLogo && (
+              <div className="w-10 h-10 bg-green-600 rounded-full hidden items-center justify-center overflow-hidden">
+                <span className="text-white font-bold text-xl">
+                  {businessName.charAt(0).toUpperCase()}
+                </span>
+              </div>
+            )}
           </div>
           {isExpanded && (
             <span className="ml-3 font-bold text-2xl text-gray-700 animate-fade-in">
-              AILisher
+              {businessName || 'AILisher'}
             </span>
           )}
         </div>
