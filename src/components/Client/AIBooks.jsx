@@ -118,6 +118,7 @@ const AddBookModal = ({ isOpen, onClose, onAdd }) => {
       const formData = new FormData();
       formData.append('title', title);
       formData.append('description', description);
+      formData.append('userType', 'user');
       
       if (coverImage) {
         formData.append('coverImage', coverImage);
@@ -130,6 +131,11 @@ const AddBookModal = ({ isOpen, onClose, onAdd }) => {
         },
         body: formData
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create book');
+      }
 
       const data = await response.json();
       
