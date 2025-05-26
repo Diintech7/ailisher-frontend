@@ -4,6 +4,7 @@ import { Book, ChevronRight, Plus, Database, ArrowLeft, AlertTriangle, Image, Up
 import Cookies from 'js-cookie';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+
 const BookItem = ({ book, onClick }) => {
   const displaySubCategory = book.subCategory === 'Other' && book.customSubCategory 
     ? book.customSubCategory 
@@ -16,7 +17,7 @@ const BookItem = ({ book, onClick }) => {
       <div className="h-48 bg-gradient-to-br from-blue-50 to-indigo-100 mb-4 rounded-lg flex items-center justify-center overflow-hidden">
         {book.coverImage ? (
           <img 
-            src={book.coverImage.startsWith('data:') ? book.coverImage : `https://aipbbackend.onrender.com/${book.coverImage}`} 
+            src={book.coverImage.startsWith('data:') ? book.coverImage : `http://localhost:5000/${book.coverImage}`} 
             alt={book.title} 
             className="h-full w-full object-cover rounded-lg"
           />
@@ -41,6 +42,7 @@ const BookItem = ({ book, onClick }) => {
     </div>
   );
 };
+
 const ImageUploadPreview = ({ imagePreview, onRemove }) => {
   if (!imagePreview) return null;
   return (
@@ -62,6 +64,7 @@ const ImageUploadPreview = ({ imagePreview, onRemove }) => {
     </div>
   );
 };
+
 const FiltersPanel = ({ filters, onFiltersChange, onClearFilters, authors, publishers, allBooks }) => {
   const [isOpen, setIsOpen] = useState(false);
   const CATEGORY_MAPPINGS = {
@@ -90,7 +93,9 @@ const FiltersPanel = ({ filters, onFiltersChange, onClearFilters, authors, publi
     });
   };
   const getValidSubCategories = () => {
-    if (!filters.mainCategory) return [];
+    if (!filters.mainCategory) {
+      return [];
+    }
     const standardCategories = CATEGORY_MAPPINGS[filters.mainCategory] || [];
     if (filters.mainCategory === 'Other') {
       return [...standardCategories, ...customSubCategories];
@@ -160,39 +165,34 @@ const FiltersPanel = ({ filters, onFiltersChange, onClearFilters, authors, publi
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Main Category</label>
               <select
-  value={filters.mainCategory || ''}
-  onChange={(e) => {
-    const newMainCategory = e.target.value;
-    handleFilterChange('mainCategory', newMainCategory);
-    handleFilterChange('subCategory', '');
-  }}
-  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
->
-  <option value="">All Categories</option>
-  {Object.keys(CATEGORY_MAPPINGS).map(category => (
-    <option key={category} value={category}>{category}</option>
-  ))}
-</select>
+                value={filters.mainCategory || ''}
+                onChange={(e) => {
+                  const newMainCategory = e.target.value;
+                  handleFilterChange('mainCategory', newMainCategory);
+                  handleFilterChange('subCategory', '');
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              >
+                <option value="">All Categories</option>
+                {Object.keys(CATEGORY_MAPPINGS).map(category => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
             </div>
-<div>
-  <label className="block text-sm font-medium text-gray-700 mb-2">Sub Category</label>
-  <select
-    value={filters.subCategory || ''}
-    onChange={(e) => handleFilterChange('subCategory', e.target.value)}
-    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-    disabled={!filters.mainCategory}
-  >
-    <option value="">All Subcategories</option>
-    {getValidSubCategories().map(subCategory => (
-      <option key={subCategory} value={subCategory}>{subCategory}</option>
-    ))}
-    {customSubCategories.map(customSub => (
-      <option key={`custom-${customSub}`} value={customSub}>
-        {customSub} (Custom)
-      </option>
-    ))}
-  </select>
-</div>    
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Sub Category</label>
+              <select
+                value={filters.subCategory || ''}
+                onChange={(e) => handleFilterChange('subCategory', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                disabled={!filters.mainCategory}
+              >
+                <option value="">All Subcategories</option>
+                {getValidSubCategories().map(subCategory => (
+                  <option key={subCategory} value={subCategory}>{subCategory}</option>
+                ))}
+              </select>
+            </div>    
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Language</label>
               <select
@@ -238,6 +238,7 @@ const FiltersPanel = ({ filters, onFiltersChange, onClearFilters, authors, publi
     </div>
   );
 };
+
 const AddBookModal = ({ isOpen, onClose, onAdd, currentUser }) => {
   const [formData, setFormData] = useState({
     title: '',
@@ -341,7 +342,7 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser }) => {
         const tagsArray = formData.tags.split(',')
           .map(tag => tag.trim())
           .filter(tag => tag.length > 0 && tag.length <= 30)
-          .slice(0, 10); // Limit to 10 tags max
+          .slice(0, 10);
         if (tagsArray.length > 0) {
           formDataToSend.append('tags', JSON.stringify(tagsArray));
         }
@@ -349,7 +350,7 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser }) => {
       if (coverImage) {
         formDataToSend.append('coverImage', coverImage);
       }
-      const response = await fetch('https://aipbbackend.onrender.com/api/books', {
+      const response = await fetch('http://localhost:5000/api/books', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -614,6 +615,7 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser }) => {
     </div>
   );
 };
+
 const AIBooks = () => {
   const [books, setBooks] = useState([]);
   const [filteredBooks, setFilteredBooks] = useState([]);
@@ -644,7 +646,7 @@ const AIBooks = () => {
         navigate('/login');
         return;
       }
-      const response = await fetch('https://aipbbackend.onrender.com/api/books', {
+      const response = await fetch('http://localhost:5000/api/books', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -667,44 +669,59 @@ const AIBooks = () => {
   useEffect(() => {
     fetchBooks();
   }, [navigate]);
-useEffect(() => {
-  if (books.length === 0) return;
-  let result = [...books];
-  if (filters.search) {
-    const searchTerm = filters.search.toLowerCase();
-    result = result.filter(book => 
-      book.title.toLowerCase().includes(searchTerm) ||
-      book.author.toLowerCase().includes(searchTerm) ||
-      (book.description && book.description.toLowerCase().includes(searchTerm))
-    );
-  }
-  if (filters.mainCategory) {
-    result = result.filter(book => book.mainCategory === filters.mainCategory);
-  }
-  if (filters.subCategory) {
-    result = result.filter(book => {
-      if (book.subCategory === filters.subCategory) {
-        return true;
-      }
-      if (book.subCategory === 'Other' && book.customSubCategory === filters.subCategory) {
-        return true;
-      }
-      return false;
-    });
-  }
-  if (filters.language) {
-    result = result.filter(book => book.language === filters.language);
-  }
-  if (filters.author) {
-    result = result.filter(book => book.author === filters.author);
-  }
-  if (filters.tag) {
-    result = result.filter(book => 
-      book.tags && book.tags.includes(filters.tag)
-    );
-  }
-  setFilteredBooks(result);
-}, [filters, books]);
+  useEffect(() => {
+    if (books.length === 0) return;
+    let result = [...books];
+    if (filters.search) {
+      const searchTerm = filters.search.toLowerCase();
+      result = result.filter(book => 
+        book.title.toLowerCase().includes(searchTerm) ||
+        book.author.toLowerCase().includes(searchTerm) ||
+        (book.description && book.description.toLowerCase().includes(searchTerm))
+      );
+      console.log('After search filter:', result.length);
+    }
+    
+    if (filters.mainCategory) {
+      console.log('Filtering by main category:', filters.mainCategory);
+      result = result.filter(book => {
+        console.log('Book main category:', book.mainCategory, 'Filter:', filters.mainCategory, 'Match:', book.mainCategory === filters.mainCategory);
+        return book.mainCategory === filters.mainCategory;
+      });
+      console.log('After main category filter:', result.length);
+    }
+    
+    if (filters.subCategory) {
+      console.log('Filtering by sub category:', filters.subCategory);
+      result = result.filter(book => {
+        const match = book.subCategory === filters.subCategory || 
+          (book.subCategory === 'Other' && book.customSubCategory === filters.subCategory);
+        console.log('Book subcategory:', book.subCategory, 'Custom:', book.customSubCategory, 'Filter:', filters.subCategory, 'Match:', match);
+        return match;
+      });
+      console.log('After sub category filter:', result.length);
+    }
+    
+    if (filters.language) {
+      result = result.filter(book => book.language === filters.language);
+      console.log('After language filter:', result.length);
+    }
+    
+    if (filters.author) {
+      result = result.filter(book => book.author === filters.author);
+      console.log('After author filter:', result.length);
+    }
+    
+    if (filters.tag) {
+      result = result.filter(book => 
+        book.tags && book.tags.includes(filters.tag)
+      );
+      console.log('After tag filter:', result.length);
+    }
+    
+    console.log('Final filtered result:', result.length);
+    setFilteredBooks(result);
+  }, [filters, books]);
   const handleAddBook = () => {
     setShowAddModal(true);
   };
@@ -715,7 +732,12 @@ useEffect(() => {
     navigate(`/ai-books/${bookId}`);
   };
   const handleFiltersChange = (newFilters) => {
+    console.log('AIBooks: Filters changing from:', filters);
+    console.log('AIBooks: Filters changing to:', newFilters);
+    
     setFilters(newFilters);
+    
+    console.log('AIBooks: State should update to:', newFilters);
   };
   const handleClearFilters = () => {
     setFilters({
@@ -739,9 +761,7 @@ useEffect(() => {
           {currentUser && (
             <p className="text-gray-600 mt-1">
               Welcome, {currentUser.name}
-              {currentUser.role === 'client' && currentUser.userId && (
-                <span className="ml-2 text-indigo-600 font-medium">({currentUser.userId})</span>
-              )}
+              
             </p>
           )}
         </div>
