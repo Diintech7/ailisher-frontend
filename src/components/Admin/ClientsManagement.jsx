@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import AddClientModal from './AddClientModal'; // Import the AddClientModal component
+import AddClientModal from './AddClientModal';
 
 const ClientManagement = () => {
   const [clients, setClients] = useState([]);
@@ -25,7 +25,8 @@ const ClientManagement = () => {
   const [sortDirection, setSortDirection] = useState('asc');
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [loginLoading, setLoginLoading] = useState(null);
-  const [showAddClientModal, setShowAddClientModal] = useState(false); // State for modal visibility
+  const [showAddClientModal, setShowAddClientModal] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(null);
 
   useEffect(() => {
     fetchClients();
@@ -65,6 +66,7 @@ const ClientManagement = () => {
       });
       setClients(clients.filter(client => client._id !== id));
       setConfirmDelete(null);
+      setDropdownOpen(null);
     } catch (err) {
       setError('Failed to delete client');
       console.error('Error deleting client:', err);
@@ -93,7 +95,6 @@ const ClientManagement = () => {
       setLoginLoading(id);
       const adminToken = Cookies.get('admintoken');
       
-      // Get login token for the client
       const response = await axios.post(
         `https://aipbbackend.onrender.com/api/admin/clients/${id}/login-token`,
         {},
@@ -101,14 +102,12 @@ const ClientManagement = () => {
       );
       
       if (response.data.success) {
-        // Store the client token
         const clientToken = response.data.token;
         const clientData = {
           role: response.data.user.role,
           name: response.data.user.name
         };
         
-        // Open a new tab with the client dashboard URL
         const newTab = window.open('', '_blank');
         
         if (newTab) {
@@ -120,11 +119,9 @@ const ClientManagement = () => {
               <body>
                 <p>Redirecting to client dashboard...</p>
                 <script>
-                  // Set cookies in the new tab
                   document.cookie = "usertoken=${clientToken}; path=/; max-age=3600";
                   document.cookie = "user=${encodeURIComponent(JSON.stringify(clientData))}; path=/; max-age=3600";
-                  // Redirect to client dashboard
-                  window.location.href = 'https://www.ailisher.com/dashboard';
+                  window.location.href = 'http://localhost:3000/dashboard';
                 </script>
               </body>
             </html>
@@ -140,12 +137,14 @@ const ClientManagement = () => {
     }
   };
 
-  // Handler for when a client is successfully added
   const handleClientAdded = () => {
-    fetchClients(); // Refresh the client list
+    fetchClients();
   };
 
-  // Sort and filter clients
+  const toggleDropdown = (id) => {
+    setDropdownOpen(dropdownOpen === id ? null : id);
+  };
+
   const filteredClients = clients
     .filter(client => 
       client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -206,7 +205,7 @@ const ClientManagement = () => {
                 onClick={() => handleSort('name')}
               >
                 <div className="flex items-center">
-                  Client Name {getSortIcon('name')}
+                  Business Name {getSortIcon('name')}
                 </div>
               </th>
               <th 
@@ -257,7 +256,7 @@ const ClientManagement = () => {
                         {client.name.charAt(0).toUpperCase()}
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{client.name}</div>
+                        <div className="text-sm font-medium text-gray-900">{client.businessName}</div>
                       </div>
                     </div>
                   </td>
@@ -315,17 +314,29 @@ const ClientManagement = () => {
                               <LogIn size={18} />
                             )}
                           </button>
-                          <button 
-                            onClick={() => setConfirmDelete(client._id)}
-                            className="text-red-600 hover:text-red-900 p-1"
-                            title="Delete client"
-                          >
-                            <Trash2 size={18} />
-                          </button>
                           <div className="relative inline-block text-left">
-                            <button className="text-gray-600 hover:text-gray-900 p-1">
+                            <button 
+                              className="text-gray-600 hover:text-gray-900 p-1"
+                              onClick={() => toggleDropdown(client._id)}
+                            >
                               <MoreVertical size={18} />
                             </button>
+                            {dropdownOpen === client._id && (
+                              <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                                <div className="py-1">
+                                  <button
+                                    onClick={() => {
+                                      setConfirmDelete(client._id);
+                                      setDropdownOpen(null);
+                                    }}
+                                    className="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left flex items-center"
+                                  >
+                                    <Trash2 size={16} className="mr-2" />
+                                    Delete Client
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </>
                       )}
@@ -338,7 +349,6 @@ const ClientManagement = () => {
         </table>
       </div>
 
-      {/* Add Client Modal */}
       <AddClientModal
         isOpen={showAddClientModal}
         onClose={() => setShowAddClientModal(false)}
