@@ -9,6 +9,18 @@ const BookItem = ({ book, onClick }) => {
   const displaySubCategory = book.subCategory === 'Other' && book.customSubCategory 
     ? book.customSubCategory 
     : book.subCategory;
+    const getCompleteImageUrl = (imageUrl) => {
+    if (!imageUrl) return null;
+        if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return imageUrl;
+    }
+    
+    if (imageUrl.startsWith('data:')) {
+      return imageUrl;
+    }
+    return `https://aipbbackend.onrender.com/${imageUrl}`;
+  };
+
   return (
     <div 
       onClick={onClick}
@@ -17,9 +29,13 @@ const BookItem = ({ book, onClick }) => {
       <div className="h-48 bg-gradient-to-br from-blue-50 to-indigo-100 mb-4 rounded-lg flex items-center justify-center overflow-hidden">
         {book.coverImage ? (
           <img 
-            src={book.coverImage.startsWith('data:') ? book.coverImage : `https://aipbbackend.onrender.com/${book.coverImage}`} 
+            src={getCompleteImageUrl(book.coverImage)} 
             alt={book.title} 
             className="h-full w-full object-cover rounded-lg"
+            onError={(e) => {
+              e.target.onerror = null; // Prevent infinite loop
+              e.target.src = ''; // Remove the broken image
+            }}
           />
         ) : (
           <Book size={64} className="text-indigo-400" />
@@ -68,7 +84,7 @@ const ImageUploadPreview = ({ imagePreview, onRemove }) => {
 const FiltersPanel = ({ filters, onFiltersChange, onClearFilters, authors, publishers, allBooks }) => {
   const [isOpen, setIsOpen] = useState(false);
   const CATEGORY_MAPPINGS = {
-    'Competitive Exams': ['UPSC', 'NEET', 'JEE', 'GATE', 'CAT'],
+    'Competitive Exams': ['UPSC', 'NEET', 'JEE', 'GATE', 'CAT', 'CA', 'CMA', 'CS', , 'BPC', 'UPPCS', 'SSC', 'NET/JRF', 'Teacher', 'NDA'],
     'Professional Courses': ['CA', 'CMA', 'CS', 'ACCA', 'CFA', 'FRM'],
     'Language Tests': ['IELTS', 'TOEFL', 'GRE', 'GMAT'],
     'Academic': ['Engineering', 'Medical', 'Management', 'Science', 'Arts', 'Commerce'],
