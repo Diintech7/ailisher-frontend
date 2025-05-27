@@ -32,7 +32,7 @@ const SidebarLayout = ({ onLogout, userRole }) => {
       try {
         const userData = JSON.parse(userCookie);
         console.log(userData)
-        setUsername(data.user.name || (userRole === 'client' ? 'Client' : 'User'));
+        setUsername(userData.name || (userRole === 'client' ? 'Client' : 'User'));
         
         // For clients, try to get business info from stored user data
         if (userRole === 'client') {
