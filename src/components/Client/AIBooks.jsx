@@ -273,7 +273,7 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
   const CATEGORY_MAPPINGS = {
-    'Competitive Exams': ['UPSC', 'NEET', 'JEE', 'GATE', 'CAT'],
+    'Competitive Exams': ['UPSC', 'NEET', 'JEE', 'GATE', 'CAT', 'CA', 'CMA', 'CS', , 'BPC', 'UPPCS', 'SSC', 'NET/JRF', 'Teacher', 'NDA'],
     'Professional Courses': ['CA', 'CMA', 'CS', 'ACCA', 'CFA', 'FRM'],
     'Language Tests': ['IELTS', 'TOEFL', 'GRE', 'GMAT'],
     'Academic': ['Engineering', 'Medical', 'Management', 'Science', 'Arts', 'Commerce'],
