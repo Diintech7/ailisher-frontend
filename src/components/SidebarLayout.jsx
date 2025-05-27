@@ -23,7 +23,7 @@ const SidebarLayout = ({ onLogout, userRole }) => {
   useEffect(() => {
     if (userRole === 'admin') {
       setUsername('Administrator');
-      setBusinessName('AILisher');
+      setBusinessName('Ailisher');
       return;
     }
 
@@ -32,19 +32,19 @@ const SidebarLayout = ({ onLogout, userRole }) => {
       try {
         const userData = JSON.parse(userCookie);
         console.log(userData)
-        setUsername(userData.name || (userRole === 'client' ? 'Client' : 'User'));
+        setUsername(data.user.name || (userRole === 'client' ? 'Client' : 'User'));
         
         // For clients, try to get business info from stored user data
         if (userRole === 'client') {
-          setBusinessName(userData.name || 'Client Dashboard');
+          setBusinessName(userData.businessName || 'Client Dashboard');
           setBusinessLogo(userData.businessLogo || '');
         } else {
-          setBusinessName('AILisher');
+          setBusinessName('Ailisher');
         }
       } catch (error) {
         console.error('Error parsing user data:', error);
         setUsername(userRole === 'client' ? 'Client' : 'User');
-        setBusinessName(userRole === 'client' ? 'Client Dashboard' : 'AILisher');
+        setBusinessName(userRole === 'client' ? 'Client Dashboard' : 'Ailisher');
       }
     }
 
@@ -137,12 +137,12 @@ const SidebarLayout = ({ onLogout, userRole }) => {
       );
     }
     
-    // Default AILisher logo or fallback
+    // Default Ailisher logo or fallback
     return (
       <>
         <img 
           src="/logo.png" 
-          alt="AILisher Logo" 
+          alt="Ailisher Logo" 
           className="w-10 h-10 object-contain"
           onError={(e) => {
             // Fallback if logo fails to load
@@ -181,7 +181,7 @@ const SidebarLayout = ({ onLogout, userRole }) => {
           </div>
           {isExpanded && (
             <span className="ml-3 font-bold text-2xl text-gray-700 animate-fade-in">
-              {businessName || 'AILisher'}
+              {businessName || 'Ailisher'}
             </span>
           )}
         </div>

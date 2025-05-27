@@ -17,7 +17,7 @@ const BookItem = ({ book, onClick }) => {
       <div className="h-48 bg-gradient-to-br from-blue-50 to-indigo-100 mb-4 rounded-lg flex items-center justify-center overflow-hidden">
         {book.coverImage ? (
           <img 
-            src={book.coverImage.startsWith('data:') ? book.coverImage : `http://localhost:5000/${book.coverImage}`} 
+            src={book.coverImage.startsWith('data:') ? book.coverImage : `https://aipbbackend.onrender.com/${book.coverImage}`} 
             alt={book.title} 
             className="h-full w-full object-cover rounded-lg"
           />
@@ -350,7 +350,7 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser }) => {
       if (coverImage) {
         formDataToSend.append('coverImage', coverImage);
       }
-      const response = await fetch('http://localhost:5000/api/books', {
+      const response = await fetch('https://aipbbackend.onrender.com/api/books', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -410,16 +410,7 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser }) => {
             </button>
           </div>
           <form onSubmit={handleSubmit}>
-            {currentUser && (
-              <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-sm text-blue-800">
-                  <span className="font-medium">Creating book for:</span> {currentUser.name}
-                  {currentUser.role === 'client' && currentUser.userId && (
-                    <span className="ml-2 text-blue-600">({currentUser.userId})</span>
-                  )}
-                </p>
-              </div>
-            )}
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-gray-700 text-sm font-medium mb-2">
@@ -646,7 +637,7 @@ const AIBooks = () => {
         navigate('/login');
         return;
       }
-      const response = await fetch('http://localhost:5000/api/books', {
+      const response = await fetch('https://aipbbackend.onrender.com/api/books', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -757,13 +748,8 @@ const AIBooks = () => {
       <ToastContainer position="top-right" autoClose={3000} />
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">My AI Books</h1>
-          {currentUser && (
-            <p className="text-gray-600 mt-1">
-              Welcome, {currentUser.name}
-              
-            </p>
-          )}
+          <h1 className="text-3xl font-bold text-gray-800">AI Books</h1>
+          
         </div>
         <div className="flex flex-wrap gap-3">
           <button 

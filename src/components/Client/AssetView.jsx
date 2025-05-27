@@ -15,7 +15,6 @@ import PYQModal from "./components/modals/PYQModal"
 import DeleteConfirmationModal from "./components/modals/DeleteConfirmationModal"
 import CreateSetModal from "./components/modals/CreateSetModal"
 import CreateObjectiveSetModal from "./components/modals/CreateObjectiveSetModal"
-import GenerateAssetsModal from "./components/modals/GenerateAssetsModal"
 import SummaryTab from "./components/tabs/SummaryTab"
 import VideosTab from "./components/tabs/VideosTab"
 import PYQsTab from "./components/tabs/PYQsTab"
@@ -35,7 +34,6 @@ const AssetView = () => {
   const [showSubjectiveModal, setShowSubjectiveModal] = useState(false)
   const [showVideoModal, setShowVideoModal] = useState(false)
   const [showPYQModal, setShowPYQModal] = useState(false)
-  const [showGenerateAssetsModal, setShowGenerateAssetsModal] = useState(false)
 
   // Question set related states
   const [showCreateSetModal, setShowCreateSetModal] = useState(false)
@@ -630,17 +628,6 @@ const AssetView = () => {
 
       {/* Tabs */}
       <div className="mb-6">
-         <div className="flex justify-end mb-4">
-          <button
-            className="px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:shadow-md transition-all duration-200 flex items-center"
-            onClick={() => setShowGenerateAssetsModal(true)}
-          >
-            <span className="mr-2">Generate Assets</span>
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
-            </svg>
-          </button>
-        </div>
         <div className="flex border-b border-gray-200">
           <button
             className={`py-3 px-6 font-medium text-sm ${activeTab === "summary" ? "text-indigo-600 border-b-2 border-indigo-600" : "text-gray-600 hover:text-gray-800"}`}
@@ -789,20 +776,6 @@ const AssetView = () => {
         chapterId={chapterId}
         topicId={topicId}
         subtopicId={subtopicId}
-      />
-
-      <GenerateAssetsModal
-        isOpen={showGenerateAssetsModal}
-        onClose={() => setShowGenerateAssetsModal(false)}
-        itemType={itemType}
-        itemId={itemId}
-        isWorkbook={isWorkbook}
-        bookId={bookId}
-        workbookId={workbookId}
-        chapterId={chapterId}
-        topicId={topicId}
-        subtopicId={subtopicId}
-        item={item}
       />
     </div>
   )
