@@ -17,13 +17,24 @@ const BookItem = ({ book, onClick, onToggleHighlight, onToggleTrending, currentU
     
   const getCompleteImageUrl = (imageUrl) => {
     if (!imageUrl) return null;
+    
+    // If it's already a full URL (http/https), return as is
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl;
     }
+    
+    // If it's a data URL, return as is
     if (imageUrl.startsWith('data:')) {
       return imageUrl;
     }
-    return `https://aipbbackend-c5ed.onrender.com/${imageUrl}`;
+    
+    // If it's an S3 URL, return as is
+    if (imageUrl.includes('amazonaws.com')) {
+      return imageUrl;
+    }
+    
+    // For local files, construct the full URL
+    return `http://localhost:5000/${imageUrl}`;
   };
 
   // Close menu when clicking outside
@@ -75,7 +86,7 @@ const BookItem = ({ book, onClick, onToggleHighlight, onToggleTrending, currentU
         return;
       }
 
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/books/${book._id}`, {
+      const response = await fetch(`http://localhost:5000/api/books/${book._id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -154,14 +165,24 @@ const BookItem = ({ book, onClick, onToggleHighlight, onToggleTrending, currentU
 
 
         <div className="h-48 bg-gradient-to-br from-blue-50 to-indigo-100 mb-4 rounded-lg flex items-center justify-center overflow-hidden">
-          {book.coverImage ? (
+          {book.coverImageUrl ? (
+            <img 
+              src={book.coverImageUrl} 
+              alt={book.title} 
+              className="h-full w-full object-fill rounded-lg"
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = '';
+              }}
+            />
+          ) : book.coverImage ? (
             <img 
               src={getCompleteImageUrl(book.coverImage)} 
               alt={book.title} 
               className="h-full w-full object-fill rounded-lg"
               onError={(e) => {
-                e.target.onerror = null; // Prevent infinite loop
-                e.target.src = ''; // Remove the broken image
+                e.target.onerror = null;
+                e.target.src = '';
               }}
             />
           ) : (
@@ -551,30 +572,81 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMappings })
           return;
         }
       }
+
+      let coverImageKey = null;
       
-      const formDataToSend = new FormData();
-      formDataToSend.append('title', formData.title.trim());
-      formDataToSend.append('description', formData.description.trim());
-      formDataToSend.append('author', formData.author.trim());
-      formDataToSend.append('publisher', formData.publisher.trim());
-      formDataToSend.append('language', formData.language);
-      formDataToSend.append('mainCategory', formData.mainCategory);
-      formDataToSend.append('subCategory', formData.subCategory);
-      formDataToSend.append('isHighlighted', formData.isHighlighted);
-      formDataToSend.append('categoryOrder', formData.categoryOrder);
+      // If there's a cover image, first get a presigned URL and upload to S3
+      if (coverImage) {
+        try {
+          // Get presigned URL
+          const uploadUrlResponse = await fetch('http://localhost:5000/api/books/cover-upload-url', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              fileName: coverImage.name,
+              contentType: coverImage.type
+            })
+          });
+
+          const uploadUrlData = await uploadUrlResponse.json();
+          
+          if (!uploadUrlData.success) {
+            throw new Error(uploadUrlData.message || 'Failed to get upload URL');
+          }
+
+          // Upload to S3 using presigned URL
+          const uploadResponse = await fetch(uploadUrlData.uploadUrl, {
+            method: 'PUT',
+            body: coverImage,
+            headers: {
+              'Content-Type': coverImage.type
+            }
+          });
+
+          if (!uploadResponse.ok) {
+            throw new Error('Failed to upload image to S3');
+          }
+
+          // Store the key from the response
+          coverImageKey = uploadUrlData.key;
+          console.log('Uploaded image with key:', coverImageKey); // Debug log
+        } catch (error) {
+          console.error('Error uploading cover image:', error);
+          toast.error('Failed to upload cover image');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+      
+      // Create book with S3 key
+      const bookData = {
+        title: formData.title.trim(),
+        description: formData.description.trim(),
+        author: formData.author.trim(),
+        publisher: formData.publisher.trim(),
+        language: formData.language,
+        mainCategory: formData.mainCategory,
+        subCategory: formData.subCategory,
+        isHighlighted: formData.isHighlighted,
+        categoryOrder: formData.categoryOrder,
+        coverImageKey: coverImageKey // Only send coverImageKey, not coverImage
+      };
       
       // Add new fields
-      if (formData.exam.trim()) formDataToSend.append('exam', formData.exam.trim());
-      if (formData.paper.trim()) formDataToSend.append('paper', formData.paper.trim());
-      if (formData.subject.trim()) formDataToSend.append('subject', formData.subject.trim());
+      if (formData.exam.trim()) bookData.exam = formData.exam.trim();
+      if (formData.paper.trim()) bookData.paper = formData.paper.trim();
+      if (formData.subject.trim()) bookData.subject = formData.subject.trim();
       
       if (currentUser) {
         const clientId = currentUser.userId || currentUser.id;
-        formDataToSend.append('clientId', clientId);
+        bookData.clientId = clientId;
       }
       
       if (formData.subCategory === 'Other' && formData.customSubCategory.trim()) {
-        formDataToSend.append('customSubCategory', formData.customSubCategory.trim());
+        bookData.customSubCategory = formData.customSubCategory.trim();
       }
       
       if (formData.tags.trim()) {
@@ -583,23 +655,23 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMappings })
           .filter(tag => tag.length > 0 && tag.length <= 30)
           .slice(0, 10);
         if (tagsArray.length > 0) {
-          formDataToSend.append('tags', JSON.stringify(tagsArray));
+          bookData.tags = tagsArray;
         }
       }
       
-      if (coverImage) {
-        formDataToSend.append('coverImage', coverImage);
-      }
+      console.log('Sending book data:', bookData); // Debug log
       
-      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/books', {
+      const response = await fetch('http://localhost:5000/api/books', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
-        body: formDataToSend
+        body: JSON.stringify(bookData)
       });
       
       const data = await response.json();
+      console.log('Received response:', data); // Debug log
       
       if (data.success) {
         toast.success('Book created successfully!');
@@ -613,7 +685,6 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMappings })
           language: 'English',
           mainCategory: 'Other',
           subCategory: 'Other',
-          // customSubCategory: '',
           exam: '',
           paper: '',
           subject: '',
@@ -951,7 +1022,7 @@ const AIBooks = () => {
       }
 
       // First fetch the category mappings
-      const categoriesResponse = await fetch('https://aipbbackend-c5ed.onrender.com/api/books/category-mappings', {
+      const categoriesResponse = await fetch('http://localhost:5000/api/books/category-mappings', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -979,7 +1050,7 @@ const AIBooks = () => {
       }
 
       // Then fetch the books with pagination and filters
-      const booksResponse = await fetch(`https://aipbbackend-c5ed.onrender.com/api/books?${queryParams}`, {
+      const booksResponse = await fetch(`http://localhost:5000/api/books?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -1093,7 +1164,7 @@ const AIBooks = () => {
       const endpoint = `/api/books/${bookId}/highlight`;
       const method = isHighlighted ? 'POST' : 'DELETE';
 
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com${endpoint}`, {
+      const response = await fetch(`http://localhost:5000${endpoint}`, {
         method,
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1131,7 +1202,7 @@ const AIBooks = () => {
       const endpoint = `/api/books/${bookId}/trending`;
       const method = isTrending ? 'POST' : 'DELETE';
 
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com${endpoint}`, {
+      const response = await fetch(`http://localhost:5000${endpoint}`, {
         method,
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1249,7 +1320,7 @@ const AIBooks = () => {
       // Update all books in the category with the new order
       const booksInCategory = books.filter(book => book.mainCategory === mainCategory);
       for (const book of booksInCategory) {
-        const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/books/${book._id}/category-order`, {
+        const response = await fetch(`http://localhost:5000/api/books/${book._id}/category-order`, {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${token}`,
