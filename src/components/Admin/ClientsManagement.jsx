@@ -121,7 +121,7 @@ const ClientManagement = () => {
                 <script>
                   document.cookie = "usertoken=${clientToken}; path=/; max-age=3600";
                   document.cookie = "user=${encodeURIComponent(JSON.stringify(clientData))}; path=/; max-age=3600";
-                  window.location.href = 'https://www.ailisher.com/dashboard';
+                  window.location.href = 'https://ailisher-frontend.vercel.app/dashboard';
                 </script>
               </body>
             </html>
