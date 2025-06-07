@@ -496,7 +496,12 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMappings })
     subject: '',
     tags: '',
     isHighlighted: false,
-    categoryOrder: 0
+    categoryOrder: 0,
+    rating: 0,
+    ratingCount: 0,
+    conversations: [],
+    users: [],
+    summary: ''
   });
   const [coverImage, setCoverImage] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
@@ -508,18 +513,62 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMappings })
     'Gujarati', 'Urdu', 'Kannada', 'Odia', 'Malayalam', 'Punjabi', 'Assamese', 'Other'
   ];
   
+  const [formErrors, setFormErrors] = useState({
+    rating: '',
+    ratingCount: '',
+    summary: ''
+  });
+  
   if (!isOpen) return null;
   
+  const validateForm = () => {
+    const errors = {};
+    
+    if (formData.rating && (isNaN(formData.rating) || formData.rating < 0 || formData.rating > 5)) {
+      errors.rating = 'Rating must be between 0 and 5';
+    }
+    
+    if (formData.ratingCount && (isNaN(formData.ratingCount) || formData.ratingCount < 0)) {
+      errors.ratingCount = 'Rating count must be a non-negative number';
+    }
+    
+    if (formData.summary && formData.summary.length > 500) {
+      errors.summary = 'Summary cannot exceed 500 characters';
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-      ...(name === 'mainCategory' && { 
-        subCategory: categoryMappings[value]?.[0] || 'Other',
-        customSubCategory: '' 
-      })
-    }));
+    
+    // Special handling for numeric inputs
+    if (name === 'rating' || name === 'ratingCount') {
+      const numValue = value === '' ? '' : Number(value);
+      setFormData(prev => ({
+        ...prev,
+        [name]: numValue
+      }));
+    } else if (name === 'conversations' || name === 'users') {
+      // Handle arrays for conversations and users
+      const arrayValue = value.split(',')
+        .map(item => item.trim())
+        .filter(item => item.length > 0);
+      setFormData(prev => ({
+        ...prev,
+        [name]: arrayValue
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value,
+        ...(name === 'mainCategory' && { 
+          subCategory: categoryMappings[value]?.[0] || 'Other',
+          customSubCategory: '' 
+        })
+      }));
+    }
   };
   
   const handleImageChange = (e) => {
@@ -554,6 +603,12 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMappings })
   
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      toast.error('Please fix the form errors before submitting');
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
@@ -610,9 +665,7 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMappings })
             throw new Error('Failed to upload image to S3');
           }
 
-          // Store the key from the response
           coverImageKey = uploadUrlData.key;
-          console.log('Uploaded image with key:', coverImageKey); // Debug log
         } catch (error) {
           console.error('Error uploading cover image:', error);
           toast.error('Failed to upload cover image');
@@ -621,7 +674,7 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMappings })
         }
       }
       
-      // Create book with S3 key
+      // Create book with all fields
       const bookData = {
         title: formData.title.trim(),
         description: formData.description.trim(),
@@ -632,10 +685,15 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMappings })
         subCategory: formData.subCategory,
         isHighlighted: formData.isHighlighted,
         categoryOrder: formData.categoryOrder,
-        coverImageKey: coverImageKey // Only send coverImageKey, not coverImage
+        coverImageKey: coverImageKey,
+        rating: parseFloat(formData.rating) || 0,
+        ratingCount: parseInt(formData.ratingCount) || 0,
+        conversations: Array.isArray(formData.conversations) ? formData.conversations : [],
+        users: Array.isArray(formData.users) ? formData.users : [],
+        summary: formData.summary.trim()
       };
       
-      // Add new fields
+      // Add optional fields if they exist
       if (formData.exam.trim()) bookData.exam = formData.exam.trim();
       if (formData.paper.trim()) bookData.paper = formData.paper.trim();
       if (formData.subject.trim()) bookData.subject = formData.subject.trim();
@@ -659,7 +717,7 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMappings })
         }
       }
       
-      console.log('Sending book data:', bookData); // Debug log
+      console.log('Sending book data:', bookData);
       
       const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/books', {
         method: 'POST',
@@ -671,7 +729,6 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMappings })
       });
       
       const data = await response.json();
-      console.log('Received response:', data); // Debug log
       
       if (data.success) {
         toast.success('Book created successfully!');
@@ -690,7 +747,12 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMappings })
           subject: '',
           tags: '',
           isHighlighted: false,
-          categoryOrder: 0
+          categoryOrder: 0,
+          rating: 0,
+          ratingCount: 0,
+          conversations: [],
+          users: [],
+          summary: ''
         });
         setCoverImage(null);
         setImagePreview('');
@@ -917,6 +979,99 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMappings })
               <p className="text-xs text-gray-500 mt-1">Separate multiple tags with commas. Maximum 10 tags, 30 characters each.</p>
             </div>
             
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-2">
+                  Rating (0-5) {formErrors.rating && <span className="text-red-500 text-xs">*</span>}
+                </label>
+                <input
+                  type="number"
+                  name="rating"
+                  value={formData.rating}
+                  onChange={handleInputChange}
+                  className={`w-full px-3 py-2 border ${formErrors.rating ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                  min="0"
+                  max="5"
+                  step="0.1"
+                  placeholder="Enter rating (0-5)"
+                />
+                {formErrors.rating && (
+                  <p className="text-red-500 text-xs mt-1">{formErrors.rating}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-gray-700 text-sm font-medium mb-2">
+                  Rating Count {formErrors.ratingCount && <span className="text-red-500 text-xs">*</span>}
+                </label>
+                <input
+                  type="number"
+                  name="ratingCount"
+                  value={formData.ratingCount}
+                  onChange={handleInputChange}
+                  className={`w-full px-3 py-2 border ${formErrors.ratingCount ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                  min="0"
+                  placeholder="Enter number of ratings"
+                />
+                {formErrors.ratingCount && (
+                  <p className="text-red-500 text-xs mt-1">{formErrors.ratingCount}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-medium mb-2">
+                Summary <span className="text-gray-500">({formData.summary.length}/500)</span>
+                {formErrors.summary && <span className="text-red-500 text-xs">*</span>}
+              </label>
+              <textarea
+                name="summary"
+                value={formData.summary}
+                onChange={handleInputChange}
+                className={`w-full px-3 py-2 border ${formErrors.summary ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 h-24`}
+                maxLength={500}
+                placeholder="Enter a brief summary of the book..."
+              />
+              {formErrors.summary && (
+                <p className="text-red-500 text-xs mt-1">{formErrors.summary}</p>
+              )}
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-medium mb-2">Total Conversations</label>
+              <input
+                type="text"
+                name="conversations"
+                value={formData.conversations.join(', ')}
+                onChange={(e) => {
+                  const conversationsArray = e.target.value.split(',')
+                    .map(conv => conv.trim())
+                    .filter(conv => conv.length > 0);
+                  setFormData(prev => ({ ...prev, conversations: conversationsArray }));
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Enter conversation IDs separated by commas"
+              />
+              <p className="text-xs text-gray-500 mt-1">Enter conversation IDs separated by commas</p>
+            </div>
+
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-medium mb-2">Total Users</label>
+              <input
+                type="text"
+                name="users"
+                value={formData.users.join(', ')}
+                onChange={(e) => {
+                  const usersArray = e.target.value.split(',')
+                    .map(user => user.trim())
+                    .filter(user => user.length > 0);
+                  setFormData(prev => ({ ...prev, users: usersArray }));
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                placeholder="Enter user IDs separated by commas"
+              />
+              <p className="text-xs text-gray-500 mt-1">Enter user IDs separated by commas</p>
+            </div>
+
             <div className="mb-4">
               <label className="flex items-center">
                 <input
@@ -929,9 +1084,6 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMappings })
                 <span className="text-gray-700 text-sm">Make this book highlighted</span>
               </label>
             </div>
-            
-            
-            
             <div className="mb-6">
               <label className="block text-gray-700 text-sm font-medium mb-2">Cover Image (Optional)</label>
               <ImageUploadPreview imagePreview={imagePreview} onRemove={handleRemoveImage} />
