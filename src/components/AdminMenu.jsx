@@ -1,10 +1,11 @@
 import React from 'react';
-import { Home, Users, User, MessageCircle, TicketCheck, DollarSign, Lightbulb, Bot } from 'lucide-react';
+import { Home, Users, User, MessageCircle, TicketCheck, DollarSign, Lightbulb, Bot, ClipboardCheck } from 'lucide-react';
 
 const AdminMenu = ({ isExpanded, currentPath, handleNavigate }) => {
   const menuItems = [
     { path: '/admin/dashboard', name: 'Overview', icon: <Home size={20} /> },
     { path: '/admin/clients', name: 'Clients', icon: <Users size={20} /> },
+    { path: '/admin/evaluators', name: 'Evaluators', icon: <ClipboardCheck size={20} /> },
     { path: '/admin/users', name: 'Users', icon: <User size={20} /> },
     { path: '/admin/ai-agents', name: 'AI Agents', icon: <Bot size={20} /> },
     { path: '/admin/conversations', name: 'Conversations', icon: <MessageCircle size={20} /> },

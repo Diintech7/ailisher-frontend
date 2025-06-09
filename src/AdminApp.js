@@ -8,6 +8,7 @@ import AdminDashboard from './components/Admin/AdminDashboard';
 import DatastorePage from './components/DatastorePage';
 import ClientsManagement from './components/Admin/ClientsManagement';
 import User from './components/Admin/User';
+import EvaluatorsManagement from './components/Admin/EvaluatorsManagement';
 // import UserManagement from './components/Admin/UserManagement';
 // import AiAgentsManagement from './components/Admin/AiAgentsManagement';
 // import ConversationsManagement from './components/Admin/ConversationsManagement';
@@ -97,6 +98,7 @@ const AdminApp = () => {
             <Route path="/datastore" element={<DatastorePage />} />
             <Route path="/clients" element={<ClientsManagement />} />
             <Route path="/users" element={<User/>} />
+            <Route path="/evaluators" element={<EvaluatorsManagement />} />
             {/* <Route path="/users" element={<UserManagement />} />
             <Route path="/ai-agents" element={<AiAgentsManagement />} />
             <Route path="/conversations" element={<ConversationsManagement />} />

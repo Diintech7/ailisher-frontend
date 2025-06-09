@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Database, ArrowLeft, Edit, Trash2, AlertTriangle, Save, Book, FileText, ChevronRight, Plus, MessageSquare, QrCode } from 'lucide-react';
+import { Database, ArrowLeft, Edit, Trash2, AlertTriangle, Save, Book, FileText, ChevronRight, Plus, MessageSquare, QrCode, BookOpen } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -675,6 +675,39 @@ const TopicDetail = () => {
     setShowSubTopicQRCodeModal(true);
   };
 
+  const handleAddAISWB = () => {
+    const token = Cookies.get('usertoken');
+    if (!token) {
+      toast.error('Please login to access AISWB management');
+      navigate('/login');
+      return;
+    }
+
+    // Validate all required IDs
+    if (!effectiveBookId || !chapterId || !topicId) {
+      toast.error('Invalid IDs. Cannot access AISWB management.');
+      return;
+    }
+
+    // Ensure we have a valid topic
+    if (!topic) {
+      toast.error('Topic information not available. Please try again.');
+      return;
+    }
+    
+    try {
+      // Navigate to the AISWB management page based on context
+      if (isWorkbook) {
+        navigate(`/ai-workbook/${workbookId}/chapters/${chapterId}/topics/${topicId}/aiswb`);
+      } else {
+        navigate(`/ai-books/${bookId}/chapters/${chapterId}/topics/${topicId}/aiswb`);
+      }
+    } catch (error) {
+      console.error('Navigation error:', error);
+      toast.error('Failed to navigate to AISWB management. Please try again.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -781,6 +814,14 @@ const TopicDetail = () => {
             >
               <Database size={16} className="mr-2" />
               <span>Topic Assets</span>
+            </button>
+
+            <button 
+              onClick={handleAddAISWB}
+              className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors shadow-sm"
+            >
+              <BookOpen size={16} className="mr-2" />
+              <span>Add AISWB</span>
             </button>
           </div>
           

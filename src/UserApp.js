@@ -25,6 +25,10 @@ import TopicViewer from './components/Client/TopicViewer';
 import SubTopicViewer from './components/Client/SubTopicViewer';
 import MobileAssetView from './components/MobileAssetView';
 import User from './components/Client/User';
+import AISWBPage from './components/Client/AISWBPage';
+import AISWBQuestions from './components/Client/AISWBQuestions';
+// import AssessmentDashboard from './components/Client/AssessmentDashboard';
+import QuestionSubmissions from './components/Client/QuestionSubmissions';
 
 const UserApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -156,6 +160,14 @@ const UserApp = () => {
                 <Route path="/ai-books/:bookId/chapters/:chapterId/topics/:topicId/datastore" element={<Datastores type="topic" />} />
                 <Route path="/ai-books/:bookId/chapters/:chapterId/topics/:topicId/subtopics/:subtopicId/datastore" element={<Datastores type="subtopic" />} />
                 
+                {/* AISWB Routes for AI Books */}
+                <Route path="/ai-books/:bookId/chapters/:chapterId/topics/:topicId/aiswb" element={<AISWBPage />} />
+                {/* <Route path="/assessment/:topicId/sets/:setId/questions/:questionId" element={<AssessmentDashboard />} /> */}
+                <Route path="/aiswb/:topicId/sets/:setId/questions/:questionId" element={<QuestionSubmissions />} />
+                
+                {/* AISWB Routes for AI Workbooks */}
+                <Route path="/ai-workbook/:workbookId/chapters/:chapterId/topics/:topicId/aiswb" element={<AISWBPage />} />
+
                 {/* Asset View Routes for AI Books */}
                 <Route path="/ai-books/:bookId/assets" element={<AssetView />} />
                 <Route path="/ai-books/:bookId/chapters/:chapterId/assets" element={<AssetView />} />
