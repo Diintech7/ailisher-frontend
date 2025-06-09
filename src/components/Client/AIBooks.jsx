@@ -570,7 +570,7 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMappings })
     const { name, value, type, checked } = e.target;
     
     // Special handling for numeric inputs
-    if (name === 'rating' || name === 'ratingCount') {
+    if (name === 'rating' || name === 'ratingCount' || name === 'categoryOrder') {
       const numValue = value === '' ? '' : Number(value);
       setFormData(prev => ({
         ...prev,
@@ -710,7 +710,7 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMappings })
         mainCategory: formData.mainCategory,
         subCategory: formData.subCategory,
         isHighlighted: formData.isHighlighted,
-        categoryOrder: formData.categoryOrder,
+        categoryOrder: parseInt(formData.categoryOrder) || 0,
         coverImageKey: coverImageKey,
         rating: parseFloat(formData.rating) || 0,
         ratingCount: parseInt(formData.ratingCount) || 0,
@@ -930,7 +930,7 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMappings })
               </div>
             </div>
             
-            <div className="mb-4">
+            {/* <div className="mb-4">
               <label className="block text-gray-700 text-sm font-medium mb-2">
                 Category Order
               </label>
@@ -944,7 +944,7 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMappings })
                 placeholder="Enter category order (0 for default)"
               />
               <p className="text-xs text-gray-500 mt-1">Lower numbers appear first in the category list</p>
-            </div>
+            </div> */}
             
             {/* New fields: Exam, Paper, Subject */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -1221,7 +1221,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     
-    if (name === 'rating' || name === 'ratingCount') {
+    if (name === 'rating' || name === 'ratingCount' || name === 'categoryOrder') {
       const numValue = value === '' ? '' : Number(value);
       setFormData(prev => ({
         ...prev,
@@ -1356,7 +1356,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
         mainCategory: formData.mainCategory,
         subCategory: formData.subCategory,
         isHighlighted: formData.isHighlighted,
-        categoryOrder: formData.categoryOrder,
+        categoryOrder: parseInt(formData.categoryOrder) || 0,
         rating: parseFloat(formData.rating) || 0,
         ratingCount: parseInt(formData.ratingCount) || 0,
         conversations: Array.isArray(formData.conversations) ? formData.conversations : [],
@@ -1551,7 +1551,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
               </div>
             </div>
             
-            <div className="mb-4">
+            {/* <div className="mb-4">
               <label className="block text-gray-700 text-sm font-medium mb-2">
                 Category Order
               </label>
@@ -1565,7 +1565,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
                 placeholder="Enter category order (0 for default)"
               />
               <p className="text-xs text-gray-500 mt-1">Lower numbers appear first in the category list</p>
-            </div>
+            </div> */}
             
             {/* New fields: Exam, Paper, Subject */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -1803,7 +1803,7 @@ const AIBooks = () => {
   });
   const [pagination, setPagination] = useState({
     page: 1,
-    limit:50,
+    limit:500,
     total: 0
   });
   const [categoryOrder, setCategoryOrder] = useState('newest');
@@ -2061,10 +2061,10 @@ const AIBooks = () => {
             onChange={(e) => setPagination(prev => ({ ...prev, limit: parseInt(e.target.value), page: 1 }))}
             className="border border-gray-300 rounded-md px-2 py-1 text-sm"
           >
-            <option value="75">75</option>
-            <option value="100">100</option>
-            <option value="125">125</option>
-            <option value="150">150</option>
+            <option value="500">500</option>
+            <option value="600">600</option>
+            <option value="700">700</option>
+            <option value="800">800</option>
           </select>
         </div>
         
@@ -2090,7 +2090,7 @@ const AIBooks = () => {
           </button>
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* <div className="flex items-center gap-2">
           <label className="text-sm text-gray-600">Sort by:</label>
           <select
             value={categoryOrder}
@@ -2100,7 +2100,7 @@ const AIBooks = () => {
             <option value="newest">Newest First</option>
             <option value="oldest">Oldest First</option>
           </select>
-        </div>
+        </div> */}
       </div>
     );
   };
@@ -2116,22 +2116,20 @@ const AIBooks = () => {
 
       const parsedOrder = parseInt(order) || 0;
 
-      // Update all books in the category with the new order
-      const booksInCategory = books.filter(book => book.mainCategory === mainCategory);
-      for (const book of booksInCategory) {
-        const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/books/${book._id}/category-order`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ order: parsedOrder })
-        });
+      // Update category order for all books in the category
+      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/books/categories/${mainCategory}/order`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ order: parsedOrder })
+      });
 
-        const data = await response.json();
-        if (!data.success) {
-          toast.error(`Failed to update order for ${book.title}`);
-        }
+      const data = await response.json();
+      if (!data.success) {
+        toast.error(data.message || 'Failed to update category order');
+        return;
       }
 
       // Update local state
@@ -2141,7 +2139,7 @@ const AIBooks = () => {
       }));
 
       // Refresh books to get updated order
-      await fetchBooks();
+      // await fetchBooks();
       toast.success(`Order updated for ${mainCategory}`);
       setEditingCategory(null); // Exit editing mode
     } catch (error) {
