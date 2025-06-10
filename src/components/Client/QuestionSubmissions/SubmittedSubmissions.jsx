@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { userAnswerService } from '../../../services/userAnswerService';
 import { toast } from 'react-toastify';
+import ManualEvaluationModal from './ManualEvaluationModal';
 
-const SubmittedSubmissions = ({ questionId }) => {
+const SubmittedSubmissions = ({ questionId, question }) => {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [expandedSubmissions, setExpandedSubmissions] = useState({}); // State to manage expanded/collapsed submissions
+  const [expandedSubmissions, setExpandedSubmissions] = useState({});
+  const [selectedSubmission, setSelectedSubmission] = useState(null);
+  const [showEvaluationModal, setShowEvaluationModal] = useState(false);
 
   useEffect(() => {
     if (questionId) {
@@ -53,14 +56,20 @@ const SubmittedSubmissions = ({ questionId }) => {
     }
   };
 
-  const handleEvaluate = async (answerId) => {
-    try {
-      // Navigate to evaluation page or open evaluation modal
-      // This will be implemented based on your evaluation flow
-      toast.info('Evaluation feature coming soon');
-    } catch (error) {
-      toast.error('Failed to start evaluation');
-    }
+  const handleEvaluate = async (submission) => {
+    setSelectedSubmission(submission);
+    setShowEvaluationModal(true);
+  };
+
+  const handleEvaluationComplete = (evaluationData) => {
+    // Update the submission in the list with the new evaluation data
+    setSubmissions(prevSubmissions => 
+      prevSubmissions.map(sub => 
+        sub._id === selectedSubmission._id 
+          ? { ...sub, evaluation: evaluationData, submissionStatus: 'evaluated' }
+          : sub
+      )
+    );
   };
 
   const handleReject = async (answerId) => {
@@ -146,6 +155,19 @@ const SubmittedSubmissions = ({ questionId }) => {
         <ImageModal
           image={selectedImage}
           onClose={() => setSelectedImage(null)}
+        />
+      )}
+
+      {/* Evaluation Modal */}
+      {showEvaluationModal && selectedSubmission && (
+        <ManualEvaluationModal
+          submission={selectedSubmission}
+          question={question}
+          onClose={() => {
+            setShowEvaluationModal(false);
+            setSelectedSubmission(null);
+          }}
+          onEvaluationComplete={handleEvaluationComplete}
         />
       )}
 
@@ -235,7 +257,7 @@ const SubmittedSubmissions = ({ questionId }) => {
                 {/* Action Buttons */}
                 <div className="mt-6 flex justify-end space-x-4">
                   <button
-                    onClick={() => handleEvaluate(submission._id)}
+                    onClick={() => handleEvaluate(submission)}
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
                   >
                     Evaluate

@@ -197,5 +197,17 @@ export const userAnswerService = {
     } catch (error) {
       throw error.response?.data || error.message;
     }
-  }
+  },
+
+  evaluateManual: async (answerId, evaluationData) => {
+    try {
+      const response = await axios.post(
+        `${BASE_URL}/userAnswers/answers/${answerId}/evaluate-manual`,
+        evaluationData
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
 }; 

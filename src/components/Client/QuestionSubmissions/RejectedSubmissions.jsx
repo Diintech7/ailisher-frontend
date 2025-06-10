@@ -9,7 +9,7 @@ const RejectedSubmissions = ({ questionId }) => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [expandedSubmissions, setExpandedSubmissions] = useState({}); // State to manage expanded/collapsed submissions
+  const [expandedSubmissions, setExpandedSubmissions] = useState({});
 
   useEffect(() => {
     if (questionId) {
@@ -20,6 +20,8 @@ const RejectedSubmissions = ({ questionId }) => {
   const fetchSubmissions = async () => {
     try {
       setLoading(true);
+      console.log('Fetching rejected submissions for questionId:', questionId);
+      
       const response = await userAnswerService.getQuestionAnswers(questionId, {
         page,
         submissionStatus: 'rejected',
@@ -27,13 +29,21 @@ const RejectedSubmissions = ({ questionId }) => {
         questionId: questionId
       });
       
+      console.log('API Response:', response);
+      
       if (response.success) {
-        // Filter submissions for this specific question
+        // Filter submissions for this specific question AND rejected status
         const filteredSubmissions = response.data.answers.filter(
-          submission => submission.question?._id === questionId
+          submission => 
+            submission.question?._id === questionId && 
+            submission.submissionStatus === 'rejected'
         );
+        
+        console.log('Filtered Submissions:', filteredSubmissions);
+        
         setSubmissions(filteredSubmissions);
         setTotalPages(Math.ceil(response.data.pagination.totalPages));
+        
         // Initialize expanded state for new submissions (default to collapsed)
         const initialExpandedState = {};
         filteredSubmissions.forEach(sub => {
@@ -63,7 +73,6 @@ const RejectedSubmissions = ({ questionId }) => {
     });
   };
 
-  // Toggle expand/collapse for a submission
   const toggleExpand = (submissionId) => {
     setExpandedSubmissions(prevState => ({
       ...prevState,
@@ -144,9 +153,9 @@ const RejectedSubmissions = ({ questionId }) => {
       ) : (
         submissions.map((submission) => (
           <div key={submission._id} className="bg-white shadow rounded-lg overflow-hidden">
-
+            
             {/* Basic Info - Always Visible */}
-            <div
+            <div 
               className="p-6 flex justify-between items-center cursor-pointer"
               onClick={() => toggleExpand(submission._id)}
             >
@@ -160,10 +169,10 @@ const RejectedSubmissions = ({ questionId }) => {
               </div>
               <div className="flex items-center space-x-2">
                 <span className="px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
-                  {submission.submissionStatus}
+                  Rejected
                 </span>
-                 {/* Expand/Collapse Icon */}
-                <svg
+                {/* Expand/Collapse Icon */}
+                <svg 
                   className={`w-5 h-5 text-gray-500 transform transition-transform ${
                     expandedSubmissions[submission._id] ? 'rotate-180' : 'rotate-0'
                   }`}
@@ -177,9 +186,8 @@ const RejectedSubmissions = ({ questionId }) => {
             {/* Collapsible Details */}
             {expandedSubmissions[submission._id] && (
               <div className="p-6 pt-0 space-y-4 border-t border-gray-200">
-
-                 {/* Rejection Reason */}
-                 {submission.rejectionReason && (
+                {/* Rejection Reason */}
+                {submission.rejectionReason && (
                   <div className="bg-red-50 p-4 rounded-lg">
                     <h4 className="text-sm font-medium text-red-700 mb-2">Reason for Rejection:</h4>
                     <div className="bg-white p-4 rounded-lg border border-gray-200">
@@ -192,11 +200,10 @@ const RejectedSubmissions = ({ questionId }) => {
                 {submission.answerImages && submission.answerImages.length > 0 && (
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Submitted Images:</h4>
-                    {/* Reduced image thumbnail size */}
                     <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
                       {submission.answerImages.map((image, index) => (
-                        <div
-                          key={index}
+                        <div 
+                          key={index} 
                           className="relative cursor-pointer group aspect-w-4 aspect-h-3 rounded-lg overflow-hidden bg-white border border-gray-200"
                           onClick={() => setSelectedImage(image)}
                         >
@@ -229,19 +236,6 @@ const RejectedSubmissions = ({ questionId }) => {
                     </div>
                   </div>
                 )}
-
-                 {/* Optional: Add a button here if you want to allow reconsideration from rejected */}
-                 {/*
-                 <div className="mt-6 flex justify-end">
-                    <button
-                      onClick={() => handleStatusUpdate(submission._id, 'pending', 'Reconsidering submission')}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                    >
-                      Reconsider
-                    </button>
-                 </div>
-                 */}
-
               </div>
             )}
           </div>
