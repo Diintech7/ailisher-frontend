@@ -365,7 +365,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                 .topic-value { color: #00b0f0; font-size: 18px; font-weight: bold; display: flex; align-items: flex-start; flex-wrap: wrap; height: auto; min-height: 60px; text-align: justify; margin-top: 5px; gap: 5px; }
                 .question-preview { font-size: 16px; font-weight: bold; color: #333; white-space: normal; overflow: visible; text-overflow: unset; max-width: 100%; word-wrap: break-word; hyphens: auto; text-align: justify; font-family: 'Noto Sans', 'Calibri', sans-serif; font-style: italic; }
                 .qr-section { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 10px; box-sizing: border-box; }
-                .scan-text { font-size: 10px; text-align: center; margin-top: 5px; font-weight: bold; }
+                .scan-text { font-size: 8px; text-align: center; margin-top: 3px; font-weight: bold; }
                 .middle-section { display: flex; height: auto; min-height: 150px; flex: 1 1 auto; overflow: visible; }
                 .left-sidebar { width: 120px; border-right: 1px solid #000; padding: 20px 0px 0px 0px; position: relative; text-align: center; }
                 .right-sidebar { width: 120px; border-left: 1px solid #000; padding: 20px 0px 0px 0px; position: relative; text-align: center; }
@@ -409,8 +409,8 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                   <div class="right-column">
                     <div class="qr-section">
                       ${qrCode ? `
-                        <img src="${qrCode}" alt="QR Code" style="width: 80px; height: 80px;" />
-                        <div class="scan-text">SCAN to<br />Upload<br />Answer</div>
+                        <img src="${qrCode}" alt="QR Code" style="width: 100px; height: 100px;" />
+                        <div class="scan-text">SCAN to Upload Answer</div>
                       ` : ''}
                     </div>
                   </div>
