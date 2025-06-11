@@ -13,6 +13,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
   const [printing, setPrinting] = useState(false);
   const [includeBlankPages, setIncludeBlankPages] = useState(false);
   const [blankPagesCount, setBlankPagesCount] = useState(1);
+  const [questionBlankPages, setQuestionBlankPages] = useState({});
   const [customWatermark, setCustomWatermark] = useState(null);
   const [testDetailsPage, setTestDetailsPage] = useState(null);
 
@@ -201,9 +202,20 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
       if (questionIndex === -1) {
         // If not selected, add it to the selection
         newSelection[setId] = [...newSelection[setId], questionId];
+        // Initialize blank pages count for this question
+        setQuestionBlankPages(prev => ({
+          ...prev,
+          [questionId]: blankPagesCount
+        }));
       } else {
         // If already selected, remove it from the selection
         newSelection[setId] = newSelection[setId].filter(id => id !== questionId);
+        // Remove blank pages count for this question
+        setQuestionBlankPages(prev => {
+          const newState = { ...prev };
+          delete newState[questionId];
+          return newState;
+        });
       }
       
       // Clean up empty sets
@@ -447,7 +459,8 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
 
           // Add blank pages if option is enabled
           if (includeBlankPages) {
-            for (let i = 0; i < blankPagesCount; i++) {
+            const pagesToAdd = questionBlankPages[questionId] || blankPagesCount;
+            for (let i = 0; i < pagesToAdd; i++) {
               printWindow.document.write(`
                 <!DOCTYPE html>
                 <html>
@@ -467,20 +480,6 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                     .qid-label { font-size: 14px; text-align: center; display: block; width: 100%; margin-bottom: 2px; }
                     .qid-value { flex: 0 0 auto; font-size: 14px; border-bottom: 1px solid #000; margin-bottom: 10px; padding-bottom: 5px; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 90%; text-align: center; }
                     .level-label { color: #00b0f0; font-size: 14px; font-weight: bold; text-align: center; display: block; width: 100%; margin-top: 5px; }
-                    .middle-section { display: flex; height: auto; min-height: 150px; flex: 1 1 auto; overflow: visible; }
-                    .left-sidebar { width: 120px; border-right: 1px solid #000; padding: 20px 0px 0px 0px; position: relative; text-align: center; }
-                    .right-sidebar { width: 120px; border-left: 1px solid #000; padding: 20px 0px 0px 0px; position: relative; text-align: center; }
-                    .keywords-label { font-style: italic; margin-bottom: 10px; font-weight: bold; }
-                    .keywords-list { font-size: 12px; }
-                    .keyword-item { margin-bottom: 5px; }
-                    .content-area { flex: 1; padding: 20px; position: relative; display: flex; flex-direction: column; overflow: visible; min-height: 100px; height: auto; }
-                    .footer-section { height: 50px; border-top: 1px solid #000; display: flex; align-items: center; justify-content: space-between; padding: 0; flex: 0 0 auto; }
-                    .footer-left { width: 120px; border-right: 1px solid #000; height: 100%; display: flex; justify-content: center; align-items: center; }
-                    .footer-middle { flex: 1; height: 100%; display: flex; justify-content: center; align-items: center; }
-                    .footer-right { width: 120px; border-left: 1px solid #000; height: 100%; }
-                    .page-number { font-size: 14px; text-align: center; }
-                    .powered-by { font-size: 14px; text-align: center; }
-                    .kitabai { font-weight: bold; }
                   </style>
                 </head>
                 <body>
@@ -701,6 +700,25 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                                   Time: {question.metadata?.estimatedTime || 0} min
                                 </span>
                               </div>
+                              {selectedQuestions[set.id]?.includes(question.id) && includeBlankPages && (
+                                <div className="mt-2 flex items-center space-x-2">
+                                  <span className="text-sm text-gray-600">Blank pages:</span>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    max="10"
+                                    value={questionBlankPages[question.id] || blankPagesCount}
+                                    onChange={(e) => {
+                                      const value = Math.min(10, Math.max(0, parseInt(e.target.value) || 0));
+                                      setQuestionBlankPages(prev => ({
+                                        ...prev,
+                                        [question.id]: value
+                                      }));
+                                    }}
+                                    className="form-input w-20 px-2 py-1 border rounded text-sm"
+                                  />
+                                </div>
+                              )}
                             </div>
                           </div>
                         ))}
