@@ -313,6 +313,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
       }
 
       let currentPageNumber = 1;
+      let questionCounter = 1;
 
       // Add test details page if uploaded
       if (testDetailsPage) {
@@ -415,7 +416,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                     <div class="topic-section">
                       <div class="topic-value">
                         <span class="question-preview">
-                          <span style="color: #00b0f0; margin-right: 5px;">Q${index + 1}:</span>${question.question}
+                          <span style="color: #00b0f0; margin-right: 5px;">Q${questionCounter}:</span>${question.question}
                         </span>
                       </div>
                     </div>
@@ -458,6 +459,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
             </html>
           `);
           currentPageNumber++;
+          questionCounter++;
 
           // Add blank pages if option is enabled
           if (includeBlankPages) {
