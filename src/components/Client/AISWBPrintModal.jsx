@@ -414,7 +414,9 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                   <div class="middle-column">
                     <div class="topic-section">
                       <div class="topic-value">
-                        <span class="question-preview"><span style="color: #00b0f0; margin-right: 5px;">Q:</span>${question.question}</span>
+                        <span class="question-preview">
+                          <span style="color: #00b0f0; margin-right: 5px;">Q${index + 1}:</span>${question.question}
+                        </span>
                       </div>
                     </div>
                   </div>
