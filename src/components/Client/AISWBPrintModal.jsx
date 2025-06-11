@@ -695,79 +695,81 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                 
                 {expandedSet === set.id && (
                   <div className="p-4 border-t border-gray-200">
-                    <div className="flex justify-end mb-2 space-x-2">
-                      <button
-                        className="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 text-sm"
-                        onClick={() => selectAllQuestions(set.id, set.questions)}
-                        disabled={set.questions.length === 0}
-                      >
-                        Select All
-                      </button>
-                      <button
-                        className="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-sm"
-                        onClick={() => deselectAllQuestions(set.id, set.questions)}
-                        disabled={set.questions.length === 0}
-                      >
-                        Deselect All
-                      </button>
-                    </div>
                     {loadingQuestions ? (
                       <div className="flex justify-center items-center py-4">
                         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
                       </div>
-                    ) : set.questions && set.questions.length > 0 ? (
-                      <div className="space-y-3">
-                        {set.questions.map((question, index) => (
-                          <div
-                            key={`${set.id}-${question.id}-${index}`}
-                            className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    ) : set.questions.length > 0 ? (
+                      <>
+                        <div className="flex justify-end mb-2 space-x-2">
+                          <button
+                            className="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 text-sm"
+                            onClick={() => selectAllQuestions(set.id, set.questions)}
+                            disabled={set.questions.length === 0}
                           >
-                            <button
-                              onClick={() => toggleQuestionSelection(set.id, question.id)}
-                              className={`mt-1 p-1 rounded-full transition-colors ${
-                                selectedQuestions[set.id]?.includes(question.id)
-                                  ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                                  : 'bg-white border border-gray-300 text-gray-400 hover:bg-gray-50'
-                              }`}
+                            Select All
+                          </button>
+                          <button
+                            className="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-sm"
+                            onClick={() => deselectAllQuestions(set.id, set.questions)}
+                            disabled={set.questions.length === 0}
+                          >
+                            Deselect All
+                          </button>
+                        </div>
+                        <div className="space-y-3">
+                          {set.questions.map((question, index) => (
+                            <div
+                              key={`${set.id}-${question.id}-${index}`}
+                              className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                             >
-                              <Check size={16} />
-                            </button>
-                            <div className="flex-1">
-                              <div className="text-gray-800">{question.question}</div>
-                              <div className="mt-2 flex flex-wrap gap-2">
-                                <span className="text-sm text-gray-600">
-                                  Difficulty: {question.metadata?.difficultyLevel || 'level1'}
-                                </span>
-                                <span className="text-sm text-gray-600">
-                                  Marks: {question.metadata?.maximumMarks || 0}
-                                </span>
-                                <span className="text-sm text-gray-600">
-                                  Time: {question.metadata?.estimatedTime || 0} min
-                                </span>
-                              </div>
-                              {selectedQuestions[set.id]?.includes(question.id) && includeBlankPages && (
-                                <div className="mt-2 flex items-center space-x-2">
-                                  <span className="text-sm text-gray-600">Blank pages:</span>
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    max="10"
-                                    value={questionBlankPages[question.id] || blankPagesCount}
-                                    onChange={(e) => {
-                                      const value = Math.min(10, Math.max(0, parseInt(e.target.value) || 0));
-                                      setQuestionBlankPages(prev => ({
-                                        ...prev,
-                                        [question.id]: value
-                                      }));
-                                    }}
-                                    className="form-input w-20 px-2 py-1 border rounded text-sm"
-                                  />
+                              <button
+                                onClick={() => toggleQuestionSelection(set.id, question.id)}
+                                className={`mt-1 p-1 rounded-full transition-colors ${
+                                  selectedQuestions[set.id]?.includes(question.id)
+                                    ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                    : 'bg-white border border-gray-300 text-gray-400 hover:bg-gray-50'
+                                }`}
+                              >
+                                <Check size={16} />
+                              </button>
+                              <div className="flex-1">
+                                <div className="text-gray-800">{question.question}</div>
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  <span className="text-sm text-gray-600">
+                                    Difficulty: {question.metadata?.difficultyLevel || 'level1'}
+                                  </span>
+                                  <span className="text-sm text-gray-600">
+                                    Marks: {question.metadata?.maximumMarks || 0}
+                                  </span>
+                                  <span className="text-sm text-gray-600">
+                                    Time: {question.metadata?.estimatedTime || 0} min
+                                  </span>
                                 </div>
-                              )}
+                                {selectedQuestions[set.id]?.includes(question.id) && includeBlankPages && (
+                                  <div className="mt-2 flex items-center space-x-2">
+                                    <span className="text-sm text-gray-600">Blank pages:</span>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      max="10"
+                                      value={questionBlankPages[question.id] || blankPagesCount}
+                                      onChange={(e) => {
+                                        const value = Math.min(10, Math.max(0, parseInt(e.target.value) || 0));
+                                        setQuestionBlankPages(prev => ({
+                                          ...prev,
+                                          [question.id]: value
+                                        }));
+                                      }}
+                                      className="form-input w-20 px-2 py-1 border rounded text-sm"
+                                    />
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      </>
                     ) : (
                       <div className="text-center py-4">
                         <p className="text-gray-500">No questions available in this set</p>
