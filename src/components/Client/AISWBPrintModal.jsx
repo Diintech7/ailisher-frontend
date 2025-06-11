@@ -740,15 +740,19 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                               </button>
                               <div className="flex-1">
                                 <div className="text-gray-800">
-                                  <pre className="whitespace-pre-wrap font-sans">{question.question}</pre>
+                                  <div style="margin-bottom: 20px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                      <div style="font-weight: bold; font-size: 14px;">${questionCounter}. Q: ${question.question}</div>
+                                      <div style="font-size: 12px; color: #666;">
+                                        ${question.metadata?.difficultyLevel || 'level1'} (${question.metadata?.wordLimit || 0} words)
+                                      </div>
+                                    </div>
+                                    <div style="font-size: 12px; color: #666;">
+                                      Marks: ${question.metadata?.maximumMarks || 0} | Time: ${question.metadata?.estimatedTime || 0} min
+                                    </div>
+                                  </div>
                                 </div>
                                 <div className="mt-2 flex flex-wrap gap-2">
-                                  <span className="text-sm text-gray-600">
-                                    Difficulty: {question.metadata?.difficultyLevel || 'level1'}
-                                  </span>
-                                  <span className="text-sm text-gray-600">
-                                    Marks: {question.metadata?.maximumMarks || 0}
-                                  </span>
                                   <span className="text-sm text-gray-600">
                                     Time: {question.metadata?.estimatedTime || 0} min
                                   </span>
