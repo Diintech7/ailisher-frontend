@@ -373,7 +373,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                 .qid-section { padding: 10px; height: 100%; width: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
                 .qid-label { font-size: 14px; text-align: center; display: block; width: 100%; margin-bottom: 2px; }
                 .qid-value { flex: 0 0 auto; font-size: 14px; border-bottom: 1px solid #000; margin-bottom: 10px; padding-bottom: 5px; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 90%; text-align: center; }
-                .level-label { color: #00b0f0; font-size: 14px; font-weight: bold; text-align: center; display: block; width: 100%; margin-top: 5px; }
+                .level-label { color: #00b0f0; font-size: 14px; font-weight: bold; text-align: center; display: block; width: 100%; }
                 .topic-section { padding: 10px; display: flex; flex-direction: column; overflow: visible; word-wrap: break-word; height: auto; }
                 .topic-value { color: #00b0f0; font-size: 18px; font-weight: bold; display: flex; align-items: flex-start; flex-wrap: wrap; height: auto; min-height: 60px; text-align: justify; margin-top: 5px; gap: 5px; }
                 .question-preview { font-size: 16px; font-weight: bold; color: #333; white-space: normal; overflow: visible; text-overflow: unset; max-width: 100%; word-wrap: break-word; hyphens: auto; text-align: justify; font-family: 'Noto Sans', 'Calibri', sans-serif; font-style: italic; }
@@ -410,7 +410,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                         <div class="qid-label">Q.ID</div>
                         ${shortQuestionId}
                       </div>
-                      <div class="level-label">${question.metadata?.difficultyLevel || 'level1'}</div>
+                      <div class="level-label">${question.metadata?.difficultyLevel || 'level1'}</br>(${question.metadata?.wordLimit || 'level1'} words)</div>
                     </div>
                   </div>
                   <div class="middle-column">
@@ -484,7 +484,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                     .qid-section { padding: 10px; height: 100%; width: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
                     .qid-label { font-size: 14px; text-align: center; display: block; width: 100%; margin-bottom: 2px; }
                     .qid-value { flex: 0 0 auto; font-size: 14px; border-bottom: 1px solid #000; margin-bottom: 10px; padding-bottom: 5px; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 90%; text-align: center; }
-                    .level-label { color: #00b0f0; font-size: 14px; font-weight: bold; text-align: center; display: block; width: 100%; margin-top: 5px; }
+                    .level-label { color: #00b0f0; font-size: 14px; font-weight: bold; text-align: center; display: block; width: 100%; }
                   </style>
                 </head>
                 <body>
@@ -500,7 +500,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                             <div class="qid-label">Q.ID</div>
                             ${shortQuestionId}
                           </div>
-                          <div class="level-label">${question.metadata?.difficultyLevel || 'level1'}</div>
+                          <div class="level-label">${question.metadata?.difficultyLevel || 'level1'}</br>(${question.metadata?.wordLimit || 'level1'} words)</div>
                         </div>
                       </div>
                       <div class="middle-column">
@@ -740,19 +740,15 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                               </button>
                               <div className="flex-1">
                                 <div className="text-gray-800">
-                                  <div style="margin-bottom: 20px;">
-                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                      <div style="font-weight: bold; font-size: 14px;">${questionCounter}. Q: ${question.question}</div>
-                                      <div style="font-size: 12px; color: #666;">
-                                        ${question.metadata?.difficultyLevel || 'level1'} (${question.metadata?.wordLimit || 0} words)
-                                      </div>
-                                    </div>
-                                    <div style="font-size: 12px; color: #666;">
-                                      Marks: ${question.metadata?.maximumMarks || 0} | Time: ${question.metadata?.estimatedTime || 0} min
-                                    </div>
-                                  </div>
+                                  <pre className="whitespace-pre-wrap font-sans">{question.question}</pre>
                                 </div>
                                 <div className="mt-2 flex flex-wrap gap-2">
+                                  <span className="text-sm text-gray-600">
+                                    Difficulty: {question.metadata?.difficultyLevel || 'level1'}
+                                  </span>
+                                  <span className="text-sm text-gray-600">
+                                    Marks: {question.metadata?.maximumMarks || 0}
+                                  </span>
                                   <span className="text-sm text-gray-600">
                                     Time: {question.metadata?.estimatedTime || 0} min
                                   </span>
