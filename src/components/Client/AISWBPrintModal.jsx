@@ -374,6 +374,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                 .qid-label { font-size: 14px; text-align: center; display: block; width: 100%; margin-bottom: 2px; }
                 .qid-value { flex: 0 0 auto; font-size: 14px; border-bottom: 1px solid #000; margin-bottom: 10px; padding-bottom: 5px; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 90%; text-align: center; }
                 .level-label { color: #00b0f0; font-size: 14px; font-weight: bold; text-align: center; display: block; width: 100%; }
+                .level-label1 { color: #00b0f0; font-size: 14px; font-weight: bold; text-align: center; display: block; width: 100%; margin-bottom: 5px; }
                 .topic-section { padding: 10px; display: flex; flex-direction: column; overflow: visible; word-wrap: break-word; height: auto; }
                 .topic-value { color: #00b0f0; font-size: 18px; font-weight: bold; display: flex; align-items: flex-start; flex-wrap: wrap; height: auto; min-height: 60px; text-align: justify; margin-top: 5px; gap: 5px; }
                 .question-preview { font-size: 16px; font-weight: bold; color: #333; white-space: normal; overflow: visible; text-overflow: unset; max-width: 100%; word-wrap: break-word; hyphens: auto; text-align: justify; font-family: 'Noto Sans', 'Calibri', sans-serif; font-style: italic; }
@@ -382,7 +383,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                 .middle-section { display: flex; height: auto; min-height: 150px; flex: 1 1 auto; overflow: visible; }
                 .left-sidebar { width: 120px; border-right: 1px solid #000; padding: 20px 0px 0px 0px; position: relative; text-align: center; }
                 .right-sidebar { width: 120px; border-left: 1px solid #000; padding: 20px 0px 0px 0px; position: relative; text-align: center; }
-                .keywords-label { font-style: italic; margin-bottom: 10px; font-weight: bold; }
+                .keywords-label { font-style: italic; margin-bottom: 10px; font-weight: bold;}
                 .keywords-list { font-size: 12px; }
                 .keyword-item { margin-bottom: 5px; }
                 .content-area { flex: 1; padding: 20px; position: relative; display: flex; flex-direction: column; overflow: visible; min-height: 100px; height: auto; }
@@ -434,6 +435,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                 
                 <div class="middle-section">
                   <div class="left-sidebar">
+                    <div class="level-label1">Marks : ${question.metadata?.maximumMarks}</div>
                     <div class="keywords-label">Keywords</div>
                     <div class="keywords-list">
                       ${keywords.map((keyword) => `<div class="keyword-item">${keyword}</div>`).join("")}
@@ -485,6 +487,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                     .qid-label { font-size: 14px; text-align: center; display: block; width: 100%; margin-bottom: 2px; }
                     .qid-value { flex: 0 0 auto; font-size: 14px; border-bottom: 1px solid #000; margin-bottom: 10px; padding-bottom: 5px; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 90%; text-align: center; }
                     .level-label { color: #00b0f0; font-size: 14px; font-weight: bold; text-align: center; display: block; width: 100%; }
+                    .level-label1 { color: #00b0f0; font-size: 14px; font-weight: bold; text-align: center; display: block; width: 100%; margin-bottom: 5px; }
                   </style>
                 </head>
                 <body>
@@ -511,6 +514,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                     
                     <div class="middle-section">
                       <div class="left-sidebar">
+                        <div class="level-label1">Marks : ${question.metadata?.maximumMarks}</div>
                         <div class="keywords-label">Keywords</div>
                         <div class="keywords-list">
                           ${keywords.map((keyword) => `<div class="keyword-item">${keyword}</div>`).join("")}
