@@ -561,6 +561,35 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
     }
   };
 
+  const selectAllQuestions = (setId, questions) => {
+    setSelectedQuestions(prev => ({
+      ...prev,
+      [setId]: questions.map(q => q.id)
+    }));
+    setQuestionBlankPages(prev => {
+      const newPages = { ...prev };
+      questions.forEach(q => {
+        newPages[q.id] = blankPagesCount;
+      });
+      return newPages;
+    });
+  };
+
+  const deselectAllQuestions = (setId, questions) => {
+    setSelectedQuestions(prev => {
+      const newSelection = { ...prev };
+      delete newSelection[setId];
+      return newSelection;
+    });
+    setQuestionBlankPages(prev => {
+      const newPages = { ...prev };
+      questions.forEach(q => {
+        delete newPages[q.id];
+      });
+      return newPages;
+    });
+  };
+
   React.useEffect(() => {
     if (isOpen) {
       console.log('🚪 Modal opened, fetching sets...');
@@ -666,6 +695,22 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                 
                 {expandedSet === set.id && (
                   <div className="p-4 border-t border-gray-200">
+                    <div className="flex justify-end mb-2 space-x-2">
+                      <button
+                        className="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 text-sm"
+                        onClick={() => selectAllQuestions(set.id, set.questions)}
+                        disabled={set.questions.length === 0}
+                      >
+                        Select All
+                      </button>
+                      <button
+                        className="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-sm"
+                        onClick={() => deselectAllQuestions(set.id, set.questions)}
+                        disabled={set.questions.length === 0}
+                      >
+                        Deselect All
+                      </button>
+                    </div>
                     {loadingQuestions ? (
                       <div className="flex justify-center items-center py-4">
                         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
