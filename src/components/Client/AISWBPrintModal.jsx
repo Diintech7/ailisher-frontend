@@ -394,6 +394,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                 .page-number { font-size: 14px; text-align: center; }
                 .powered-by { font-size: 14px; text-align: center; }
                 .kitabai { font-weight: bold; }
+                .question-preview { white-space: pre-wrap; }
               </style>
             </head>
             <body>
@@ -416,7 +417,8 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                     <div class="topic-section">
                       <div class="topic-value">
                         <span class="question-preview">
-                          <span style="color: #00b0f0; margin-right: 5px;">Q${questionCounter}:</span>${question.question}
+                          <span style="color: #00b0f0; margin-right: 5px;">Q${questionCounter}:</span>
+                          <div style="white-space: pre-wrap;">${question.question}</div>
                         </span>
                       </div>
                     </div>
@@ -738,7 +740,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                                 <Check size={16} />
                               </button>
                               <div className="flex-1">
-                                <div className="text-gray-800">{question.question}</div>
+                                <div className="text-gray-800 whitespace-pre-wrap">{question.question}</div>
                                 <div className="mt-2 flex flex-wrap gap-2">
                                   <span className="text-sm text-gray-600">
                                     Difficulty: {question.metadata?.difficultyLevel || 'level1'}
