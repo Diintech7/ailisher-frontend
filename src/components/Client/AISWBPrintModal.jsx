@@ -362,8 +362,8 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
               <title>Question ${currentPageNumber}</title>
               <style>
                 @page { size: A4; margin: 0; }
-                body { margin: 0; padding: 0; font-family: Arial, sans-serif; position: relative; }
-                .a4-page { width: 210mm; height: 297mm; margin: 0 auto; background: white; position: relative; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; }
+                body { margin: 0; padding: 0; font-family: Arial, sans-serif; position: relative; width: 210mm; min-height: 297mm; }
+                .a4-page { width: 210mm; height: 297mm; margin: 0; padding: 0; background: white; position: relative; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; }
                 .watermark { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; opacity: 0.5; z-index: 0; pointer-events: none; }
                 .watermark img { max-width: 300px; max-height: 300px; }
                 .top-section { display: flex; border-bottom: 1px solid #000; height: auto; min-height: 130px; max-height: auto; flex: 0 0 auto; }
@@ -473,8 +473,8 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                   <title>Blank Page ${currentPageNumber}</title>
                   <style>
                     @page { size: A4; margin: 0; }
-                    body { margin: 0; padding: 0; font-family: Arial, sans-serif; position: relative; }
-                    .a4-page { width: 210mm; height: 297mm; margin: 0 auto; background: white; position: relative; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; }
+                    body { margin: 0; padding: 0; font-family: Arial, sans-serif; position: relative; width: 210mm; min-height: 297mm; }
+                    .a4-page { width: 210mm; height: 297mm; margin: 0; padding: 0; background: white; position: relative; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; }
                     .watermark { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; opacity: 0.5; z-index: 0; pointer-events: none; }
                     .watermark img { max-width: 300px; max-height: 300px; }
                     .top-section { display: flex; border-bottom: 1px solid #000; height: auto; min-height: 130px; max-height: auto; flex: 0 0 auto; }
