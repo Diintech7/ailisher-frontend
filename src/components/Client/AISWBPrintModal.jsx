@@ -394,7 +394,6 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                 .page-number { font-size: 14px; text-align: center; }
                 .powered-by { font-size: 14px; text-align: center; }
                 .kitabai { font-weight: bold; }
-                .question-preview { white-space: pre-wrap; }
                 .question-preview pre { white-space: pre-wrap; font-family: inherit; }
               </style>
             </head>
@@ -418,8 +417,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                     <div class="topic-section">
                       <div class="topic-value">
                         <span class="question-preview">
-                          <span style="color: #00b0f0; margin-right: 5px;">Q${questionCounter}:</span>
-                          <pre style="white-space: pre-wrap; margin: 0; font-family: inherit;">${question.question}</pre>
+                          <pre style="margin: 0; font-family: inherit;"><span style="color: #00b0f0; margin-right: 5px;">Q${questionCounter}:</span>${question.question}</pre>
                         </span>
                       </div>
                     </div>
