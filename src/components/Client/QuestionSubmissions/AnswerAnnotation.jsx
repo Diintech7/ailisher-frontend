@@ -2,6 +2,15 @@
 
 import { useState, useRef, useEffect } from "react"
 import { toast } from "react-toastify"
+import axios from 'axios'
+
+// Create axios instance with base configuration
+const api = axios.create({
+  baseURL: 'https://aipbbackend-c5ed.onrender.com/api',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 const AnswerAnnotation = ({ submission, onClose, onSave }) => {
   const [activeTool, setActiveTool] = useState("pen")
@@ -18,7 +27,16 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false)
   const [score, setScore] = useState('')
   const [expertRemarks, setExpertRemarks] = useState('')
-  const [annotatedImages, setAnnotatedImages] = useState({})
+  const [annotatedImages, setAnnotatedImages] = useState([])
+  const [loading, setLoading] = useState(false)
+  const [uploadingImages, setUploadingImages] = useState(false)
+  const [reviewData, setReviewData] = useState({
+    review_result: '',
+    expert_score: '',
+    expert_remarks: '',
+  })
+  const [imagePreviews, setImagePreviews] = useState([])
+  const [selectedImage, setSelectedImage] = useState(null)
 
   const canvasRef = useRef(null)
   const fabricCanvasRef = useRef(null)
@@ -191,6 +209,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
     if (!canvas) return
 
     setIsImageLoading(true)
+    console.log("Loading image with URL:", imageUrl)
 
     try {
       // Clear existing content
@@ -204,6 +223,12 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
         if (!canvas) return
 
         try {
+          console.log("Image loaded successfully:", {
+            url: imageUrl,
+            width: img.width,
+            height: img.height
+          })
+
           // Calculate scaling to fill the container while maintaining aspect ratio
           const containerWidth = canvas.width
           const containerHeight = canvas.height
@@ -922,11 +947,49 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   }
 
                   // Store the annotated image data URL
-                  const annotatedImageUrl = tempCanvas.toDataURL('image/png', 1.0)
-                  setAnnotatedImages(prev => ({
-                    ...prev,
-                    [index]: annotatedImageUrl
-                  }))
+                  const annotatedImageUrl = tempCanvas.toDataURL('image/png', 1.0);
+                  
+                  // Convert data URL to Blob
+                  const response = await fetch(annotatedImageUrl);
+                  const blob = await response.blob();
+                  
+                  // Upload to S3
+                  const uploadUrlResponse = await api.post(
+                    '/review/annotated-image-upload-url',
+                    {
+                      fileName: `annotated_${index}.png`,
+                      contentType: 'image/png',
+                      clientId: submission.clientId || 'CLI677117YN7N',
+                      answerId: submission._id
+                    }
+                  );
+
+                  if (!uploadUrlResponse.data.success) {
+                    throw new Error(uploadUrlResponse.data.message || 'Failed to get upload URL');
+                  }
+
+                  const uploadUrl = uploadUrlResponse.data.data.uploadUrl;
+                  const key = uploadUrlResponse.data.data.key;
+
+                  // Upload to S3
+                  const uploadResponse = await fetch(uploadUrl, {
+                    method: 'PUT',
+                    body: blob,
+                    headers: {
+                      'Content-Type': 'image/png'
+                    }
+                  });
+
+                  if (!uploadResponse.ok) {
+                    throw new Error('Failed to upload annotated image to S3');
+                  }
+
+                  // Add to annotated images array with s3Key
+                  setAnnotatedImages(prev => {
+                    const newImages = Array.isArray(prev) ? [...prev] : [];
+                    newImages.push({ s3Key: key });
+                    return newImages;
+                  });
 
                   resolve()
                 } catch (error) {
@@ -981,7 +1044,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
     Object.keys(updatedAnnotations).forEach((index) => {
       const link = document.createElement('a')
       link.download = `annotated_image_${parseInt(index) + 1}.png`
-      link.href = annotatedImages[index]
+      link.href = updatedAnnotations[index].imageUrl
       link.click()
     })
 
@@ -994,12 +1057,86 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
   }
 
   const handleCompleteReview = async () => {
-    // Get annotated images without downloading
-    const updatedAnnotations = await getAnnotatedImages()
-    if (updatedAnnotations) {
-      setIsReviewModalOpen(true)
+    try {
+      if (!fabricCanvasRef.current) {
+        toast.error("Canvas not initialized");
+        return;
+      }
+
+      // Get the canvas data URL
+      const dataUrl = fabricCanvasRef.current.toDataURL({
+        format: 'png',
+        quality: 1,
+        multiplier: 1,
+        enableRetinaScaling: true
+      });
+
+      // Convert data URL to Blob
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+
+      // Get presigned URL for upload
+      const uploadUrlResponse = await api.post(
+        '/review/annotated-image-upload-url',
+        {
+          fileName: `annotated_${currentImageIndex}.png`,
+          contentType: 'image/png',
+          clientId: submission.clientId || 'CLI677117YN7N',
+          answerId: submission._id
+        }
+      );
+
+      if (!uploadUrlResponse.data.success) {
+        throw new Error(uploadUrlResponse.data.message || 'Failed to get upload URL');
+      }
+
+      const uploadUrl = uploadUrlResponse.data.data.uploadUrl;
+      const key = uploadUrlResponse.data.data.key;
+
+      // Upload to S3
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: blob,
+        headers: {
+          'Content-Type': 'image/png'
+        }
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload annotated image to S3');
+      }
+
+      // Add to annotated images array
+      setAnnotatedImages(prev => {
+        const newImages = Array.isArray(prev) ? [...prev] : [];
+        newImages.push({ s3Key: key });
+        return newImages;
+      });
+
+      // Create preview for the uploaded image
+      setImagePreviews(prev => {
+        const newPreviews = Array.isArray(prev) ? [...prev] : [];
+        newPreviews.push(dataUrl);
+        return newPreviews;
+      });
+
+      // Open review modal
+      setIsReviewModalOpen(true);
+    } catch (error) {
+      console.error('Error in handleCompleteReview:', error);
+      let errorMessage = 'Failed to process review';
+      
+      if (error.response) {
+        errorMessage = error.response.data.message || `Server error: ${error.response.status}`;
+      } else if (error.request) {
+        errorMessage = 'No response from server. Please check if the server is running.';
+      } else {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
     }
-  }
+  };
 
   // Separate function for closing the modal
   const handleClose = () => {
@@ -1073,6 +1210,235 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
     setScore('')
     setExpertRemarks('')
   }
+
+  // Create preview URL for image
+  const createImagePreview = (file) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        resolve(reader.result);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Handle image upload
+  const handleImageUpload = async (file) => {
+    try {
+      console.log('Starting image upload for file:', file.name);
+      
+      // Get presigned URL for upload
+      const uploadUrlResponse = await api.post(
+        '/review/annotated-image-upload-url',
+        {
+          fileName: file.name,
+          contentType: file.type,
+          clientId: submission.clientId || 'CLI677117YN7N',
+          answerId: submission._id
+        }
+      );
+
+      console.log('Upload URL Response:', uploadUrlResponse.data);
+
+      if (!uploadUrlResponse.data.success) {
+        throw new Error(uploadUrlResponse.data.message || 'Failed to get upload URL');
+      }
+
+      const uploadUrl = uploadUrlResponse.data.data.uploadUrl;
+      const key = uploadUrlResponse.data.data.key;
+
+
+      console.log('Extracted uploadUrl:', uploadUrl);
+      console.log('Extracted key:', key);
+
+      if (!uploadUrl || typeof uploadUrl !== 'string') {
+        throw new Error('Invalid upload URL received from server');
+      }
+
+      // Upload to S3
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'PUT',
+        body: file,
+        headers: {
+          'Content-Type': file.type
+        }
+      });
+
+      if (!uploadResponse.ok) {
+        const errorText = await uploadResponse.text();
+        console.error('S3 Upload Error:', {
+          status: uploadResponse.status,
+          statusText: uploadResponse.statusText,
+          errorText
+        });
+        throw new Error(`Failed to upload image to S3: ${errorText}`);
+      }
+
+      // Add to annotated images array
+      setAnnotatedImages(prev => {
+        const newImages = Array.isArray(prev) ? [...prev] : [];
+        newImages.push({ s3Key: key });
+        return newImages;
+      });
+
+      return key;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      if (error.response) {
+        console.error('Error response data:', error.response.data);
+        console.error('Error response status:', error.response.status);
+        console.error('Error response headers:', error.response.headers);
+      }
+      throw error;
+    }
+  };
+
+  // Handle file selection
+  const handleFileSelect = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      setUploadingImages(true);
+      
+      // Create preview immediately when file is selected
+      const preview = await createImagePreview(file);
+      setSelectedImage(preview);
+      
+      // Upload image and get S3 key
+      const s3Key = await handleImageUpload(file);
+      
+      // After successful upload, add to previews array
+      setImagePreviews(prev => {
+        const newPreviews = Array.isArray(prev) ? [...prev] : [];
+        newPreviews.push(preview);
+        return newPreviews;
+      });
+      
+      // Clear the selected image after successful upload
+      setSelectedImage(null);
+      
+      toast.success('Image uploaded successfully');
+    } catch (error) {
+      console.error('Error in handleFileSelect:', error);
+      setSelectedImage(null);
+      
+      let errorMessage = 'Failed to upload image';
+      
+      if (error.response) {
+        errorMessage = error.response.data.message || `Server error: ${error.response.status}`;
+      } else if (error.request) {
+        errorMessage = 'No response from server. Please check if the server is running.';
+      } else {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
+    } finally {
+      setUploadingImages(false);
+    }
+  };
+
+  // Remove image
+  const handleRemoveImage = (index) => {
+    setAnnotatedImages(prev => {
+      const newImages = Array.isArray(prev) ? [...prev] : [];
+      newImages.splice(index, 1);
+      return newImages;
+    });
+    
+    setImagePreviews(prev => {
+      const newPreviews = Array.isArray(prev) ? [...prev] : [];
+      newPreviews.splice(index, 1);
+      return newPreviews;
+    });
+  };
+
+  // Handle form input changes
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setReviewData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Handle review submission
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!reviewData.review_result || !reviewData.expert_score || !reviewData.expert_remarks) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+
+    if (annotatedImages.length === 0) {
+      toast.error('Please upload at least one annotated image');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      console.log("submission by sapna", submission)
+
+      // First, fetch the review request ID using the submission ID
+      const reviewRequestResponse = await api.get(`/review/by-submission/${submission._id}`);
+      console.log("Review request response:", reviewRequestResponse.data);
+      
+      if (!reviewRequestResponse.data.success) {
+        throw new Error(reviewRequestResponse.data.message || 'Failed to fetch review request');
+      }
+
+      const requestId = reviewRequestResponse.data.data.requestId;
+      console.log("Request ID:", requestId);
+      console.log("Review data:", reviewData);
+      console.log("Annotated images:", annotatedImages);
+
+      // Check if answer is in correct status
+      if (submission.reviewStatus !== 'review_accepted') {
+        throw new Error('Answer is not in the correct status for review submission. Current status: ' + submission.reviewStatus);
+      }
+
+      // Now submit the review with the fetched request ID
+      const response = await api.post(
+        `/review/${requestId}/submit`,
+        {
+          ...reviewData,
+          annotated_images: annotatedImages
+        }
+      );
+      console.log("Submit response:", response.data);
+
+      if (response.data.success) {
+        toast.success('Review submitted successfully');
+        if (onSave) {
+          onSave(response.data.data);
+        }
+        handleCloseReviewModal();
+      } else {
+        throw new Error(response.data.message || 'Failed to submit review');
+      }
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      let errorMessage = 'Failed to submit review';
+      
+      if (error.response) {
+        errorMessage = error.response.data.message || `Server error: ${error.response.status}`;
+        
+        if (error.response.data.message?.includes('not in correct status')) {
+          errorMessage = 'This review has already been submitted or is not in the correct state. Please refresh the page.';
+        }
+      } else if (error.request) {
+        errorMessage = 'No response from server. Please check if the server is running.';
+      } else {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 bg-white z-50 flex flex-col">
@@ -1407,60 +1773,141 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
               </button>
             </div>
 
-            {/* Annotated Images */}
-            <div className="mb-6">
-              <h4 className="text-lg font-medium mb-2">Annotated Images</h4>
-              <div className="grid grid-cols-2 gap-4">
-                {Object.entries(annotatedImages).map(([index, imageUrl]) => (
-                  <div key={index} className="border rounded-lg p-2">
-                    <img 
-                      src={imageUrl} 
-                      alt={`Annotated Answer ${parseInt(index) + 1}`}
-                      className="w-full h-auto rounded"
-                    />
-                  </div>
-                ))}
+            <form onSubmit={handleReviewSubmit} className="space-y-6">
+              {/* Review Result */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Review Result
+                </label>
+                <input
+                  type="text"
+                  name="review_result"
+                  value={reviewData.review_result}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
               </div>
-            </div>
 
-            {/* Score Field */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Score
-              </label>
-              <input
-                type="number"
-                value={score}
-                onChange={(e) => setScore(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter score"
-                min="0"
-                max="100"
-              />
-            </div>
+              {/* Expert Score */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Score (0-100)
+                </label>
+                <input
+                  type="number"
+                  name="expert_score"
+                  value={reviewData.expert_score}
+                  onChange={handleInputChange}
+                  min="0"
+                  max="100"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
 
-            {/* Expert Remarks Field */}
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Expert Remarks
-              </label>
-              <textarea
-                value={expertRemarks}
-                onChange={(e) => setExpertRemarks(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                rows="4"
-                placeholder="Enter your expert remarks"
-              />
-            </div>
+              {/* Expert Remarks */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Remarks
+                </label>
+                <textarea
+                  name="expert_remarks"
+                  value={reviewData.expert_remarks}
+                  onChange={handleInputChange}
+                  rows="4"
+                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  required
+                />
+              </div>
 
-            {/* Save Review Button */}
-            <div className="flex justify-end">
-              <button
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-              >
-                Save Review
-              </button>
-            </div>
+              {/* Image Upload Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Annotated Images
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileSelect}
+                      className="hidden"
+                      id="image-upload"
+                      disabled={uploadingImages}
+                    />
+                    <label
+                      htmlFor="image-upload"
+                      className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
+                        uploadingImages
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
+                      }`}
+                    >
+                      {uploadingImages ? 'Uploading...' : 'Upload Image'}
+                    </label>
+                  </div>
+                </div>
+
+                {/* Selected Image Preview */}
+                {selectedImage && (
+                  <div className="mt-4">
+                    <p className="text-sm text-gray-500 mb-2">Selected Image Preview:</p>
+                    <div className="relative w-full max-w-md">
+                      <img
+                        src={selectedImage}
+                        alt="Selected"
+                        className="w-full h-auto rounded-lg shadow-md"
+                      />
+                      {uploadingImages && (
+                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
+                          <div className="text-white">Uploading...</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Uploaded Images Preview */}
+                {imagePreviews.length > 0 && (
+                  <div className="mt-4">
+                    <p className="text-sm text-gray-500 mb-2">Uploaded Images:</p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {imagePreviews.map((preview, index) => (
+                        <div key={index} className="relative">
+                          <img
+                            src={preview}
+                            alt={`Uploaded ${index + 1}`}
+                            className="w-full h-32 object-cover rounded-lg shadow-md"
+                          />
+                          <button
+                            onClick={() => handleRemoveImage(index)}
+                            className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  disabled={loading || uploadingImages}
+                  className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 ${
+                    (loading || uploadingImages) ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  {loading ? 'Submitting...' : 'Submit Review'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
