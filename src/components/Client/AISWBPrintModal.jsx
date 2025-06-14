@@ -202,10 +202,10 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
       if (questionIndex === -1) {
         // If not selected, add it to the selection
         newSelection[setId] = [...newSelection[setId], questionId];
-        // Initialize blank pages count for this question
+        // Initialize blank pages count for this question to 0 by default
         setQuestionBlankPages(prev => ({
           ...prev,
-          [questionId]: blankPagesCount
+          [questionId]: 0
         }));
       } else {
         // If already selected, remove it from the selection
@@ -236,30 +236,37 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
         throw new Error('Authentication required');
       }
 
+      // Build query parameters with same settings as QRCodeGenerator
       const queryParams = new URLSearchParams({
         format: 'json',
-        size: 150,
-        includeAnswers: false
+        size: 300, // Match the default size from QRCodeGenerator
+        includeAnswers: true // Set to true to include answers like the standalone component
       }).toString();
-
+      
+      // Use the same API endpoint as QRCodeGenerator
       const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/qr/questions/${questionId}/qrcode?${queryParams}`, {
+        method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
         }
       });
-
+      
       if (!response.ok) {
-        throw new Error('Failed to generate QR code');
+        const errorData = await response.text();
+        console.error('Server response:', errorData);
+        throw new Error(`Failed to generate QR code: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
-      if (data.success && data.data?.qrCode) {
+      if (data.success && data.data && data.data.qrCode) {
         return data.data.qrCode;
       }
-      throw new Error('Invalid QR code data');
+      throw new Error('Invalid QR code data received from server');
     } catch (error) {
       console.error('Error generating QR code:', error);
+      toast.error(error.message || 'Failed to generate QR code. Please try again.');
       return null;
     } finally {
       setLoadingQR(prev => ({ ...prev, [questionId]: false }));
@@ -466,7 +473,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
 
           // Add blank pages if option is enabled
           if (includeBlankPages) {
-            const pagesToAdd = questionBlankPages[questionId] || blankPagesCount;
+            const pagesToAdd = questionBlankPages[questionId] ?? 0;
             for (let i = 0; i < pagesToAdd; i++) {
               printWindow.document.write(`
                 <!DOCTYPE html>
@@ -578,7 +585,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
     setQuestionBlankPages(prev => {
       const newPages = { ...prev };
       questions.forEach(q => {
-        newPages[q.id] = blankPagesCount;
+        newPages[q.id] = 0; // Initialize to 0 instead of blankPagesCount
       });
       return newPages;
     });
@@ -764,7 +771,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                                       type="number"
                                       min="0"
                                       max="10"
-                                      value={questionBlankPages[question.id] || blankPagesCount}
+                                      value={questionBlankPages[question.id] ?? 0}
                                       onChange={(e) => {
                                         const value = Math.min(10, Math.max(0, parseInt(e.target.value) || 0));
                                         setQuestionBlankPages(prev => ({

@@ -210,4 +210,16 @@ export const userAnswerService = {
       throw error.response?.data || error.message;
     }
   },
+
+  // New function to fetch pending reviews
+  getPendingReviews: async () => {
+    try {
+      const response = await axios.get('https://aipbbackend-c5ed.onrender.com/api/review/pending');
+      console.log('Pending Reviews Response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Pending Reviews Error:', error.response?.data);
+      throw error;
+    }
+  },
 }; 

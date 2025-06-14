@@ -1,287 +1,1078 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { toast } from 'react-toastify';
-import { 
-  Canvas,
-  FabricImage,
-  IText,
-  PencilBrush,
-  Circle,
-  Rect
-} from 'fabric';
+"use client"
 
-const AnswerAnnotation = ({ submission, onClose }) => {
-  const [activeTool, setActiveTool] = useState('pen');
-  const [penColor, setPenColor] = useState('#FF0000');
-  const [penSize, setPenSize] = useState(2);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [canUndo, setCanUndo] = useState(false);
-  const [canRedo, setCanRedo] = useState(false);
-  const [isImageLoading, setIsImageLoading] = useState(true);
-  const canvasRef = useRef(null);
-  const fabricCanvasRef = useRef(null);
-  const backgroundImageRef = useRef(null);
-  const undoStackRef = useRef([]);
-  const redoStackRef = useRef([]);
-  const isDrawingRef = useRef(false);
-  const startPointRef = useRef(null);
+import { useState, useRef, useEffect } from "react"
+import { toast } from "react-toastify"
 
-  // Initialize fabric canvas
+const AnswerAnnotation = ({ submission, onClose, onSave }) => {
+  const [activeTool, setActiveTool] = useState("pen")
+  const [penColor, setPenColor] = useState("#FF0000")
+  const [penSize, setPenSize] = useState(2)
+  const [zoom, setZoom] = useState(1)
+  const [isImageLoading, setIsImageLoading] = useState(false)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [canUndo, setCanUndo] = useState(false)
+  const [canRedo, setCanRedo] = useState(false)
+  const [annotations, setAnnotations] = useState({})
+  const [isDragging, setIsDragging] = useState(false)
+  const [lastPos, setLastPos] = useState({ x: 0, y: 0 })
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false)
+  const [score, setScore] = useState('')
+  const [expertRemarks, setExpertRemarks] = useState('')
+  const [annotatedImages, setAnnotatedImages] = useState({})
+
+  const canvasRef = useRef(null)
+  const fabricCanvasRef = useRef(null)
+  const backgroundImageRef = useRef(null)
+  const historyRef = useRef([])
+  const historyIndexRef = useRef(-1)
+  const containerRef = useRef(null)
+
+  // Load Fabric.js
   useEffect(() => {
-    if (canvasRef.current) {
-      const canvas = new Canvas(canvasRef.current, {
-        isDrawingMode: true,
-        width: canvasRef.current.parentElement.clientWidth,
-        height: canvasRef.current.parentElement.clientHeight,
-        backgroundColor: '#f0f0f0' // Light gray background to make canvas visible
-      });
+    const loadFabric = async () => {
+      try {
+        // Try loading from CDN first
+        const script = document.createElement("script")
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"
+        script.async = true
 
-      // Track changes for undo/redo
-      canvas.on('object:added', () => {
-        redoStackRef.current = [];
-        setCanRedo(false);
-        setCanUndo(true);
-      });
-
-      // Handle object selection for color changes
-      canvas.on('selection:created', (e) => {
-        if (e.target && e.target.type === 'i-text') {
-          setPenColor(e.target.fill);
-        }
-      });
-
-      // Handle mouse events for shapes
-      canvas.on('mouse:down', (o) => {
-        if (activeTool === 'circle' || activeTool === 'rectangle') {
-          isDrawingRef.current = true;
-          const pointer = canvas.getPointer(o.e);
-          startPointRef.current = { x: pointer.x, y: pointer.y };
-        }
-      });
-
-      canvas.on('mouse:move', (o) => {
-        if (!isDrawingRef.current) return;
-        
-        const pointer = canvas.getPointer(o.e);
-        const start = startPointRef.current;
-        
-        if (activeTool === 'circle') {
-          const radius = Math.sqrt(
-            Math.pow(pointer.x - start.x, 2) + Math.pow(pointer.y - start.y, 2)
-          ) / 2;
-          
-          const circle = new Circle({
-            left: start.x - radius,
-            top: start.y - radius,
-            radius: radius,
-            fill: 'transparent',
-            stroke: penColor,
-            strokeWidth: penSize
-          });
-          
-          canvas.remove(canvas.getObjects().find(obj => obj.isTemporary));
-          circle.isTemporary = true;
-          canvas.add(circle);
-        } else if (activeTool === 'rectangle') {
-          const rect = new Rect({
-            left: Math.min(start.x, pointer.x),
-            top: Math.min(start.y, pointer.y),
-            width: Math.abs(pointer.x - start.x),
-            height: Math.abs(pointer.y - start.y),
-            fill: 'transparent',
-            stroke: penColor,
-            strokeWidth: penSize
-          });
-          
-          canvas.remove(canvas.getObjects().find(obj => obj.isTemporary));
-          rect.isTemporary = true;
-          canvas.add(rect);
-        }
-        
-        canvas.renderAll();
-      });
-
-      canvas.on('mouse:up', () => {
-        if (isDrawingRef.current) {
-          isDrawingRef.current = false;
-          const tempObject = canvas.getObjects().find(obj => obj.isTemporary);
-          if (tempObject) {
-            tempObject.isTemporary = false;
-            canvas.renderAll();
+        await new Promise((resolve, reject) => {
+          script.onload = () => {
+            console.log("Fabric.js loaded from CDN:", {
+              hasFabric: !!window.fabric,
+              fabricVersion: window.fabric?.version,
+            })
+            resolve()
           }
+
+          script.onerror = (error) => {
+            console.error("Error loading Fabric.js from CDN:", error)
+            reject(new Error("Failed to load Fabric.js from CDN"))
+          }
+
+          document.head.appendChild(script)
+        })
+      } catch (error) {
+        console.error("Error loading Fabric.js:", error)
+        toast.error("Failed to load drawing tools")
+      }
+    }
+
+    // Only load if not already loaded
+    if (!window.fabric) {
+      console.log("Loading Fabric.js...")
+      loadFabric()
+    } else {
+      console.log("Fabric.js already loaded:", {
+        hasFabric: !!window.fabric,
+        fabricVersion: window.fabric.version,
+      })
+    }
+
+    // Cleanup function
+    return () => {
+      if (window.fabric) {
+        console.log("Cleaning up Fabric.js...")
+        // Don't delete window.fabric as it might be needed by other components
+      }
+    }
+  }, [])
+
+  // Initialize canvas when component mounts
+  useEffect(() => {
+    const initializeCanvas = () => {
+      if (!canvasRef.current || !window.fabric) return
+
+      try {
+        // Clean up existing canvas if it exists
+        if (fabricCanvasRef.current) {
+          fabricCanvasRef.current.dispose()
         }
-      });
 
-      fabricCanvasRef.current = canvas;
+        // Get the container dimensions
+        const container = canvasRef.current.parentElement
+        const containerWidth = container.clientWidth
+        const containerHeight = container.clientHeight
 
-      // Load initial image
-      if (submission.answerImages && submission.answerImages.length > 0) {
-        loadImage(submission.answerImages[currentImageIndex].imageUrl);
+        console.log("Container dimensions:", {
+          width: containerWidth,
+          height: containerHeight,
+        })
+
+        // Create canvas with container dimensions
+        const fabricCanvas = new window.fabric.Canvas(canvasRef.current, {
+          width: containerWidth,
+          height: containerHeight,
+          backgroundColor: "#ffffff",
+          selection: false, // Disable selection by default
+          preserveObjectStacking: true,
+          stopContextMenu: true, // Prevent context menu
+        })
+
+        fabricCanvasRef.current = fabricCanvas
+
+        // Add history tracking
+        fabricCanvas.on("object:added", () => {
+          saveToHistory()
+        })
+
+        fabricCanvas.on("object:modified", () => {
+          saveToHistory()
+        })
+
+        fabricCanvas.on("object:removed", () => {
+          saveToHistory()
+        })
+
+        // Add zoom and pan functionality
+        fabricCanvas.on("mouse:wheel", (opt) => {
+          const delta = opt.e.deltaY
+          let zoom = fabricCanvas.getZoom()
+          zoom *= 0.999 ** delta
+          if (zoom > 20) zoom = 20
+          if (zoom < 0.1) zoom = 0.1
+
+          fabricCanvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom)
+          setZoom(zoom)
+          opt.e.preventDefault()
+          opt.e.stopPropagation()
+        })
+
+        fabricCanvas.on("mouse:down", (opt) => {
+          if (opt.e.button === 1 || (opt.e.button === 0 && opt.e.altKey)) {
+            setIsDragging(true)
+            setLastPos({ x: opt.e.clientX, y: opt.e.clientY })
+            fabricCanvas.selection = false
+            fabricCanvas.discardActiveObject()
+            fabricCanvas.requestRenderAll()
+          }
+        })
+
+        fabricCanvas.on("mouse:move", (opt) => {
+          if (isDragging) {
+            const e = opt.e
+            const vpt = fabricCanvas.viewportTransform
+            vpt[4] += e.clientX - lastPos.x
+            vpt[5] += e.clientY - lastPos.y
+            fabricCanvas.requestRenderAll()
+            setLastPos({ x: e.clientX, y: e.clientY })
+          }
+        })
+
+        fabricCanvas.on("mouse:up", () => {
+          setIsDragging(false)
+        })
+
+        // Load initial image if available
+        if (submission.answerImages && submission.answerImages.length > 0) {
+          loadImage(submission.answerImages[currentImageIndex].imageUrl)
+        }
+      } catch (error) {
+        console.error("Error initializing canvas:", error)
+        toast.error("Failed to initialize drawing tools")
+      }
+    }
+
+    // Initialize with a small delay to ensure DOM is ready
+    const timeoutId = setTimeout(initializeCanvas, 100)
+
+    return () => {
+      clearTimeout(timeoutId)
+      if (fabricCanvasRef.current) {
+        fabricCanvasRef.current.dispose()
+        fabricCanvasRef.current = null
+      }
+    }
+  }, [])
+
+  // Load image into canvas
+  const loadImage = (imageUrl) => {
+    const canvas = fabricCanvasRef.current
+    if (!canvas) return
+
+    setIsImageLoading(true)
+
+    try {
+      // Clear existing content
+      canvas.clear()
+
+      // Create a new image element
+      const img = new Image()
+      img.crossOrigin = "anonymous"
+
+      img.onload = () => {
+        if (!canvas) return
+
+        try {
+          // Calculate scaling to fill the container while maintaining aspect ratio
+          const containerWidth = canvas.width
+          const containerHeight = canvas.height
+          const scaleX = containerWidth / img.width
+          const scaleY = containerHeight / img.height
+          const scale = Math.min(scaleX, scaleY)
+
+          console.log("Calculated scaling:", {
+            scaleX,
+            scaleY,
+            finalScale: scale,
+          })
+
+          // Create fabric image
+          const fabricImage = new window.fabric.Image(img, {
+            scaleX: scale,
+            scaleY: scale,
+            left: (containerWidth - img.width * scale) / 2,
+            top: (containerHeight - img.height * scale) / 2,
+            selectable: false,
+            evented: false,
+          })
+
+          console.log("Fabric image created:", {
+            scaleX: fabricImage.scaleX,
+            scaleY: fabricImage.scaleY,
+            left: fabricImage.left,
+            top: fabricImage.top,
+            width: img.width * scale,
+            height: img.height * scale,
+          })
+
+          backgroundImageRef.current = fabricImage
+
+          canvas.add(fabricImage)
+          canvas.sendToBack(fabricImage)
+          canvas.renderAll()
+          console.log("Canvas rendered with image")
+
+          // Restore annotations for this image if they exist
+          if (annotations[currentImageIndex]) {
+            setTimeout(() => {
+              if (canvas) {
+                canvas.loadFromJSON(annotations[currentImageIndex], () => {
+                  // Make sure background image is not selectable
+                  const bgImage = canvas.getObjects().find((obj) => obj.type === "image")
+                  if (bgImage) {
+                    bgImage.selectable = false
+                    bgImage.evented = false
+                  }
+                  canvas.renderAll()
+                })
+              }
+            }, 100)
+          }
+
+          setIsImageLoading(false)
+        } catch (error) {
+          console.error("Error creating fabric image:", error)
+          toast.error("Failed to create image")
+          setIsImageLoading(false)
+        }
       }
 
-      return () => {
-        canvas.dispose();
-      };
+      img.onerror = (error) => {
+        console.error("Error loading image:", error)
+        toast.error("Failed to load image")
+        setIsImageLoading(false)
+      }
+
+      img.src = imageUrl
+    } catch (error) {
+      console.error("Error in loadImage:", error)
+      toast.error("Failed to load image")
+      setIsImageLoading(false)
     }
-  }, [activeTool, penColor, penSize]);
+  }
 
-  const loadImage = (imageUrl) => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+  // Update canvas when image changes
+  useEffect(() => {
+    const loadNewImage = async () => {
+      if (!submission.answerImages || !submission.answerImages[currentImageIndex]) return
 
-    setIsImageLoading(true);
+      try {
+        setIsImageLoading(true)
 
-    // Clear existing content
-    canvas.clear();
-    
-    // Load new image
-    FabricImage.fromURL(imageUrl, (img) => {
-      // Calculate scale to fit canvas while maintaining aspect ratio
-      const scale = Math.min(
-        (canvas.width - 40) / img.width,  // Leave 20px padding on each side
-        (canvas.height - 40) / img.height
-      );
-      
-      img.scale(scale);
-      
-      // Center the image
-      img.set({
-        left: (canvas.width - img.width * scale) / 2,
-        top: (canvas.height - img.height * scale) / 2,
-        selectable: false,
-        evented: false
-      });
+        // Clean up existing canvas
+        if (fabricCanvasRef.current) {
+          fabricCanvasRef.current.dispose()
+          fabricCanvasRef.current = null
+        }
 
-      // Store reference to background image
-      backgroundImageRef.current = img;
-      
-      canvas.add(img);
-      canvas.renderAll();
-      
-      // Reset undo/redo stacks
-      undoStackRef.current = [];
-      redoStackRef.current = [];
-      setCanUndo(false);
-      setCanRedo(false);
-      setIsImageLoading(false);
-    }, { crossOrigin: 'anonymous' }); // Add crossOrigin option
-  };
+        // Reinitialize canvas
+        const container = canvasRef.current?.parentElement
+        if (!container) return
 
-  const saveState = () => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+        const containerWidth = container.clientWidth
+        const containerHeight = container.clientHeight
 
-    const objects = canvas.getObjects();
-    // Don't save the background image in the undo stack
-    const annotations = objects.filter(obj => obj !== backgroundImageRef.current);
-    undoStackRef.current.push(annotations);
-  };
+        const fabricCanvas = new window.fabric.Canvas(canvasRef.current, {
+          width: containerWidth,
+          height: containerHeight,
+          backgroundColor: "#ffffff",
+          selection: false,
+          preserveObjectStacking: true,
+          stopContextMenu: true,
+        })
+
+        fabricCanvasRef.current = fabricCanvas
+
+        // Add history tracking
+        fabricCanvas.on("object:added", () => {
+          saveToHistory()
+        })
+
+        fabricCanvas.on("object:modified", () => {
+          saveToHistory()
+        })
+
+        fabricCanvas.on("object:removed", () => {
+          saveToHistory()
+        })
+
+        // Add zoom and pan functionality
+        fabricCanvas.on("mouse:wheel", (opt) => {
+          const delta = opt.e.deltaY
+          let zoom = fabricCanvas.getZoom()
+          zoom *= 0.999 ** delta
+          if (zoom > 20) zoom = 20
+          if (zoom < 0.1) zoom = 0.1
+
+          fabricCanvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom)
+          setZoom(zoom)
+          opt.e.preventDefault()
+          opt.e.stopPropagation()
+        })
+
+        fabricCanvas.on("mouse:down", (opt) => {
+          if (opt.e.button === 1 || (opt.e.button === 0 && opt.e.altKey)) {
+            setIsDragging(true)
+            setLastPos({ x: opt.e.clientX, y: opt.e.clientY })
+            fabricCanvas.selection = false
+            fabricCanvas.discardActiveObject()
+            fabricCanvas.requestRenderAll()
+          }
+        })
+
+        fabricCanvas.on("mouse:move", (opt) => {
+          if (isDragging) {
+            const e = opt.e
+            const vpt = fabricCanvas.viewportTransform
+            vpt[4] += e.clientX - lastPos.x
+            vpt[5] += e.clientY - lastPos.y
+            fabricCanvas.requestRenderAll()
+            setLastPos({ x: e.clientX, y: e.clientY })
+          }
+        })
+
+        fabricCanvas.on("mouse:up", () => {
+          setIsDragging(false)
+        })
+
+        // Load the new image
+        await loadImage(submission.answerImages[currentImageIndex].imageUrl)
+
+        // Restore annotations if they exist
+        if (annotations[currentImageIndex]) {
+          fabricCanvas.loadFromJSON(annotations[currentImageIndex], () => {
+            // Make sure background image is not selectable
+            const bgImage = fabricCanvas.getObjects().find((obj) => obj.type === "image")
+            if (bgImage) {
+              bgImage.selectable = false
+              bgImage.evented = false
+            }
+            fabricCanvas.renderAll()
+          })
+        }
+
+        // Restore zoom level
+        fabricCanvas.setZoom(zoom)
+        fabricCanvas.requestRenderAll()
+      } catch (error) {
+        console.error("Error loading new image:", error)
+        toast.error("Failed to load image")
+      } finally {
+        setIsImageLoading(false)
+      }
+    }
+
+    loadNewImage()
+  }, [currentImageIndex])
+
+  // Update canvas when tool changes
+  useEffect(() => {
+    if (fabricCanvasRef.current) {
+      const canvas = fabricCanvasRef.current
+
+      // Remove all existing event listeners
+      canvas.off("mouse:down")
+      canvas.off("mouse:move")
+      canvas.off("mouse:up")
+
+      // Reset drawing mode and selection
+      canvas.isDrawingMode = false
+      canvas.freeDrawingBrush = null
+      canvas.selection = false
+      canvas.discardActiveObject()
+      canvas.requestRenderAll()
+
+      // Set cursor based on selected tool
+      switch (activeTool) {
+        case "pen":
+          canvas.defaultCursor = "crosshair"
+          canvas.isDrawingMode = true
+          const brush = new window.fabric.PencilBrush(canvas)
+          brush.color = penColor
+          brush.width = penSize
+          canvas.freeDrawingBrush = brush
+          canvas.selection = false
+          break
+
+        case "rectangle":
+          canvas.defaultCursor = "crosshair"
+          canvas.isDrawingMode = false
+          canvas.selection = false
+          let startPoint
+          let currentRect
+          let isDrawing = false
+
+          canvas.on("mouse:down", (o) => {
+            if (o.e.button === 0) {
+              // Only handle left click
+              isDrawing = true
+              const pointer = canvas.getPointer(o.e)
+              startPoint = { x: pointer.x, y: pointer.y }
+
+              currentRect = new window.fabric.Rect({
+                left: startPoint.x,
+                top: startPoint.y,
+                width: 0,
+                height: 0,
+                fill: "transparent",
+                stroke: penColor,
+                strokeWidth: penSize,
+                selectable: false,
+                evented: false,
+              })
+
+              canvas.add(currentRect)
+              o.e.preventDefault()
+              o.e.stopPropagation()
+            }
+          })
+
+          canvas.on("mouse:move", (o) => {
+            if (!isDrawing || !currentRect) return
+
+            const pointer = canvas.getPointer(o.e)
+            const width = pointer.x - startPoint.x
+            const height = pointer.y - startPoint.y
+
+            currentRect.set({
+              width: Math.abs(width),
+              height: Math.abs(height),
+              left: width > 0 ? startPoint.x : pointer.x,
+              top: height > 0 ? startPoint.y : pointer.y,
+            })
+
+            canvas.renderAll()
+            o.e.preventDefault()
+            o.e.stopPropagation()
+          })
+
+          canvas.on("mouse:up", (o) => {
+            if (isDrawing) {
+              isDrawing = false
+              currentRect = null
+              o.e.preventDefault()
+              o.e.stopPropagation()
+            }
+          })
+          break
+
+        case "circle":
+          canvas.defaultCursor = "crosshair"
+          canvas.isDrawingMode = false
+          canvas.selection = false
+          let startPointCircle
+          let currentCircle
+          let isDrawingCircle = false
+
+          canvas.on("mouse:down", (o) => {
+            if (o.e.button === 0) {
+              // Only handle left click
+              isDrawingCircle = true
+              const pointer = canvas.getPointer(o.e)
+              startPointCircle = { x: pointer.x, y: pointer.y }
+
+              currentCircle = new window.fabric.Circle({
+                left: startPointCircle.x,
+                top: startPointCircle.y,
+                radius: 0,
+                fill: "transparent",
+                stroke: penColor,
+                strokeWidth: penSize,
+                selectable: false,
+                evented: false,
+              })
+
+              canvas.add(currentCircle)
+              o.e.preventDefault()
+              o.e.stopPropagation()
+            }
+          })
+
+          canvas.on("mouse:move", (o) => {
+            if (!isDrawingCircle || !currentCircle) return
+
+            const pointer = canvas.getPointer(o.e)
+            const radius = Math.sqrt(
+              Math.pow(pointer.x - startPointCircle.x, 2) + Math.pow(pointer.y - startPointCircle.y, 2),
+            )
+
+            currentCircle.set({
+              radius: radius,
+            })
+
+            canvas.renderAll()
+            o.e.preventDefault()
+            o.e.stopPropagation()
+          })
+
+          canvas.on("mouse:up", (o) => {
+            if (isDrawingCircle) {
+              isDrawingCircle = false
+              currentCircle = null
+              o.e.preventDefault()
+              o.e.stopPropagation()
+            }
+          })
+          break
+
+        case "text":
+          canvas.defaultCursor = "text"
+          canvas.isDrawingMode = false
+          canvas.selection = false
+          break
+
+        case "select":
+          canvas.defaultCursor = "default"
+          canvas.isDrawingMode = false
+          canvas.selection = true
+          canvas.forEachObject((obj) => {
+            if (obj !== backgroundImageRef.current) {
+              obj.selectable = true
+              obj.evented = true
+            }
+          })
+          break
+
+        case "clear":
+          canvas.defaultCursor = "default"
+          canvas.isDrawingMode = false
+          canvas.selection = false
+          break
+      }
+
+      try {
+        canvas.renderAll()
+      } catch (error) {
+        console.error("Error rendering canvas:", error)
+      }
+    }
+  }, [activeTool, penColor, penSize])
+
+  // History management functions
+  const saveToHistory = () => {
+    if (fabricCanvasRef.current) {
+      const json = fabricCanvasRef.current.toJSON()
+      historyRef.current = historyRef.current.slice(0, historyIndexRef.current + 1)
+      historyRef.current.push(json)
+      historyIndexRef.current = historyRef.current.length - 1
+      updateUndoRedoState()
+
+      // Save annotations for current image
+      setAnnotations((prev) => ({
+        ...prev,
+        [currentImageIndex]: json,
+      }))
+    }
+  }
+
+  const updateUndoRedoState = () => {
+    setCanUndo(historyIndexRef.current > 0)
+    setCanRedo(historyIndexRef.current < historyRef.current.length - 1)
+  }
 
   const handleUndo = () => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || !canUndo) return;
-
-    const objects = canvas.getObjects();
-    const annotations = objects.filter(obj => obj !== backgroundImageRef.current);
-    
-    if (annotations.length > 0) {
-      // Save current state to redo stack
-      redoStackRef.current.push(annotations);
-      setCanRedo(true);
-
-      // Remove the last annotation
-      canvas.remove(annotations[annotations.length - 1]);
-      
-      // Update undo state
-      setCanUndo(annotations.length > 1);
+    if (canUndo && fabricCanvasRef.current) {
+      historyIndexRef.current--
+      fabricCanvasRef.current.loadFromJSON(historyRef.current[historyIndexRef.current], () => {
+        fabricCanvasRef.current.renderAll()
+        updateUndoRedoState()
+      })
     }
-  };
+  }
 
   const handleRedo = () => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas || !canRedo) return;
-
-    const redoState = redoStackRef.current.pop();
-    if (redoState && redoState.length > 0) {
-      // Add back the last annotation
-      const lastAnnotation = redoState[redoState.length - 1];
-      canvas.add(lastAnnotation);
-      canvas.renderAll();
-
-      // Update states
-      setCanUndo(true);
-      setCanRedo(redoStackRef.current.length > 0);
+    if (canRedo && fabricCanvasRef.current) {
+      historyIndexRef.current++
+      fabricCanvasRef.current.loadFromJSON(historyRef.current[historyIndexRef.current], () => {
+        fabricCanvasRef.current.renderAll()
+        updateUndoRedoState()
+      })
     }
-  };
+  }
 
-  const handleToolChange = (tool) => {
-    setActiveTool(tool);
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
-    
-    switch (tool) {
-      case 'pen':
-        canvas.isDrawingMode = true;
-        const brush = new PencilBrush(canvas);
-        brush.color = penColor;
-        brush.width = penSize;
-        canvas.freeDrawingBrush = brush;
-        break;
-      case 'text':
-      case 'circle':
-      case 'rectangle':
-        canvas.isDrawingMode = false;
-        break;
-      case 'select':
-        canvas.isDrawingMode = false;
-        break;
-      default:
-        break;
+  const handleToolSelect = (tool) => {
+    setActiveTool(tool)
+
+    if (fabricCanvasRef.current) {
+      try {
+        switch (tool) {
+          case "pen":
+            fabricCanvasRef.current.isDrawingMode = true
+            const brush = new window.fabric.PencilBrush(fabricCanvasRef.current)
+            brush.color = penColor
+            brush.width = penSize
+            fabricCanvasRef.current.freeDrawingBrush = brush
+            break
+          case "rectangle":
+            fabricCanvasRef.current.isDrawingMode = false
+            break
+          case "circle":
+            fabricCanvasRef.current.isDrawingMode = false
+            break
+          case "text":
+            fabricCanvasRef.current.isDrawingMode = false
+            const text = new window.fabric.IText("Double click to edit", {
+              left: 100,
+              top: 100,
+              fontFamily: "Arial",
+              fill: penColor,
+              fontSize: 20,
+              fontWeight: "400",
+              fontStyle: "normal",
+              underline: false,
+              linethrough: false,
+              textAlign: "left",
+              charSpacing: 0,
+              lineHeight: 1,
+            })
+            fabricCanvasRef.current.add(text)
+            fabricCanvasRef.current.setActiveObject(text)
+            break
+          case "select":
+            fabricCanvasRef.current.isDrawingMode = false
+            fabricCanvasRef.current.selection = true
+            fabricCanvasRef.current.forEachObject((obj) => {
+              if (obj !== backgroundImageRef.current) {
+                obj.selectable = true
+                obj.evented = true
+              }
+            })
+            break
+          case "clear":
+            fabricCanvasRef.current.clear()
+            // Re-add the background image
+            if (backgroundImageRef.current) {
+              fabricCanvasRef.current.add(backgroundImageRef.current)
+              fabricCanvasRef.current.sendToBack(backgroundImageRef.current)
+              fabricCanvasRef.current.renderAll()
+            }
+            break
+        }
+      } catch (error) {
+        console.error("Error applying tool:", error)
+        toast.error("Failed to apply tool")
+      }
     }
-  };
+  }
 
   const handleColorChange = (color) => {
-    setPenColor(color);
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+    setPenColor(color)
 
-    const activeObject = canvas.getActiveObject();
-    if (activeObject) {
-      if (activeObject.type === 'i-text') {
-        activeObject.set('fill', color);
-      } else {
-        activeObject.set('stroke', color);
+    const canvas = fabricCanvasRef.current
+    if (!canvas) return
+
+    // Update active object color if in select mode
+    if (activeTool === "select") {
+      const activeObject = canvas.getActiveObject()
+      if (activeObject) {
+        if (activeObject.type === "i-text") {
+          activeObject.set("fill", color)
+        } else {
+          activeObject.set("stroke", color)
+        }
+        canvas.renderAll()
       }
-      canvas.renderAll();
     }
-  };
 
-  const handleAddText = () => {
-    const canvas = fabricCanvasRef.current;
-    if (!canvas) return;
+    // Update brush color
+    if (canvas.freeDrawingBrush) {
+      canvas.freeDrawingBrush.color = color
+    }
+  }
 
-    const text = new IText('Double click to edit', {
-      left: 100,
-      top: 100,
-      fontFamily: 'Arial',
-      fill: penColor,
-      fontSize: 20
-    });
-    canvas.add(text);
-    canvas.setActiveObject(text);
-    setCanUndo(true);
-  };
+  const handleBrushSizeChange = (size) => {
+    setPenSize(size)
+
+    const canvas = fabricCanvasRef.current
+    if (!canvas) return
+
+    // Update active object stroke width if in select mode
+    if (activeTool === "select") {
+      const activeObject = canvas.getActiveObject()
+      if (activeObject && activeObject.type !== "i-text") {
+        activeObject.set("strokeWidth", size)
+        canvas.renderAll()
+      }
+    }
+
+    // Update brush size
+    if (canvas.freeDrawingBrush) {
+      canvas.freeDrawingBrush.width = size
+    }
+  }
 
   const handleImageChange = (index) => {
-    if (index >= 0 && index < submission.answerImages.length) {
-      setCurrentImageIndex(index);
-      loadImage(submission.answerImages[index].imageUrl);
+    try {
+    // Save current annotations before changing image
+    if (fabricCanvasRef.current) {
+      const json = fabricCanvasRef.current.toJSON()
+      setAnnotations((prev) => ({
+        ...prev,
+        [currentImageIndex]: json,
+      }))
     }
-  };
 
-  const handleSave = () => {
-    // TODO: Implement save functionality
-    toast.success('Annotations saved successfully');
-  };
+    // Reset history for new image
+    historyRef.current = []
+    historyIndexRef.current = -1
+    setCanUndo(false)
+    setCanRedo(false)
+
+    // Change image
+    setCurrentImageIndex(index)
+    } catch (error) {
+      console.error("Error changing image:", error)
+      toast.error("Failed to change image")
+    }
+  }
+
+  const getAnnotatedImages = async () => {
+    if (!fabricCanvasRef.current) {
+      toast.error("Canvas not initialized")
+      return
+    }
+
+    try {
+      // Save current annotations
+      const json = fabricCanvasRef.current.toJSON()
+      const updatedAnnotations = {
+        ...annotations,
+        [currentImageIndex]: json,
+      }
+
+      // Process all annotated images
+      const processPromises = Object.keys(updatedAnnotations).map(async (index) => {
+        let tempCanvasElement = null
+        let tempFabricCanvas = null
+
+        try {
+          if (!submission.answerImages || !submission.answerImages[index]) {
+            console.error(`Image not found for index ${index}`)
+            return
+          }
+
+          // Create a temporary canvas with exact image dimensions
+          const tempCanvas = document.createElement('canvas')
+          const tempCtx = tempCanvas.getContext('2d')
+
+          if (!tempCtx) {
+            throw new Error("Failed to get canvas context")
+          }
+
+          // Load the original image
+          const img = new Image()
+          img.crossOrigin = "anonymous"
+          
+          await new Promise((resolve, reject) => {
+            img.onload = () => {
+              console.log("Image loaded successfully:", {
+                width: img.width,
+                height: img.height,
+                index
+              })
+              resolve()
+            }
+            img.onerror = (error) => {
+              console.error("Error loading image:", error)
+              reject(new Error(`Failed to load image for index ${index}`))
+            }
+            img.src = submission.answerImages[index].imageUrl
+          })
+
+          // Set canvas size to match original image dimensions
+          tempCanvas.width = img.width
+          tempCanvas.height = img.height
+
+          // Draw the original image at full size
+          tempCtx.drawImage(img, 0, 0, img.width, img.height)
+
+          // Create a temporary fabric canvas for annotations
+          tempCanvasElement = document.createElement('canvas')
+          tempCanvasElement.width = img.width
+          tempCanvasElement.height = img.height
+          tempCanvasElement.style.position = 'absolute'
+          tempCanvasElement.style.left = '-9999px'
+          tempCanvasElement.style.top = '-9999px'
+          tempCanvasElement.style.visibility = 'hidden'
+          document.body.appendChild(tempCanvasElement)
+          
+          // Initialize Fabric.js canvas with proper configuration
+          tempFabricCanvas = new window.fabric.Canvas(tempCanvasElement, {
+            width: img.width,
+            height: img.height,
+            renderOnAddRemove: false,
+            selection: false,
+            preserveObjectStacking: true
+          })
+
+          // Ensure canvas is initialized before loading JSON
+          await new Promise(resolve => setTimeout(resolve, 0))
+
+          // Load annotations
+          await new Promise((resolve, reject) => {
+            try {
+              if (!updatedAnnotations[index]) {
+                console.warn(`No annotations found for index ${index}`)
+                resolve()
+                return
+              }
+
+              // Create a new fabric image for the background
+              const fabricImage = new window.fabric.Image(img, {
+                left: 0,
+                top: 0,
+                width: img.width,
+                height: img.height,
+                selectable: false,
+                evented: false
+              })
+
+              // Add the background image first
+              tempFabricCanvas.add(fabricImage)
+              tempFabricCanvas.renderAll()
+
+              // Now load the annotations
+              tempFabricCanvas.loadFromJSON(updatedAnnotations[index], async () => {
+                try {
+                  const bgImage = tempFabricCanvas.getObjects().find(obj => obj.type === 'image')
+                  if (!bgImage) {
+                    console.warn("No background image found in annotations")
+                    resolve()
+                    return
+                  }
+
+                  // Calculate scaling factors
+                  const originalWidth = img.width
+                  const originalHeight = img.height
+                  const displayWidth = bgImage.width * bgImage.scaleX
+                  const displayHeight = bgImage.height * bgImage.scaleY
+                  
+                  const scaleX = originalWidth / displayWidth
+                  const scaleY = originalHeight / displayHeight
+
+                  // Draw annotations with exact positioning
+                  const annotationObjects = tempFabricCanvas.getObjects().filter(obj => obj !== bgImage)
+                  for (const obj of annotationObjects) {
+                    try {
+                      // Convert object to data URL with high quality
+                      const objDataUrl = obj.toDataURL({
+                        format: 'png',
+                        quality: 1,
+                        multiplier: 1,
+                        enableRetinaScaling: true
+                      })
+
+                      const objImg = new Image()
+                      await new Promise((resolve, reject) => {
+                        objImg.onload = resolve
+                        objImg.onerror = reject
+                        objImg.src = objDataUrl
+                      })
+
+                      // Calculate exact position relative to background image
+                      const objLeft = (obj.left - bgImage.left) * scaleX
+                      const objTop = (obj.top - bgImage.top) * scaleY
+
+                      // Calculate scaled dimensions
+                      const scaledWidth = obj.width * obj.scaleX * scaleX
+                      const scaledHeight = obj.height * obj.scaleY * scaleY
+
+                      // Draw annotation at exact position with proper scaling
+                      tempCtx.drawImage(
+                        objImg,
+                        objLeft,
+                        objTop,
+                        scaledWidth,
+                        scaledHeight
+                      )
+                    } catch (objError) {
+                      console.error("Error processing annotation object:", objError)
+                    }
+                  }
+
+                  // Store the annotated image data URL
+                  const annotatedImageUrl = tempCanvas.toDataURL('image/png', 1.0)
+                  setAnnotatedImages(prev => ({
+                    ...prev,
+                    [index]: annotatedImageUrl
+                  }))
+
+                  resolve()
+                } catch (error) {
+                  console.error("Error processing annotations:", error)
+                  reject(error)
+                }
+              })
+            } catch (error) {
+              console.error("Error loading JSON:", error)
+              reject(error)
+            }
+          })
+
+        } catch (error) {
+          console.error(`Error processing image ${index}:`, error)
+          toast.error(`Failed to process image ${parseInt(index) + 1}`)
+        } finally {
+          // Cleanup
+          if (tempFabricCanvas) {
+            try {
+              tempFabricCanvas.dispose()
+            } catch (error) {
+              console.error("Error disposing fabric canvas:", error)
+            }
+          }
+          if (tempCanvasElement && tempCanvasElement.parentNode) {
+            try {
+              tempCanvasElement.parentNode.removeChild(tempCanvasElement)
+            } catch (error) {
+              console.error("Error removing canvas element:", error)
+            }
+          }
+        }
+      })
+
+      // Wait for all processing to complete
+      await Promise.all(processPromises)
+
+      return updatedAnnotations
+    } catch (error) {
+      console.error("Error getting annotated images:", error)
+      toast.error(error.message || "Failed to get annotated images")
+      return null
+    }
+  }
+
+  const handleSave = async () => {
+    const updatedAnnotations = await getAnnotatedImages()
+    if (!updatedAnnotations) return
+
+    // Download all annotated images
+    Object.keys(updatedAnnotations).forEach((index) => {
+      const link = document.createElement('a')
+      link.download = `annotated_image_${parseInt(index) + 1}.png`
+      link.href = annotatedImages[index]
+      link.click()
+    })
+
+    // Call the original onSave callback
+      onSave({
+        annotations: updatedAnnotations,
+      })
+
+    toast.success("Annotations saved and images downloaded successfully!")
+  }
+
+  const handleCompleteReview = async () => {
+    // Get annotated images without downloading
+    const updatedAnnotations = await getAnnotatedImages()
+    if (updatedAnnotations) {
+      setIsReviewModalOpen(true)
+    }
+  }
+
+  // Separate function for closing the modal
+  const handleClose = () => {
+    onClose()
+  }
+
+  // Add zoom controls handler
+  const handleZoom = (direction) => {
+    if (!fabricCanvasRef.current) return
+
+    const canvas = fabricCanvasRef.current
+    const currentZoom = canvas.getZoom()
+    let newZoom
+
+    if (direction === 'in') {
+      newZoom = Math.min(currentZoom * 1.1, 20)
+    } else if (direction === 'out') {
+      newZoom = Math.max(currentZoom / 1.1, 0.1)
+    } else {
+      newZoom = 1
+    }
+
+    canvas.zoomToPoint(
+      { x: canvas.width / 2, y: canvas.height / 2 },
+      newZoom
+    )
+    setZoom(newZoom)
+  }
+
+  // Update zoom controls in the toolbar
+  const renderZoomControls = () => (
+    <div className="flex items-center space-x-2">
+      <button
+        onClick={() => handleZoom('out')}
+        className="p-2 rounded bg-white text-gray-700 hover:bg-gray-100"
+        title="Zoom Out"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+        </svg>
+      </button>
+      <span className="text-sm text-gray-700">{Math.round(zoom * 100)}%</span>
+      <button
+        onClick={() => handleZoom('in')}
+        className="p-2 rounded bg-white text-gray-700 hover:bg-gray-100"
+        title="Zoom In"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
+      <button
+        onClick={() => handleZoom('reset')}
+        className="p-2 rounded bg-white text-gray-700 hover:bg-gray-100"
+        title="Reset Zoom"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5"
+          />
+        </svg>
+      </button>
+    </div>
+  )
+
+  const handleCloseReviewModal = () => {
+    setIsReviewModalOpen(false)
+    setScore('')
+    setExpertRemarks('')
+  }
 
   return (
     <div className="fixed inset-0 bg-white z-50 flex flex-col">
@@ -290,20 +1081,20 @@ const AnswerAnnotation = ({ submission, onClose }) => {
         <div>
           <h2 className="text-xl font-semibold">Annotate Answer</h2>
           <p className="text-sm text-gray-300">
-            {submission.user?.name || 'Anonymous'} - {new Date(submission.evaluatedAt).toLocaleDateString()}
+            {submission.user?.name || "Anonymous"} - {new Date(submission.evaluatedAt).toLocaleDateString()}
           </p>
         </div>
         <div className="flex space-x-4">
-          <button
-            onClick={handleSave}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-          >
+          <button onClick={handleSave} className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
             Save Annotations
           </button>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+          <button 
+            onClick={handleCompleteReview} 
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
+            Complete Review
+          </button>
+          <button onClick={handleClose} className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">
             Close
           </button>
         </div>
@@ -318,14 +1109,12 @@ const AnswerAnnotation = ({ submission, onClose }) => {
             <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
               <h3 className="text-sm font-medium text-purple-700 mb-2">Accuracy</h3>
               <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div 
-                  className="bg-purple-600 h-2.5 rounded-full" 
+                <div
+                  className="bg-purple-600 h-2.5 rounded-full"
                   style={{ width: `${submission.evaluation.accuracy}%` }}
                 ></div>
               </div>
-              <p className="text-lg font-semibold text-gray-800 mt-1">
-                {submission.evaluation.accuracy}%
-              </p>
+              <p className="text-lg font-semibold text-gray-800 mt-1">{submission.evaluation.accuracy}%</p>
             </div>
 
             {/* Strengths */}
@@ -376,9 +1165,7 @@ const AnswerAnnotation = ({ submission, onClose }) => {
             {submission.evaluation.feedback && (
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <h3 className="text-sm font-medium text-gray-700 mb-2">Feedback</h3>
-                <p className="text-sm text-gray-800 whitespace-pre-wrap">
-                  {submission.evaluation.feedback}
-                </p>
+                <p className="text-sm text-gray-800 whitespace-pre-wrap">{submission.evaluation.feedback}</p>
               </div>
             )}
           </div>
@@ -391,53 +1178,97 @@ const AnswerAnnotation = ({ submission, onClose }) => {
             <div className="flex items-center space-x-4">
               <div className="flex space-x-2">
                 <button
-                  onClick={() => handleToolChange('pen')}
+                  onClick={() => handleToolSelect("pen")}
                   className={`p-2 rounded ${
-                    activeTool === 'pen' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'
+                    activeTool === "pen" ? "bg-blue-500 text-white" : "bg-white text-gray-700"
                   }`}
+                  title="Pen"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                    />
                   </svg>
                 </button>
                 <button
-                  onClick={() => handleToolChange('text')}
+                  onClick={() => handleToolSelect("text")}
                   className={`p-2 rounded ${
-                    activeTool === 'text' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'
+                    activeTool === "text" ? "bg-blue-500 text-white" : "bg-white text-gray-700"
                   }`}
+                  title="Text"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
                   </svg>
                 </button>
                 <button
-                  onClick={() => handleToolChange('circle')}
+                  onClick={() => handleToolSelect("circle")}
                   className={`p-2 rounded ${
-                    activeTool === 'circle' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'
+                    activeTool === "circle" ? "bg-blue-500 text-white" : "bg-white text-gray-700"
                   }`}
+                  title="Circle"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 12m-9 0a9 9 0 1118 0a9 9 0 01-18 0z" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 12m-9 0a9 9 0 1118 0a9 9 0 01-18 0z"
+                    />
                   </svg>
                 </button>
                 <button
-                  onClick={() => handleToolChange('rectangle')}
+                  onClick={() => handleToolSelect("rectangle")}
                   className={`p-2 rounded ${
-                    activeTool === 'rectangle' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'
+                    activeTool === "rectangle" ? "bg-blue-500 text-white" : "bg-white text-gray-700"
                   }`}
+                  title="Rectangle"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 10h16M4 14h16M4 18h16"
+                    />
                   </svg>
                 </button>
                 <button
-                  onClick={() => handleToolChange('select')}
+                  onClick={() => handleToolSelect("select")}
                   className={`p-2 rounded ${
-                    activeTool === 'select' ? 'bg-blue-500 text-white' : 'bg-white text-gray-700'
+                    activeTool === "select" ? "bg-blue-500 text-white" : "bg-white text-gray-700"
                   }`}
+                  title="Select"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"
+                    />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => handleToolSelect("clear")}
+                  className="p-2 rounded bg-white text-red-600 hover:bg-red-50"
+                  title="Clear All"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
                   </svg>
                 </button>
               </div>
@@ -448,78 +1279,106 @@ const AnswerAnnotation = ({ submission, onClose }) => {
                   onClick={handleUndo}
                   disabled={!canUndo}
                   className={`p-2 rounded ${
-                    canUndo ? 'bg-white text-gray-700 hover:bg-gray-100' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    canUndo
+                      ? "bg-white text-gray-700 hover:bg-gray-100"
+                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
                   }`}
+                  title="Undo"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
+                    />
                   </svg>
                 </button>
                 <button
                   onClick={handleRedo}
                   disabled={!canRedo}
                   className={`p-2 rounded ${
-                    canRedo ? 'bg-white text-gray-700 hover:bg-gray-100' : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                    canRedo
+                      ? "bg-white text-gray-700 hover:bg-gray-100"
+                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
                   }`}
+                  title="Redo"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10H11a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 10H11a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6"
+                    />
                   </svg>
                 </button>
               </div>
 
+              {renderZoomControls()}
+
+              {/* Color and Size Controls */}
               <div className="flex items-center space-x-2">
                 <input
                   type="color"
                   value={penColor}
                   onChange={(e) => handleColorChange(e.target.value)}
                   className="w-8 h-8 rounded cursor-pointer"
+                  title="Color"
                 />
-                <input
-                  type="range"
-                  min="1"
-                  max="10"
-                  value={penSize}
-                  onChange={(e) => setPenSize(parseInt(e.target.value))}
-                  className="w-24"
-                />
+                <div className="flex items-center space-x-1">
+                  <input
+                    type="range"
+                    min="1"
+                    max="20"
+                    value={penSize}
+                    onChange={(e) => handleBrushSizeChange(Number.parseInt(e.target.value))}
+                    className="w-24"
+                    title="Brush Size"
+                  />
+                  <span className="text-xs text-gray-500 w-6 text-right">{penSize}px</span>
+                </div>
               </div>
-
-              {activeTool === 'text' && (
-                <button
-                  onClick={handleAddText}
-                  className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
-                >
-                  Add Text
-                </button>
-              )}
             </div>
           </div>
 
-          {/* Canvas */}
-          <div className="flex-1 relative bg-gray-100">
+          {/* Canvas Container */}
+          <div className="flex-1 relative bg-gray-100 overflow-hidden" ref={containerRef}>
             {isImageLoading && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-75 z-10">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
               </div>
             )}
-            <canvas ref={canvasRef} className="absolute inset-0" />
+            <canvas
+              ref={canvasRef}
+              className="w-full h-full"
+              style={{
+                cursor:
+                  activeTool === "pen"
+                    ? "crosshair"
+                    : activeTool === "text"
+                      ? "text"
+                      : activeTool === "select"
+                        ? "default"
+                        : "crosshair",
+              }}
+            />
           </div>
 
           {/* Image Thumbnails */}
           {submission.answerImages && submission.answerImages.length > 1 && (
             <div className="bg-gray-100 p-4 border-t border-gray-200">
-              <div className="flex space-x-2 overflow-x-auto">
+              <div className="flex space-x-2 overflow-x-auto pb-2">
                 {submission.answerImages.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => handleImageChange(index)}
-                    className={`w-20 h-20 rounded border-2 ${
-                      currentImageIndex === index ? 'border-blue-500' : 'border-gray-300'
+                    className={`flex-shrink-0 w-20 h-20 rounded border-2 ${
+                      currentImageIndex === index ? "border-blue-500" : "border-gray-300"
                     }`}
                   >
                     <img
-                      src={image.imageUrl}
+                      src={image.imageUrl || "/placeholder.svg"}
                       alt={`Answer ${index + 1}`}
                       className="w-full h-full object-cover rounded"
                       crossOrigin="anonymous"
@@ -531,8 +1390,82 @@ const AnswerAnnotation = ({ submission, onClose }) => {
           )}
         </div>
       </div>
-    </div>
-  );
-};
 
-export default AnswerAnnotation; 
+      {/* Review Modal */}
+      {isReviewModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white rounded-lg p-6 w-[800px] max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold">Complete Review</h3>
+              <button 
+                onClick={handleCloseReviewModal}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Annotated Images */}
+            <div className="mb-6">
+              <h4 className="text-lg font-medium mb-2">Annotated Images</h4>
+              <div className="grid grid-cols-2 gap-4">
+                {Object.entries(annotatedImages).map(([index, imageUrl]) => (
+                  <div key={index} className="border rounded-lg p-2">
+                    <img 
+                      src={imageUrl} 
+                      alt={`Annotated Answer ${parseInt(index) + 1}`}
+                      className="w-full h-auto rounded"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Score Field */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Score
+              </label>
+              <input
+                type="number"
+                value={score}
+                onChange={(e) => setScore(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter score"
+                min="0"
+                max="100"
+              />
+            </div>
+
+            {/* Expert Remarks Field */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Expert Remarks
+              </label>
+              <textarea
+                value={expertRemarks}
+                onChange={(e) => setExpertRemarks(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows="4"
+                placeholder="Enter your expert remarks"
+              />
+            </div>
+
+            {/* Save Review Button */}
+            <div className="flex justify-end">
+              <button
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Save Review
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default AnswerAnnotation

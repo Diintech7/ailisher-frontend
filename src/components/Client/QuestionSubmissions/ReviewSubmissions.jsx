@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { userAnswerService } from '../../../services/userAnswerService';
 import { toast } from 'react-toastify';
 import AnswerAnnotation from './AnswerAnnotation';
+import axios from 'axios';
 
 const ReviewSubmissions = ({ questionId }) => {
   const [submissions, setSubmissions] = useState([]);
@@ -23,50 +24,71 @@ const ReviewSubmissions = ({ questionId }) => {
   const fetchSubmissions = async () => {
     try {
       setLoading(true);
-      const response = await userAnswerService.getQuestionAnswers(questionId, {
-        page,
-        submissionStatus: 'evaluated',
-        limit: 10,
-        questionId: questionId
-      });
       
-      if (response.success) {
-        console.log('Raw API Response:', response.data);
+      if (activeTab === 'review_pending') {
+        // Use new API for pending reviews
+        const response = await userAnswerService.getPendingReviews();
         
-        // Get accepted submissions from localStorage
-        const acceptedSubmissions = JSON.parse(localStorage.getItem(`review_submissions_${questionId}`) || '[]');
-        
-        let filteredSubmissions;
-        if (activeTab === 'review_accepted') {
-          // For accepted tab, use localStorage data
-          filteredSubmissions = acceptedSubmissions.filter(
-            submission => submission.reviewStatus === 'review_accepted'
-          );
-        } else {
-          // For pending tab, use API data and exclude accepted ones
-          const pendingSubmissions = response.data.answers.filter(
-            submission => 
-              submission.question?._id === questionId &&
-              submission.submissionStatus === 'evaluated' &&
-              submission.reviewStatus === activeTab
+        if (response.success) {
+          // Filter reviews for the current question
+          const filteredReviews = response.data.requests.filter(
+            review => review.questionId._id === questionId
           );
           
-          // Filter out any submissions that are already accepted
-          const acceptedIds = new Set(acceptedSubmissions.map(sub => sub._id));
-          filteredSubmissions = pendingSubmissions.filter(sub => !acceptedIds.has(sub._id));
+          // Transform the data to match the expected format
+          const transformedReviews = filteredReviews.map(review => ({
+            _id: review._id,
+            user: review.userId,
+            question: review.questionId,
+            evaluation: review.answerId.evaluation,
+            answerImages: review.answerId.answerImages,
+            submittedAt: review.answerId.submittedAt,
+            reviewStatus: review.requestStatus,
+            notes: review.notes,
+            priority: review.priority,
+            evaluatedAt: review.requestedAt
+          }));
+          
+          setSubmissions(transformedReviews);
+          setTotalPages(Math.ceil(filteredReviews.length / 10));
+          
+          const initialExpandedState = {};
+          transformedReviews.forEach(sub => {
+            initialExpandedState[sub._id] = false;
+          });
+          setExpandedSubmissions(initialExpandedState);
+        } else {
+          setError(response.message);
         }
-        
-        console.log('Filtered Submissions:', filteredSubmissions);
-        
-        setSubmissions(filteredSubmissions);
-        setTotalPages(Math.ceil(response.data.pagination.totalPages));
-        const initialExpandedState = {};
-        filteredSubmissions.forEach(sub => {
-          initialExpandedState[sub._id] = false;
-        });
-        setExpandedSubmissions(initialExpandedState);
       } else {
-        setError(response.message);
+        // Use existing API for other tabs
+        const response = await userAnswerService.getQuestionAnswers(questionId, {
+          page,
+          submissionStatus: 'evaluated',
+          publishStatus: 'published',
+          reviewStatus: activeTab,
+          limit: 10,
+          questionId: questionId
+        });
+        
+        if (response.success) {
+          const filteredSubmissions = response.data.answers.filter(submission => 
+            submission.question?._id === questionId &&
+            submission.submissionStatus === 'evaluated' &&
+            submission.publishStatus === 'published' &&
+            submission.reviewStatus === activeTab
+          );
+          
+          setSubmissions(filteredSubmissions);
+          setTotalPages(Math.ceil(response.data.pagination.totalPages));
+          const initialExpandedState = {};
+          filteredSubmissions.forEach(sub => {
+            initialExpandedState[sub._id] = false;
+          });
+          setExpandedSubmissions(initialExpandedState);
+        } else {
+          setError(response.message);
+        }
       }
     } catch (error) {
       setError(error.message);
@@ -78,40 +100,51 @@ const ReviewSubmissions = ({ questionId }) => {
 
   const handleReviewStatusUpdate = async (answerId, newStatus, reason) => {
     try {
-      // Get existing submissions from localStorage
-      const existingSubmissions = JSON.parse(localStorage.getItem(`review_submissions_${questionId}`) || '[]');
-      
-      // Find and update the submission
-      const updatedSubmissions = existingSubmissions.map(sub => {
-        if (sub._id === answerId) {
-          return {
-            ...sub,
-            reviewStatus: newStatus,
-            reviewAcceptedAt: new Date().toISOString()
-          };
+      if (activeTab === 'review_pending') {
+        // Make API call with POST method and log response
+        const response = await axios.post(`https://aipbbackend-c5ed.onrender.com/api/review/${answerId}/accept`);
+        console.log('Review accept response:', response.data);
+        
+        if (response.data.success) {
+          toast.success('Review accepted successfully');
+          fetchSubmissions(); // Refresh the list
+        } else {
+          throw new Error(response.data.message || 'Failed to accept review');
         }
-        return sub;
-      });
+      } else {
+        // Existing logic for other tabs
+        const existingSubmissions = JSON.parse(localStorage.getItem(`review_submissions_${questionId}`) || '[]');
+        
+        const updatedSubmissions = existingSubmissions.map(sub => {
+          if (sub._id === answerId) {
+            return {
+              ...sub,
+              reviewStatus: newStatus,
+              reviewAcceptedAt: new Date().toISOString()
+            };
+          }
+          return sub;
+        });
 
-      // If submission not found in localStorage, add it
-      if (!existingSubmissions.find(sub => sub._id === answerId)) {
-        const submissionToUpdate = submissions.find(sub => sub._id === answerId);
-        if (submissionToUpdate) {
-          updatedSubmissions.push({
-            ...submissionToUpdate,
-            reviewStatus: newStatus,
-            reviewAcceptedAt: new Date().toISOString()
-          });
+        if (!existingSubmissions.find(sub => sub._id === answerId)) {
+          const submissionToUpdate = submissions.find(sub => sub._id === answerId);
+          if (submissionToUpdate) {
+            updatedSubmissions.push({
+              ...submissionToUpdate,
+              reviewStatus: newStatus,
+              reviewAcceptedAt: new Date().toISOString()
+            });
+          }
         }
+
+        localStorage.setItem(`review_submissions_${questionId}`, JSON.stringify(updatedSubmissions));
+        
+        toast.success('Review accepted successfully');
+        fetchSubmissions();
       }
-
-      // Save to localStorage
-      localStorage.setItem(`review_submissions_${questionId}`, JSON.stringify(updatedSubmissions));
-      
-      toast.success('Review accepted successfully');
-      fetchSubmissions(); // Refresh the list
     } catch (error) {
-      toast.error('Failed to update review status');
+      console.error('Error updating review status:', error);
+      toast.error(error.message || 'Failed to update review status');
     }
   };
 
@@ -313,6 +346,22 @@ const ReviewSubmissions = ({ questionId }) => {
                   <div className="bg-purple-100 p-4 rounded-lg border border-purple-200">
                     <h4 className="text-sm font-medium text-purple-800 mb-2">Analysis:</h4>
                     <div className="bg-white rounded-lg p-4 space-y-4 border border-gray-200">
+
+                      {/* User Reason for Review Request */}
+                      {submission.notes && (
+                        <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                          <h5 className="text-sm font-medium text-blue-700">User Reason for Review Request:</h5>
+                          <p className="text-sm text-gray-800 mt-1">{submission.notes}</p>
+                        </div>
+                      )}
+
+                      {/* Priority */}
+                      {submission.priority && (
+                        <div className="bg-green-50 p-3 rounded-lg border border-green-100">
+                          <h5 className="text-sm font-medium text-green-700">Priority:</h5>
+                          <p className="text-sm text-gray-800 mt-1 capitalize">{submission.priority}</p>
+                        </div>
+                      )}
 
                       {/* Accuracy */}
                       <div className="bg-purple-50 p-3 rounded-lg border border-purple-100">
