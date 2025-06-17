@@ -1,20 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 const QRQuestionPage = () => {
-  // Get URL parameters (you'll need to pass these as props in your actual implementation)
-  const [questionId, setQuestionId] = useState('6850f54f0509357360ab6258');
-  const [clientName, setClientName] = useState('KitabAI');
-  const [clientId, setClientId] = useState('CLI677117YN7N');
+  const [questionId, setQuestionId] = useState('');
+  const [clientName, setClientName] = useState('');
+  const [clientId, setClientId] = useState('');
   
   const [step, setStep] = useState('loading'); // loading, auth, question, submit
   const [question, setQuestion] = useState(null);
   const [clientInfo, setClientInfo] = useState(null);
+  const [userInfo, setUserInfo] = useState(null);
   const [mobile, setMobile] = useState('');
   const [name, setName] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isRegisteredUser, setIsRegisteredUser] = useState(false);
 
   // Answer submission states
   const [selectedImages, setSelectedImages] = useState([]);
@@ -41,27 +42,70 @@ const QRQuestionPage = () => {
     return null;
   };
 
+  // NEW: Function to fetch client info early
+  const fetchClientInfo = async (clientId) => {
+    try {
+      // Option 1: Use the existing check-user endpoint (recommended)
+      const response = await fetch(`${API_BASE}/mobile-qr-auth/clients/${clientId}/qr/check-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ mobile: '0000000000' }), // Dummy mobile to get client info
+      });
+
+      const data = await response.json();
+      
+      if (data.success && data.data.clientInfo) {
+        setClientInfo(data.data.clientInfo);
+        return data.data.clientInfo;
+      }
+      
+      // Option 2: If you have a dedicated client info endpoint, use this instead:
+      // const response = await fetch(`${API_BASE}/clients/${clientId}/info`);
+      // const data = await response.json();
+      // if (data.success) {
+      //   setClientInfo(data.data);
+      //   return data.data;
+      // }
+      
+      return null;
+    } catch (error) {
+      console.error('Error fetching client info:', error);
+      return null;
+    }
+  };
+
   useEffect(() => {
-    // In real implementation, get these from URL params
-    const urlParams = new URLSearchParams(window.location.search);
-    const urlQuestionId = window.location.pathname.split('/').pop();
-    const urlClientName = urlParams.get('client');
-    const urlClientId = urlParams.get('clientId');
-    
-    if (urlQuestionId) setQuestionId(urlQuestionId);
-    if (urlClientName) setClientName(urlClientName);
-    if (urlClientId) setClientId(urlClientId);
-    
-    checkAuthAndLoadQuestion();
+    const initializePage = async () => {
+      // Get URL parameters
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlQuestionId = window.location.pathname.split('/').pop();
+      const urlClientName = urlParams.get('client');
+      const urlClientId = urlParams.get('clientId');
+      
+      if (urlQuestionId) setQuestionId(urlQuestionId);
+      if (urlClientName) setClientName(urlClientName);
+      if (urlClientId) {
+        setClientId(urlClientId);
+        
+        // Fetch client info immediately when we have clientId
+        await fetchClientInfo(urlClientId);
+      }
+      
+      // Then check auth and load question
+      await checkAuthAndLoadQuestion();
+    };
+
+    initializePage();
   }, []);
 
   const checkAuthAndLoadQuestion = async () => {
     try {
       const token = getCookie('qr_auth_token');
-      console.log(token)
       
       if (token) {
-        // Check if already authenticated - Fixed endpoint URL
+        // Check if already authenticated
         const response = await fetch(`${API_BASE}/aiswb/qr/questions/${questionId}/view`, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -85,6 +129,41 @@ const QRQuestionPage = () => {
     }
   };
 
+  const checkUserRegistration = async (mobileNumber) => {
+    try {
+      const response = await fetch(`${API_BASE}/mobile-qr-auth/clients/${clientId}/qr/check-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ mobile: mobileNumber }),
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        // Update client info if not already set
+        if (data.data.clientInfo && !clientInfo) {
+          setClientInfo(data.data.clientInfo);
+        }
+        
+        setIsRegisteredUser(data.data.isRegistered);
+        
+        if (data.data.isRegistered && data.data.userProfile) {
+          setUserInfo(data.data.userProfile);
+          setName(data.data.userProfile.name || '');
+        }
+        
+        return data.data;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('User check error:', error);
+      return null;
+    }
+  };
+
   const sendOTP = async () => {
     if (!mobile || mobile.length !== 10) {
       setError('Please enter a valid 10-digit mobile number');
@@ -95,6 +174,9 @@ const QRQuestionPage = () => {
     setError('');
 
     try {
+      // First check if user is registered
+      await checkUserRegistration(mobile);
+
       const response = await fetch(`${API_BASE}/mobile-qr-auth/clients/${clientId}/qr/send-otp`, {
         method: 'POST',
         headers: {
@@ -108,6 +190,23 @@ const QRQuestionPage = () => {
       if (data.success) {
         setOtpSent(true);
         setError('');
+        
+        // Update client and user info from response
+        if (data.data.clientInfo) {
+          setClientInfo(data.data.clientInfo);
+        }
+        
+        if (data.data.userInfo) {
+          setIsRegisteredUser(data.data.userInfo.isRegistered);
+          if (data.data.userInfo.isRegistered) {
+            setUserInfo({
+              name: data.data.userInfo.name,
+              profilePicture: data.data.userInfo.profilePicture,
+              mobile: mobile
+            });
+            setName(data.data.userInfo.name || '');
+          }
+        }
       } else {
         console.error('OTP send error:', data);
         setError(data.message || 'Failed to send OTP');
@@ -126,7 +225,8 @@ const QRQuestionPage = () => {
       return;
     }
 
-    if (!name || name.length < 2) {
+    // Only require name for new users
+    if (!isRegisteredUser && (!name || name.length < 2)) {
       setError('Please enter your name');
       return;
     }
@@ -135,12 +235,22 @@ const QRQuestionPage = () => {
     setError('');
 
     try {
+      const requestBody = { 
+        mobile, 
+        otp
+      };
+
+      // Only include name for new users or if name field is filled
+      if (!isRegisteredUser || name.trim()) {
+        requestBody.name = name;
+      }
+
       const response = await fetch(`${API_BASE}/mobile-qr-auth/clients/${clientId}/qr/verify-otp`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ mobile, otp, name }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
@@ -148,6 +258,17 @@ const QRQuestionPage = () => {
       if (data.success) {
         // Save token in cookies
         setCookie('qr_auth_token', data.data.authToken, 30);
+        
+        // Update user and client info
+        setUserInfo({
+          name: data.data.user.name,
+          profilePicture: data.data.user.profilePicture,
+          mobile: data.data.user.mobile
+        });
+        
+        if (data.data.clientInfo) {
+          setClientInfo(data.data.clientInfo);
+        }
         
         // Load question
         await loadQuestion(data.data.authToken);
@@ -165,7 +286,6 @@ const QRQuestionPage = () => {
 
   const loadQuestion = async (token) => {
     try {
-      // Fixed endpoint URL - should match your backend route
       const response = await fetch(`${API_BASE}/aiswb/qr/questions/${questionId}/view`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -176,7 +296,9 @@ const QRQuestionPage = () => {
       
       if (data.success) {
         setQuestion(data.data);
-        setClientInfo(data.data.clientInfo);
+        if (data.data.clientInfo) {
+          setClientInfo(data.data.clientInfo);
+        }
         setStep('question');
       } else {
         console.error('Question load error:', data);
@@ -248,7 +370,6 @@ const QRQuestionPage = () => {
 
     try {
       const token = getCookie('qr_auth_token');
-      console.log(token)
       const formData = new FormData();
 
       // Add images to form data
@@ -263,7 +384,7 @@ const QRQuestionPage = () => {
 
       // Add metadata
       formData.append('sourceType', 'qr_scan');
-      formData.append('timeSpent', Math.floor(Date.now() / 1000)); // Simple time tracking
+      formData.append('timeSpent', Math.floor(Date.now() / 1000));
       formData.append('deviceInfo', navigator.userAgent);
       formData.append('appVersion', 'web-qr-1.0');
 
@@ -308,16 +429,21 @@ const QRQuestionPage = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
         <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
-          {/* Client Info */}
+          {/* Client Info - Now shows logo immediately when available */}
           <div className="text-center mb-8">
             {clientInfo?.clientLogo && (
               <img 
                 src={clientInfo.clientLogo} 
-                alt={clientName}
-                className="w-16 h-16 mx-auto mb-4 rounded-full object-cover"
+                alt={clientInfo.clientName || clientName}
+                className="w-16 h-16 mx-auto mb-4 rounded-full object-cover border-2 border-gray-200"
               />
             )}
-            <h1 className="text-2xl font-bold text-gray-800">{clientName}</h1>
+            <h1 className="text-2xl font-bold text-gray-800">
+              {clientInfo?.clientName || clientName}
+            </h1>
+            {clientInfo?.city && (
+              <p className="text-gray-500 text-sm">{clientInfo.city}</p>
+            )}
             <p className="text-gray-600 mt-2">Please authenticate to access the question</p>
           </div>
 
@@ -352,18 +478,47 @@ const QRQuestionPage = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Your Name
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Enter your name"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+              {/* Show user info if registered */}
+              {isRegisteredUser && userInfo && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-center space-x-3">
+                    {userInfo.profilePicture ? (
+                      <img 
+                        src={userInfo.profilePicture} 
+                        alt={userInfo.name}
+                        className="w-12 h-12 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                        <span className="text-green-600 font-semibold text-lg">
+                          {userInfo.name?.charAt(0)?.toUpperCase() || 'U'}
+                        </span>
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-semibold text-green-800">Welcome back!</p>
+                      <p className="text-green-700 text-sm">{userInfo.name}</p>
+                      <p className="text-green-600 text-xs">{userInfo.mobile}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Name field - only show for new users */}
+              {!isRegisteredUser && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Your Name
+                  </label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter your name"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              )}
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -380,7 +535,7 @@ const QRQuestionPage = () => {
               
               <button
                 onClick={verifyOTP}
-                disabled={loading || otp.length !== 6 || !name}
+                disabled={loading || otp.length !== 6 || (!isRegisteredUser && !name)}
                 className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 {loading ? 'Verifying...' : 'Verify & Continue'}
@@ -391,6 +546,9 @@ const QRQuestionPage = () => {
                   setOtpSent(false);
                   setOtp('');
                   setError('');
+                  setIsRegisteredUser(false);
+                  setUserInfo(null);
+                  setName('');
                 }}
                 className="w-full text-blue-600 hover:text-blue-800"
               >
@@ -403,6 +561,7 @@ const QRQuestionPage = () => {
     );
   }
 
+  // Rest of the component remains the same...
   if (step === 'submit' && submitSuccess) {
     return (
       <div className="min-h-screen bg-gray-50 p-4">
@@ -477,7 +636,6 @@ const QRQuestionPage = () => {
                     Submit Another Attempt ({submissionResult.remainingAttempts} left)
                   </button>
                 )}
-                
               </div>
             </div>
           </div>
@@ -490,31 +648,54 @@ const QRQuestionPage = () => {
     return (
       <div className="min-h-screen bg-gray-50 p-4">
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
+          {/* Header with Client and User Info */}
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 {clientInfo?.clientLogo && (
                   <img 
                     src={clientInfo.clientLogo} 
-                    alt={clientName}
-                    className="w-12 h-12 rounded-full object-cover"
+                    alt={clientInfo.clientName || clientName}
+                    className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
                   />
                 )}
                 <div>
-                  <h1 className="text-xl font-bold text-gray-800">{clientName}</h1>
+                  <h1 className="text-xl font-bold text-gray-800">{clientInfo?.clientName || clientName}</h1>
                   <p className="text-gray-600 text-sm">Question ID: {questionId}</p>
                 </div>
               </div>
               
-              <div className="text-right">
-                <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
-                  Difficulty: {question.metadata?.difficultyLevel}
+              {/* User Info */}
+              {userInfo && (
+                <div className="flex items-center space-x-3">
+                  {userInfo.profilePicture ? (
+                    <img 
+                      src={userInfo.profilePicture} 
+                      alt={userInfo.name}
+                      className="w-10 h-10 rounded-full object-cover border-2 border-blue-200"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                      <span className="text-blue-600 font-semibold">
+                        {userInfo.name?.charAt(0)?.toUpperCase() || 'U'}
+                      </span>
+                    </div>
+                  )}
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-gray-800">{userInfo.name || 'User'}</p>
+                    <p className="text-xs text-gray-500">{userInfo.mobile}</p>
+                  </div>
                 </div>
-                <p className="text-sm text-gray-600 mt-1">
-                  Max Marks: {question.metadata?.maximumMarks}
-                </p>
+              )}
+            </div>
+            
+            <div className="mt-4 flex justify-between items-center">
+              <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
+                Difficulty: {question.metadata?.difficultyLevel}
               </div>
+              <p className="text-sm text-gray-600">
+                Max Marks: {question.metadata?.maximumMarks}
+              </p>
             </div>
           </div>
 
@@ -638,6 +819,7 @@ const QRQuestionPage = () => {
               </div>
             )}
 
+
             {/* Submit Buttons */}
             <div className="flex flex-col sm:flex-row gap-4">
               <button
@@ -654,7 +836,6 @@ const QRQuestionPage = () => {
                   'Submit Answer'
                 )}
               </button>
-              
             </div>
 
             {/* Help Text */}
