@@ -55,13 +55,13 @@ const DataStore = ({ type }) => {
   // Determine API endpoint based on type (book, chapter, topic, or subtopic)
   const getApiEndpoint = () => {
     if (type === 'book' && bookId) {
-      return `https://aipbbackend.onrender.com/api/datastores/book/${bookId}`;
+      return `https://aipbbackend-c5ed.onrender.com/api/datastores/book/${bookId}`;
     } else if (type === 'chapter' && bookId && chapterId) {
-      return `https://aipbbackend.onrender.com/api/datastores/chapter/${chapterId}`;
+      return `https://aipbbackend-c5ed.onrender.com/api/datastores/chapter/${chapterId}`;
     } else if (type === 'topic' && bookId && chapterId && topicId) {
-      return `https://aipbbackend.onrender.com/api/datastores/topic/${topicId}`;
+      return `https://aipbbackend-c5ed.onrender.com/api/datastores/topic/${topicId}`;
     } else if (type === 'subtopic' && bookId && chapterId && topicId && subtopicId) {
-      return `https://aipbbackend.onrender.com/api/datastores/subtopic/${subtopicId}`;
+      return `https://aipbbackend-c5ed.onrender.com/api/datastores/subtopic/${subtopicId}`;
     }
     return null;
   };

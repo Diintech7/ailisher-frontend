@@ -224,7 +224,7 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded }) => {
       const token = Cookies.get('admintoken');
       console.log('Admin token:', token); // Debug log
       
-      const response = await fetch('https://aipbbackend.onrender.com/api/admin/clients', {
+      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/admin/clients', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

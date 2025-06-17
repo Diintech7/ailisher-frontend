@@ -34,8 +34,8 @@ const AISWBPage = () => {
 
         // Verify topic exists and user has access
         const baseUrl = isWorkbook 
-          ? `https://aipbbackend.onrender.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}`
-          : `https://aipbbackend.onrender.com/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}`;
+          ? `https://aipbbackend-c5ed.onrender.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}`
+          : `https://aipbbackend-c5ed.onrender.com/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}`;
 
         const response = await fetch(baseUrl, {
           headers: {

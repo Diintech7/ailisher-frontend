@@ -6,7 +6,7 @@ import axios from 'axios'
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: 'https://aipbbackend.onrender.com/api',
+  baseURL: 'https://aipbbackend-c5ed.onrender.com/api',
   headers: {
     'Content-Type': 'application/json',
   },

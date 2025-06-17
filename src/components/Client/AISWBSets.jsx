@@ -24,7 +24,7 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
         return;
       }
 
-      const response = await fetch(`https://aipbbackend.onrender.com/api/aiswb/topic/${topicId}/sets`, {
+      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/topic/${topicId}/sets`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -58,7 +58,7 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
         return;
       }
 
-      const response = await fetch(`https://aipbbackend.onrender.com/api/aiswb/topic/${topicId}/sets`, {
+      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/topic/${topicId}/sets`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -92,7 +92,7 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
           return;
         }
 
-        const response = await fetch(`https://aipbbackend.onrender.com/api/aiswb/topic/${topicId}/sets/${setId}`, {
+        const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/topic/${topicId}/sets/${setId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -136,7 +136,7 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
         return;
       }
 
-      const response = await fetch(`https://aipbbackend.onrender.com/api/aiswb/topic/${topicId}/sets/${editingSet.id}`, {
+      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/topic/${topicId}/sets/${editingSet.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

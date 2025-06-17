@@ -122,8 +122,8 @@ const AddSubTopicModal = ({ isOpen, onClose, bookId, workbookId, chapterId, topi
 
       // Determine endpoint based on context
       const subtopicsUrl = isWorkbook 
-        ? `https://aipbbackend.onrender.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics`
-        : `https://aipbbackend.onrender.com/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics`;
+        ? `https://aipbbackend-c5ed.onrender.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics`
+        : `https://aipbbackend-c5ed.onrender.com/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics`;
 
       const response = await fetch(subtopicsUrl, {
         method: 'POST',
@@ -292,8 +292,8 @@ const EditTopicModal = ({ isOpen, onClose, bookId, workbookId, chapterId, topic,
       
       // Determine endpoint based on context
       const updateUrl = isWorkbook
-        ? `https://aipbbackend.onrender.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topic._id}`
-        : `https://aipbbackend.onrender.com/api/books/${bookId}/chapters/${chapterId}/topics/${topic._id}`;
+        ? `https://aipbbackend-c5ed.onrender.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topic._id}`
+        : `https://aipbbackend-c5ed.onrender.com/api/books/${bookId}/chapters/${chapterId}/topics/${topic._id}`;
 
       const response = await fetch(updateUrl, {
         method: 'PUT',
@@ -461,8 +461,8 @@ const TopicDetail = () => {
 
       // Determine endpoints based on context (workbook or book)
       const baseUrl = isWorkbook 
-        ? `https://aipbbackend.onrender.com/api/workbooks/${workbookId}/chapters/${chapterId}`
-        : `https://aipbbackend.onrender.com/api/books/${bookId}/chapters/${chapterId}`;
+        ? `https://aipbbackend-c5ed.onrender.com/api/workbooks/${workbookId}/chapters/${chapterId}`
+        : `https://aipbbackend-c5ed.onrender.com/api/books/${bookId}/chapters/${chapterId}`;
       
       const topicUrl = `${baseUrl}/topics/${topicId}`;
       const subtopicsUrl = `${baseUrl}/topics/${topicId}/subtopics`;
@@ -550,8 +550,8 @@ const TopicDetail = () => {
 
       // Determine endpoint based on context
       const deleteUrl = isWorkbook
-        ? `https://aipbbackend.onrender.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}`
-        : `https://aipbbackend.onrender.com/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}`;
+        ? `https://aipbbackend-c5ed.onrender.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}`
+        : `https://aipbbackend-c5ed.onrender.com/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}`;
 
       const response = await fetch(deleteUrl, {
         method: 'DELETE',
@@ -601,8 +601,8 @@ const TopicDetail = () => {
 
       // Determine endpoint based on context
       const updateUrl = isWorkbook
-        ? `https://aipbbackend.onrender.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}`
-        : `https://aipbbackend.onrender.com/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}`;
+        ? `https://aipbbackend-c5ed.onrender.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}`
+        : `https://aipbbackend-c5ed.onrender.com/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}`;
 
       const response = await fetch(updateUrl, {
         method: 'PUT',
