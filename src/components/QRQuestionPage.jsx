@@ -84,30 +84,45 @@ const QRQuestionPage = () => {
       const urlClientName = urlParams.get('client');
       const urlClientId = urlParams.get('clientId');
       
-      if (urlQuestionId) setQuestionId(urlQuestionId);
+      // Set the state values and get the actual values to use
+      let currentQuestionId = '';
+      let currentClientId = '';
+      
+      if (urlQuestionId) {
+        setQuestionId(urlQuestionId);
+        currentQuestionId = urlQuestionId;
+      }
       if (urlClientName) setClientName(urlClientName);
       if (urlClientId) {
         setClientId(urlClientId);
+        currentClientId = urlClientId;
         
         // Fetch client info immediately when we have clientId
         await fetchClientInfo(urlClientId);
       }
       
-      // Then check auth and load question
-      await checkAuthAndLoadQuestion();
+      // Now check auth and load question with the actual values
+      if (currentQuestionId) {
+        await checkAuthAndLoadQuestion(currentQuestionId);
+      } else {
+        setError('Question ID not found');
+        setStep('auth');
+      }
     };
 
     initializePage();
   }, []);
+  
 
-  const checkAuthAndLoadQuestion = async () => {
+  const checkAuthAndLoadQuestion = async (qId) => {
     try {
       const token = getCookie('qr_auth_token');
+      console.log('Question ID:', qId);
       
-      if (token) {
+      if (token && qId) {
         // Check if already authenticated
-        const response = await fetch(`${API_BASE}/aiswb/qr/questions/${questionId}/view`, {
-          headers: {
+        const response = await fetch(`${API_BASE}/aiswb/qr/questions/${qId}/view`, {
+            headers: {
             'Authorization': `Bearer ${token}`
           }
         });
@@ -270,8 +285,8 @@ const QRQuestionPage = () => {
           setClientInfo(data.data.clientInfo);
         }
         
-        // Load question
-        await loadQuestion(data.data.authToken);
+        // Load question with the current questionId
+        await loadQuestion(data.data.authToken, questionId);
       } else {
         console.error('OTP verification error:', data);
         setError(data.message || data.error?.details || 'Invalid OTP');
@@ -284,11 +299,16 @@ const QRQuestionPage = () => {
     }
   };
 
-  const loadQuestion = async (token) => {
+  const loadQuestion = async (token, qId = questionId) => {
     try {
-      const response = await fetch(`${API_BASE}/aiswb/qr/questions/${questionId}/view`, {
+      if (!qId) {
+        setError('Question ID not available');
+        return;
+      }
+
+      const response = await fetch(`${API_BASE}/aiswb/qr/questions/${qId}/view`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token || getCookie('qr_auth_token')}`
         }
       });
 
