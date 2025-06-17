@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useNavigate, useParams } from "react-router-dom"
-import { ArrowLeft, Book, FileText, List, BookOpen } from "lucide-react"
+import { ArrowLeft, Book, FileText, List, BookOpen, Plus } from "lucide-react"
 import Cookies from "js-cookie"
 import { toast, ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
@@ -20,6 +20,7 @@ import VideosTab from "./components/tabs/VideosTab"
 import PYQsTab from "./components/tabs/PYQsTab"
 import SubjectiveTab from "./components/tabs/SubjectiveTab"
 import ObjectiveTab from "./components/tabs/ObjectiveTab"
+import GenerateAssetsModal from "./components/modals/GenerateAssetsModal"
 
 const AssetView = () => {
   const [loading, setLoading] = useState(true)
@@ -107,6 +108,7 @@ const AssetView = () => {
   // Add a state for currently selected set to view questions
   const [selectedViewSet, setSelectedViewSet] = useState(null)
 
+  const [showGenerateAssetsModal, setShowGenerateAssetsModal] = useState(false)
   const { bookId, workbookId, chapterId, topicId, subtopicId } = useParams()
   const navigate = useNavigate()
 
@@ -553,7 +555,7 @@ const AssetView = () => {
     <div className="container mx-auto px-4 py-8">
       <ToastContainer position="top-right" autoClose={3000} />
 
-      <div className="flex items-center mb-4">
+      <div className="flex items-center justify-between mb-4">
         <button
           onClick={handleBackClick}
           className="flex items-center text-indigo-600 hover:text-indigo-800 transition-colors"
@@ -658,6 +660,15 @@ const AssetView = () => {
             onClick={() => setActiveTab("pyqs")}
           >
             PYQ's
+          </button>
+
+          <div className="flex-1"></div>
+          <button
+            onClick={() => setShowGenerateAssetsModal(true)}
+            className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors ml-4"
+          >
+            <Plus size={18} className="mr-2" />
+            Generate Assets
           </button>
         </div>
 
@@ -776,6 +787,20 @@ const AssetView = () => {
         chapterId={chapterId}
         topicId={topicId}
         subtopicId={subtopicId}
+      />
+
+      <GenerateAssetsModal
+        isOpen={showGenerateAssetsModal}
+        onClose={() => setShowGenerateAssetsModal(false)}
+        itemType={itemType}
+        itemId={itemId}
+        isWorkbook={isWorkbook}
+        bookId={bookId}
+        workbookId={workbookId}
+        chapterId={chapterId}
+        topicId={topicId}
+        subtopicId={subtopicId}
+        item={item}
       />
     </div>
   )
