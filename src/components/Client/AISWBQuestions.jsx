@@ -59,7 +59,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
       // Fetch each question's details
       const questionsPromises = questionIds.map(async (questionId) => {
         try {
-          const response = await fetch(`https://aipbbackend.onrender.com/api/aiswb/questions/${questionId}`, {
+          const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/questions/${questionId}`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -160,7 +160,10 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
         return false;
       }
 
-      const response = await fetch(`https://aipbbackend.onrender.com/api/aiswb/topic/${topicId}/sets/${selectedSet.id}/questions`, {
+      console.log('Adding question with data:', newQuestion);
+      console.log('API endpoint:', `https://aipbbackend-c5ed.onrender.com/api/aiswb/topic/${topicId}/sets/${selectedSet.id}/questions`);
+
+      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/topic/${topicId}/sets/${selectedSet.id}/questions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -169,13 +172,16 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
         body: JSON.stringify(newQuestion)
       });
 
+      console.log('API Response status:', response.status);
       const data = await response.json();
+      console.log('API Response data:', data);
       
       if (data.success) {
         // Refresh questions after successful addition
         await refreshQuestions();
         return true;
       } else {
+        console.error('API Error:', data.message || 'Failed to add question');
         toast.error(data.message || 'Failed to add question');
         return false;
       }
@@ -194,7 +200,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
         return false;
       }
 
-      const response = await fetch(`https://aipbbackend.onrender.com/api/aiswb/questions/${editedQuestion.id}`, {
+      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/questions/${editedQuestion.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -229,7 +235,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
           return;
         }
 
-        const response = await fetch(`https://aipbbackend.onrender.com/api/aiswb/topic/${topicId}/sets/${selectedSet.id}/questions/${questionId}`, {
+        const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/topic/${topicId}/sets/${selectedSet.id}/questions/${questionId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -293,7 +299,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
         qrText = `AISWB Question: ${question.question.substring(0, 50)}... (ID: ${question.id})`;
         qrContent = qrText;
       } else if (format === 'url') {
-        qrText = `https://aipbbackend.onrender.com/view/questions/${question.id}`;
+        qrText = `https://aipbbackend-c5ed.onrender.com/view/questions/${question.id}`;
         qrContent = qrText;
       } else {
         // Default to JSON
@@ -350,7 +356,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
       }).toString();
       
       // Correct API endpoint based on documentation
-      const response = await fetch(`https://aipbbackend.onrender.com/api/aiswb/qr/questions/${question.id}/qrcode?${queryParams}`, {
+      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/qr/questions/${question.id}/qrcode?${queryParams}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -523,7 +529,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
         requestBody
       });
 
-      const response = await fetch(`https://aipbbackend.onrender.com/api/aiswb/questions/${questionId}`, {
+      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/questions/${questionId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -837,19 +843,26 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
                 />
               </div>
 
-              {/* Answer Video URL Section */}
-              {selectedQuestion.answerVideoUrl && (
+              {/* Answer Video URLs */}
+              {selectedQuestion.answerVideoUrls && selectedQuestion.answerVideoUrls.length > 0 && (
                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                  <h4 className="text-lg font-semibold text-blue-800 mb-2">Answer Video</h4>
-                  <div className="bg-white p-4 rounded-lg">
-                    <a 
-                      href={selectedQuestion.answerVideoUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:text-blue-800 underline"
-                    >
-                      {selectedQuestion.answerVideoUrl}
-                    </a>
+                  <h4 className="text-lg font-semibold text-blue-800 mb-2">Answer Video URLs</h4>
+                  <div className="space-y-2">
+                    {selectedQuestion.answerVideoUrls.map((url, index) => (
+                      <div key={index} className="bg-white p-4 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-600 font-medium">Video {index + 1}:</span>
+                          <a 
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 underline flex-1"
+                          >
+                            {url}
+                          </a>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
