@@ -55,7 +55,11 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
             ...editingQuestion.metadata.qualityParameters,
             customParams: editingQuestion.metadata.qualityParameters.customParams || []
           }
-        }
+        },
+        // Convert answerVideoUrls array to comma-separated string for the form
+        answerVideoUrl: Array.isArray(editingQuestion.answerVideoUrls) 
+          ? editingQuestion.answerVideoUrls.join(', ')
+          : editingQuestion.answerVideoUrls || ''
       };
       setQuestions([formattedQuestion]);
     } else {
@@ -197,29 +201,51 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
     setError('');
 
     try {
-      const questionsData = questions.map(q => ({
-        ...q,
-        metadata: {
-          keywords: q.metadata.keywords.split(',').map(k => k.trim()).filter(k => k),
-          difficultyLevel: q.metadata.difficultyLevel,
-          wordLimit: parseInt(q.metadata.wordLimit) || 0,
-          estimatedTime: parseInt(q.metadata.estimatedTime) || 0,
-          maximumMarks: parseInt(q.metadata.maximumMarks) || 0,
-          qualityParameters: {
-            intro: q.metadata.qualityParameters.intro,
-            body: {
-              enabled: q.metadata.qualityParameters.body.enabled,
-              features: q.metadata.qualityParameters.body.features,
-              examples: q.metadata.qualityParameters.body.examples,
-              facts: q.metadata.qualityParameters.body.facts,
-              diagram: q.metadata.qualityParameters.body.diagram
-            },
-            conclusion: q.metadata.qualityParameters.conclusion,
-            customParams: q.metadata.qualityParameters.customParams.filter(param => param.trim())
-          }
-        },
-        languageMode: q.languageMode
-      }));
+      console.log('Original questions data:', questions);
+
+      const questionsData = questions.map(q => {
+        // Process answerVideoUrls to get valid YouTube URLs
+        let videoUrls = [];
+        if (typeof q.answerVideoUrl === 'string') {
+          videoUrls = q.answerVideoUrl.split(',')
+            .map(url => url.trim())
+            .filter(url => url.includes('youtube.com/watch?v='));
+        } else if (Array.isArray(q.answerVideoUrl)) {
+          videoUrls = q.answerVideoUrl.filter(url => url.includes('youtube.com/watch?v='));
+        }
+
+        // Create a new object without answerVideoUrl
+        const { answerVideoUrl, ...rest } = q;
+
+        const processedData = {
+          ...rest,
+          metadata: {
+            keywords: q.metadata.keywords.split(',').map(k => k.trim()).filter(k => k),
+            difficultyLevel: q.metadata.difficultyLevel,
+            wordLimit: parseInt(q.metadata.wordLimit) || 0,
+            estimatedTime: parseInt(q.metadata.estimatedTime) || 0,
+            maximumMarks: parseInt(q.metadata.maximumMarks) || 0,
+            qualityParameters: {
+              intro: q.metadata.qualityParameters.intro,
+              body: {
+                enabled: q.metadata.qualityParameters.body.enabled,
+                features: q.metadata.qualityParameters.body.features,
+                examples: q.metadata.qualityParameters.body.examples,
+                facts: q.metadata.qualityParameters.body.facts,
+                diagram: q.metadata.qualityParameters.body.diagram
+              },
+              conclusion: q.metadata.qualityParameters.conclusion,
+              customParams: q.metadata.qualityParameters.customParams.filter(param => param.trim())
+            }
+          },
+          languageMode: q.languageMode,
+          answerVideoUrls: videoUrls  // Only sending answerVideoUrls
+        };
+        console.log('Processed question data:', processedData);
+        return processedData;
+      });
+
+      console.log('Final questions data to be sent:', questionsData);
 
       if (editingQuestion) {
         // Update existing question
@@ -227,6 +253,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
           ...questionsData[0],
           id: editingQuestion.id
         };
+        console.log('Updating question with data:', updatedQuestion);
         const result = await onEditQuestion(updatedQuestion);
         if (result) {
           toast.success('Question updated successfully!');
@@ -236,7 +263,9 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
         // Add new questions
         let allSuccess = true;
         for (const question of questionsData) {
+          console.log('Sending question to API:', question);
           const result = await onAddQuestion(question);
+          console.log('API response for question:', result);
           if (!result) {
             allSuccess = false;
             break;
@@ -442,15 +471,18 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
                 {/* Answer Video URL */}
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Answer Video URL
+                    Answer Video URLs (comma-separated)
                   </label>
                   <input
-                    type="url"
+                    type="text"
                     value={question.answerVideoUrl}
                     onChange={(e) => handleQuestionChange(index, 'answerVideoUrl', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Enter video URL for answer"
+                    placeholder="Enter video URLs separated by commas"
                   />
+                  <p className="mt-1 text-sm text-gray-500">
+                    Enter multiple URLs separated by commas (e.g., url1, url2, url3)
+                  </p>
                 </div>
 
                 {/* Evaluation Mode */}
