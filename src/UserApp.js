@@ -29,6 +29,7 @@ import AISWBPage from './components/Client/AISWBPage';
 import AISWBQuestions from './components/Client/AISWBQuestions';
 // import AssessmentDashboard from './components/Client/AssessmentDashboard';
 import QuestionSubmissions from './components/Client/QuestionSubmissions';
+import QRQuestionPage from './components/QRQuestionPage';
 
 const UserApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -106,6 +107,12 @@ const UserApp = () => {
   return (
     <div className="app-container">
       <Routes>
+
+{/* QR Question Access Route - Public */}
+<Route path="/question/:questionId" element={<QRQuestionPage />} />
+
+{/* Mobile Asset View Routes - These should be accessible without authentication for QR code scanning */}
+<Route path="/mobile-asset-view/:bookId" element={<MobileAssetView />} />
         {/* Public routes - accessible without authentication */}
         <Route path="/book-viewer/:bookId" element={<BookChaptersQRView />} />
         <Route path="/book-viewer/:bookId/chapters/:chapterId" element={<ChapterViewer />} />
