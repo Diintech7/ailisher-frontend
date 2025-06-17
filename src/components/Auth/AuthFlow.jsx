@@ -25,7 +25,7 @@ const AuthFlow = ({ onAuthSuccess }) => {
     try {
       console.log('Attempting login with:', { email, role: selectedRole });
       
-      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/auth/login', {
+      const response = await fetch('https://aipbbackend.onrender.com/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -64,7 +64,7 @@ const AuthFlow = ({ onAuthSuccess }) => {
     setError('');
     
     try {
-      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/auth/register', {
+      const response = await fetch('https://aipbbackend.onrender.com/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -115,7 +115,7 @@ const AuthFlow = ({ onAuthSuccess }) => {
 
       // console.log('Submitting client registration with token:', token);
 
-      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/auth/clients', {
+      const response = await fetch('https://aipbbackend.onrender.com/api/auth/clients', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -125,7 +125,7 @@ const ChatApplication = () => {
       
       // In a real implementation, you would use fetch like this:
       /*
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/chat`, {
+      const response = await fetch(`https://aipbbackend.onrender.com/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

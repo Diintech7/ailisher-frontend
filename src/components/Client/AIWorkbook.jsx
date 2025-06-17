@@ -14,7 +14,7 @@ const WorkbookItem = ({ workbook, onClick }) => (
     <div className="h-48 bg-gradient-to-br from-green-50 to-teal-100 mb-4 rounded-lg flex items-center justify-center overflow-hidden">
       {workbook.coverImage ? (
         <img 
-          src={workbook.coverImage.startsWith('data:') ? workbook.coverImage : `https://aipbbackend-c5ed.onrender.com/${workbook.coverImage}`} 
+          src={workbook.coverImage.startsWith('data:') ? workbook.coverImage : `https://aipbbackend.onrender.com/${workbook.coverImage}`} 
           alt={workbook.title} 
           className="h-full w-full object-cover rounded-lg"
         />
@@ -123,7 +123,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd }) => {
         formData.append('coverImage', coverImage);
       }
 
-      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/workbooks', {
+      const response = await fetch('https://aipbbackend.onrender.com/api/workbooks', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -241,7 +241,7 @@ const AIWorkbook = () => {
         return;
       }
 
-      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/workbooks', {
+      const response = await fetch('https://aipbbackend.onrender.com/api/workbooks', {
         headers: {
           'Authorization': `Bearer ${token}`
         }

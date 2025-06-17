@@ -39,7 +39,7 @@ const AdminRegistrationPage = ({ onAuthSuccess }) => {
     
     try {
       // Make API call to your backend
-      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/admin/register', {
+      const response = await fetch('https://aipbbackend.onrender.com/api/admin/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

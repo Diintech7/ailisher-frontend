@@ -48,7 +48,7 @@ const UserApp = () => {
             setIsAuthenticated(true);
             setUserRole(userData.role);
           }
-          const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/auth/validate', {
+          const response = await fetch('https://aipbbackend.onrender.com/api/auth/validate', {
             headers: {
               'Authorization': `Bearer ${token}`
             }

@@ -25,7 +25,7 @@ const QRQuestionPage = () => {
   const [submissionResult, setSubmissionResult] = useState(null);
   const fileInputRef = useRef(null);
 
-  const API_BASE = 'https://aipbbackend-c5ed.onrender.com/api';
+  const API_BASE = 'https://aipbbackend.onrender.com/api';
 
   // Simple cookie utility
   const setCookie = (name, value, days) => {

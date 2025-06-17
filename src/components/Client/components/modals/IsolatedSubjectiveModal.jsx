@@ -91,7 +91,7 @@ const IsolatedSubjectiveModal = ({ isOpen, onClose, onSubmit, initialQuestion = 
       if (initialQuestion) {
         // Update existing question
         const response = await axios.put(
-          `https://aipbbackend-c5ed.onrender.com/api/subjective-assets/questions/${initialQuestion._id}`,
+          `https://aipbbackend.onrender.com/api/subjective-assets/questions/${initialQuestion._id}`,
           {
             question: validQuestions[0].question,
             answer: validQuestions[0].answer,
@@ -106,7 +106,7 @@ const IsolatedSubjectiveModal = ({ isOpen, onClose, onSubmit, initialQuestion = 
       } else {
         // Create new questions
         const response = await axios.post(
-          `https://aipbbackend-c5ed.onrender.com/api/subjective-assets/question-sets/${currentSet._id}/questions`,
+          `https://aipbbackend.onrender.com/api/subjective-assets/question-sets/${currentSet._id}/questions`,
           {
             questions: validQuestions.map((q) => ({
               question: q.question,

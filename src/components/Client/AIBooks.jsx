@@ -35,7 +35,7 @@ const BookItem = ({ book, onClick, onToggleHighlight, onToggleTrending, currentU
     }
     
     // For local files, construct the full URL
-    return `https://aipbbackend-c5ed.onrender.com/${imageUrl}`;
+    return `https://aipbbackend.onrender.com/${imageUrl}`;
   };
 
   // Close menu when clicking outside
@@ -93,7 +93,7 @@ const BookItem = ({ book, onClick, onToggleHighlight, onToggleTrending, currentU
         return;
       }
 
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/books/${book._id}`, {
+      const response = await fetch(`https://aipbbackend.onrender.com/api/books/${book._id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -660,7 +660,7 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMappings })
       if (coverImage) {
         try {
           // Get presigned URL
-          const uploadUrlResponse = await fetch('https://aipbbackend-c5ed.onrender.com/api/books/cover-upload-url', {
+          const uploadUrlResponse = await fetch('https://aipbbackend.onrender.com/api/books/cover-upload-url', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -745,7 +745,7 @@ const AddBookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMappings })
       
       console.log('Sending book data:', bookData);
       
-      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/books', {
+      const response = await fetch('https://aipbbackend.onrender.com/api/books', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1308,7 +1308,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
       
       if (coverImage) {
         try {
-          const uploadUrlResponse = await fetch('https://aipbbackend-c5ed.onrender.com/api/books/cover-upload-url', {
+          const uploadUrlResponse = await fetch('https://aipbbackend.onrender.com/api/books/cover-upload-url', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -1391,7 +1391,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
         }
       }
       
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/books/${book._id}`, {
+      const response = await fetch(`https://aipbbackend.onrender.com/api/books/${book._id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1821,7 +1821,7 @@ const AIBooks = () => {
       }
 
       // First fetch the category mappings
-      const categoriesResponse = await fetch('https://aipbbackend-c5ed.onrender.com/api/books/category-mappings', {
+      const categoriesResponse = await fetch('https://aipbbackend.onrender.com/api/books/category-mappings', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -1849,7 +1849,7 @@ const AIBooks = () => {
       }
 
       // Then fetch the books with pagination and filters
-      const booksResponse = await fetch(`https://aipbbackend-c5ed.onrender.com/api/books?${queryParams}`, {
+      const booksResponse = await fetch(`https://aipbbackend.onrender.com/api/books?${queryParams}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -1963,7 +1963,7 @@ const AIBooks = () => {
       const endpoint = `/api/books/${bookId}/highlight`;
       const method = isHighlighted ? 'POST' : 'DELETE';
 
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com${endpoint}`, {
+      const response = await fetch(`https://aipbbackend.onrender.com${endpoint}`, {
         method,
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -2001,7 +2001,7 @@ const AIBooks = () => {
       const endpoint = `/api/books/${bookId}/trending`;
       const method = isTrending ? 'POST' : 'DELETE';
 
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com${endpoint}`, {
+      const response = await fetch(`https://aipbbackend.onrender.com${endpoint}`, {
         method,
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -2117,7 +2117,7 @@ const AIBooks = () => {
       const parsedOrder = parseInt(order) || 0;
 
       // Update category order for all books in the category
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/books/categories/${mainCategory}/order`, {
+      const response = await fetch(`https://aipbbackend.onrender.com/api/books/categories/${mainCategory}/order`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

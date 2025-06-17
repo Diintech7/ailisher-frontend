@@ -57,7 +57,7 @@ const SidebarLayout = ({ onLogout, userRole }) => {
   const fetchClientInfo = async () => {
     try {
       const token = Cookies.get('usertoken');
-      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/auth/profile', {
+      const response = await fetch('https://aipbbackend.onrender.com/api/auth/profile', {
         headers: {
           'Authorization': `Bearer ${token}`
         }

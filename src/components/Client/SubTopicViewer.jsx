@@ -13,7 +13,7 @@ const SubTopicViewer = () => {
     const fetchSubtopicData = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/qrcode/book-data/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`);
+        const response = await fetch(`https://aipbbackend.onrender.com/api/qrcode/book-data/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`);
         const data = await response.json();
         
         if (data.success) {
@@ -42,7 +42,7 @@ const SubTopicViewer = () => {
       return imageUrl;
     }
     
-    return `https://aipbbackend-c5ed.onrender.com/${imageUrl}`;
+    return `https://aipbbackend.onrender.com/${imageUrl}`;
   };
 
   // Get file icon based on file type

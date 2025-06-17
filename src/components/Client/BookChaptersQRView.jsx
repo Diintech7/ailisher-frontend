@@ -14,11 +14,11 @@ const BookChaptersQRView = () => {
       setLoading(true);
       try {
         // Fetch book details
-        const bookResponse = await fetch(`https://aipbbackend-c5ed.onrender.com/api/books/${bookId}`);
+        const bookResponse = await fetch(`https://aipbbackend.onrender.com/api/books/${bookId}`);
         const bookData = await bookResponse.json();
         
         // Fetch chapters
-        const chaptersResponse = await fetch(`https://aipbbackend-c5ed.onrender.com/api/books/${bookId}/chapters`);
+        const chaptersResponse = await fetch(`https://aipbbackend.onrender.com/api/books/${bookId}/chapters`);
         const chaptersData = await chaptersResponse.json();
         
         if (bookData.success) {
@@ -53,7 +53,7 @@ const BookChaptersQRView = () => {
     }
     
     // Otherwise, assume it's a relative path and prepend the backend URL
-    return `https://aipbbackend-c5ed.onrender.com/${imageUrl}`;
+    return `https://aipbbackend.onrender.com/${imageUrl}`;
   };
 
   if (loading) {
