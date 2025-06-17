@@ -858,12 +858,6 @@ const QRQuestionPage = () => {
               </button>
             </div>
 
-            {/* Help Text */}
-            <div className="mt-4 text-sm text-gray-600">
-              <p>• You can submit up to 5 attempts for this question</p>
-              <p>• Either upload images of your answer or provide text answer (or both)</p>
-              <p>• Supported formats: JPG, PNG, WebP, PDF (max 5MB each)</p>
-            </div>
           </div>
         </div>
       </div>
