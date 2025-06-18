@@ -5,11 +5,13 @@ import Cookies from 'js-cookie';
 import UserMenu from './UserMenu';
 import ClientMenu from './ClientMenu';
 import AdminMenu from './AdminMenu';
+import EvaluatorMenu from './EvaluatorMenu';
 
 const SidebarLayout = ({ onLogout, userRole }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [currentPath, setCurrentPath] = useState('/dashboard');
   const [username, setUsername] = useState('');
+  const [Email,setEmail] = useState ('');
   const [businessName, setBusinessName] = useState('');
   const [businessLogo, setBusinessLogo] = useState('');
   const [showSettings, setShowSettings] = useState(false);
@@ -24,6 +26,24 @@ const SidebarLayout = ({ onLogout, userRole }) => {
     if (userRole === 'admin') {
       setUsername('Administrator');
       setBusinessName('Ailisher');
+      return;
+    }
+
+    if (userRole === 'evaluator') {
+      const evaluatorUser = Cookies.get('evaluatorUser');
+      if (evaluatorUser) {
+        try {
+          const userData = JSON.parse(evaluatorUser);
+          console.log("evaluator data",userData)
+          setUsername(userData.name || 'Evaluator');
+          setEmail(userData.email);
+          setBusinessName('Ailisher');
+        } catch (error) {
+          console.error('Error parsing evaluator data:', error);
+          setUsername('Evaluator');
+          setBusinessName('Ailisher');
+        }
+      }
       return;
     }
 
@@ -217,6 +237,14 @@ const SidebarLayout = ({ onLogout, userRole }) => {
           />
         )}
 
+         {userRole === 'evaluator' && (
+          <EvaluatorMenu
+            isExpanded={isExpanded}
+            currentPath={currentPath}
+            handleNavigate={handleNavigate}
+          />
+        )}
+
         <div className="absolute bottom-0 w-full border-t border-gray-200 p-4">
           <div className="relative">
             <div 
@@ -274,6 +302,9 @@ const SidebarLayout = ({ onLogout, userRole }) => {
                   <span className="text-xs text-gray-500">Logged in as</span>
                   <span className="font-medium text-gray-800">
                     {username} ({userRole})
+                  </span>
+                  <span className=" text-gray-700">
+                    {Email}
                   </span>
                 </div>
               </div>
