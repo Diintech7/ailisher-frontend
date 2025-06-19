@@ -12,6 +12,9 @@ const api = axios.create({
   },
 });
 
+// Global Fabric.js loader promise
+let fabricLoaderPromise = null;
+
 const AnswerAnnotation = ({ submission, onClose, onSave }) => {
   const [activeTool, setActiveTool] = useState("pen")
   const [penColor, setPenColor] = useState("#FF0000")
@@ -37,6 +40,11 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
   })
   const [imagePreviews, setImagePreviews] = useState([])
   const [selectedImage, setSelectedImage] = useState(null)
+  const [isFabricLoaded, setIsFabricLoaded] = useState(!!window.fabric && !!window.fabric.Canvas)
+  const [isFabricLoading, setIsFabricLoading] = useState(false)
+  const [isComponentMounted, setIsComponentMounted] = useState(true)
+  // --- [NEW] Canvas key for remounting ---
+  const [canvasKey, setCanvasKey] = useState(0)
 
   const canvasRef = useRef(null)
   const fabricCanvasRef = useRef(null)
@@ -44,71 +52,161 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
   const historyRef = useRef([])
   const historyIndexRef = useRef(-1)
   const containerRef = useRef(null)
+  const tempElementsRef = useRef([])
 
-  // Load Fabric.js
+  // Component mount/unmount tracking
   useEffect(() => {
-    const loadFabric = async () => {
-      try {
-        // Try loading from CDN first
-        const script = document.createElement("script")
-        script.src = "https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"
-        script.async = true
-
-        await new Promise((resolve, reject) => {
-          script.onload = () => {
-            console.log("Fabric.js loaded from CDN:", {
-              hasFabric: !!window.fabric,
-              fabricVersion: window.fabric?.version,
-            })
-            resolve()
-          }
-
-          script.onerror = (error) => {
-            console.error("Error loading Fabric.js from CDN:", error)
-            reject(new Error("Failed to load Fabric.js from CDN"))
-          }
-
-          document.head.appendChild(script)
-        })
-      } catch (error) {
-        console.error("Error loading Fabric.js:", error)
-        toast.error("Failed to load drawing tools")
-      }
-    }
-
-    // Only load if not already loaded
-    if (!window.fabric) {
-      console.log("Loading Fabric.js...")
-      loadFabric()
-    } else {
-      console.log("Fabric.js already loaded:", {
-        hasFabric: !!window.fabric,
-        fabricVersion: window.fabric.version,
-      })
-    }
-
-    // Cleanup function
+    setIsComponentMounted(true)
     return () => {
-      if (window.fabric) {
-        console.log("Cleaning up Fabric.js...")
-        // Don't delete window.fabric as it might be needed by other components
+      setIsComponentMounted(false)
+    }
+  }, [])
+
+  // Cleanup function for temporary elements
+  const cleanupTempElements = () => {
+    if (tempElementsRef.current) {
+      tempElementsRef.current.forEach(element => {
+        try {
+          if (element && element.parentNode) {
+            element.parentNode.removeChild(element)
+          }
+        } catch (error) {
+          console.warn("Error removing temp element:", error)
+        }
+      })
+      tempElementsRef.current = []
+    }
+  }
+
+  // Enhanced cleanup on unmount
+  useEffect(() => {
+    return () => {
+      cleanupTempElements()
+      
+      // Cleanup fabric canvas
+      if (fabricCanvasRef.current) {
+        try {
+          fabricCanvasRef.current.dispose()
+        } catch (error) {
+          console.warn("Error disposing fabric canvas:", error)
+        }
+        fabricCanvasRef.current = null
       }
     }
   }, [])
 
-  // Initialize canvas when component mounts
+  // Utility function to check if canvas is ready for operations
+  const isCanvasReady = () => {
+    if (!isComponentMounted) return false
+    
+    try {
+      return (
+        fabricCanvasRef.current &&
+        window.fabric &&
+        fabricCanvasRef.current.getContext &&
+        fabricCanvasRef.current.getContext('2d') &&
+        fabricCanvasRef.current.getContext('2d') !== null &&
+        !isFabricLoading &&
+        isFabricLoaded &&
+        fabricCanvasRef.current.width > 0 &&
+        fabricCanvasRef.current.height > 0
+      )
+    } catch (error) {
+      console.warn("Error checking canvas readiness:", error)
+      return false
+    }
+  }
+
+  // Safe canvas operation wrapper
+  const safeCanvasOperation = (operation, operationName = 'canvas operation') => {
+    if (!isCanvasReady() || !isComponentMounted) {
+      console.warn(`Canvas not ready for ${operationName}`);
+      return false;
+    }
+
+    try {
+      const result = operation();
+      return result;
+    } catch (error) {
+      console.error(`Error in ${operationName}:`, error);
+      return false;
+    }
+  }
+
+  // Load Fabric.js
   useEffect(() => {
-    const initializeCanvas = () => {
-      if (!canvasRef.current || !window.fabric) return
+    let isMounted = true;
+    if (window.fabric && window.fabric.Canvas) {
+      setIsFabricLoaded(true);
+      setIsFabricLoading(false);
+      return;
+    }
+    if (!fabricLoaderPromise) {
+      setIsFabricLoading(true);
+      fabricLoaderPromise = new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js";
+        script.async = true;
+        script.onload = () => {
+          if (isMounted) {
+            setIsFabricLoaded(true);
+            setIsFabricLoading(false);
+          }
+          resolve();
+        };
+        script.onerror = (error) => {
+          if (isMounted) {
+            setIsFabricLoading(false);
+          }
+          reject(error);
+        };
+        document.head.appendChild(script);
+      });
+    } else {
+      setIsFabricLoading(true);
+      fabricLoaderPromise.then(() => {
+        if (isMounted) {
+          setIsFabricLoaded(true);
+          setIsFabricLoading(false);
+        }
+      });
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Initialize canvas when Fabric.js is loaded and component mounts
+  useEffect(() => {
+    if (!isFabricLoaded || !canvasRef.current || !isComponentMounted) return;
+
+    const initializeCanvas = async () => {
+      if (!canvasRef.current || !window.fabric || !window.fabric.Canvas) {
+        console.log("Canvas initialization skipped - Fabric.js not ready");
+        return;
+      }
 
       try {
         // Clean up existing canvas if it exists
         if (fabricCanvasRef.current) {
-          fabricCanvasRef.current.dispose()
+          try {
+            fabricCanvasRef.current.dispose()
+          } catch (disposeError) {
+            console.warn("Error disposing existing canvas:", disposeError)
+          }
+          fabricCanvasRef.current = null
         }
+
+        // Wait a bit to ensure proper cleanup
+        await new Promise(resolve => setTimeout(resolve, 50))
 
         // Get the container dimensions
         const container = canvasRef.current.parentElement
+        if (!container) {
+          console.error("Container not found for canvas")
+          return
+        }
+
         const containerWidth = container.clientWidth
         const containerHeight = container.clientHeight
 
@@ -117,33 +215,80 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
           height: containerHeight,
         })
 
-        // Create canvas with container dimensions
-        const fabricCanvas = new window.fabric.Canvas(canvasRef.current, {
-          width: containerWidth,
-          height: containerHeight,
-          backgroundColor: "#ffffff",
-          selection: false, // Disable selection by default
-          preserveObjectStacking: true,
-          stopContextMenu: true, // Prevent context menu
-        })
+        // Ensure the canvas element is ready
+        if (!canvasRef.current) {
+          console.error("Canvas element not found");
+          return;
+        }
+
+        // Ensure the canvas element has proper dimensions
+        if (containerWidth <= 0 || containerHeight <= 0) {
+          console.error("Container has invalid dimensions:", { containerWidth, containerHeight });
+          return;
+        }
+
+        // Set canvas element dimensions
+        canvasRef.current.width = containerWidth;
+        canvasRef.current.height = containerHeight;
+
+        // Test if we can get a context from the canvas element
+        try {
+          const testContext = canvasRef.current.getContext('2d');
+          if (!testContext) {
+            console.error("Cannot get 2D context from canvas element");
+            return;
+          }
+        } catch (contextError) {
+          console.error("Error getting canvas context:", contextError);
+          return;
+        }
+
+        // Create new fabric canvas
+        let fabricCanvas
+        try {
+          fabricCanvas = new window.fabric.Canvas(canvasRef.current, {
+            width: containerWidth,
+            height: containerHeight,
+            backgroundColor: "#ffffff",
+            selection: false,
+            preserveObjectStacking: true,
+            stopContextMenu: true,
+          })
+        } catch (canvasError) {
+          console.error("Error creating fabric canvas:", canvasError)
+          if (isComponentMounted) {
+            toast.error("Failed to initialize canvas")
+          }
+          return
+        }
 
         fabricCanvasRef.current = fabricCanvas
 
+        // Wait for canvas to be fully initialized
+        await new Promise(resolve => setTimeout(resolve, 100))
+
         // Add history tracking
         fabricCanvas.on("object:added", () => {
-          saveToHistory()
+          if (isComponentMounted) {
+            saveToHistory()
+          }
         })
 
         fabricCanvas.on("object:modified", () => {
-          saveToHistory()
+          if (isComponentMounted) {
+            saveToHistory()
+          }
         })
 
         fabricCanvas.on("object:removed", () => {
-          saveToHistory()
+          if (isComponentMounted) {
+            saveToHistory()
+          }
         })
 
         // Add zoom and pan functionality
         fabricCanvas.on("mouse:wheel", (opt) => {
+          if (!isComponentMounted) return
           const delta = opt.e.deltaY
           let zoom = fabricCanvas.getZoom()
           zoom *= 0.999 ** delta
@@ -157,6 +302,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
         })
 
         fabricCanvas.on("mouse:down", (opt) => {
+          if (!isComponentMounted) return
           if (opt.e.button === 1 || (opt.e.button === 0 && opt.e.altKey)) {
             setIsDragging(true)
             setLastPos({ x: opt.e.clientX, y: opt.e.clientY })
@@ -167,6 +313,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
         })
 
         fabricCanvas.on("mouse:move", (opt) => {
+          if (!isComponentMounted) return
           if (isDragging) {
             const e = opt.e
             const vpt = fabricCanvas.viewportTransform
@@ -178,16 +325,20 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
         })
 
         fabricCanvas.on("mouse:up", () => {
-          setIsDragging(false)
+          if (isComponentMounted) {
+            setIsDragging(false)
+          }
         })
 
         // Load initial image if available
         if (submission.answerImages && submission.answerImages.length > 0) {
-          loadImage(submission.answerImages[currentImageIndex].imageUrl)
+          await loadImage(submission.answerImages[currentImageIndex].imageUrl)
         }
       } catch (error) {
         console.error("Error initializing canvas:", error)
-        toast.error("Failed to initialize drawing tools")
+        if (isComponentMounted) {
+          toast.error("Failed to initialize drawing tools")
+        }
       }
     }
 
@@ -197,30 +348,31 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
     return () => {
       clearTimeout(timeoutId)
       if (fabricCanvasRef.current) {
-        fabricCanvasRef.current.dispose()
+        try {
+          fabricCanvasRef.current.dispose()
+        } catch (disposeError) {
+          console.warn("Error disposing canvas in cleanup:", disposeError)
+        }
         fabricCanvasRef.current = null
       }
     }
-  }, [])
+  }, [isFabricLoaded, submission.answerImages, currentImageIndex, isComponentMounted])
 
   // Load image into canvas
   const loadImage = (imageUrl) => {
-    const canvas = fabricCanvasRef.current
-    if (!canvas) return
-
-    setIsImageLoading(true)
-    console.log("Loading image with URL:", imageUrl)
-
+    let isMounted = true;
+    setIsImageLoading(true);
+    const canvas = fabricCanvasRef.current;
     try {
-      // Clear existing content
-      canvas.clear()
-
-      // Create a new image element
-      const img = new Image()
-      img.crossOrigin = "anonymous"
-
+      const img = new window.Image();
+      img.crossOrigin = "anonymous";
       img.onload = () => {
-        if (!canvas) return
+        if (!isMounted) return;
+        if (!canvasRef.current || !fabricCanvasRef.current) {
+          console.log("Canvas refs not available after image load");
+          setIsImageLoading(false);
+          return;
+        }
 
         try {
           console.log("Image loaded successfully:", {
@@ -263,97 +415,181 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
 
           backgroundImageRef.current = fabricImage
 
-          canvas.add(fabricImage)
-          canvas.sendToBack(fabricImage)
-          canvas.renderAll()
-          console.log("Canvas rendered with image")
+          // Add image to canvas safely
+          safeCanvasOperation(() => {
+            canvas.add(fabricImage)
+            canvas.sendToBack(fabricImage)
+            canvas.renderAll()
+            console.log("Canvas rendered with image")
+          }, 'add image to canvas')
 
           // Restore annotations for this image if they exist
           if (annotations[currentImageIndex]) {
             setTimeout(() => {
-              if (canvas) {
-                canvas.loadFromJSON(annotations[currentImageIndex], () => {
-                  // Make sure background image is not selectable
-                  const bgImage = canvas.getObjects().find((obj) => obj.type === "image")
-                  if (bgImage) {
-                    bgImage.selectable = false
-                    bgImage.evented = false
-                  }
-                  canvas.renderAll()
-                })
+              if (isCanvasReady() && isComponentMounted) {
+                safeCanvasOperation(() => {
+                  canvas.loadFromJSON(annotations[currentImageIndex], () => {
+                    // Make sure background image is not selectable
+                    const bgImage = canvas.getObjects().find((obj) => obj.type === "image")
+                    if (bgImage) {
+                      bgImage.selectable = false
+                      bgImage.evented = false
+                    }
+                    canvas.renderAll()
+                  })
+                }, 'load annotations')
               }
             }, 100)
           }
 
-          setIsImageLoading(false)
+          if (isComponentMounted) {
+            setIsImageLoading(false)
+          }
         } catch (error) {
           console.error("Error creating fabric image:", error)
-          toast.error("Failed to create image")
-          setIsImageLoading(false)
+          if (isComponentMounted) {
+            toast.error("Failed to create image")
+            setIsImageLoading(false)
+          }
         }
       }
 
-      img.onerror = (error) => {
-        console.error("Error loading image:", error)
-        toast.error("Failed to load image")
-        setIsImageLoading(false)
-      }
+      img.onerror = () => {
+        if (!isMounted) return;
+        setIsImageLoading(false);
+      };
 
       img.src = imageUrl
     } catch (error) {
-      console.error("Error in loadImage:", error)
-      toast.error("Failed to load image")
-      setIsImageLoading(false)
+      if (isMounted) setIsImageLoading(false);
     }
-  }
+    return () => { isMounted = false; };
+  };
 
   // Update canvas when image changes
   useEffect(() => {
-    const loadNewImage = async () => {
-      if (!submission.answerImages || !submission.answerImages[currentImageIndex]) return
+    if (!isFabricLoaded || !submission.answerImages || !submission.answerImages[currentImageIndex] || !isComponentMounted) {
+      return;
+    }
 
+    const loadNewImage = async () => {
       try {
+        if (!isComponentMounted) return
         setIsImageLoading(true)
 
-        // Clean up existing canvas
+        // Clean up existing canvas properly
         if (fabricCanvasRef.current) {
-          fabricCanvasRef.current.dispose()
+          try {
+            // Remove all event listeners first
+            fabricCanvasRef.current.off("object:added")
+            fabricCanvasRef.current.off("object:modified")
+            fabricCanvasRef.current.off("object:removed")
+            fabricCanvasRef.current.off("mouse:wheel")
+            fabricCanvasRef.current.off("mouse:down")
+            fabricCanvasRef.current.off("mouse:move")
+            fabricCanvasRef.current.off("mouse:up")
+            
+            // Dispose the canvas
+            fabricCanvasRef.current.dispose()
+          } catch (disposeError) {
+            console.warn("Error disposing canvas:", disposeError)
+          }
           fabricCanvasRef.current = null
         }
 
+        // Wait a bit to ensure proper cleanup
+        await new Promise(resolve => setTimeout(resolve, 50))
+
+        // Check if component is still mounted
+        if (!isComponentMounted) return
+
         // Reinitialize canvas
         const container = canvasRef.current?.parentElement
-        if (!container) return
+        if (!container || !window.fabric || !window.fabric.Canvas) {
+          console.log("Cannot reinitialize canvas - missing dependencies");
+          return;
+        }
 
         const containerWidth = container.clientWidth
         const containerHeight = container.clientHeight
 
-        const fabricCanvas = new window.fabric.Canvas(canvasRef.current, {
-          width: containerWidth,
-          height: containerHeight,
-          backgroundColor: "#ffffff",
-          selection: false,
-          preserveObjectStacking: true,
-          stopContextMenu: true,
-        })
+        // Ensure the canvas element is ready
+        if (!canvasRef.current) {
+          console.error("Canvas element not found");
+          return;
+        }
+
+        // Ensure the canvas element has proper dimensions
+        if (containerWidth <= 0 || containerHeight <= 0) {
+          console.error("Container has invalid dimensions:", { containerWidth, containerHeight });
+          return;
+        }
+
+        // Set canvas element dimensions
+        canvasRef.current.width = containerWidth;
+        canvasRef.current.height = containerHeight;
+
+        // Test if we can get a context from the canvas element
+        try {
+          const testContext = canvasRef.current.getContext('2d');
+          if (!testContext) {
+            console.error("Cannot get 2D context from canvas element");
+            return;
+          }
+        } catch (contextError) {
+          console.error("Error getting canvas context:", contextError);
+          return;
+        }
+
+        // Create new fabric canvas
+        let fabricCanvas
+        try {
+          fabricCanvas = new window.fabric.Canvas(canvasRef.current, {
+            width: containerWidth,
+            height: containerHeight,
+            backgroundColor: "#ffffff",
+            selection: false,
+            preserveObjectStacking: true,
+            stopContextMenu: true,
+          })
+        } catch (canvasError) {
+          console.error("Error creating fabric canvas:", canvasError)
+          if (isComponentMounted) {
+            toast.error("Failed to initialize canvas")
+          }
+          return
+        }
 
         fabricCanvasRef.current = fabricCanvas
 
+        // Wait for canvas to be fully initialized
+        await new Promise(resolve => setTimeout(resolve, 100))
+
+        // Check if component is still mounted
+        if (!isComponentMounted) return
+
         // Add history tracking
         fabricCanvas.on("object:added", () => {
-          saveToHistory()
+          if (isComponentMounted) {
+            saveToHistory()
+          }
         })
 
         fabricCanvas.on("object:modified", () => {
-          saveToHistory()
+          if (isComponentMounted) {
+            saveToHistory()
+          }
         })
 
         fabricCanvas.on("object:removed", () => {
-          saveToHistory()
+          if (isComponentMounted) {
+            saveToHistory()
+          }
         })
 
         // Add zoom and pan functionality
         fabricCanvas.on("mouse:wheel", (opt) => {
+          if (!isComponentMounted) return
           const delta = opt.e.deltaY
           let zoom = fabricCanvas.getZoom()
           zoom *= 0.999 ** delta
@@ -367,6 +603,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
         })
 
         fabricCanvas.on("mouse:down", (opt) => {
+          if (!isComponentMounted) return
           if (opt.e.button === 1 || (opt.e.button === 0 && opt.e.altKey)) {
             setIsDragging(true)
             setLastPos({ x: opt.e.clientX, y: opt.e.clientY })
@@ -377,6 +614,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
         })
 
         fabricCanvas.on("mouse:move", (opt) => {
+          if (!isComponentMounted) return
           if (isDragging) {
             const e = opt.e
             const vpt = fabricCanvas.viewportTransform
@@ -388,221 +626,253 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
         })
 
         fabricCanvas.on("mouse:up", () => {
-          setIsDragging(false)
+          if (isComponentMounted) {
+            setIsDragging(false)
+          }
         })
 
         // Load the new image
         await loadImage(submission.answerImages[currentImageIndex].imageUrl)
 
+        // Check if component is still mounted
+        if (!isComponentMounted) return
+
         // Restore annotations if they exist
         if (annotations[currentImageIndex]) {
-          fabricCanvas.loadFromJSON(annotations[currentImageIndex], () => {
-            // Make sure background image is not selectable
-            const bgImage = fabricCanvas.getObjects().find((obj) => obj.type === "image")
-            if (bgImage) {
-              bgImage.selectable = false
-              bgImage.evented = false
-            }
-            fabricCanvas.renderAll()
-          })
+          try {
+            fabricCanvas.loadFromJSON(annotations[currentImageIndex], () => {
+              if (!isComponentMounted) return
+              // Make sure background image is not selectable
+              const bgImage = fabricCanvas.getObjects().find((obj) => obj.type === "image")
+              if (bgImage) {
+                bgImage.selectable = false
+                bgImage.evented = false
+              }
+              fabricCanvas.renderAll()
+            })
+          } catch (jsonError) {
+            console.error("Error restoring annotations:", jsonError)
+          }
         }
 
-        // Restore zoom level
-        fabricCanvas.setZoom(zoom)
-        fabricCanvas.requestRenderAll()
+        // Restore zoom level safely
+        try {
+          // Wait a bit to ensure canvas is fully ready
+          setTimeout(() => {
+            if (isCanvasReady() && fabricCanvas.getContext && fabricCanvas.getContext('2d') && isComponentMounted) {
+              try {
+                fabricCanvas.setZoom(zoom)
+                fabricCanvas.requestRenderAll()
+              } catch (setZoomError) {
+                console.warn("Error setting zoom:", setZoomError)
+              }
+            } else {
+              console.warn("Canvas not ready for zoom restoration, skipping")
+            }
+          }, 200)
+        } catch (zoomError) {
+          console.warn("Error in zoom restoration:", zoomError)
+        }
       } catch (error) {
         console.error("Error loading new image:", error)
-        toast.error("Failed to load image")
+        if (isComponentMounted) {
+          toast.error("Failed to load image")
+        }
       } finally {
-        setIsImageLoading(false)
+        if (isComponentMounted) {
+          setIsImageLoading(false)
+        }
       }
     }
 
     loadNewImage()
-  }, [currentImageIndex])
+  }, [currentImageIndex, isFabricLoaded, isComponentMounted])
 
   // Update canvas when tool changes
   useEffect(() => {
-    if (fabricCanvasRef.current) {
-      const canvas = fabricCanvasRef.current
-
-      // Remove all existing event listeners
-      canvas.off("mouse:down")
-      canvas.off("mouse:move")
-      canvas.off("mouse:up")
-
-      // Reset drawing mode and selection
-      canvas.isDrawingMode = false
-      canvas.freeDrawingBrush = null
-      canvas.selection = false
-      canvas.discardActiveObject()
-      canvas.requestRenderAll()
-
-      // Set cursor based on selected tool
-      switch (activeTool) {
-        case "pen":
-          canvas.defaultCursor = "crosshair"
-          canvas.isDrawingMode = true
-          const brush = new window.fabric.PencilBrush(canvas)
-          brush.color = penColor
-          brush.width = penSize
-          canvas.freeDrawingBrush = brush
-          canvas.selection = false
-          break
-
-        case "rectangle":
-          canvas.defaultCursor = "crosshair"
-          canvas.isDrawingMode = false
-          canvas.selection = false
-          let startPoint
-          let currentRect
-          let isDrawing = false
-
-          canvas.on("mouse:down", (o) => {
-            if (o.e.button === 0) {
-              // Only handle left click
-              isDrawing = true
-              const pointer = canvas.getPointer(o.e)
-              startPoint = { x: pointer.x, y: pointer.y }
-
-              currentRect = new window.fabric.Rect({
-                left: startPoint.x,
-                top: startPoint.y,
-                width: 0,
-                height: 0,
-                fill: "transparent",
-                stroke: penColor,
-                strokeWidth: penSize,
-                selectable: false,
-                evented: false,
-              })
-
-              canvas.add(currentRect)
-              o.e.preventDefault()
-              o.e.stopPropagation()
-            }
-          })
-
-          canvas.on("mouse:move", (o) => {
-            if (!isDrawing || !currentRect) return
-
-            const pointer = canvas.getPointer(o.e)
-            const width = pointer.x - startPoint.x
-            const height = pointer.y - startPoint.y
-
-            currentRect.set({
-              width: Math.abs(width),
-              height: Math.abs(height),
-              left: width > 0 ? startPoint.x : pointer.x,
-              top: height > 0 ? startPoint.y : pointer.y,
-            })
-
-            canvas.renderAll()
-            o.e.preventDefault()
-            o.e.stopPropagation()
-          })
-
-          canvas.on("mouse:up", (o) => {
-            if (isDrawing) {
-              isDrawing = false
-              currentRect = null
-              o.e.preventDefault()
-              o.e.stopPropagation()
-            }
-          })
-          break
-
-        case "circle":
-          canvas.defaultCursor = "crosshair"
-          canvas.isDrawingMode = false
-          canvas.selection = false
-          let startPointCircle
-          let currentCircle
-          let isDrawingCircle = false
-
-          canvas.on("mouse:down", (o) => {
-            if (o.e.button === 0) {
-              // Only handle left click
-              isDrawingCircle = true
-              const pointer = canvas.getPointer(o.e)
-              startPointCircle = { x: pointer.x, y: pointer.y }
-
-              currentCircle = new window.fabric.Circle({
-                left: startPointCircle.x,
-                top: startPointCircle.y,
-                radius: 0,
-                fill: "transparent",
-                stroke: penColor,
-                strokeWidth: penSize,
-                selectable: false,
-                evented: false,
-              })
-
-              canvas.add(currentCircle)
-              o.e.preventDefault()
-              o.e.stopPropagation()
-            }
-          })
-
-          canvas.on("mouse:move", (o) => {
-            if (!isDrawingCircle || !currentCircle) return
-
-            const pointer = canvas.getPointer(o.e)
-            const radius = Math.sqrt(
-              Math.pow(pointer.x - startPointCircle.x, 2) + Math.pow(pointer.y - startPointCircle.y, 2),
-            )
-
-            currentCircle.set({
-              radius: radius,
-            })
-
-            canvas.renderAll()
-            o.e.preventDefault()
-            o.e.stopPropagation()
-          })
-
-          canvas.on("mouse:up", (o) => {
-            if (isDrawingCircle) {
-              isDrawingCircle = false
-              currentCircle = null
-              o.e.preventDefault()
-              o.e.stopPropagation()
-            }
-          })
-          break
-
-        case "text":
-          canvas.defaultCursor = "text"
-          canvas.isDrawingMode = false
-          canvas.selection = false
-          break
-
-        case "select":
-          canvas.defaultCursor = "default"
-          canvas.isDrawingMode = false
-          canvas.selection = true
-          canvas.forEachObject((obj) => {
-            if (obj !== backgroundImageRef.current) {
-              obj.selectable = true
-              obj.evented = true
-            }
-          })
-          break
-
-        case "clear":
-          canvas.defaultCursor = "default"
-          canvas.isDrawingMode = false
-          canvas.selection = false
-          break
-      }
-
-      try {
-        canvas.renderAll()
-      } catch (error) {
-        console.error("Error rendering canvas:", error)
-      }
+    if (!fabricCanvasRef.current || !window.fabric || !canvasRef.current) {
+      console.log("Canvas or Fabric.js not ready for tool changes");
+      return;
     }
-  }, [activeTool, penColor, penSize])
+
+    const canvas = fabricCanvasRef.current
+
+    // Remove all existing event listeners
+    canvas.off("mouse:down")
+    canvas.off("mouse:move")
+    canvas.off("mouse:up")
+
+    // Reset drawing mode and selection
+    canvas.isDrawingMode = false
+    canvas.freeDrawingBrush = null
+    canvas.selection = false
+    canvas.discardActiveObject()
+    canvas.requestRenderAll()
+
+    // Set cursor based on selected tool
+    switch (activeTool) {
+      case "pen":
+        canvas.defaultCursor = "crosshair"
+        canvas.isDrawingMode = true
+        const brush = new window.fabric.PencilBrush(canvas)
+        brush.color = penColor
+        brush.width = penSize
+        canvas.freeDrawingBrush = brush
+        canvas.selection = false
+        break
+
+      case "rectangle":
+        canvas.defaultCursor = "crosshair"
+        canvas.isDrawingMode = false
+        canvas.selection = false
+        let startPoint
+        let currentRect
+        let isDrawing = false
+
+        canvas.on("mouse:down", (o) => {
+          if (o.e.button === 0) {
+            // Only handle left click
+            isDrawing = true
+            const pointer = canvas.getPointer(o.e)
+            startPoint = { x: pointer.x, y: pointer.y }
+
+            currentRect = new window.fabric.Rect({
+              left: startPoint.x,
+              top: startPoint.y,
+              width: 0,
+              height: 0,
+              fill: "transparent",
+              stroke: penColor,
+              strokeWidth: penSize,
+              selectable: false,
+              evented: false,
+            })
+
+            canvas.add(currentRect)
+            o.e.preventDefault()
+            o.e.stopPropagation()
+          }
+        })
+
+        canvas.on("mouse:move", (o) => {
+          if (!isDrawing || !currentRect) return
+
+          const pointer = canvas.getPointer(o.e)
+          const width = pointer.x - startPoint.x
+          const height = pointer.y - startPoint.y
+
+          currentRect.set({
+            width: Math.abs(width),
+            height: Math.abs(height),
+            left: width > 0 ? startPoint.x : pointer.x,
+            top: height > 0 ? startPoint.y : pointer.y,
+          })
+
+          canvas.renderAll()
+          o.e.preventDefault()
+          o.e.stopPropagation()
+        })
+
+        canvas.on("mouse:up", (o) => {
+          if (isDrawing) {
+            isDrawing = false
+            currentRect = null
+            o.e.preventDefault()
+            o.e.stopPropagation()
+          }
+        })
+        break
+
+      case "circle":
+        canvas.defaultCursor = "crosshair"
+        canvas.isDrawingMode = false
+        canvas.selection = false
+        let startPointCircle
+        let currentCircle
+        let isDrawingCircle = false
+
+        canvas.on("mouse:down", (o) => {
+          if (o.e.button === 0) {
+            // Only handle left click
+            isDrawingCircle = true
+            const pointer = canvas.getPointer(o.e)
+            startPointCircle = { x: pointer.x, y: pointer.y }
+
+            currentCircle = new window.fabric.Circle({
+              left: startPointCircle.x,
+              top: startPointCircle.y,
+              radius: 0,
+              fill: "transparent",
+              stroke: penColor,
+              strokeWidth: penSize,
+              selectable: false,
+              evented: false,
+            })
+
+            canvas.add(currentCircle)
+            o.e.preventDefault()
+            o.e.stopPropagation()
+          }
+        })
+
+        canvas.on("mouse:move", (o) => {
+          if (!isDrawingCircle || !currentCircle) return
+
+          const pointer = canvas.getPointer(o.e)
+          const radius = Math.sqrt(
+            Math.pow(pointer.x - startPointCircle.x, 2) + Math.pow(pointer.y - startPointCircle.y, 2),
+          )
+
+          currentCircle.set({
+            radius: radius,
+          })
+
+          canvas.renderAll()
+          o.e.preventDefault()
+          o.e.stopPropagation()
+        })
+
+        canvas.on("mouse:up", (o) => {
+          if (isDrawingCircle) {
+            isDrawingCircle = false
+            currentCircle = null
+            o.e.preventDefault()
+            o.e.stopPropagation()
+          }
+        })
+        break
+
+      case "text":
+        canvas.defaultCursor = "text"
+        canvas.isDrawingMode = false
+        canvas.selection = false
+        break
+
+      case "select":
+        canvas.defaultCursor = "default"
+        canvas.isDrawingMode = false
+        canvas.selection = true
+        canvas.forEachObject((obj) => {
+          if (obj !== backgroundImageRef.current) {
+            obj.selectable = true
+            obj.evented = true
+          }
+        })
+        break
+
+      case "clear":
+        canvas.defaultCursor = "default"
+        canvas.isDrawingMode = false
+        canvas.selection = false
+        break
+    }
+
+    try {
+      canvas.renderAll()
+    } catch (error) {
+      console.error("Error rendering canvas:", error)
+    }
+  }, [activeTool, penColor, penSize, isFabricLoaded])
 
   // History management functions
   const saveToHistory = () => {
@@ -647,67 +917,69 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
   }
 
   const handleToolSelect = (tool) => {
-    setActiveTool(tool)
+    if (!fabricCanvasRef.current || !window.fabric || !canvasRef.current) {
+      console.log("Canvas or Fabric.js not ready for tool changes");
+      return;
+    }
+    setActiveTool(tool);
 
-    if (fabricCanvasRef.current) {
-      try {
-        switch (tool) {
-          case "pen":
-            fabricCanvasRef.current.isDrawingMode = true
-            const brush = new window.fabric.PencilBrush(fabricCanvasRef.current)
-            brush.color = penColor
-            brush.width = penSize
-            fabricCanvasRef.current.freeDrawingBrush = brush
-            break
-          case "rectangle":
-            fabricCanvasRef.current.isDrawingMode = false
-            break
-          case "circle":
-            fabricCanvasRef.current.isDrawingMode = false
-            break
-          case "text":
-            fabricCanvasRef.current.isDrawingMode = false
-            const text = new window.fabric.IText("Double click to edit", {
-              left: 100,
-              top: 100,
-              fontFamily: "Arial",
-              fill: penColor,
-              fontSize: 20,
-              fontWeight: "400",
-              fontStyle: "normal",
-              underline: false,
-              linethrough: false,
-              textAlign: "left",
-              charSpacing: 0,
-              lineHeight: 1,
-            })
-            fabricCanvasRef.current.add(text)
-            fabricCanvasRef.current.setActiveObject(text)
-            break
-          case "select":
-            fabricCanvasRef.current.isDrawingMode = false
-            fabricCanvasRef.current.selection = true
-            fabricCanvasRef.current.forEachObject((obj) => {
-              if (obj !== backgroundImageRef.current) {
-                obj.selectable = true
-                obj.evented = true
-              }
-            })
-            break
-          case "clear":
-            fabricCanvasRef.current.clear()
-            // Re-add the background image
-            if (backgroundImageRef.current) {
-              fabricCanvasRef.current.add(backgroundImageRef.current)
-              fabricCanvasRef.current.sendToBack(backgroundImageRef.current)
-              fabricCanvasRef.current.renderAll()
+    try {
+      switch (tool) {
+        case "pen":
+          fabricCanvasRef.current.isDrawingMode = true
+          const brush = new window.fabric.PencilBrush(fabricCanvasRef.current)
+          brush.color = penColor
+          brush.width = penSize
+          fabricCanvasRef.current.freeDrawingBrush = brush
+          break
+        case "rectangle":
+          fabricCanvasRef.current.isDrawingMode = false
+          break
+        case "circle":
+          fabricCanvasRef.current.isDrawingMode = false
+          break
+        case "text":
+          fabricCanvasRef.current.isDrawingMode = false
+          const text = new window.fabric.IText("Double click to edit", {
+            left: 100,
+            top: 100,
+            fontFamily: "Arial",
+            fill: penColor,
+            fontSize: 20,
+            fontWeight: "400",
+            fontStyle: "normal",
+            underline: false,
+            linethrough: false,
+            textAlign: "left",
+            charSpacing: 0,
+            lineHeight: 1,
+          })
+          fabricCanvasRef.current.add(text)
+          fabricCanvasRef.current.setActiveObject(text)
+          break
+        case "select":
+          fabricCanvasRef.current.isDrawingMode = false
+          fabricCanvasRef.current.selection = true
+          fabricCanvasRef.current.forEachObject((obj) => {
+            if (obj !== backgroundImageRef.current) {
+              obj.selectable = true
+              obj.evented = true
             }
-            break
-        }
-      } catch (error) {
-        console.error("Error applying tool:", error)
-        toast.error("Failed to apply tool")
+          })
+          break
+        case "clear":
+          fabricCanvasRef.current.clear()
+          // Re-add the background image
+          if (backgroundImageRef.current) {
+            fabricCanvasRef.current.add(backgroundImageRef.current)
+            fabricCanvasRef.current.sendToBack(backgroundImageRef.current)
+            fabricCanvasRef.current.renderAll()
+          }
+          break
       }
+    } catch (error) {
+      console.error("Error applying tool:", error)
+      toast.error("Failed to apply tool")
     }
   }
 
@@ -759,23 +1031,27 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
 
   const handleImageChange = (index) => {
     try {
-    // Save current annotations before changing image
-    if (fabricCanvasRef.current) {
-      const json = fabricCanvasRef.current.toJSON()
-      setAnnotations((prev) => ({
-        ...prev,
-        [currentImageIndex]: json,
-      }))
-    }
+      // Save current annotations before changing image
+      if (fabricCanvasRef.current && fabricCanvasRef.current.getObjects) {
+        try {
+          const json = fabricCanvasRef.current.toJSON()
+          setAnnotations((prev) => ({
+            ...prev,
+            [currentImageIndex]: json,
+          }))
+        } catch (jsonError) {
+          console.warn("Error saving annotations for current image:", jsonError)
+        }
+      }
 
-    // Reset history for new image
-    historyRef.current = []
-    historyIndexRef.current = -1
-    setCanUndo(false)
-    setCanRedo(false)
+      // Reset history for new image
+      historyRef.current = []
+      historyIndexRef.current = -1
+      setCanUndo(false)
+      setCanRedo(false)
 
-    // Change image
-    setCurrentImageIndex(index)
+      // Change image
+      setCurrentImageIndex(index)
     } catch (error) {
       console.error("Error changing image:", error)
       toast.error("Failed to change image")
@@ -783,8 +1059,8 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
   }
 
   const getAnnotatedImages = async () => {
-    if (!fabricCanvasRef.current) {
-      toast.error("Canvas not initialized")
+    if (!fabricCanvasRef.current || !window.fabric || !isComponentMounted) {
+      toast.error("Canvas or Fabric.js not initialized")
       return
     }
 
@@ -820,7 +1096,16 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
           img.crossOrigin = "anonymous"
           
           await new Promise((resolve, reject) => {
+            if (!isComponentMounted) {
+              reject(new Error("Component unmounted during image loading"))
+              return
+            }
+            
             img.onload = () => {
+              if (!isComponentMounted) {
+                reject(new Error("Component unmounted after image load"))
+                return
+              }
               console.log("Image loaded successfully:", {
                 width: img.width,
                 height: img.height,
@@ -850,9 +1135,20 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
           tempCanvasElement.style.left = '-9999px'
           tempCanvasElement.style.top = '-9999px'
           tempCanvasElement.style.visibility = 'hidden'
-          document.body.appendChild(tempCanvasElement)
+          
+          // Add to document and track for cleanup
+          if (document.body && isComponentMounted) {
+            document.body.appendChild(tempCanvasElement)
+            tempElementsRef.current.push(tempCanvasElement)
+          } else {
+            throw new Error("Document body not available or component unmounted")
+          }
           
           // Initialize Fabric.js canvas with proper configuration
+          if (!window.fabric || !window.fabric.Canvas) {
+            throw new Error("Fabric.js not available for temporary canvas creation")
+          }
+          
           tempFabricCanvas = new window.fabric.Canvas(tempCanvasElement, {
             width: img.width,
             height: img.height,
@@ -890,6 +1186,11 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
               // Now load the annotations
               tempFabricCanvas.loadFromJSON(updatedAnnotations[index], async () => {
                 try {
+                  if (!isComponentMounted) {
+                    resolve()
+                    return
+                  }
+                  
                   const bgImage = tempFabricCanvas.getObjects().find(obj => obj.type === 'image')
                   if (!bgImage) {
                     console.warn("No background image found in annotations")
@@ -910,6 +1211,8 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   const annotationObjects = tempFabricCanvas.getObjects().filter(obj => obj !== bgImage)
                   for (const obj of annotationObjects) {
                     try {
+                      if (!isComponentMounted) break
+                      
                       // Convert object to data URL with high quality
                       const objDataUrl = obj.toDataURL({
                         format: 'png',
@@ -920,6 +1223,10 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
 
                       const objImg = new Image()
                       await new Promise((resolve, reject) => {
+                        if (!isComponentMounted) {
+                          reject(new Error("Component unmounted"))
+                          return
+                        }
                         objImg.onload = resolve
                         objImg.onerror = reject
                         objImg.src = objDataUrl
@@ -985,11 +1292,13 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   }
 
                   // Add to annotated images array with s3Key
-                  setAnnotatedImages(prev => {
-                    const newImages = Array.isArray(prev) ? [...prev] : [];
-                    newImages.push({ s3Key: key });
-                    return newImages;
-                  });
+                  if (isComponentMounted) {
+                    setAnnotatedImages(prev => {
+                      const newImages = Array.isArray(prev) ? [...prev] : [];
+                      newImages.push({ s3Key: key });
+                      return newImages;
+                    });
+                  }
 
                   resolve()
                 } catch (error) {
@@ -1005,7 +1314,9 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
 
         } catch (error) {
           console.error(`Error processing image ${index}:`, error)
-          toast.error(`Failed to process image ${parseInt(index) + 1}`)
+          if (isComponentMounted) {
+            toast.error(`Failed to process image ${parseInt(index) + 1}`)
+          }
         } finally {
           // Cleanup
           if (tempFabricCanvas) {
@@ -1018,6 +1329,8 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
           if (tempCanvasElement && tempCanvasElement.parentNode) {
             try {
               tempCanvasElement.parentNode.removeChild(tempCanvasElement)
+              // Remove from tracking array
+              tempElementsRef.current = tempElementsRef.current.filter(el => el !== tempCanvasElement)
             } catch (error) {
               console.error("Error removing canvas element:", error)
             }
@@ -1031,7 +1344,9 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
       return updatedAnnotations
     } catch (error) {
       console.error("Error getting annotated images:", error)
-      toast.error(error.message || "Failed to get annotated images")
+      if (isComponentMounted) {
+        toast.error(error.message || "Failed to get annotated images")
+      }
       return null
     }
   }
@@ -1140,30 +1455,66 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
 
   // Separate function for closing the modal
   const handleClose = () => {
+    // Set component as unmounted first
+    setIsComponentMounted(false)
+    
+    // Cleanup fabric canvas
+    if (fabricCanvasRef.current) {
+      try {
+        fabricCanvasRef.current.dispose()
+        console.log('[AnswerAnnotation] Fabric canvas disposed on close');
+      } catch (error) {
+        console.warn("Error disposing fabric canvas on close:", error)
+      }
+      fabricCanvasRef.current = null
+    }
+    
+    // Cleanup temporary elements
+    cleanupTempElements()
+    
+    // Reset everything (including refs, state, DOM)
+    resetAllRefsAndState();
+    
+    // Call the original onClose callback
     onClose()
   }
 
   // Add zoom controls handler
   const handleZoom = (direction) => {
-    if (!fabricCanvasRef.current) return
-
-    const canvas = fabricCanvasRef.current
-    const currentZoom = canvas.getZoom()
-    let newZoom
-
-    if (direction === 'in') {
-      newZoom = Math.min(currentZoom * 1.1, 20)
-    } else if (direction === 'out') {
-      newZoom = Math.max(currentZoom / 1.1, 0.1)
-    } else {
-      newZoom = 1
+    if (!isCanvasReady()) {
+      console.log("Canvas not ready for zoom");
+      return;
     }
 
-    canvas.zoomToPoint(
-      { x: canvas.width / 2, y: canvas.height / 2 },
-      newZoom
-    )
-    setZoom(newZoom)
+    const canvas = fabricCanvasRef.current
+    
+    // Additional safety check for canvas context
+    if (!canvas.getContext || !canvas.getContext('2d')) {
+      console.warn("Canvas context not available for zoom");
+      return;
+    }
+
+    try {
+      const currentZoom = canvas.getZoom()
+      let newZoom
+
+      if (direction === 'in') {
+        newZoom = Math.min(currentZoom * 1.1, 20)
+      } else if (direction === 'out') {
+        newZoom = Math.max(currentZoom / 1.1, 0.1)
+      } else {
+        newZoom = 1
+      }
+
+      canvas.zoomToPoint(
+        { x: canvas.width / 2, y: canvas.height / 2 },
+        newZoom
+      )
+      setZoom(newZoom)
+    } catch (zoomError) {
+      console.error("Error during zoom operation:", zoomError)
+      toast.error("Failed to zoom")
+    }
   }
 
   // Update zoom controls in the toolbar
@@ -1171,7 +1522,12 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
     <div className="flex items-center space-x-2">
       <button
         onClick={() => handleZoom('out')}
-        className="p-2 rounded bg-white text-gray-700 hover:bg-gray-100"
+        disabled={isFabricLoading || !isFabricLoaded}
+        className={`p-2 rounded ${
+          isFabricLoading || !isFabricLoaded
+            ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+            : "bg-white text-gray-700 hover:bg-gray-100"
+        }`}
         title="Zoom Out"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1181,7 +1537,12 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
       <span className="text-sm text-gray-700">{Math.round(zoom * 100)}%</span>
       <button
         onClick={() => handleZoom('in')}
-        className="p-2 rounded bg-white text-gray-700 hover:bg-gray-100"
+        disabled={isFabricLoading || !isFabricLoaded}
+        className={`p-2 rounded ${
+          isFabricLoading || !isFabricLoaded
+            ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+            : "bg-white text-gray-700 hover:bg-gray-100"
+        }`}
         title="Zoom In"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1190,7 +1551,12 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
       </button>
       <button
         onClick={() => handleZoom('reset')}
-        className="p-2 rounded bg-white text-gray-700 hover:bg-gray-100"
+        disabled={isFabricLoading || !isFabricLoaded}
+        className={`p-2 rounded ${
+          isFabricLoading || !isFabricLoaded
+            ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+            : "bg-white text-gray-700 hover:bg-gray-100"
+        }`}
         title="Reset Zoom"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1440,6 +1806,48 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
     }
   };
 
+  // --- [A] Add a helper to reset all refs and state ---
+  const resetAllRefsAndState = () => {
+    // DO NOT remove canvas from DOM! Let React handle it.
+    fabricCanvasRef.current = null;
+    backgroundImageRef.current = null;
+    historyRef.current = [];
+    historyIndexRef.current = -1;
+    tempElementsRef.current = [];
+    setAnnotations({});
+    setAnnotatedImages([]);
+    setImagePreviews([]);
+    setSelectedImage(null);
+    setCurrentImageIndex(0);
+    setZoom(1);
+    setCanUndo(false);
+    setCanRedo(false);
+    setIsDragging(false);
+    setLastPos({ x: 0, y: 0 });
+    setIsReviewModalOpen(false);
+    setScore('');
+    setExpertRemarks('');
+    setReviewData({
+      review_result: '',
+      expert_score: '',
+      expert_remarks: '',
+    });
+    setIsComponentMounted(true);
+    setIsFabricLoaded(!!window.fabric && !!window.fabric.Canvas);
+    setIsFabricLoading(false);
+    // [NEW] Increment canvasKey to force remount
+    setCanvasKey(k => k + 1);
+    console.log('[AnswerAnnotation] All refs and state reset, canvasKey incremented');
+  };
+
+  // --- [B] On modal open (when submission changes), reset everything ---
+  useEffect(() => {
+    resetAllRefsAndState();
+    // If you want to force a new <canvas> element, you can do so here if needed
+    // (React will re-render the canvas, so usually not needed)
+    console.log('[AnswerAnnotation] Modal opened, state and refs reset');
+  }, [submission]);
+
   return (
     <div className="fixed inset-0 bg-white z-50 flex flex-col">
       {/* Header */}
@@ -1451,16 +1859,24 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
           </p>
         </div>
         <div className="flex space-x-4">
-          <button onClick={handleSave} className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+          <button 
+            onClick={handleSave} 
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+            disabled={!isComponentMounted}
+          >
             Save Annotations
           </button>
           <button 
             onClick={handleCompleteReview} 
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            disabled={!isComponentMounted}
           >
             Complete Review
           </button>
-          <button onClick={handleClose} className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">
+          <button 
+            onClick={handleClose} 
+            className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+          >
             Close
           </button>
         </div>
@@ -1545,8 +1961,11 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
               <div className="flex space-x-2">
                 <button
                   onClick={() => handleToolSelect("pen")}
+                  disabled={isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current}
                   className={`p-2 rounded ${
-                    activeTool === "pen" ? "bg-blue-500 text-white" : "bg-white text-gray-700"
+                    isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-white text-gray-700 hover:bg-gray-100"
                   }`}
                   title="Pen"
                 >
@@ -1561,8 +1980,11 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                 </button>
                 <button
                   onClick={() => handleToolSelect("text")}
+                  disabled={isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current}
                   className={`p-2 rounded ${
-                    activeTool === "text" ? "bg-blue-500 text-white" : "bg-white text-gray-700"
+                    isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-white text-gray-700 hover:bg-gray-100"
                   }`}
                   title="Text"
                 >
@@ -1577,8 +1999,11 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                 </button>
                 <button
                   onClick={() => handleToolSelect("circle")}
+                  disabled={isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current}
                   className={`p-2 rounded ${
-                    activeTool === "circle" ? "bg-blue-500 text-white" : "bg-white text-gray-700"
+                    isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-white text-gray-700 hover:bg-gray-100"
                   }`}
                   title="Circle"
                 >
@@ -1593,8 +2018,11 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                 </button>
                 <button
                   onClick={() => handleToolSelect("rectangle")}
+                  disabled={isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current}
                   className={`p-2 rounded ${
-                    activeTool === "rectangle" ? "bg-blue-500 text-white" : "bg-white text-gray-700"
+                    isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-white text-gray-700 hover:bg-gray-100"
                   }`}
                   title="Rectangle"
                 >
@@ -1609,8 +2037,11 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                 </button>
                 <button
                   onClick={() => handleToolSelect("select")}
+                  disabled={isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current}
                   className={`p-2 rounded ${
-                    activeTool === "select" ? "bg-blue-500 text-white" : "bg-white text-gray-700"
+                    isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-white text-gray-700 hover:bg-gray-100"
                   }`}
                   title="Select"
                 >
@@ -1625,7 +2056,12 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                 </button>
                 <button
                   onClick={() => handleToolSelect("clear")}
-                  className="p-2 rounded bg-white text-red-600 hover:bg-red-50"
+                  disabled={isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current}
+                  className={`p-2 rounded ${
+                    isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-white text-red-600 hover:bg-red-50"
+                  }`}
                   title="Clear All"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1643,11 +2079,11 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
               <div className="flex space-x-2">
                 <button
                   onClick={handleUndo}
-                  disabled={!canUndo}
+                  disabled={!canUndo || isFabricLoading || !isFabricLoaded || !isComponentMounted}
                   className={`p-2 rounded ${
-                    canUndo
-                      ? "bg-white text-gray-700 hover:bg-gray-100"
-                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    !canUndo || isFabricLoading || !isFabricLoaded || !isComponentMounted
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-white text-gray-700 hover:bg-gray-100"
                   }`}
                   title="Undo"
                 >
@@ -1662,11 +2098,11 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                 </button>
                 <button
                   onClick={handleRedo}
-                  disabled={!canRedo}
+                  disabled={!canRedo || isFabricLoading || !isFabricLoaded || !isComponentMounted}
                   className={`p-2 rounded ${
-                    canRedo
-                      ? "bg-white text-gray-700 hover:bg-gray-100"
-                      : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    !canRedo || isFabricLoading || !isFabricLoaded || !isComponentMounted
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                      : "bg-white text-gray-700 hover:bg-gray-100"
                   }`}
                   title="Redo"
                 >
@@ -1689,7 +2125,12 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   type="color"
                   value={penColor}
                   onChange={(e) => handleColorChange(e.target.value)}
-                  className="w-8 h-8 rounded cursor-pointer"
+                  disabled={isFabricLoading || !isFabricLoaded || !isComponentMounted}
+                  className={`w-8 h-8 rounded ${
+                    isFabricLoading || !isFabricLoaded || !isComponentMounted
+                      ? "cursor-not-allowed opacity-50"
+                      : "cursor-pointer"
+                  }`}
                   title="Color"
                 />
                 <div className="flex items-center space-x-1">
@@ -1699,7 +2140,12 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                     max="20"
                     value={penSize}
                     onChange={(e) => handleBrushSizeChange(Number.parseInt(e.target.value))}
-                    className="w-24"
+                    disabled={isFabricLoading || !isFabricLoaded || !isComponentMounted}
+                    className={`w-24 ${
+                      isFabricLoading || !isFabricLoaded || !isComponentMounted
+                        ? "cursor-not-allowed opacity-50"
+                        : ""
+                    }`}
                     title="Brush Size"
                   />
                   <span className="text-xs text-gray-500 w-6 text-right">{penSize}px</span>
@@ -1710,12 +2156,25 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
 
           {/* Canvas Container */}
           <div className="flex-1 relative bg-gray-100 overflow-hidden" ref={containerRef}>
-            {isImageLoading && (
+            {/* Fabric.js Loading State */}
+            {isFabricLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-75 z-20">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading drawing tools...</p>
+                </div>
+              </div>
+            )}
+            
+            {/* Image Loading State */}
+            {isImageLoading && !isFabricLoading && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-75 z-10">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
               </div>
             )}
+            
             <canvas
+              key={canvasKey}
               ref={canvasRef}
               className="w-full h-full"
               style={{
