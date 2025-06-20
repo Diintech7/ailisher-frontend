@@ -1076,11 +1076,13 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
       const processPromises = Object.keys(updatedAnnotations).map(async (index) => {
         let tempCanvasElement = null
         let tempFabricCanvas = null
+        let previewUrl = null
+        let s3Key = null
 
         try {
           if (!submission.answerImages || !submission.answerImages[index]) {
             console.error(`Image not found for index ${index}`)
-            return
+            return { s3Key: null, previewUrl: null }
           }
 
           // Create a temporary canvas with exact image dimensions
@@ -1094,23 +1096,18 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
           // Load the original image
           const img = new Image()
           img.crossOrigin = "anonymous"
-          
+
           await new Promise((resolve, reject) => {
             if (!isComponentMounted) {
               reject(new Error("Component unmounted during image loading"))
               return
             }
-            
+
             img.onload = () => {
               if (!isComponentMounted) {
                 reject(new Error("Component unmounted after image load"))
                 return
               }
-              console.log("Image loaded successfully:", {
-                width: img.width,
-                height: img.height,
-                index
-              })
               resolve()
             }
             img.onerror = (error) => {
@@ -1135,7 +1132,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
           tempCanvasElement.style.left = '-9999px'
           tempCanvasElement.style.top = '-9999px'
           tempCanvasElement.style.visibility = 'hidden'
-          
+
           // Add to document and track for cleanup
           if (document.body && isComponentMounted) {
             document.body.appendChild(tempCanvasElement)
@@ -1143,12 +1140,12 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
           } else {
             throw new Error("Document body not available or component unmounted")
           }
-          
+
           // Initialize Fabric.js canvas with proper configuration
           if (!window.fabric || !window.fabric.Canvas) {
             throw new Error("Fabric.js not available for temporary canvas creation")
           }
-          
+
           tempFabricCanvas = new window.fabric.Canvas(tempCanvasElement, {
             width: img.width,
             height: img.height,
@@ -1190,7 +1187,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                     resolve()
                     return
                   }
-                  
+
                   const bgImage = tempFabricCanvas.getObjects().find(obj => obj.type === 'image')
                   if (!bgImage) {
                     console.warn("No background image found in annotations")
@@ -1203,7 +1200,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   const originalHeight = img.height
                   const displayWidth = bgImage.width * bgImage.scaleX
                   const displayHeight = bgImage.height * bgImage.scaleY
-                  
+
                   const scaleX = originalWidth / displayWidth
                   const scaleY = originalHeight / displayHeight
 
@@ -1212,7 +1209,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   for (const obj of annotationObjects) {
                     try {
                       if (!isComponentMounted) break
-                      
+
                       // Convert object to data URL with high quality
                       const objDataUrl = obj.toDataURL({
                         format: 'png',
@@ -1255,11 +1252,12 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
 
                   // Store the annotated image data URL
                   const annotatedImageUrl = tempCanvas.toDataURL('image/png', 1.0);
-                  
+                  previewUrl = annotatedImageUrl;
+
                   // Convert data URL to Blob
                   const response = await fetch(annotatedImageUrl);
                   const blob = await response.blob();
-                  
+
                   // Upload to S3
                   const uploadUrlResponse = await api.post(
                     '/review/annotated-image-upload-url',
@@ -1291,14 +1289,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                     throw new Error('Failed to upload annotated image to S3');
                   }
 
-                  // Add to annotated images array with s3Key
-                  if (isComponentMounted) {
-                    setAnnotatedImages(prev => {
-                      const newImages = Array.isArray(prev) ? [...prev] : [];
-                      newImages.push({ s3Key: key });
-                      return newImages;
-                    });
-                  }
+                  s3Key = key;
 
                   resolve()
                 } catch (error) {
@@ -1336,12 +1327,14 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
             }
           }
         }
+        return { s3Key, previewUrl };
       })
 
       // Wait for all processing to complete
-      await Promise.all(processPromises)
+      const results = await Promise.all(processPromises)
 
-      return updatedAnnotations
+      // Return an array of { s3Key, previewUrl }
+      return results
     } catch (error) {
       console.error("Error getting annotated images:", error)
       if (isComponentMounted) {
@@ -1373,74 +1366,32 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
 
   const handleCompleteReview = async () => {
     try {
-      if (!fabricCanvasRef.current) {
-        toast.error("Canvas not initialized");
+      // Process and upload all annotated images (not just the current one)
+      setLoading(true);
+      const annotatedResults = await getAnnotatedImages();
+      if (!annotatedResults) {
+        setLoading(false);
         return;
       }
 
-      // Get the canvas data URL
-      const dataUrl = fabricCanvasRef.current.toDataURL({
-        format: 'png',
-        quality: 1,
-        multiplier: 1,
-        enableRetinaScaling: true
-      });
-
-      // Convert data URL to Blob
-      const response = await fetch(dataUrl);
-      const blob = await response.blob();
-
-      // Get presigned URL for upload
-      const uploadUrlResponse = await api.post(
-        '/review/annotated-image-upload-url',
-        {
-          fileName: `annotated_${currentImageIndex}.png`,
-          contentType: 'image/png',
-          clientId: submission.clientId || 'CLI677117YN7N',
-          answerId: submission._id
+      // Collect all S3 keys and previews from annotatedResults
+      const s3Keys = [];
+      const previews = [];
+      for (let i = 0; i < annotatedResults.length; i++) {
+        const result = annotatedResults[i];
+        if (result && result.s3Key) {
+          s3Keys.push({ s3Key: result.s3Key });
+          previews.push(result.previewUrl);
         }
-      );
-
-      if (!uploadUrlResponse.data.success) {
-        throw new Error(uploadUrlResponse.data.message || 'Failed to get upload URL');
       }
-
-      const uploadUrl = uploadUrlResponse.data.data.uploadUrl;
-      const key = uploadUrlResponse.data.data.key;
-
-      // Upload to S3
-      const uploadResponse = await fetch(uploadUrl, {
-        method: 'PUT',
-        body: blob,
-        headers: {
-          'Content-Type': 'image/png'
-        }
-      });
-
-      if (!uploadResponse.ok) {
-        throw new Error('Failed to upload annotated image to S3');
-      }
-
-      // Add to annotated images array
-      setAnnotatedImages(prev => {
-        const newImages = Array.isArray(prev) ? [...prev] : [];
-        newImages.push({ s3Key: key });
-        return newImages;
-      });
-
-      // Create preview for the uploaded image
-      setImagePreviews(prev => {
-        const newPreviews = Array.isArray(prev) ? [...prev] : [];
-        newPreviews.push(dataUrl);
-        return newPreviews;
-      });
-
-      // Open review modal
+      setAnnotatedImages(s3Keys);
+      setImagePreviews(previews);
       setIsReviewModalOpen(true);
+      setLoading(false);
     } catch (error) {
+      setLoading(false);
       console.error('Error in handleCompleteReview:', error);
       let errorMessage = 'Failed to process review';
-      
       if (error.response) {
         errorMessage = error.response.data.message || `Server error: ${error.response.status}`;
       } else if (error.request) {
@@ -1448,7 +1399,6 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
       } else {
         errorMessage = error.message;
       }
-      
       toast.error(errorMessage);
     }
   };
