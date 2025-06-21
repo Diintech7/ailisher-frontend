@@ -182,12 +182,42 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
         return true;
       } else {
         console.error('API Error:', data.message || 'Failed to add question');
-        toast.error(data.message || 'Failed to add question');
+        
+        // Handle specific error messages
+        let errorMessage = data.message || 'Failed to add question';
+        
+        if (data.message && data.message.includes('YouTube')) {
+          errorMessage = 'Invalid YouTube URL format. Please check your video URLs.';
+        } else if (data.message && data.message.includes('validation')) {
+          errorMessage = 'Please check all required fields and ensure valid data.';
+        } else if (data.message && data.message.includes('duplicate')) {
+          errorMessage = 'This question already exists.';
+        } else if (response.status === 400) {
+          errorMessage = 'Invalid data provided. Please check your input.';
+        } else if (response.status === 401) {
+          errorMessage = 'Authentication failed. Please login again.';
+        } else if (response.status === 403) {
+          errorMessage = 'You do not have permission to add questions.';
+        } else if (response.status === 404) {
+          errorMessage = 'Topic or set not found.';
+        } else if (response.status === 500) {
+          errorMessage = 'Server error occurred. Please try again later.';
+        }
+        
+        toast.error(errorMessage);
         return false;
       }
     } catch (error) {
       console.error('Error adding question:', error);
-      toast.error('Failed to connect to the server');
+      
+      // Handle network errors
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        toast.error('Network error. Please check your internet connection.');
+      } else if (error.message.includes('Failed to fetch')) {
+        toast.error('Unable to connect to server. Please try again later.');
+      } else {
+        toast.error('Failed to connect to the server');
+      }
       return false;
     }
   };
