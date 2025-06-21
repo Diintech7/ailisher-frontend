@@ -30,7 +30,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
     modalAnswer: '',
     languageMode: 'english',
     answerVideoUrls: [],
-    evaluationMode: 'manual'
+    evaluationMode: 'auto'
   };
 
   const [questions, setQuestions] = useState([initialQuestionState]);
