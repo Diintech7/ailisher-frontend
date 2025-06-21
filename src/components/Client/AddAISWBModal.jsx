@@ -299,11 +299,16 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
           ...questionsData[0],
           id: editingQuestion.id
         };
-        console.log('Updating question with data:', updatedQuestion);
+        console.log('Modal: Updating question with data:', updatedQuestion);
+        console.log('Modal: Question ID being updated:', editingQuestion.id);
         const result = await onEditQuestion(updatedQuestion);
+        console.log('Modal: Update result from onEditQuestion:', result);
         if (result) {
+          console.log('Modal: Question update successful!');
           toast.success('Question updated successfully!');
           onClose();
+        } else {
+          console.error('Modal: Question update failed!');
         }
       } else {
         // Add new questions

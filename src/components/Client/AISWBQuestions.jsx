@@ -230,6 +230,9 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
         return false;
       }
 
+      console.log('Sending update request for question:', editedQuestion.id);
+      console.log('Update request data:', editedQuestion);
+
       const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/questions/${editedQuestion.id}`, {
         method: 'PUT',
         headers: {
@@ -239,18 +242,32 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
         body: JSON.stringify({ question: editedQuestion })
       });
 
+      console.log('Update API Response status:', response.status);
+      console.log('Update API Response headers:', Object.fromEntries(response.headers.entries()));
+
       const data = await response.json();
+      console.log('Update API Response data:', data);
+      console.log('Update API Response success:', data.success);
+      console.log('Update API Response message:', data.message);
       
       if (data.success) {
+        console.log('Question updated successfully!');
         // Refresh questions after successful edit
         await refreshQuestions();
         return true;
       } else {
+        console.error('Update API Error:', data.message || 'Failed to update question');
+        console.error('Update API Error details:', data);
         toast.error(data.message || 'Failed to update question');
         return false;
       }
     } catch (error) {
       console.error('Error updating question:', error);
+      console.error('Update error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
       toast.error('Failed to connect to the server');
       return false;
     }
