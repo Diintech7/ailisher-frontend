@@ -442,7 +442,7 @@ const EvaluatedSubmissions = ({ questionId }) => {
                   {submission.evaluation?.marks !== undefined && submission.evaluation !== undefined && (
                     <div className="bg-green-100 p-4 rounded-lg border border-green-200">
                       <h5 className="text-sm font-medium text-green-800 mb-2">Marks Awarded</h5>
-                      <p className="text-2xl font-bold text-green-800">{submission.evaluation.marks} / {submission.evaluation.totalMarks || 10}</p>
+                      <p className="text-2xl font-bold text-green-800">{submission.evaluation.marks} / {submission.question.metadata?.maximumMarks}</p>
                     </div>
                   )}
 

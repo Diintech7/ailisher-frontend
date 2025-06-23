@@ -171,6 +171,9 @@ const ReviewSubmissions = ({ questionId }) => {
   const ImageModal = ({ image, onClose }) => {
     if (!image) return null;
 
+    // Handle both regular answer images and annotated images
+    const imageUrl = image.downloadUrl || image.imageUrl;
+
     return (
       <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
         <div className="relative max-w-4xl w-full">
@@ -183,9 +186,13 @@ const ReviewSubmissions = ({ questionId }) => {
             </svg>
           </button>
           <img
-            src={image.imageUrl}
+            src={imageUrl}
             alt="Full size"
             className="w-full h-auto max-h-[80vh] object-contain"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = 'https://via.placeholder.com/800x600?text=Image+Not+Found';
+            }}
           />
         </div>
       </div>
@@ -295,8 +302,36 @@ const ReviewSubmissions = ({ questionId }) => {
             {/* Collapsible Details */}
             {expandedSubmissions[submission._id] && (
               <div className="p-6 pt-0 space-y-4 border-t border-gray-200">
-                {/* Answer Images */}
-                {submission.answerImages && submission.answerImages.length > 0 && (
+                {/* Answer Images - Show annotated images for completed reviews, regular images for others */}
+                {activeTab === 'review_completed' && submission.feedback?.expertReview?.annotatedImages && submission.feedback.expertReview.annotatedImages.length > 0 ? (
+                  <div className="bg-gray-100 p-4 rounded-lg border border-gray-200">
+                    <h4 className="text-sm font-medium text-gray-700 mb-2">Annotated Images:</h4>
+                    <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
+                      {submission.feedback.expertReview.annotatedImages.map((image, index) => (
+                        <div 
+                          key={index} 
+                          className="relative cursor-pointer group aspect-w-4 aspect-h-3 rounded-lg overflow-hidden bg-white border border-gray-200"
+                          onClick={() => setSelectedImage(image)}
+                        >
+                          <img
+                            src={image.downloadUrl}
+                            alt={`Annotated image ${index + 1}`}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              e.target.onerror = null;
+                              e.target.src = 'https://via.placeholder.com/150x100?text=Image+Not+Found';
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity flex items-center justify-center">
+                            <svg className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m4-3H6" />
+                            </svg>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : submission.answerImages && submission.answerImages.length > 0 && (
                   <div className="bg-gray-100 p-4 rounded-lg border border-gray-200">
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Submitted Images:</h4>
                     <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
@@ -326,8 +361,8 @@ const ReviewSubmissions = ({ questionId }) => {
                   </div>
                 )}
 
-                {/* Extracted Text */}
-                {submission.extractedTexts && submission.extractedTexts.length > 0 && (
+                {/* Extracted Text - Only show for non-completed reviews */}
+                {activeTab !== 'review_completed' && submission.extractedTexts && submission.extractedTexts.length > 0 && (
                   <div className="bg-blue-100 p-4 rounded-lg border border-blue-200">
                     <h4 className="text-sm font-medium text-blue-800 mb-2">Extracted Text from Answer Images:</h4>
                     <div className="bg-white rounded-lg p-4 border border-gray-200">
@@ -341,8 +376,48 @@ const ReviewSubmissions = ({ questionId }) => {
                   </div>
                 )}
 
-                {/* Analysis Details */}
-                {submission.evaluation && (
+                {/* Expert Review Details - Only show for completed reviews */}
+                {activeTab === 'review_completed' && submission.feedback?.expertReview && (
+                  <div className="bg-purple-100 p-4 rounded-lg border border-purple-200">
+                    <h4 className="text-sm font-medium text-purple-800 mb-2">Expert Review:</h4>
+                    <div className="bg-white rounded-lg p-4 space-y-4 border border-gray-200">
+
+                      {/* Score */}
+                      <div className="bg-green-50 p-3 rounded-lg border border-green-100">
+                        <h5 className="text-sm font-medium text-green-700">Score:</h5>
+                        <p className="text-2xl font-bold text-green-800 mt-1">{submission.feedback.expertReview.score} / 10</p>
+                      </div>
+
+                      {/* Remarks */}
+                      {submission.feedback.expertReview.remarks && (
+                        <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                          <h5 className="text-sm font-medium text-blue-700">Remarks:</h5>
+                          <p className="text-sm text-gray-800 mt-1">{submission.feedback.expertReview.remarks}</p>
+                        </div>
+                      )}
+
+                      {/* Result */}
+                      {submission.feedback.expertReview.result && (
+                        <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
+                          <h5 className="text-sm font-medium text-yellow-700">Result:</h5>
+                          <p className="text-sm text-gray-800 mt-1">{submission.feedback.expertReview.result}</p>
+                        </div>
+                      )}
+
+                      {/* Reviewed At */}
+                      {submission.feedback.expertReview.reviewedAt && (
+                        <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                          <h5 className="text-sm font-medium text-gray-700">Reviewed At:</h5>
+                          <p className="text-sm text-gray-800 mt-1">{formatDateTime(submission.feedback.expertReview.reviewedAt)}</p>
+                        </div>
+                      )}
+
+                    </div>
+                  </div>
+                )}
+
+                {/* Analysis Details - Only show for non-completed reviews */}
+                {activeTab !== 'review_completed' && submission.evaluation && (
                   <div className="bg-purple-100 p-4 rounded-lg border border-purple-200">
                     <h4 className="text-sm font-medium text-purple-800 mb-2">Analysis:</h4>
                     <div className="bg-white rounded-lg p-4 space-y-4 border border-gray-200">
@@ -418,16 +493,16 @@ const ReviewSubmissions = ({ questionId }) => {
                   </div>
                 )}
 
-                {/* Marks Awarded */}
-                {submission.evaluation?.marks !== undefined && (
+                {/* Marks Awarded - Only show for non-completed reviews */}
+                {activeTab !== 'review_completed' && submission.evaluation?.marks !== undefined && (
                   <div className="bg-green-100 p-4 rounded-lg border border-green-200">
                     <h5 className="text-sm font-medium text-green-800 mb-2">Marks Awarded</h5>
-                    <p className="text-2xl font-bold text-green-800">{submission.evaluation.marks} / {submission.evaluation.totalMarks || 10}</p>
+                    <p className="text-2xl font-bold text-green-800">{submission.evaluation.marks} / {submission.question.metadata?.maximumMarks}</p>
                   </div>
                 )}
 
-                {/* Feedback */}
-                {submission.evaluation?.feedback && (
+                {/* Feedback - Only show for non-completed reviews */}
+                {activeTab !== 'review_completed' && submission.evaluation?.feedback && (
                   <div className="bg-blue-100 p-4 rounded-lg border border-blue-200">
                     <h5 className="text-sm font-medium text-blue-800 mb-2">Feedback</h5>
                     <div className="text-sm text-gray-800 whitespace-pre-wrap">

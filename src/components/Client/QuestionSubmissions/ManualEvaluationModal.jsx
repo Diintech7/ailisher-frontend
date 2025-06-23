@@ -139,20 +139,22 @@ const ManualEvaluationModal = ({ submission, onClose, onEvaluationComplete }) =>
         evaluationPrompt,
         includeExtractedText: true,
         includeQuestionDetails: true,
-        maxMarks: submission.question.metadata?.maximumMarks || 10
+        maxMarks: submission.question.metadata?.maximumMarks
       });
+      console.log('Evaluation response:', response);
 
       if (response.success) {
         toast.success('Answer evaluated successfully');
-        onEvaluationComplete(response.data);
+        onEvaluationComplete(response.data || response);
         onClose();
       } else {
-        setError(response.message);
-        toast.error(response.message);
+        setError(response.message || 'Evaluation failed');
+        toast.error(response.message || 'Evaluation failed');
       }
     } catch (error) {
-      setError(error.message);
-      toast.error('Failed to evaluate answer');
+      console.error('Evaluation error:', error);
+      setError(error.message || 'Failed to evaluate answer');
+      toast.error(error.message || 'Failed to evaluate answer');
     } finally {
       setIsLoading(false);
     }
