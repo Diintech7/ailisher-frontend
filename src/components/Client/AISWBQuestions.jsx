@@ -183,12 +183,42 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
         return true;
       } else {
         console.error('API Error:', data.message || 'Failed to add question');
-        toast.error(data.message || 'Failed to add question');
+        
+        // Handle specific error messages
+        let errorMessage = data.message || 'Failed to add question';
+        
+        if (data.message && data.message.includes('YouTube')) {
+          errorMessage = 'Invalid YouTube URL format. Please check your video URLs.';
+        } else if (data.message && data.message.includes('validation')) {
+          errorMessage = 'Please check all required fields and ensure valid data.';
+        } else if (data.message && data.message.includes('duplicate')) {
+          errorMessage = 'This question already exists.';
+        } else if (response.status === 400) {
+          errorMessage = 'Invalid data provided. Please check your input.';
+        } else if (response.status === 401) {
+          errorMessage = 'Authentication failed. Please login again.';
+        } else if (response.status === 403) {
+          errorMessage = 'You do not have permission to add questions.';
+        } else if (response.status === 404) {
+          errorMessage = 'Topic or set not found.';
+        } else if (response.status === 500) {
+          errorMessage = 'Server error occurred. Please try again later.';
+        }
+        
+        toast.error(errorMessage);
         return false;
       }
     } catch (error) {
       console.error('Error adding question:', error);
-      toast.error('Failed to connect to the server');
+      
+      // Handle network errors
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        toast.error('Network error. Please check your internet connection.');
+      } else if (error.message.includes('Failed to fetch')) {
+        toast.error('Unable to connect to server. Please try again later.');
+      } else {
+        toast.error('Failed to connect to the server');
+      }
       return false;
     }
   };
@@ -201,6 +231,9 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
         return false;
       }
 
+      console.log('Sending update request for question:', editedQuestion.id);
+      console.log('Update request data:', editedQuestion);
+
       const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/questions/${editedQuestion.id}`, {
         method: 'PUT',
         headers: {
@@ -210,18 +243,32 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
         body: JSON.stringify({ question: editedQuestion })
       });
 
+      console.log('Update API Response status:', response.status);
+      console.log('Update API Response headers:', Object.fromEntries(response.headers.entries()));
+
       const data = await response.json();
+      console.log('Update API Response data:', data);
+      console.log('Update API Response success:', data.success);
+      console.log('Update API Response message:', data.message);
       
       if (data.success) {
+        console.log('Question updated successfully!');
         // Refresh questions after successful edit
         await refreshQuestions();
         return true;
       } else {
+        console.error('Update API Error:', data.message || 'Failed to update question');
+        console.error('Update API Error details:', data);
         toast.error(data.message || 'Failed to update question');
         return false;
       }
     } catch (error) {
       console.error('Error updating question:', error);
+      console.error('Update error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
       toast.error('Failed to connect to the server');
       return false;
     }

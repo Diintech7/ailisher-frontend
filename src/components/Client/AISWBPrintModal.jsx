@@ -16,6 +16,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
   const [questionBlankPages, setQuestionBlankPages] = useState({});
   const [customWatermark, setCustomWatermark] = useState(null);
   const [testDetailsPage, setTestDetailsPage] = useState(null);
+  const [printWithAnswers, setPrintWithAnswers] = useState(false);
 
   const fetchSetsForPrint = async () => {
     setLoadingSets(true);
@@ -295,78 +296,138 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
     }
   };
 
-  const handlePrint = async () => {
-    if (Object.keys(selectedQuestions).length === 0) {
-      toast.error('Please select at least one question to print');
-      return;
+  // Function to split long answers into multiple pages
+  const splitAnswerIntoPages = (answer, maxCharsPerPage = 1500) => {
+    if (!answer) return [];
+    
+    const pages = [];
+    let currentPage = '';
+    const words = answer.split(' ');
+    
+    for (const word of words) {
+      const testPage = currentPage + (currentPage ? ' ' : '') + word;
+      if (testPage.length > maxCharsPerPage && currentPage) {
+        pages.push(currentPage.trim());
+        currentPage = word;
+      } else {
+        currentPage = testPage;
+      }
     }
+    
+    if (currentPage.trim()) {
+      pages.push(currentPage.trim());
+    }
+    
+    return pages;
+  };
 
-    setPrinting(true);
-    try {
-      const printWindow = window.open('', '_blank');
-      if (!printWindow) {
-        throw new Error('Failed to open print window');
+  // Function to calculate available space for answer based on question length
+  const calculateAnswerSpace = (questionText, totalPageCapacity = 3500) => {
+    if (!questionText) return totalPageCapacity;
+    
+    // Count question characters (including formatting)
+    const questionLength = questionText.length;
+    
+    // Calculate remaining space for answer
+    const availableForAnswer = totalPageCapacity - questionLength;
+    
+    // Ensure minimum space for answer (at least 500 characters)
+    return Math.max(availableForAnswer, 500);
+  };
+
+  // Function to split content considering question and answer together
+  const splitContentWithQuestion = (questionText, answerText, totalPageCapacity = 3500) => {
+    if (!answerText) return [];
+    
+    const pages = [];
+    const questionLength = questionText ? questionText.length : 0;
+    
+    // Calculate space available for answer on first page
+    const firstPageAnswerSpace = totalPageCapacity - questionLength;
+    
+    // Split answer into words
+    const words = answerText.split(' ');
+    let currentPage = '';
+    let isFirstPage = true;
+    
+    for (const word of words) {
+      const testPage = currentPage + (currentPage ? ' ' : '') + word;
+      const maxCharsForCurrentPage = isFirstPage ? firstPageAnswerSpace : totalPageCapacity;
+      
+      if (testPage.length > maxCharsForCurrentPage && currentPage) {
+        pages.push(currentPage.trim());
+        currentPage = word;
+        isFirstPage = false; // Next pages are answer-only pages
+      } else {
+        currentPage = testPage;
       }
+    }
+    
+    if (currentPage.trim()) {
+      pages.push(currentPage.trim());
+    }
+    
+    return pages;
+  };
 
-      // Generate QR codes for all selected questions
-      const qrCodes = {};
-      for (const [setId, questionIds] of Object.entries(selectedQuestions)) {
-        for (const questionId of questionIds) {
-          const qrCode = await generateQRCodeForQuestion(questionId);
-          if (qrCode) {
-            qrCodes[questionId] = qrCode;
-          }
-        }
+  // Function to split content with maximum 2000 characters for answer-only pages and dynamic 1700 max for question pages
+  const splitContentWithMaxAnswerLimit = (questionText, answerText, maxAnswerChars = 2000) => {
+    if (!answerText) return [];
+    
+    const pages = [];
+    const questionLength = questionText ? questionText.length : 0;
+    
+    // For question pages: content area maximum 1700 characters, but dynamic based on question length
+    // For answer-only pages: maximum 2000 characters
+    const availableSpace = 2200 - questionLength;
+    const firstPageAnswerSpace = Math.min(1500, availableSpace); // Dynamic with 1700 max
+    
+    // Split answer into words
+    const words = answerText.split(' ');
+    let currentPage = '';
+    let isFirstPage = true;
+    
+    for (const word of words) {
+      const testPage = currentPage + (currentPage ? ' ' : '') + word;
+      // Use dynamic space for first page (question+answer), maxAnswerChars for subsequent pages (answer-only)
+      const maxCharsForCurrentPage = isFirstPage ? firstPageAnswerSpace : maxAnswerChars;
+      
+      if (testPage.length > maxCharsForCurrentPage && currentPage) {
+        pages.push(currentPage.trim());
+        currentPage = word;
+        isFirstPage = false; // Next pages are answer-only pages
+      } else {
+        currentPage = testPage;
       }
+    }
+    
+    if (currentPage.trim()) {
+      pages.push(currentPage.trim());
+    }
+    
+    return pages;
+  };
 
-      let currentPageNumber = 1;
-      let questionCounter = 1;
+  // Function to generate a single page HTML for questions/answers
+  const generatePageHTML = (pageData) => {
+    const {
+      pageNumber,
+      question,
+      questionCounter,
+      keywords,
+      qrCode,
+      shortQuestionId,
+      answerContent,
+      isAnswerPage = false,
+      answerPageNumber = 1,
+      totalAnswerPages = 1
+    } = pageData;
 
-      // Add test details page if uploaded
-      if (testDetailsPage) {
-        printWindow.document.write(`
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <title>Test Details</title>
-            <style>
-              @page { size: A4; margin: 0; }
-              body { margin: 0; padding: 0; }
-              .a4-page { width: 210mm; height: 297mm; margin: 0 auto; background: white; position: relative; }
-            </style>
-          </head>
-          <body>
-            <div class="a4-page">
-              <img src="${testDetailsPage}" style="width: 100%; height: 100%; object-fit: contain;" />
-            </div>
-          </body>
-          </html>
-        `);
-        currentPageNumber++;
-      }
-
-      // Process each selected question
-      for (const [setId, questionIds] of Object.entries(selectedQuestions)) {
-        const set = sets.find(s => s.id === setId);
-        if (!set) continue;
-
-        for (const questionId of questionIds) {
-          const question = set.questions.find(q => q.id === questionId);
-          if (!question) continue;
-
-          // Limit keywords to 10
-          const keywords = (question.metadata?.keywords || []).slice(0, 10);
-          const qrCode = qrCodes[questionId];
-          
-          // Get last 10 digits of question ID
-          const shortQuestionId = question.id ? question.id.slice(-10) : '';
-
-          // Print question page
-          printWindow.document.write(`
+    return `
             <!DOCTYPE html>
             <html>
             <head>
-              <title>Question ${currentPageNumber}</title>
+        <title>${isAnswerPage ? 'Answer' : 'Question'} ${pageNumber}</title>
               <style>
                 @page { size: A4; margin: 0; }
                 body { margin: 0; padding: 0; font-family: Arial, sans-serif; position: relative; width: 210mm; min-height: 297mm; }
@@ -403,6 +464,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                 .powered-by { font-size: 14px; text-align: center; }
                 .kitabai { font-weight: bold; }
                 .question-preview pre { white-space: pre-wrap; font-family: inherit; }
+          .answer-page-indicator { font-size: 12px; color: #666; margin-bottom: 10px; }
               </style>
             </head>
             <body>
@@ -424,9 +486,13 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                   <div class="middle-column">
                     <div class="topic-section">
                       <div class="topic-value">
+                  ${isAnswerPage ? `
+                    <div class="answer-page-indicator">Answer Page ${answerPageNumber} of ${totalAnswerPages}</div>
+                  ` : `
                         <span class="question-preview">
                           <pre style="margin: 0; font-family: inherit;"><span style="color: #00b0f0; margin-right: 5px;">Q${questionCounter}:</span>${question.question}</pre>
                         </span>
+                  `}
                       </div>
                     </div>
                   </div>
@@ -449,6 +515,12 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                     </div>
                   </div>
                   <div class="content-area">
+              ${answerContent ? `
+                <div style="font-size: 14px; line-height: 1.4; font-family: 'Noto Sans', 'Calibri', sans-serif;">
+                  ${!isAnswerPage ? '<div style="font-weight: bold; color: #00b0f0; margin-bottom: 8px;">Answer:</div>' : ''}
+                  <div style="text-align: justify; white-space: pre-wrap;">${answerContent}</div>
+                </div>
+              ` : ''}
                   </div>
                   <div class="right-sidebar">
                   </div>
@@ -456,7 +528,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                 
                 <div class="footer-section">
                   <div class="footer-left">
-                    <div class="page-number">${currentPageNumber}</div>
+              <div class="page-number">${pageNumber}</div>
                   </div>
                   <div class="footer-middle">
                     <div class="powered-by">Powered by <span class="kitabai">KitabAI</span></div>
@@ -467,86 +539,145 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
               </div>
             </body>
             </html>
-          `);
-          currentPageNumber++;
+    `;
+  };
+
+  const handlePrint = async () => {
+    if (Object.keys(selectedQuestions).length === 0) {
+      toast.error('Please select at least one question to print');
+      return;
+    }
+
+    setPrinting(true);
+    try {
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        throw new Error('Failed to open print window');
+      }
+
+      // Generate QR codes for all selected questions
+      const qrCodes = {};
+      for (const [setId, questionIds] of Object.entries(selectedQuestions)) {
+        for (const questionId of questionIds) {
+          const qrCode = await generateQRCodeForQuestion(questionId);
+          if (qrCode) {
+            qrCodes[questionId] = qrCode;
+          }
+        }
+      }
+
+      let currentPageNumber = 1;
+      let questionCounter = 1;
+
+      // Add test details page if uploaded
+      if (testDetailsPage) {
+              printWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+            <title>Test Details</title>
+                  <style>
+                    @page { size: A4; margin: 0; }
+              body { margin: 0; padding: 0; }
+              .a4-page { width: 210mm; height: 297mm; margin: 0 auto; background: white; position: relative; }
+                  </style>
+                </head>
+                <body>
+                  <div class="a4-page">
+              <img src="${testDetailsPage}" style="width: 100%; height: 100%; object-fit: contain;" />
+                  </div>
+                </body>
+                </html>
+              `);
+              currentPageNumber++;
+            }
+
+      // Process each selected question
+      for (const [setId, questionIds] of Object.entries(selectedQuestions)) {
+        const set = sets.find(s => s.id === setId);
+        if (!set) continue;
+
+        for (const questionId of questionIds) {
+          const question = set.questions.find(q => q.id === questionId);
+          if (!question) continue;
+
+          // Limit keywords to 10
+          const keywords = (question.metadata?.keywords || []).slice(0, 10);
+          const qrCode = qrCodes[questionId];
+          
+          // Get last 10 digits of question ID
+          const shortQuestionId = question.id ? question.id.slice(-10) : '';
+
+          // Handle answer pagination if printing with answers
+          if (printWithAnswers && question.modalAnswer) {
+            const answerPages = splitContentWithMaxAnswerLimit(question.question, question.modalAnswer, 1700);
+            
+            // Print first page with question and first part of answer
+            printWindow.document.write(generatePageHTML({
+              pageNumber: currentPageNumber,
+              question: question,
+              questionCounter: questionCounter,
+              keywords: keywords,
+              qrCode: qrCode,
+              shortQuestionId: shortQuestionId,
+              answerContent: answerPages[0],
+              isAnswerPage: false,
+              answerPageNumber: 1,
+              totalAnswerPages: answerPages.length
+            }));
+            currentPageNumber++;
+
+            // Print additional answer pages if needed
+            for (let i = 1; i < answerPages.length; i++) {
+              printWindow.document.write(generatePageHTML({
+                pageNumber: currentPageNumber,
+                question: question,
+                questionCounter: questionCounter,
+                keywords: keywords,
+                qrCode: null, // No QR code on continuation pages
+                shortQuestionId: shortQuestionId,
+                answerContent: answerPages[i],
+                isAnswerPage: true,
+                answerPageNumber: i + 1,
+                totalAnswerPages: answerPages.length
+              }));
+              currentPageNumber++;
+            }
+          } else {
+            // Print question page without answers
+            printWindow.document.write(generatePageHTML({
+              pageNumber: currentPageNumber,
+              question: question,
+              questionCounter: questionCounter,
+              keywords: keywords,
+              qrCode: qrCode,
+              shortQuestionId: shortQuestionId,
+              answerContent: null,
+              isAnswerPage: false,
+              answerPageNumber: 1,
+              totalAnswerPages: 1
+            }));
+            currentPageNumber++;
+          }
+          
           questionCounter++;
 
           // Add blank pages if option is enabled
           if (includeBlankPages) {
             const pagesToAdd = questionBlankPages[questionId] ?? 0;
             for (let i = 0; i < pagesToAdd; i++) {
-              printWindow.document.write(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                  <title>Blank Page ${currentPageNumber}</title>
-                  <style>
-                    @page { size: A4; margin: 0; }
-                    body { margin: 0; padding: 0; font-family: Arial, sans-serif; position: relative; width: 210mm; min-height: 297mm; }
-                    .a4-page { width: 210mm; height: 297mm; margin: 0; padding: 0; background: white; position: relative; overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; }
-                    .watermark { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; opacity: 0.5; z-index: 0; pointer-events: none; }
-                    .watermark img { max-width: 300px; max-height: 300px; }
-                    .top-section { display: flex; border-bottom: 1px solid #000; height: auto; min-height: 130px; max-height: auto; flex: 0 0 auto; }
-                    .left-column { width: 120px; border-right: 1px solid #000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-                    .middle-column { flex: 1; overflow: visible; padding: 10px; }
-                    .right-column { width: 120px; border-left: 1px solid #000; display: flex; justify-content: center; align-items: center; }
-                    .qid-section { padding: 10px; height: 100%; width: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
-                    .qid-label { font-size: 14px; text-align: center; display: block; width: 100%; margin-bottom: 2px; }
-                    .qid-value { flex: 0 0 auto; font-size: 14px; border-bottom: 1px solid #000; margin-bottom: 10px; padding-bottom: 5px; display: flex; flex-direction: column; justify-content: center; align-items: center; width: 90%; text-align: center; }
-                    .level-label { color: #00b0f0; font-size: 14px; font-weight: bold; text-align: center; display: block; width: 100%; }
-                    .level-label1 { color: #00b0f0; font-size: 14px; font-weight: bold; text-align: center; display: block; width: 100%; margin-bottom: 5px; }
-                  </style>
-                </head>
-                <body>
-                  <div class="a4-page">
-                    <div class="watermark">
-                      <img src="${customWatermark || '/LOGO_WATERMARK.png'}" alt="Watermark" />
-                    </div>
-                    
-                    <div class="top-section">
-                      <div class="left-column">
-                        <div class="qid-section">
-                          <div class="qid-value">
-                            <div class="qid-label">Q.ID</div>
-                            ${shortQuestionId}
-                          </div>
-                          <div class="level-label">${question.metadata?.difficultyLevel || 'level1'}</br>(${question.metadata?.wordLimit || 'level1'} words)</div>
-                        </div>
-                      </div>
-                      <div class="middle-column">
-                      </div>
-                      <div class="right-column">
-                      </div>
-                    </div>
-                    
-                    <div class="middle-section">
-                      <div class="left-sidebar">
-                        <div class="level-label1">Marks : ${question.metadata?.maximumMarks}</div>
-                        <div class="keywords-label">Keywords</div>
-                        <div class="keywords-list">
-                          ${keywords.map((keyword) => `<div class="keyword-item">${keyword}</div>`).join("")}
-                        </div>
-                      </div>
-                      <div class="content-area">
-                      </div>
-                      <div class="right-sidebar">
-                      </div>
-                    </div>
-                    
-                    <div class="footer-section">
-                      <div class="footer-left">
-                        <div class="page-number">${currentPageNumber}</div>
-                      </div>
-                      <div class="footer-middle">
-                        <div class="powered-by">Powered by <span class="kitabai">KItabAI</span></div>
-                      </div>
-                      <div class="footer-right">
-                      </div>
-                    </div>
-                  </div>
-                </body>
-                </html>
-              `);
+              printWindow.document.write(generatePageHTML({
+                pageNumber: currentPageNumber,
+                question: question,
+                questionCounter: questionCounter,
+                keywords: keywords,
+                qrCode: null,
+                shortQuestionId: shortQuestionId,
+                answerContent: null,
+                isAnswerPage: false,
+                answerPageNumber: 1,
+                totalAnswerPages: 1
+              }));
               currentPageNumber++;
             }
           }
@@ -672,6 +803,16 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
               className="form-checkbox h-5 w-5 text-blue-600"
             />
             <span className="text-gray-700">Include blank pages after each question</span>
+          </label>
+
+          <label className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              checked={printWithAnswers}
+              onChange={(e) => setPrintWithAnswers(e.target.checked)}
+              className="form-checkbox h-5 w-5 text-blue-600"
+            />
+            <span className="text-gray-700">Print questions with answers</span>
           </label>
 
           {includeBlankPages && (

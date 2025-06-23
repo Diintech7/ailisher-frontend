@@ -29,9 +29,9 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
     },
     modalAnswer: '',
     languageMode: 'english',
-    answerVideoUrl: '',
-    evaluationMode: 'manual',
-    evaluationType: ''
+    answerVideoUrl: [],
+    evaluationMode: 'auto',
+    evaluationType:''
   };
 
   const [questions, setQuestions] = useState([initialQuestionState]);
@@ -41,6 +41,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
   const [showGeminiModal, setShowGeminiModal] = useState(false);
   const [currentGenerationType, setCurrentGenerationType] = useState(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(null);
+  const [urlErrors, setUrlErrors] = useState({});
 
   useEffect(() => {
     if (editingQuestion) {
@@ -57,15 +58,18 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
             customParams: editingQuestion.metadata.qualityParameters.customParams || []
           }
         },
-        // Convert answerVideoUrls array to comma-separated string for the form
-        answerVideoUrl: Array.isArray(editingQuestion.answerVideoUrls) 
+        // Keep answerVideoUrls as array, convert to comma-separated string for display
+        answerVideoUrls: Array.isArray(editingQuestion.answerVideoUrls) 
           ? editingQuestion.answerVideoUrls.join(', ')
           : editingQuestion.answerVideoUrls || '',
         evaluationType: editingQuestion.evaluationType || ''
       };
       setQuestions([formattedQuestion]);
+      // Clear URL errors when editing
+      setUrlErrors({});
     } else {
       setQuestions([initialQuestionState]);
+      setUrlErrors({});
     }
   }, [editingQuestion]);
 
@@ -197,6 +201,31 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
     }
   };
 
+  // Function to validate YouTube URLs
+  const validateYouTubeUrls = (urls) => {
+    if (!urls || urls.trim() === '') return { isValid: true, invalidUrls: [] };
+    
+    const urlList = urls.split(',').map(url => url.trim()).filter(url => url);
+    const invalidUrls = urlList.filter(url => 
+      !url.includes('youtube.com/watch?v=') && !url.includes('youtube.com/live/')
+    );
+    
+    return {
+      isValid: invalidUrls.length === 0,
+      invalidUrls: invalidUrls
+    };
+  };
+
+  // Function to handle URL validation on change
+  const handleUrlChange = (index, value) => {
+    const validation = validateYouTubeUrls(value);
+    setUrlErrors(prev => ({
+      ...prev,
+      [index]: validation.isValid ? null : `Invalid YouTube URLs: ${validation.invalidUrls.join(', ')}`
+    }));
+    handleQuestionChange(index, 'answerVideoUrls', value);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -213,21 +242,38 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
     }
 
     try {
+      // Check for URL errors before processing
+      const hasUrlErrors = Object.values(urlErrors).some(error => error !== null);
+      if (hasUrlErrors) {
+        setError('Please fix the YouTube URL errors before submitting.');
+        toast.error('Please fix the YouTube URL errors before submitting.');
+        setIsSubmitting(false);
+        return;
+      }
+
       console.log('Original questions data:', questions);
 
-      const questionsData = questions.map(q => {
+      const questionsData = questions.map((q, index) => {
         // Process answerVideoUrls to get valid YouTube URLs
         let videoUrls = [];
-        if (typeof q.answerVideoUrl === 'string') {
-          videoUrls = q.answerVideoUrl.split(',')
-            .map(url => url.trim())
-            .filter(url => url.includes('youtube.com/watch?v='));
-        } else if (Array.isArray(q.answerVideoUrl)) {
-          videoUrls = q.answerVideoUrl.filter(url => url.includes('youtube.com/watch?v='));
+        
+        if (typeof q.answerVideoUrls === 'string') {
+          const urls = q.answerVideoUrls.split(',').map(url => url.trim()).filter(url => url);
+          urls.forEach(url => {
+            if (url.includes('youtube.com/watch?v=') || url.includes('youtube.com/live/')) {
+              videoUrls.push(url);
+            }
+          });
+        } else if (Array.isArray(q.answerVideoUrls)) {
+          q.answerVideoUrls.forEach(url => {
+            if (url && (url.includes('youtube.com/watch?v=') || url.includes('youtube.com/live/'))) {
+              videoUrls.push(url);
+            }
+          });
         }
 
-        // Create a new object without answerVideoUrl
-        const { answerVideoUrl, ...rest } = q;
+        // Create a new object without answerVideoUrls
+        const { answerVideoUrls, ...rest } = q;
 
         const processedData = {
           ...rest,
@@ -251,9 +297,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
             }
           },
           languageMode: q.languageMode,
-          answerVideoUrls: videoUrls,  // Only sending answerVideoUrls
-          evaluationMode: q.evaluationMode,
-          evaluationType: q.evaluationType
+          answerVideoUrls: videoUrls  // Only sending answerVideoUrls
         };
         console.log('Processed question data:', processedData);
         return processedData;
@@ -267,11 +311,16 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
           ...questionsData[0],
           id: editingQuestion.id
         };
-        console.log('Updating question with data:', updatedQuestion);
+        console.log('Modal: Updating question with data:', updatedQuestion);
+        console.log('Modal: Question ID being updated:', editingQuestion.id);
         const result = await onEditQuestion(updatedQuestion);
+        console.log('Modal: Update result from onEditQuestion:', result);
         if (result) {
+          console.log('Modal: Question update successful!');
           toast.success('Question updated successfully!');
           onClose();
+        } else {
+          console.error('Modal: Question update failed!');
         }
       } else {
         // Add new questions
@@ -293,8 +342,26 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
       }
     } catch (error) {
       console.error('Error saving questions:', error);
-      setError('Failed to save questions. Please try again.');
-      toast.error('Failed to save questions. Please try again.');
+      
+      // Handle specific error types
+      if (error.message.includes('Invalid YouTube URLs')) {
+        setError(error.message);
+      } else if (error.message.includes('500') || error.message.includes('Internal Server Error')) {
+        setError('Server error occurred. Please try again later.');
+        toast.error('Server error occurred. Please try again later.');
+      } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+        setError('Authentication failed. Please login again.');
+        toast.error('Authentication failed. Please login again.');
+      } else if (error.message.includes('403') || error.message.includes('Forbidden')) {
+        setError('You do not have permission to perform this action.');
+        toast.error('You do not have permission to perform this action.');
+      } else if (error.message.includes('404') || error.message.includes('Not Found')) {
+        setError('Resource not found. Please check your input.');
+        toast.error('Resource not found. Please check your input.');
+      } else {
+        setError('Failed to save questions. Please try again.');
+        toast.error('Failed to save questions. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -489,14 +556,21 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
                   </label>
                   <input
                     type="text"
-                    value={question.answerVideoUrl}
-                    onChange={(e) => handleQuestionChange(index, 'answerVideoUrl', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={question.answerVideoUrls}
+                    onChange={(e) => handleUrlChange(index, e.target.value)}
+                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      urlErrors[index] 
+                        ? 'border-red-500 focus:ring-red-500' 
+                        : 'border-gray-300 focus:ring-blue-500'
+                    }`}
                     placeholder="Enter video URLs separated by commas"
                   />
                   <p className="mt-1 text-sm text-gray-500">
                     Enter multiple URLs separated by commas (e.g., url1, url2, url3)
                   </p>
+                  {urlErrors[index] && (
+                    <p className="mt-1 text-sm text-red-500">{urlErrors[index]}</p>
+                  )}
                 </div>
 
                 {/* Evaluation Mode */}
