@@ -29,8 +29,9 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
     },
     modalAnswer: '',
     languageMode: 'english',
-    answerVideoUrls: [],
-    evaluationMode: 'auto'
+    answerVideoUrl: [],
+    evaluationMode: 'auto',
+    evaluationType:''
   };
 
   const [questions, setQuestions] = useState([initialQuestionState]);
@@ -60,7 +61,8 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
         // Keep answerVideoUrls as array, convert to comma-separated string for display
         answerVideoUrls: Array.isArray(editingQuestion.answerVideoUrls) 
           ? editingQuestion.answerVideoUrls.join(', ')
-          : editingQuestion.answerVideoUrls || ''
+          : editingQuestion.answerVideoUrls || '',
+        evaluationType: editingQuestion.evaluationType || ''
       };
       setQuestions([formattedQuestion]);
       // Clear URL errors when editing
@@ -229,6 +231,16 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
     setIsSubmitting(true);
     setError('');
 
+    // Validation: Ensure evaluationType is selected if evaluationMode is manual
+    for (const q of questions) {
+      if (q.evaluationMode === 'manual' && !q.evaluationType) {
+        setError('Please select an evaluation type for manual evaluation mode.');
+        toast.error('Please select an evaluation type for manual evaluation mode.');
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
     try {
       // Check for URL errors before processing
       const hasUrlErrors = Object.values(urlErrors).some(error => error !== null);
@@ -285,7 +297,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
             }
           },
           languageMode: q.languageMode,
-          answerVideoUrls: videoUrls  // Send as array to API
+          answerVideoUrls: videoUrls  // Only sending answerVideoUrls
         };
         console.log('Processed question data:', processedData);
         return processedData;
@@ -575,6 +587,25 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
                     <option value="auto">Auto</option>
                   </select>
                 </div>
+
+                {/* Evaluation Type (only for manual mode) */}
+                {question.evaluationMode === 'manual' && (
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Evaluation Type
+                    </label>
+                    <select
+                      value={question.evaluationType}
+                      onChange={(e) => handleQuestionChange(index, 'evaluationType', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    >
+                      <option value="">Select Evaluation Type</option>
+                      <option value="with annotation">With Annotation</option>
+                      <option value="without annotation">Without Annotation</option>
+                    </select>
+                  </div>
+                )}
 
                 {/* Quality Parameters */}
                 <div className="mb-4">

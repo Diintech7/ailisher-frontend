@@ -5,6 +5,10 @@ import SidebarLayout from './components/SidebarLayout';
 import EvaluatorLoginPage from './components/Auth/EvaluatorLoginPage';
 import EvaluatorRegistrationPage from './components/Auth/EvaluatorRegistrationPage';
 import EvaluatorDashboard from './components/Evaluator/EvaluatorDashboard';
+import EvaluatorReview from './components/Evaluator/EvaluatorReview';
+import EvaluatorProfile from './components/Evaluator/EvaluatorProfile';
+import PendingAnswers from './components/Evaluator/PendingAnswers';
+import EvaluatedAnswers from './components/Evaluator/EvaluatedAnswers';
 
 const EvaluatorApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -86,6 +90,11 @@ const EvaluatorApp = () => {
         {isAuthenticated ? (
           <Route element={<SidebarLayout onLogout={handleLogout} userRole="evaluator" />}>
             <Route path="/dashboard" element={<EvaluatorDashboard />} />
+            <Route path="/review" element={<EvaluatorReview/>} />
+            <Route path="/profile" element={<EvaluatorProfile/>} />
+            <Route path="/pending" element={<PendingAnswers/>} />
+            <Route path="/evaluated" element={<EvaluatedAnswers/>} />
+
           </Route>
         ) : (
           <Route path="*" element={<Navigate to="/evaluator/login" replace />} />

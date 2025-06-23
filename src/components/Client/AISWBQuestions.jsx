@@ -154,6 +154,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
 
   const handleAddQuestion = async (newQuestion) => {
     try {
+      console.log('Question being sent from frontend:', newQuestion);
       const token = Cookies.get('usertoken');
       if (!token) {
         toast.error('Authentication required');

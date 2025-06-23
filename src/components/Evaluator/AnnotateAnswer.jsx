@@ -15,7 +15,7 @@ const api = axios.create({
 // Global Fabric.js loader promise
 let fabricLoaderPromise = null;
 
-const AnswerAnnotation = ({ submission, onClose, onSave }) => {
+const AnnotateAnswer = ({ submission, onClose, onSave }) => {
   const [activeTool, setActiveTool] = useState("pen")
   const [penColor, setPenColor] = useState("#FF0000")
   const [penSize, setPenSize] = useState(2)
@@ -1260,7 +1260,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
 
                   // Upload to S3
                   const uploadUrlResponse = await api.post(
-                    '/review/annotated-image-upload-url',
+                    '/evaluator-reviews/annotated-image-upload-url',
                     {
                       fileName: `annotated_${index}.png`,
                       contentType: 'image/png',
@@ -1344,27 +1344,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
     }
   }
 
-  const handleSave = async () => {
-    const updatedAnnotations = await getAnnotatedImages()
-    if (!updatedAnnotations) return
-
-    // Download all annotated images
-    Object.keys(updatedAnnotations).forEach((index) => {
-      const link = document.createElement('a')
-      link.download = `annotated_image_${parseInt(index) + 1}.png`
-      link.href = updatedAnnotations[index].imageUrl
-      link.click()
-    })
-
-    // Call the original onSave callback
-      onSave({
-        annotations: updatedAnnotations,
-      })
-
-    toast.success("Annotations saved and images downloaded successfully!")
-  }
-
-  const handleCompleteReview = async () => {
+  const handleOpenPublishModal = async () => {
     try {
       // Process and upload all annotated images (not just the current one)
       setLoading(true);
@@ -1390,7 +1370,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
       setLoading(false);
     } catch (error) {
       setLoading(false);
-      console.error('Error in handleCompleteReview:', error);
+      console.error('Error in handleOpenPublishModal:', error);
       let errorMessage = 'Failed to process review';
       if (error.response) {
         errorMessage = error.response.data.message || `Server error: ${error.response.status}`;
@@ -1402,6 +1382,65 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
       toast.error(errorMessage);
     }
   };
+
+  const handlePublish = async () => {
+    if (annotatedImages.length === 0) {
+        toast.error('No annotated images to publish.');
+        return;
+    }
+
+    setLoading(true);
+    try {
+        const publishPromises = annotatedImages.map(image => 
+            api.post('/evaluator-reviews/publishwithannotation', {
+                answerId: submission._id,
+                annotatedImageKey: image.s3Key,
+            })
+        );
+        
+        await Promise.all(publishPromises);
+        
+        toast.success('Annotations published successfully!');
+        handleCloseReviewModal();
+        if (onSave) {
+            onSave(); 
+        }
+        onClose();
+    } catch (error) {
+        console.error('Error publishing annotations:', error);
+        let errorMessage = 'Failed to publish annotations.';
+        if (error.response) {
+            errorMessage = error.response.data.message || `Server error: ${error.response.status}`;
+        } else if (error.request) {
+            errorMessage = 'No response from server. Please check your connection.';
+        } else {
+            errorMessage = error.message;
+        }
+        toast.error(errorMessage);
+    } finally {
+        setLoading(false);
+    }
+};
+
+  const handleSave = async () => {
+    const updatedAnnotations = await getAnnotatedImages()
+    if (!updatedAnnotations) return
+
+    // Download all annotated images
+    Object.keys(updatedAnnotations).forEach((index) => {
+      const link = document.createElement('a')
+      link.download = `annotated_image_${parseInt(index) + 1}.png`
+      link.href = updatedAnnotations[index].imageUrl
+      link.click()
+    })
+
+    // Call the original onSave callback
+      onSave({
+        annotations: updatedAnnotations,
+      })
+
+    toast.success("Annotations saved and images downloaded successfully!")
+  }
 
   // Separate function for closing the modal
   const handleClose = () => {
@@ -1679,83 +1718,6 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
     }));
   };
 
-  // Handle review submission
-  const handleReviewSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!reviewData.review_result || !reviewData.expert_score || !reviewData.expert_remarks) {
-      toast.error('Please fill in all required fields');
-      return;
-    }
-
-    if (annotatedImages.length === 0) {
-      toast.error('Please upload at least one annotated image');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      console.log("submission by sapna", submission)
-
-      // First, fetch the review request ID using the submission ID
-      const reviewRequestResponse = await api.get(`/review/by-submission/${submission._id}`);
-      console.log("Review request response:", reviewRequestResponse.data);
-      
-      if (!reviewRequestResponse.data.success) {
-        throw new Error(reviewRequestResponse.data.message || 'Failed to fetch review request');
-      }
-
-      const requestId = reviewRequestResponse.data.data.requestId;
-      console.log("Request ID:", requestId);
-      console.log("Review data:", reviewData);
-      console.log("Annotated images:", annotatedImages);
-
-      // Check if answer is in correct status
-      if (submission.reviewStatus !== 'review_accepted') {
-        throw new Error('Answer is not in the correct status for review submission. Current status: ' + submission.reviewStatus);
-      }
-
-      // Now submit the review with the fetched request ID
-      const response = await api.post(
-        `/review/${requestId}/submit`,
-        {
-          ...reviewData,
-          annotated_images: annotatedImages
-        }
-      );
-      console.log("Submit response:", response.data);
-
-      if (response.data.success) {
-        toast.success('Review submitted successfully');
-        if (onSave) {
-          onSave(response.data.data);
-        }
-        handleCloseReviewModal();
-      } else {
-        throw new Error(response.data.message || 'Failed to submit review');
-      }
-    } catch (error) {
-      console.error('Error submitting review:', error);
-      let errorMessage = 'Failed to submit review';
-      
-      if (error.response) {
-        errorMessage = error.response.data.message || `Server error: ${error.response.status}`;
-        
-        if (error.response.data.message?.includes('not in correct status')) {
-          errorMessage = 'This review has already been submitted or is not in the correct state. Please refresh the page.';
-        }
-      } else if (error.request) {
-        errorMessage = 'No response from server. Please check if the server is running.';
-      } else {
-        errorMessage = error.message;
-      }
-      
-      toast.error(errorMessage);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // --- [A] Add a helper to reset all refs and state ---
   const resetAllRefsAndState = () => {
     // DO NOT remove canvas from DOM! Let React handle it.
@@ -1817,11 +1779,11 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
             Save Annotations
           </button>
           <button 
-            onClick={handleCompleteReview} 
+            onClick={handleOpenPublishModal} 
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             disabled={!isComponentMounted}
           >
-            Complete Review
+            Publish With Annotation
           </button>
           <button 
             onClick={handleClose} 
@@ -2171,7 +2133,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 w-[800px] max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold">Complete Review</h3>
+              <h3 className="text-xl font-semibold">Publish with AI Evaluation</h3>
               <button 
                 onClick={handleCloseReviewModal}
                 className="text-gray-500 hover:text-gray-700"
@@ -2182,141 +2144,84 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
               </button>
             </div>
 
-            <form onSubmit={handleReviewSubmit} className="space-y-6">
-              {/* Review Result */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Review Result
-                </label>
-                <input
-                  type="text"
-                  name="review_result"
-                  value={reviewData.review_result}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
+            <div className="space-y-6">
+              {/* AI Evaluation Details */}
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h4 className="text-lg font-medium text-gray-800 mb-4">AI Evaluation Summary</h4>
+                <div className="space-y-4">
+                  {/* Accuracy */}
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-600">Accuracy:</span>
+                    <span className="text-sm font-bold text-purple-700">{submission.evaluation.accuracy}%</span>
+                  </div>
+                  {/* Marks */}
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-600">Marks:</span>
+                    <span className="text-sm font-bold text-blue-700">{submission.evaluation.marks} / {submission.question.metadata?.maximumMarks || 10}</span>
+                  </div>
+                  {/* Strengths */}
+                  {submission.evaluation.strengths?.length > 0 && (
+                    <div>
+                      <h5 className="text-sm font-medium text-green-700 mb-1">Strengths</h5>
+                      <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                        {submission.evaluation.strengths.map((strength, index) => (
+                          <li key={index}>{strength}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {/* Weaknesses */}
+                  {submission.evaluation.weaknesses?.length > 0 && (
+                    <div>
+                      <h5 className="text-sm font-medium text-red-700 mb-1">Areas for Improvement</h5>
+                      <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
+                        {submission.evaluation.weaknesses.map((weakness, index) => (
+                          <li key={index}>{weakness}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              {/* Expert Score */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Score (0-100)
-                </label>
-                <input
-                  type="number"
-                  name="expert_score"
-                  value={reviewData.expert_score}
-                  onChange={handleInputChange}
-                  min="0"
-                  max="100"
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-
-              {/* Expert Remarks */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Remarks
-                </label>
-                <textarea
-                  name="expert_remarks"
-                  value={reviewData.expert_remarks}
-                  onChange={handleInputChange}
-                  rows="4"
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
-              </div>
-
-              {/* Image Upload Section */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Annotated Images
-                  </label>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                      id="image-upload"
-                      disabled={uploadingImages}
-                    />
-                    <label
-                      htmlFor="image-upload"
-                      className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
-                        uploadingImages
-                          ? 'bg-gray-400 cursor-not-allowed'
-                          : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
-                      }`}
-                    >
-                      {uploadingImages ? 'Uploading...' : 'Upload Image'}
-                    </label>
+              {/* Annotated Images Preview */}
+              {imagePreviews.length > 0 && (
+                <div>
+                  <h4 className="text-lg font-medium text-gray-800 mb-2">Your Annotations</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    {imagePreviews.map((preview, index) => (
+                      <div key={index} className="relative">
+                        <img
+                          src={preview}
+                          alt={`Annotated ${index + 1}`}
+                          className="w-full h-40 object-cover rounded-lg shadow-md border"
+                        />
+                      </div>
+                    ))}
                   </div>
                 </div>
+              )}
 
-                {/* Selected Image Preview */}
-                {selectedImage && (
-                  <div className="mt-4">
-                    <p className="text-sm text-gray-500 mb-2">Selected Image Preview:</p>
-                    <div className="relative w-full max-w-md">
-                      <img
-                        src={selectedImage}
-                        alt="Selected"
-                        className="w-full h-auto rounded-lg shadow-md"
-                      />
-                      {uploadingImages && (
-                        <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center rounded-lg">
-                          <div className="text-white">Uploading...</div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Uploaded Images Preview */}
-                {imagePreviews.length > 0 && (
-                  <div className="mt-4">
-                    <p className="text-sm text-gray-500 mb-2">Uploaded Images:</p>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {imagePreviews.map((preview, index) => (
-                        <div key={index} className="relative">
-                          <img
-                            src={preview}
-                            alt={`Uploaded ${index + 1}`}
-                            className="w-full h-32 object-cover rounded-lg shadow-md"
-                          />
-                          <button
-                            onClick={() => handleRemoveImage(index)}
-                            className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Submit Button */}
-              <div className="flex justify-end">
+              {/* Action Buttons */}
+              <div className="flex justify-end pt-4 border-t mt-6">
                 <button
-                  type="submit"
+                  onClick={handleCloseReviewModal}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 mr-2"
+                  disabled={loading}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handlePublish}
                   disabled={loading || uploadingImages}
-                  className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 ${
+                  className={`px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 ${
                     (loading || uploadingImages) ? 'opacity-50 cursor-not-allowed' : ''
                   }`}
                 >
-                  {loading ? 'Submitting...' : 'Submit Review'}
+                  {loading ? 'Publishing...' : 'Publish'}
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
@@ -2324,4 +2229,4 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
   )
 }
 
-export default AnswerAnnotation
+export default AnnotateAnswer

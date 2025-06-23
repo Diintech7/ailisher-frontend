@@ -119,7 +119,10 @@ const SidebarLayout = ({ onLogout, userRole }) => {
       navigate('/admin/settings');
     } else if (userRole === 'client') {
       navigate('/profile');
-    } else {
+    } else if (userRole === 'evaluator') {
+      navigate('/evaluator/profile');
+    }
+    else {
       navigate('/settings');
     }
   };
