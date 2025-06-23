@@ -296,54 +296,38 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
     }
   };
 
-  // Function to split long answers into multiple pages
-  const splitAnswerIntoPages = (answer, maxCharsPerPage = 1500) => {
-    if (!answer) return [];
+  // Function to calculate visual space for answer content (80-85 characters per line)
+  const calculateVisualAnswerSpace = (text) => {
+    if (!text) return 0;
     
-    const pages = [];
-    let currentPage = '';
-    const words = answer.split(' ');
+    const charsPerLine = 82; // Average of 80-85 characters per line
+    const lines = text.split('\n'); // Split by manual line breaks
+    let totalVisualSpace = 0;
     
-    for (const word of words) {
-      const testPage = currentPage + (currentPage ? ' ' : '') + word;
-      if (testPage.length > maxCharsPerPage && currentPage) {
-        pages.push(currentPage.trim());
-        currentPage = word;
+    for (const line of lines) {
+      if (line.length <= charsPerLine) {
+        totalVisualSpace += charsPerLine; // Full line space used
       } else {
-        currentPage = testPage;
+        // Line wraps to multiple lines
+        const wrappedLines = Math.ceil(line.length / charsPerLine);
+        totalVisualSpace += wrappedLines * charsPerLine;
       }
     }
     
-    if (currentPage.trim()) {
-      pages.push(currentPage.trim());
-    }
-    
-    return pages;
+    return totalVisualSpace;
   };
 
-  // Function to calculate available space for answer based on question length
-  const calculateAnswerSpace = (questionText, totalPageCapacity = 3500) => {
-    if (!questionText) return totalPageCapacity;
-    
-    // Count question characters (including formatting)
-    const questionLength = questionText.length;
-    
-    // Calculate remaining space for answer
-    const availableForAnswer = totalPageCapacity - questionLength;
-    
-    // Ensure minimum space for answer (at least 500 characters)
-    return Math.max(availableForAnswer, 500);
-  };
-
-  // Function to split content considering question and answer together
-  const splitContentWithQuestion = (questionText, answerText, totalPageCapacity = 3500) => {
+  // Function to split content with maximum 2000 characters for answer-only pages and dynamic 1500 max for question pages
+  const splitContentWithMaxAnswerLimit = (questionText, answerText, maxAnswerChars = 2000) => {
     if (!answerText) return [];
     
     const pages = [];
     const questionLength = questionText ? questionText.length : 0;
     
-    // Calculate space available for answer on first page
-    const firstPageAnswerSpace = totalPageCapacity - questionLength;
+    // For question pages: content area maximum 1500 characters, but dynamic based on question length
+    // For answer-only pages: maximum 2000 characters
+    const availableSpace = 2200 - questionLength;
+    const firstPageAnswerSpace = Math.min(1500, availableSpace); // Dynamic with 1500 max
     
     // Split answer into words
     const words = answerText.split(' ');
@@ -352,7 +336,8 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
     
     for (const word of words) {
       const testPage = currentPage + (currentPage ? ' ' : '') + word;
-      const maxCharsForCurrentPage = isFirstPage ? firstPageAnswerSpace : totalPageCapacity;
+      // Use dynamic space for first page (question+answer), maxAnswerChars for subsequent pages (answer-only)
+      const maxCharsForCurrentPage = isFirstPage ? firstPageAnswerSpace : maxAnswerChars;
       
       if (testPage.length > maxCharsForCurrentPage && currentPage) {
         pages.push(currentPage.trim());
@@ -370,17 +355,20 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
     return pages;
   };
 
-  // Function to split content with maximum 2000 characters for answer-only pages and dynamic 1700 max for question pages
-  const splitContentWithMaxAnswerLimit = (questionText, answerText, maxAnswerChars = 2000) => {
+  // Function to split content using visual space calculation (80-85 chars per line)
+  const splitContentWithVisualSpace = (questionText, answerText, maxAnswerChars = 2000) => {
     if (!answerText) return [];
     
     const pages = [];
     const questionLength = questionText ? questionText.length : 0;
     
-    // For question pages: content area maximum 1700 characters, but dynamic based on question length
+    // Calculate visual space for question
+    const questionVisualSpace = calculateVisualAnswerSpace(questionText);
+    
+    // For question pages: use visual space calculation
     // For answer-only pages: maximum 2000 characters
-    const availableSpace = 2200 - questionLength;
-    const firstPageAnswerSpace = Math.min(1500, availableSpace); // Dynamic with 1700 max
+    const availableSpace = 2200 - questionVisualSpace;
+    const firstPageAnswerSpace = Math.min(1500, availableSpace); // Dynamic with 1500 max
     
     // Split answer into words
     const words = answerText.split(' ');
@@ -389,7 +377,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
     
     for (const word of words) {
       const testPage = currentPage + (currentPage ? ' ' : '') + word;
-      // Use dynamic space for first page (question+answer), maxAnswerChars for subsequent pages (answer-only)
+      // Use visual space calculation for first page, maxAnswerChars for subsequent pages
       const maxCharsForCurrentPage = isFirstPage ? firstPageAnswerSpace : maxAnswerChars;
       
       if (testPage.length > maxCharsForCurrentPage && currentPage) {
@@ -610,7 +598,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
 
           // Handle answer pagination if printing with answers
           if (printWithAnswers && question.modalAnswer) {
-            const answerPages = splitContentWithMaxAnswerLimit(question.question, question.modalAnswer, 1700);
+            const answerPages = splitContentWithVisualSpace(question.question, question.modalAnswer, 2000);
             
             // Print first page with question and first part of answer
             printWindow.document.write(generatePageHTML({
