@@ -7,6 +7,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import PDFSplitter from './PDFSplitter';
 import QRCodeModal from './QRCodeModal';
 import QRCodeModalChapter from './QRCodeModalChapter';
+import PrintBookModal from './PrintBookModal';
 
 const ChapterItem = ({ chapter, onClick, onQRCodeClick }) => (
   <div className="bg-white p-5 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100">
@@ -312,6 +313,7 @@ const BookDetail = () => {
   const [showQRCodeModal, setShowQRCodeModal] = useState(false);
   const [showChapterQRCodeModal, setShowChapterQRCodeModal] = useState(false);
   const [selectedChapterId, setSelectedChapterId] = useState(null);
+  const [showPrintBookModal, setShowPrintBookModal] = useState(false);
   const { bookId } = useParams();
   const navigate = useNavigate();
 
@@ -605,6 +607,14 @@ const BookDetail = () => {
                     <Database size={16} className="mr-2" />
                     <span>Book Assets</span>
                   </button>
+
+                  <button 
+                    className="flex items-center px-4 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700 transition-colors shadow-sm"
+                    onClick={() => setShowPrintBookModal(true)}
+                  >
+                    <Book size={16} className="mr-2" />
+                    <span>Print Book</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -673,6 +683,13 @@ const BookDetail = () => {
         bookId={bookId}
         chapterId={selectedChapterId}
         chapterTitle={chapters.find(c => c._id === selectedChapterId)?.title}
+      />
+      <PrintBookModal
+        isOpen={showPrintBookModal}
+        onClose={() => setShowPrintBookModal(false)}
+        bookId={bookId}
+        chapters={chapters}
+        bookTitle={book?.title}
       />
     </div>
   );
