@@ -110,19 +110,19 @@ const AdvancedLandingPage = () => {
 
   const testimonials = [
     {
-      name: "Dr. Sarah Johnson",
+      name: "Kuldeep Yadav",
       role: "Education Director",
       content: "AILisher transformed how our students interact with textbooks. The AI tutoring feature is revolutionary.",
       rating: 5
     },
     {
-      name: "Michael Chen",
+      name: "Pankaj Pareek",
       role: "Publisher",
       content: "Our book sales increased by 300% after integrating with AILisher. The platform is incredible.",
       rating: 5
     },
     {
-      name: "Emma Rodriguez",
+      name: "Ankur Maurya",
       role: "Student",
       content: "Having an AI tutor available 24/7 changed my study habits completely. I understand concepts better now.",
       rating: 5
