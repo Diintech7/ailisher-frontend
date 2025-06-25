@@ -29,7 +29,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
     },
     modalAnswer: '',
     languageMode: 'english',
-    answerVideoUrl: [],
+    answerVideoUrls: [],
     evaluationMode: 'auto',
     evaluationType:''
   };
