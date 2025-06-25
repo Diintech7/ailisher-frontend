@@ -656,7 +656,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
             for (let i = 0; i < pagesToAdd; i++) {
               printWindow.document.write(generatePageHTML({
                 pageNumber: currentPageNumber,
-                question: question,
+                question: null,
                 questionCounter: questionCounter,
                 keywords: keywords,
                 qrCode: null,
