@@ -1367,6 +1367,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
   const handleCompleteReview = async () => {
     try {
       // Process and upload all annotated images (not just the current one)
+      console.log(submission.questionId.metadata?.maximumMarks)
       setLoading(true);
       const annotatedResults = await getAnnotatedImages();
       if (!annotatedResults) {
@@ -1889,7 +1890,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
               <h3 className="text-sm font-medium text-blue-700 mb-2">Marks Awarded</h3>
               <p className="text-2xl font-bold text-blue-800">
-                {submission.evaluation.marks} / {submission.evaluation.totalMarks || 10}
+                {submission.evaluation.marks} / {submission.questionId.metadata?.maximumMarks || 10}
               </p>
             </div>
 
@@ -2201,7 +2202,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
               {/* Expert Score */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Score (0-100)
+                  Score (0-{submission.questionId.metadata?.maximumMarks})
                 </label>
                 <input
                   type="number"
@@ -2209,7 +2210,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   value={reviewData.expert_score}
                   onChange={handleInputChange}
                   min="0"
-                  max="100"
+                  max={submission.questionId.metadata?.maximumMarks}
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   required
                 />

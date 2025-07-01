@@ -29,7 +29,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
     },
     modalAnswer: '',
     languageMode: 'english',
-    answerVideoUrl: [],
+    answerVideoUrls: [],
     evaluationMode: 'auto',
     evaluationType:''
   };
@@ -62,6 +62,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
         answerVideoUrls: Array.isArray(editingQuestion.answerVideoUrls) 
           ? editingQuestion.answerVideoUrls.join(', ')
           : editingQuestion.answerVideoUrls || '',
+          
         evaluationType: editingQuestion.evaluationType || ''
       };
       setQuestions([formattedQuestion]);

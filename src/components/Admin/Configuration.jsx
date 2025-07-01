@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
+import { useParams } from 'react-router-dom';
 // import { apiRequest } from '../utils/api';
 
-function ConfigTable({ data, onEdit, onDelete }) {
+function ConfigTable({ data, onEdit, onDelete, expired }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full bg-white rounded-lg shadow border table-fixed overflow-y-auto">
@@ -17,7 +18,7 @@ function ConfigTable({ data, onEdit, onDelete }) {
         </thead>
         <tbody>
           {data.map((row, idx) => (
-            <tr key={idx} className="border-t hover:bg-gray-50">
+            <tr key={idx} className={`border-t hover:bg-gray-50 ${expired ? 'bg-red-100 text-red-700 font-semibold animate-pulse' : ''}`}>
               <td className="px-4 py-2 font-medium">{row.sourcename}</td>
               <td className="px-4 py-2">{row.modelname}</td>
               <td className="px-4 py-2 font-mono text-xs text-gray-600" colSpan={2}>{row.key}</td>
@@ -103,7 +104,9 @@ export default function Configuration() {
   const [addSection, setAddSection] = useState(null); // sourcetype for add form
   const [editModel, setEditModel] = useState(null); // { ...model, sourcetype }
   const [newSection, setNewSection] = useState('');
+  const [expiredSections, setExpiredSections] = useState([]); // Track expired config sections
 
+  const { clientId } = useParams();
   // Helper to get auth headers
   const getAuthHeaders = () => {
     const token = Cookies.get('admintoken');
@@ -117,7 +120,7 @@ export default function Configuration() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('http://localhost:5000/api/config', {
+      const response = await fetch(`http://localhost:5000/api/config/clients/${clientId}`, {
         headers: getAuthHeaders()
       });
       const data = await response.json();
@@ -129,6 +132,27 @@ export default function Configuration() {
         }
       });
       setConfigData(grouped);
+
+      // Check isExpired for each section
+      const expired = [];
+      await Promise.all(
+        configs.map(async (cfg) => {
+          if (cfg && cfg.sourcetype) {
+            try {
+              const res = await fetch(`http://localhost:5000/api/config/clients/${clientId}/config/${cfg.sourcetype}/expire`, {
+                headers: getAuthHeaders()
+              });
+              const result = await res.json();
+              if (result.isExpired) {
+                expired.push(cfg.sourcetype);
+              }
+            } catch (e) {
+              // ignore error for this section
+            }
+          }
+        })
+      );
+      setExpiredSections(expired);
     } catch (err) {
       setError(err.message || 'Failed to fetch configuration');
     } finally {
@@ -144,7 +168,7 @@ export default function Configuration() {
   const handleAdd = async (sourcetype, model) => {
     try {
       setLoading(true);
-      await fetch('http://localhost:5000/api/config/model', {
+      await fetch(`http://localhost:5000/api/config/clients/${clientId}/model`, {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ ...model, sourcetype })
@@ -165,7 +189,7 @@ export default function Configuration() {
   const handleUpdate = async (model) => {
     try {
       setLoading(true);
-      await fetch(`http://localhost:5000/api/config/model/${editModel.sourcetype}/${editModel.key}`, {
+      await fetch(`http://localhost:5000/api/config/clients/${clientId}/model/${editModel.sourcetype}/${editModel.key}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify(model)
@@ -184,7 +208,7 @@ export default function Configuration() {
     if (!window.confirm(`Delete model ${model.modelname} (${model.key})?`)) return;
     try {
       setLoading(true);
-      await fetch(`http://localhost:5000/api/config/model/${sourcetype}/${model.key}`, {
+      await fetch(`http://localhost:5000/api/config/clients/${clientId}/model/${sourcetype}/${model.key}`, {
         method: 'DELETE',
         headers: getAuthHeaders()
       });
@@ -205,6 +229,16 @@ export default function Configuration() {
   return (
     <div className="w-full mx-auto px-4">
       <h1 className="text-3xl font-bold mb-8 text-center text-gray-800">Configuration</h1>
+      {expiredSections.length > 0 && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+          <strong>Alert:</strong> The following config sections are expired and require immediate key update:
+          <ul className="list-disc ml-6 mt-2">
+            {expiredSections.map(section => (
+              <li key={section}><b>{section}</b> - Please update the key immediately!</li>
+            ))}
+          </ul>
+        </div>
+      )}
       {loading && <div className="text-center text-gray-500">Loading...</div>}
       {error && <div className="text-center text-red-500">{error}</div>}
       <div className="mb-6 flex gap-2 items-end">
@@ -251,6 +285,7 @@ export default function Configuration() {
                 data={data}
                 onEdit={model => handleEdit(model, section)}
                 onDelete={model => handleDelete(model, section)}
+                expired={expiredSections.includes(section)}
               />
             </div>
           ))}
