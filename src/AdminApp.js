@@ -102,7 +102,7 @@ const AdminApp = () => {
             <Route path="/users" element={<User/>} />
             <Route path="/evaluators" element={<EvaluatorsManagement />} />
             <Route path="/services" element={<AiServiceManager />} />
-            <Route path="/configuration" element={<Configuration />} />
+            <Route path="/configuration/:clientId" element={<Configuration />} />
 
             {/* <Route path="/users" element={<UserManagement />} />
             <Route path="/ai-agents" element={<AiAgentsManagement />} />

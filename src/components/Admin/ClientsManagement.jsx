@@ -32,6 +32,10 @@ const ClientManagement = () => {
 
   const navigate = useNavigate();
 
+  const handleconfig = (id) => {
+    navigate(`/admin/configuration/${id}`);
+  };
+  
   useEffect(() => {
     fetchClients();
   }, []);
@@ -328,7 +332,7 @@ const ClientManagement = () => {
                         <>
                           <button
                             className="px-4 py-2 text-black rounded-md transition-colors"
-                            onClick={() => navigate('/admin/configuration')}
+                            onClick={() => handleconfig(client._id)}
                           >
                             <SettingsIcon size={18}/>
                           </button>
