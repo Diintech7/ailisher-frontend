@@ -42,6 +42,7 @@ const ReviewSubmissions = ({ questionId }) => {
             question: review.questionId,
             evaluation: review.answerId.evaluation,
             answerImages: review.answerId.answerImages,
+            annotations: review.answerId.annotations,
             submittedAt: review.answerId.submittedAt,
             reviewStatus: review.requestStatus,
             notes: review.notes,
@@ -331,18 +332,18 @@ const ReviewSubmissions = ({ questionId }) => {
                       ))}
                     </div>
                   </div>
-                ) : submission.answerImages && submission.answerImages.length > 0 && (
+                ) : submission.annotations && submission.annotations.length > 0 && (
                   <div className="bg-gray-100 p-4 rounded-lg border border-gray-200">
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Submitted Images:</h4>
                     <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
-                      {submission.answerImages.map((image, index) => (
+                      {submission.annotations.map((image, index) => (
                         <div 
                           key={index} 
                           className="relative cursor-pointer group aspect-w-4 aspect-h-3 rounded-lg overflow-hidden bg-white border border-gray-200"
                           onClick={() => setSelectedImage(image)}
                         >
                           <img
-                            src={image.imageUrl}
+                            src={image.downloadUrl}
                             alt={`Answer image ${index + 1}`}
                             className="w-full h-full object-cover"
                             onError={(e) => {

@@ -184,7 +184,7 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold text-gray-800">AISWB Sets</h2>
+        <h2 className="text-2xl font-semibold text-gray-800">Subjective Sets</h2>
         <button
           onClick={() => {
             setEditingSet(null);

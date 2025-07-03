@@ -641,7 +641,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
         <div className="flex items-center">
           <button
             onClick={onBack}
-            className="flex items-center text-gray-600 hover:text-gray-800 mr-4"
+            className="flex items-center bg-green-600 px-4 py-2 text-white rounded-md hover:bg-red-700 transition-colors mr-4"
           >
             <ChevronRight size={20} className="transform rotate-180" />
             <span>Back to Sets</span>

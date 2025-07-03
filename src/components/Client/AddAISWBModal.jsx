@@ -41,7 +41,6 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
   const [showGeminiModal, setShowGeminiModal] = useState(false);
   const [currentGenerationType, setCurrentGenerationType] = useState(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(null);
-  const [urlErrors, setUrlErrors] = useState({});
 
   useEffect(() => {
     if (editingQuestion) {
@@ -66,11 +65,8 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
         evaluationType: editingQuestion.evaluationType || ''
       };
       setQuestions([formattedQuestion]);
-      // Clear URL errors when editing
-      setUrlErrors({});
     } else {
       setQuestions([initialQuestionState]);
-      setUrlErrors({});
     }
   }, [editingQuestion]);
 
@@ -202,31 +198,6 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
     }
   };
 
-  // Function to validate YouTube URLs
-  const validateYouTubeUrls = (urls) => {
-    if (!urls || urls.trim() === '') return { isValid: true, invalidUrls: [] };
-    
-    const urlList = urls.split(',').map(url => url.trim()).filter(url => url);
-    const invalidUrls = urlList.filter(url => 
-      !url.includes('youtube.com/watch?v=') && !url.includes('youtube.com/live/')
-    );
-    
-    return {
-      isValid: invalidUrls.length === 0,
-      invalidUrls: invalidUrls
-    };
-  };
-
-  // Function to handle URL validation on change
-  const handleUrlChange = (index, value) => {
-    const validation = validateYouTubeUrls(value);
-    setUrlErrors(prev => ({
-      ...prev,
-      [index]: validation.isValid ? null : `Invalid YouTube URLs: ${validation.invalidUrls.join(', ')}`
-    }));
-    handleQuestionChange(index, 'answerVideoUrls', value);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -243,34 +214,14 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
     }
 
     try {
-      // Check for URL errors before processing
-      const hasUrlErrors = Object.values(urlErrors).some(error => error !== null);
-      if (hasUrlErrors) {
-        setError('Please fix the YouTube URL errors before submitting.');
-        toast.error('Please fix the YouTube URL errors before submitting.');
-        setIsSubmitting(false);
-        return;
-      }
-
       console.log('Original questions data:', questions);
 
       const questionsData = questions.map((q, index) => {
-        // Process answerVideoUrls to get valid YouTube URLs
         let videoUrls = [];
-        
         if (typeof q.answerVideoUrls === 'string') {
-          const urls = q.answerVideoUrls.split(',').map(url => url.trim()).filter(url => url);
-          urls.forEach(url => {
-            if (url.includes('youtube.com/watch?v=') || url.includes('youtube.com/live/')) {
-              videoUrls.push(url);
-            }
-          });
+          videoUrls = q.answerVideoUrls.split(',').map(url => url.trim()).filter(url => url);
         } else if (Array.isArray(q.answerVideoUrls)) {
-          q.answerVideoUrls.forEach(url => {
-            if (url && (url.includes('youtube.com/watch?v=') || url.includes('youtube.com/live/'))) {
-              videoUrls.push(url);
-            }
-          });
+          videoUrls = q.answerVideoUrls.map(url => url && url.trim()).filter(url => url);
         }
 
         // Create a new object without answerVideoUrls
@@ -298,7 +249,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
             }
           },
           languageMode: q.languageMode,
-          answerVideoUrls: videoUrls  // Only sending answerVideoUrls
+          answerVideoUrls: videoUrls  // Send whatever user entered
         };
         console.log('Processed question data:', processedData);
         return processedData;
@@ -345,9 +296,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
       console.error('Error saving questions:', error);
       
       // Handle specific error types
-      if (error.message.includes('Invalid YouTube URLs')) {
-        setError(error.message);
-      } else if (error.message.includes('500') || error.message.includes('Internal Server Error')) {
+      if (error.message.includes('500') || error.message.includes('Internal Server Error')) {
         setError('Server error occurred. Please try again later.');
         toast.error('Server error occurred. Please try again later.');
       } else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
@@ -558,20 +507,13 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
                   <input
                     type="text"
                     value={question.answerVideoUrls}
-                    onChange={(e) => handleUrlChange(index, e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                      urlErrors[index] 
-                        ? 'border-red-500 focus:ring-red-500' 
-                        : 'border-gray-300 focus:ring-blue-500'
-                    }`}
+                    onChange={(e) => handleQuestionChange(index, 'answerVideoUrls', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Enter video URLs separated by commas"
                   />
                   <p className="mt-1 text-sm text-gray-500">
                     Enter multiple URLs separated by commas (e.g., url1, url2, url3)
                   </p>
-                  {urlErrors[index] && (
-                    <p className="mt-1 text-sm text-red-500">{urlErrors[index]}</p>
-                  )}
                 </div>
 
                 {/* Evaluation Mode */}

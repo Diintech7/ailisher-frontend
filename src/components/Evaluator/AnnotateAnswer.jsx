@@ -45,6 +45,33 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
   const [isComponentMounted, setIsComponentMounted] = useState(true)
   // --- [NEW] Canvas key for remounting ---
   const [canvasKey, setCanvasKey] = useState(0)
+  // --- [NEW] Comment tool states ---
+  const [showCommentDropdown, setShowCommentDropdown] = useState(false)
+  const [selectedComment, setSelectedComment] = useState("")
+
+  // --- [NEW] Predefined comments with handwriting style ---
+  const predefinedComments = [
+    "Excellent work! ✓",
+    "Good job! 👍",
+    "Well done!",
+    "Perfect! ⭐",
+    "Great explanation!",
+    "Correct approach ✓",
+    "Nice work!",
+    "Outstanding! 🌟",
+    "Keep it up!",
+    "Brilliant! 💡",
+    "Needs improvement",
+    "Try again",
+    "Check this",
+    "Review concept",
+    "Incomplete",
+    "Wrong approach",
+    "Missing steps",
+    "Unclear explanation",
+    "Revise this topic",
+    "Practice more",
+  ]
 
   const canvasRef = useRef(null)
   const fabricCanvasRef = useRef(null)
@@ -632,7 +659,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         })
 
         // Load the new image
-        await loadImage(submission.answerImages[currentImageIndex].imageUrl)
+        await loadImage(submission.anno[currentImageIndex].imageUrl)
 
         // Check if component is still mounted
         if (!isComponentMounted) return
@@ -848,6 +875,13 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         canvas.selection = false
         break
 
+      // --- [NEW] Comment tool case ---
+      case "comment":
+        canvas.defaultCursor = "pointer"
+        canvas.isDrawingMode = false
+        canvas.selection = false
+        break  
+
       case "select":
         canvas.defaultCursor = "default"
         canvas.isDrawingMode = false
@@ -943,7 +977,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
           const text = new window.fabric.IText("Double click to edit", {
             left: 100,
             top: 100,
-            fontFamily: "Arial",
+            fontFamily: "Kalam, cursive",
             fill: penColor,
             fontSize: 20,
             fontWeight: "400",
@@ -951,12 +985,25 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
             underline: false,
             linethrough: false,
             textAlign: "left",
-            charSpacing: 0,
-            lineHeight: 1,
+            charSpacing: 1,
+            lineHeight: 1.2,
+            // Add some rotation for more natural handwritten look
+            angle: Math.random() * 4 - 2, // Random rotation between -2 and 2 degrees
+        shadow: {
+          color: "rgba(0,0,0,0.1)",
+          blur: 1,
+          offsetX: 1,
+          offsetY: 1,
+        },
           })
           fabricCanvasRef.current.add(text)
           fabricCanvasRef.current.setActiveObject(text)
           break
+        // --- [NEW] Comment tool case ---
+        case "comment":
+          fabricCanvasRef.current.isDrawingMode = false
+          setShowCommentDropdown(true)
+          break  
         case "select":
           fabricCanvasRef.current.isDrawingMode = false
           fabricCanvasRef.current.selection = true
@@ -980,6 +1027,53 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
     } catch (error) {
       console.error("Error applying tool:", error)
       toast.error("Failed to apply tool")
+    }
+  }
+
+  // --- [NEW] Handle comment selection and placement ---
+  const handleCommentSelect = (comment) => {
+    if (!fabricCanvasRef.current || !window.fabric) {
+      console.log("Canvas or Fabric.js not ready for comment placement")
+      return
+    }
+
+    try {
+      // Create handwritten-style text
+      const commentText = new window.fabric.IText(comment, {
+        left: 100,
+        top: 100,
+        fontFamily: "Kalam, cursive", // Handwriting-style font we can add one more like:- Playpen Sans, 
+        fill: penColor,
+        fontSize: 18,
+        fontWeight: "400",
+        fontStyle: "normal",
+        underline: false,
+        linethrough: false,
+        textAlign: "left",
+        charSpacing: 1,
+        lineHeight: 1.2,
+        // Add some rotation for more natural handwritten look
+        angle: Math.random() * 4 - 2, // Random rotation between -2 and 2 degrees
+        shadow: {
+          color: "rgba(0,0,0,0.1)",
+          blur: 1,
+          offsetX: 1,
+          offsetY: 1,
+        },
+      })
+
+      fabricCanvasRef.current.add(commentText)
+      fabricCanvasRef.current.setActiveObject(commentText)
+      fabricCanvasRef.current.renderAll()
+
+      // Close dropdown and reset
+      setShowCommentDropdown(false)
+      setSelectedComment("")
+
+      toast.success("Comment added! You can move and edit it.")
+    } catch (error) {
+      console.error("Error adding comment:", error)
+      toast.error("Failed to add comment")
     }
   }
 
@@ -1762,6 +1856,9 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
 
   return (
     <div className="fixed inset-0 bg-white z-50 flex flex-col">
+      {/* Load Google Fonts for handwriting style */}
+      <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@300;400;700&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Playpen+Sans:wght@300..800&family=Swanky+and+Moo+Moo&display=swap" rel="stylesheet"></link>
       {/* Header */}
       <div className="bg-gray-800 text-white p-4 flex justify-between items-center">
         <div>
@@ -1909,6 +2006,62 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                     />
                   </svg>
                 </button>
+
+                {/* --- [NEW] Comment Tool Button --- */}
+                <div className="relative">
+                  <button
+                    onClick={() => handleToolSelect("comment")}
+                    disabled={isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current}
+                    className={`p-2 rounded ${
+                      activeTool === "comment"
+                        ? "bg-blue-500 text-white"
+                        : isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-white text-gray-700 hover:bg-gray-100"
+                    }`}
+                    title="Comment"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                      />
+                    </svg>
+                  </button>
+
+                  {/* --- [NEW] Comment Dropdown --- */}
+                  {showCommentDropdown && (
+                    <div className="absolute top-full left-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+                      <div className="p-3 border-b border-gray-200">
+                        <h4 className="text-sm font-medium text-gray-700">Select a Comment</h4>
+                      </div>
+                      <div className="p-2">
+                        {predefinedComments.map((comment, index) => (
+                          <button
+                            key={index}
+                            onClick={() => handleCommentSelect(comment)}
+                            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-150"
+                            style={{ fontFamily: "Kalam, cursive" }}
+                          >
+                            {comment}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="p-2 border-t border-gray-200">
+                        <button
+                          onClick={() => setShowCommentDropdown(false)}
+                          className="w-full px-3 py-2 text-sm text-gray-500 hover:bg-gray-100 rounded-md"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+
                 <button
                   onClick={() => handleToolSelect("circle")}
                   disabled={isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current}
@@ -2095,6 +2248,8 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                     ? "crosshair"
                     : activeTool === "text"
                       ? "text"
+                      : activeTool === "comment"
+                        ? "pointer"
                       : activeTool === "select"
                         ? "default"
                         : "crosshair",
