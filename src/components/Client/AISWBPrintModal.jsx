@@ -408,7 +408,8 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
       answerContent,
       isAnswerPage = false,
       answerPageNumber = 1,
-      totalAnswerPages = 1
+      totalAnswerPages = 1,
+      isBlankPage = false
     } = pageData;
 
     return `
@@ -474,22 +475,22 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                   <div class="middle-column">
                     <div class="topic-section">
                       <div class="topic-value">
-                  ${isAnswerPage ? `
+                  ${isBlankPage ? '' : (isAnswerPage ? `
                     <div class="answer-page-indicator">Answer Page ${answerPageNumber} of ${totalAnswerPages}</div>
                   ` : `
                         <span class="question-preview">
                           <pre style="margin: 0; font-family: inherit;"><span style="color: #00b0f0; margin-right: 5px;">Q${questionCounter}:</span>${question.question}</pre>
                         </span>
-                  `}
+                  `)}
                       </div>
                     </div>
                   </div>
                   <div class="right-column">
                     <div class="qr-section">
-                      ${qrCode ? `
+                      ${isBlankPage ? '' : (qrCode ? `
                         <img src="${qrCode}" alt="QR Code" style="width: 100px; height: 100px;" />
                         <div class="scan-text">SCAN to Upload Answer</div>
-                      ` : ''}
+                      ` : '')}
                     </div>
                   </div>
                 </div>
@@ -503,12 +504,12 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                     </div>
                   </div>
                   <div class="content-area">
-              ${answerContent ? `
+              ${isBlankPage ? '' : (answerContent ? `
                 <div style="font-size: 14px; line-height: 1.4; font-family: 'Noto Sans', 'Calibri', sans-serif;">
                   ${!isAnswerPage ? '<div style="font-weight: bold; color: #00b0f0; margin-bottom: 8px;">Answer:</div>' : ''}
                   <div style="text-align: justify; white-space: pre-wrap;">${answerContent}</div>
                 </div>
-              ` : ''}
+              ` : '')}
                   </div>
                   <div class="right-sidebar">
                   </div>
@@ -659,12 +660,13 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                 question: question,
                 questionCounter: questionCounter,
                 keywords: keywords,
-                qrCode: null,
+                qrCode: null, // No QR code
                 shortQuestionId: shortQuestionId,
-                answerContent: null,
+                answerContent: null, // No answer
                 isAnswerPage: false,
                 answerPageNumber: 1,
-                totalAnswerPages: 1
+                totalAnswerPages: 1,
+                isBlankPage: true // <-- Add this flag for blank pages
               }));
               currentPageNumber++;
             }

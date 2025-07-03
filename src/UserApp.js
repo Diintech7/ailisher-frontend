@@ -30,6 +30,7 @@ import AISWBQuestions from './components/Client/AISWBQuestions';
 // import AssessmentDashboard from './components/Client/AssessmentDashboard';
 import QuestionSubmissions from './components/Client/QuestionSubmissions';
 import QRQuestionPage from './components/QRQuestionPage';
+import BookCourses from './components/Client/BookCourses';
 
 const UserApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -180,6 +181,8 @@ const UserApp = () => {
                 <Route path="/ai-books/:bookId/chapters/:chapterId/assets" element={<AssetView />} />
                 <Route path="/ai-books/:bookId/chapters/:chapterId/topics/:topicId/assets" element={<AssetView />} />
                 <Route path="/ai-books/:bookId/chapters/:chapterId/topics/:topicId/subtopics/:subtopicId/assets" element={<AssetView />} />
+                {/* Book Courses Route */}
+                <Route path="/ai-books/:bookId/courses" element={<BookCourses />} />
                 
                 {/* Asset View Routes for AI Workbooks */}
                 <Route path="/ai-workbook/:workbookId/assets" element={<AssetView />} />

@@ -402,17 +402,17 @@ export default function EvaluatorReview() {
                 )}
 
                 {/* Answer Images */}
-                {review.answerImages && review.answerImages.length > 0 && (
+                {review.annotations && review.annotations.length > 0 && (
                   <div className="bg-yellow-50 p-4 rounded-lg">
                     <h3 className="font-semibold mb-3 flex items-center gap-2">
                       <ImageIcon size={16} />
-                      Answer Images ({review.answerImages.length})
+                      Answer Images ({review.annotations.length})
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {review.answerImages.map((image, index) => (
+                      {review.annotations.map((image, index) => (
                         <div key={index} className="border rounded-lg overflow-hidden">
                           <img
-                            src={image.imageUrl}
+                            src={image.downloadUrl}
                             alt={`Answer ${index + 1}`}
                             className="w-full h-48 object-cover"
                             onError={(e) => {
@@ -427,7 +427,7 @@ export default function EvaluatorReview() {
                               {formatDate(image.uploadedAt)}
                             </p>
                             <a
-                              href={image.imageUrl}
+                              href={image.downloadUrl}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 mt-2"

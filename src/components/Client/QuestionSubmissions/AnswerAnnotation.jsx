@@ -2,18 +2,18 @@
 
 import { useState, useRef, useEffect } from "react"
 import { toast } from "react-toastify"
-import axios from 'axios'
+import axios from "axios"
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: 'https://aipbbackend-c5ed.onrender.com/api',
+  baseURL: "https://aipbbackend-c5ed.onrender.com/api",
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
-});
+})
 
 // Global Fabric.js loader promise
-let fabricLoaderPromise = null;
+let fabricLoaderPromise = null
 
 const AnswerAnnotation = ({ submission, onClose, onSave }) => {
   const [activeTool, setActiveTool] = useState("pen")
@@ -28,15 +28,15 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
   const [isDragging, setIsDragging] = useState(false)
   const [lastPos, setLastPos] = useState({ x: 0, y: 0 })
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false)
-  const [score, setScore] = useState('')
-  const [expertRemarks, setExpertRemarks] = useState('')
+  const [score, setScore] = useState("")
+  const [expertRemarks, setExpertRemarks] = useState("")
   const [annotatedImages, setAnnotatedImages] = useState([])
   const [loading, setLoading] = useState(false)
   const [uploadingImages, setUploadingImages] = useState(false)
   const [reviewData, setReviewData] = useState({
-    review_result: '',
-    expert_score: '',
-    expert_remarks: '',
+    review_result: "",
+    expert_score: "",
+    expert_remarks: "",
   })
   const [imagePreviews, setImagePreviews] = useState([])
   const [selectedImage, setSelectedImage] = useState(null)
@@ -45,6 +45,33 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
   const [isComponentMounted, setIsComponentMounted] = useState(true)
   // --- [NEW] Canvas key for remounting ---
   const [canvasKey, setCanvasKey] = useState(0)
+  // --- [NEW] Comment tool states ---
+  const [showCommentDropdown, setShowCommentDropdown] = useState(false)
+  const [selectedComment, setSelectedComment] = useState("")
+
+  // --- [NEW] Predefined comments with handwriting style ---
+  const predefinedComments = [
+    "Excellent work! ✓",
+    "Good job! 👍",
+    "Well done!",
+    "Perfect! ⭐",
+    "Great explanation!",
+    "Correct approach ✓",
+    "Nice work!",
+    "Outstanding! 🌟",
+    "Keep it up!",
+    "Brilliant! 💡",
+    "Needs improvement",
+    "Try again",
+    "Check this",
+    "Review concept",
+    "Incomplete",
+    "Wrong approach",
+    "Missing steps",
+    "Unclear explanation",
+    "Revise this topic",
+    "Practice more",
+  ]
 
   const canvasRef = useRef(null)
   const fabricCanvasRef = useRef(null)
@@ -65,7 +92,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
   // Cleanup function for temporary elements
   const cleanupTempElements = () => {
     if (tempElementsRef.current) {
-      tempElementsRef.current.forEach(element => {
+      tempElementsRef.current.forEach((element) => {
         try {
           if (element && element.parentNode) {
             element.parentNode.removeChild(element)
@@ -82,7 +109,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
   useEffect(() => {
     return () => {
       cleanupTempElements()
-      
+
       // Cleanup fabric canvas
       if (fabricCanvasRef.current) {
         try {
@@ -98,14 +125,14 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
   // Utility function to check if canvas is ready for operations
   const isCanvasReady = () => {
     if (!isComponentMounted) return false
-    
+
     try {
       return (
         fabricCanvasRef.current &&
         window.fabric &&
         fabricCanvasRef.current.getContext &&
-        fabricCanvasRef.current.getContext('2d') &&
-        fabricCanvasRef.current.getContext('2d') !== null &&
+        fabricCanvasRef.current.getContext("2d") &&
+        fabricCanvasRef.current.getContext("2d") !== null &&
         !isFabricLoading &&
         isFabricLoaded &&
         fabricCanvasRef.current.width > 0 &&
@@ -118,72 +145,72 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
   }
 
   // Safe canvas operation wrapper
-  const safeCanvasOperation = (operation, operationName = 'canvas operation') => {
+  const safeCanvasOperation = (operation, operationName = "canvas operation") => {
     if (!isCanvasReady() || !isComponentMounted) {
-      console.warn(`Canvas not ready for ${operationName}`);
-      return false;
+      console.warn(`Canvas not ready for ${operationName}`)
+      return false
     }
 
     try {
-      const result = operation();
-      return result;
+      const result = operation()
+      return result
     } catch (error) {
-      console.error(`Error in ${operationName}:`, error);
-      return false;
+      console.error(`Error in ${operationName}:`, error)
+      return false
     }
   }
 
   // Load Fabric.js
   useEffect(() => {
-    let isMounted = true;
+    let isMounted = true
     if (window.fabric && window.fabric.Canvas) {
-      setIsFabricLoaded(true);
-      setIsFabricLoading(false);
-      return;
+      setIsFabricLoaded(true)
+      setIsFabricLoading(false)
+      return
     }
     if (!fabricLoaderPromise) {
-      setIsFabricLoading(true);
+      setIsFabricLoading(true)
       fabricLoaderPromise = new Promise((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = "https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js";
-        script.async = true;
+        const script = document.createElement("script")
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"
+        script.async = true
         script.onload = () => {
           if (isMounted) {
-            setIsFabricLoaded(true);
-            setIsFabricLoading(false);
+            setIsFabricLoaded(true)
+            setIsFabricLoading(false)
           }
-          resolve();
-        };
+          resolve()
+        }
         script.onerror = (error) => {
           if (isMounted) {
-            setIsFabricLoading(false);
+            setIsFabricLoading(false)
           }
-          reject(error);
-        };
-        document.head.appendChild(script);
-      });
+          reject(error)
+        }
+        document.head.appendChild(script)
+      })
     } else {
-      setIsFabricLoading(true);
+      setIsFabricLoading(true)
       fabricLoaderPromise.then(() => {
         if (isMounted) {
-          setIsFabricLoaded(true);
-          setIsFabricLoading(false);
+          setIsFabricLoaded(true)
+          setIsFabricLoading(false)
         }
-      });
+      })
     }
     return () => {
-      isMounted = false;
-    };
-  }, []);
+      isMounted = false
+    }
+  }, [])
 
   // Initialize canvas when Fabric.js is loaded and component mounts
   useEffect(() => {
-    if (!isFabricLoaded || !canvasRef.current || !isComponentMounted) return;
+    if (!isFabricLoaded || !canvasRef.current || !isComponentMounted) return
 
     const initializeCanvas = async () => {
       if (!canvasRef.current || !window.fabric || !window.fabric.Canvas) {
-        console.log("Canvas initialization skipped - Fabric.js not ready");
-        return;
+        console.log("Canvas initialization skipped - Fabric.js not ready")
+        return
       }
 
       try {
@@ -198,7 +225,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
         }
 
         // Wait a bit to ensure proper cleanup
-        await new Promise(resolve => setTimeout(resolve, 50))
+        await new Promise((resolve) => setTimeout(resolve, 50))
 
         // Get the container dimensions
         const container = canvasRef.current.parentElement
@@ -217,30 +244,30 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
 
         // Ensure the canvas element is ready
         if (!canvasRef.current) {
-          console.error("Canvas element not found");
-          return;
+          console.error("Canvas element not found")
+          return
         }
 
         // Ensure the canvas element has proper dimensions
         if (containerWidth <= 0 || containerHeight <= 0) {
-          console.error("Container has invalid dimensions:", { containerWidth, containerHeight });
-          return;
+          console.error("Container has invalid dimensions:", { containerWidth, containerHeight })
+          return
         }
 
         // Set canvas element dimensions
-        canvasRef.current.width = containerWidth;
-        canvasRef.current.height = containerHeight;
+        canvasRef.current.width = containerWidth
+        canvasRef.current.height = containerHeight
 
         // Test if we can get a context from the canvas element
         try {
-          const testContext = canvasRef.current.getContext('2d');
+          const testContext = canvasRef.current.getContext("2d")
           if (!testContext) {
-            console.error("Cannot get 2D context from canvas element");
-            return;
+            console.error("Cannot get 2D context from canvas element")
+            return
           }
         } catch (contextError) {
-          console.error("Error getting canvas context:", contextError);
-          return;
+          console.error("Error getting canvas context:", contextError)
+          return
         }
 
         // Create new fabric canvas
@@ -265,7 +292,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
         fabricCanvasRef.current = fabricCanvas
 
         // Wait for canvas to be fully initialized
-        await new Promise(resolve => setTimeout(resolve, 100))
+        await new Promise((resolve) => setTimeout(resolve, 100))
 
         // Add history tracking
         fabricCanvas.on("object:added", () => {
@@ -360,25 +387,25 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
 
   // Load image into canvas
   const loadImage = (imageUrl) => {
-    let isMounted = true;
-    setIsImageLoading(true);
-    const canvas = fabricCanvasRef.current;
+    let isMounted = true
+    setIsImageLoading(true)
+    const canvas = fabricCanvasRef.current
     try {
-      const img = new window.Image();
-      img.crossOrigin = "anonymous";
+      const img = new window.Image()
+      img.crossOrigin = "anonymous"
       img.onload = () => {
-        if (!isMounted) return;
+        if (!isMounted) return
         if (!canvasRef.current || !fabricCanvasRef.current) {
-          console.log("Canvas refs not available after image load");
-          setIsImageLoading(false);
-          return;
+          console.log("Canvas refs not available after image load")
+          setIsImageLoading(false)
+          return
         }
 
         try {
           console.log("Image loaded successfully:", {
             url: imageUrl,
             width: img.width,
-            height: img.height
+            height: img.height,
           })
 
           // Calculate scaling to fill the container while maintaining aspect ratio
@@ -421,7 +448,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
             canvas.sendToBack(fabricImage)
             canvas.renderAll()
             console.log("Canvas rendered with image")
-          }, 'add image to canvas')
+          }, "add image to canvas")
 
           // Restore annotations for this image if they exist
           if (annotations[currentImageIndex]) {
@@ -437,7 +464,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                     }
                     canvas.renderAll()
                   })
-                }, 'load annotations')
+                }, "load annotations")
               }
             }, 100)
           }
@@ -455,21 +482,28 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
       }
 
       img.onerror = () => {
-        if (!isMounted) return;
-        setIsImageLoading(false);
-      };
+        if (!isMounted) return
+        setIsImageLoading(false)
+      }
 
       img.src = imageUrl
     } catch (error) {
-      if (isMounted) setIsImageLoading(false);
+      if (isMounted) setIsImageLoading(false)
     }
-    return () => { isMounted = false; };
-  };
+    return () => {
+      isMounted = false
+    }
+  }
 
   // Update canvas when image changes
   useEffect(() => {
-    if (!isFabricLoaded || !submission.answerImages || !submission.answerImages[currentImageIndex] || !isComponentMounted) {
-      return;
+    if (
+      !isFabricLoaded ||
+      !submission.answerImages ||
+      !submission.answerImages[currentImageIndex] ||
+      !isComponentMounted
+    ) {
+      return
     }
 
     const loadNewImage = async () => {
@@ -488,7 +522,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
             fabricCanvasRef.current.off("mouse:down")
             fabricCanvasRef.current.off("mouse:move")
             fabricCanvasRef.current.off("mouse:up")
-            
+
             // Dispose the canvas
             fabricCanvasRef.current.dispose()
           } catch (disposeError) {
@@ -498,7 +532,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
         }
 
         // Wait a bit to ensure proper cleanup
-        await new Promise(resolve => setTimeout(resolve, 50))
+        await new Promise((resolve) => setTimeout(resolve, 50))
 
         // Check if component is still mounted
         if (!isComponentMounted) return
@@ -506,8 +540,8 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
         // Reinitialize canvas
         const container = canvasRef.current?.parentElement
         if (!container || !window.fabric || !window.fabric.Canvas) {
-          console.log("Cannot reinitialize canvas - missing dependencies");
-          return;
+          console.log("Cannot reinitialize canvas - missing dependencies")
+          return
         }
 
         const containerWidth = container.clientWidth
@@ -515,30 +549,30 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
 
         // Ensure the canvas element is ready
         if (!canvasRef.current) {
-          console.error("Canvas element not found");
-          return;
+          console.error("Canvas element not found")
+          return
         }
 
         // Ensure the canvas element has proper dimensions
         if (containerWidth <= 0 || containerHeight <= 0) {
-          console.error("Container has invalid dimensions:", { containerWidth, containerHeight });
-          return;
+          console.error("Container has invalid dimensions:", { containerWidth, containerHeight })
+          return
         }
 
         // Set canvas element dimensions
-        canvasRef.current.width = containerWidth;
-        canvasRef.current.height = containerHeight;
+        canvasRef.current.width = containerWidth
+        canvasRef.current.height = containerHeight
 
         // Test if we can get a context from the canvas element
         try {
-          const testContext = canvasRef.current.getContext('2d');
+          const testContext = canvasRef.current.getContext("2d")
           if (!testContext) {
-            console.error("Cannot get 2D context from canvas element");
-            return;
+            console.error("Cannot get 2D context from canvas element")
+            return
           }
         } catch (contextError) {
-          console.error("Error getting canvas context:", contextError);
-          return;
+          console.error("Error getting canvas context:", contextError)
+          return
         }
 
         // Create new fabric canvas
@@ -563,7 +597,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
         fabricCanvasRef.current = fabricCanvas
 
         // Wait for canvas to be fully initialized
-        await new Promise(resolve => setTimeout(resolve, 100))
+        await new Promise((resolve) => setTimeout(resolve, 100))
 
         // Check if component is still mounted
         if (!isComponentMounted) return
@@ -659,7 +693,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
         try {
           // Wait a bit to ensure canvas is fully ready
           setTimeout(() => {
-            if (isCanvasReady() && fabricCanvas.getContext && fabricCanvas.getContext('2d') && isComponentMounted) {
+            if (isCanvasReady() && fabricCanvas.getContext && fabricCanvas.getContext("2d") && isComponentMounted) {
               try {
                 fabricCanvas.setZoom(zoom)
                 fabricCanvas.requestRenderAll()
@@ -691,8 +725,8 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
   // Update canvas when tool changes
   useEffect(() => {
     if (!fabricCanvasRef.current || !window.fabric || !canvasRef.current) {
-      console.log("Canvas or Fabric.js not ready for tool changes");
-      return;
+      console.log("Canvas or Fabric.js not ready for tool changes")
+      return
     }
 
     const canvas = fabricCanvasRef.current
@@ -848,6 +882,13 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
         canvas.selection = false
         break
 
+      // --- [NEW] Comment tool case ---
+      case "comment":
+        canvas.defaultCursor = "pointer"
+        canvas.isDrawingMode = false
+        canvas.selection = false
+        break
+
       case "select":
         canvas.defaultCursor = "default"
         canvas.isDrawingMode = false
@@ -918,10 +959,10 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
 
   const handleToolSelect = (tool) => {
     if (!fabricCanvasRef.current || !window.fabric || !canvasRef.current) {
-      console.log("Canvas or Fabric.js not ready for tool changes");
-      return;
+      console.log("Canvas or Fabric.js not ready for tool changes")
+      return
     }
-    setActiveTool(tool);
+    setActiveTool(tool)
 
     try {
       switch (tool) {
@@ -943,7 +984,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
           const text = new window.fabric.IText("Double click to edit", {
             left: 100,
             top: 100,
-            fontFamily: "Arial",
+            fontFamily: "Kalam, cursive",
             fill: penColor,
             fontSize: 20,
             fontWeight: "400",
@@ -951,11 +992,24 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
             underline: false,
             linethrough: false,
             textAlign: "left",
-            charSpacing: 0,
-            lineHeight: 1,
+            charSpacing: 1,
+            lineHeight: 1.2,
+            // Add some rotation for more natural handwritten look
+        angle: Math.random() * 4 - 2, // Random rotation between -2 and 2 degrees
+        shadow: {
+          color: "rgba(0,0,0,0.1)",
+          blur: 1,
+          offsetX: 1,
+          offsetY: 1,
+        },
           })
           fabricCanvasRef.current.add(text)
           fabricCanvasRef.current.setActiveObject(text)
+          break
+        // --- [NEW] Comment tool case ---
+        case "comment":
+          fabricCanvasRef.current.isDrawingMode = false
+          setShowCommentDropdown(true)
           break
         case "select":
           fabricCanvasRef.current.isDrawingMode = false
@@ -980,6 +1034,53 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
     } catch (error) {
       console.error("Error applying tool:", error)
       toast.error("Failed to apply tool")
+    }
+  }
+
+  // --- [NEW] Handle comment selection and placement ---
+  const handleCommentSelect = (comment) => {
+    if (!fabricCanvasRef.current || !window.fabric) {
+      console.log("Canvas or Fabric.js not ready for comment placement")
+      return
+    }
+
+    try {
+      // Create handwritten-style text
+      const commentText = new window.fabric.IText(comment, {
+        left: 100,
+        top: 100,
+        fontFamily: "Kalam, cursive", // Handwriting-style font we can add one more like:- Playpen Sans, 
+        fill: penColor,
+        fontSize: 18,
+        fontWeight: "400",
+        fontStyle: "normal",
+        underline: false,
+        linethrough: false,
+        textAlign: "left",
+        charSpacing: 1,
+        lineHeight: 1.2,
+        // Add some rotation for more natural handwritten look
+        angle: Math.random() * 4 - 2, // Random rotation between -2 and 2 degrees
+        shadow: {
+          color: "rgba(0,0,0,0.1)",
+          blur: 1,
+          offsetX: 1,
+          offsetY: 1,
+        },
+      })
+
+      fabricCanvasRef.current.add(commentText)
+      fabricCanvasRef.current.setActiveObject(commentText)
+      fabricCanvasRef.current.renderAll()
+
+      // Close dropdown and reset
+      setShowCommentDropdown(false)
+      setSelectedComment("")
+
+      toast.success("Comment added! You can move and edit it.")
+    } catch (error) {
+      console.error("Error adding comment:", error)
+      toast.error("Failed to add comment")
     }
   }
 
@@ -1086,8 +1187,8 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
           }
 
           // Create a temporary canvas with exact image dimensions
-          const tempCanvas = document.createElement('canvas')
-          const tempCtx = tempCanvas.getContext('2d')
+          const tempCanvas = document.createElement("canvas")
+          const tempCtx = tempCanvas.getContext("2d")
 
           if (!tempCtx) {
             throw new Error("Failed to get canvas context")
@@ -1125,13 +1226,13 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
           tempCtx.drawImage(img, 0, 0, img.width, img.height)
 
           // Create a temporary fabric canvas for annotations
-          tempCanvasElement = document.createElement('canvas')
+          tempCanvasElement = document.createElement("canvas")
           tempCanvasElement.width = img.width
           tempCanvasElement.height = img.height
-          tempCanvasElement.style.position = 'absolute'
-          tempCanvasElement.style.left = '-9999px'
-          tempCanvasElement.style.top = '-9999px'
-          tempCanvasElement.style.visibility = 'hidden'
+          tempCanvasElement.style.position = "absolute"
+          tempCanvasElement.style.left = "-9999px"
+          tempCanvasElement.style.top = "-9999px"
+          tempCanvasElement.style.visibility = "hidden"
 
           // Add to document and track for cleanup
           if (document.body && isComponentMounted) {
@@ -1151,11 +1252,11 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
             height: img.height,
             renderOnAddRemove: false,
             selection: false,
-            preserveObjectStacking: true
+            preserveObjectStacking: true,
           })
 
           // Ensure canvas is initialized before loading JSON
-          await new Promise(resolve => setTimeout(resolve, 0))
+          await new Promise((resolve) => setTimeout(resolve, 0))
 
           // Load annotations
           await new Promise((resolve, reject) => {
@@ -1173,7 +1274,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                 width: img.width,
                 height: img.height,
                 selectable: false,
-                evented: false
+                evented: false,
               })
 
               // Add the background image first
@@ -1188,7 +1289,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                     return
                   }
 
-                  const bgImage = tempFabricCanvas.getObjects().find(obj => obj.type === 'image')
+                  const bgImage = tempFabricCanvas.getObjects().find((obj) => obj.type === "image")
                   if (!bgImage) {
                     console.warn("No background image found in annotations")
                     resolve()
@@ -1205,17 +1306,17 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   const scaleY = originalHeight / displayHeight
 
                   // Draw annotations with exact positioning
-                  const annotationObjects = tempFabricCanvas.getObjects().filter(obj => obj !== bgImage)
+                  const annotationObjects = tempFabricCanvas.getObjects().filter((obj) => obj !== bgImage)
                   for (const obj of annotationObjects) {
                     try {
                       if (!isComponentMounted) break
 
                       // Convert object to data URL with high quality
                       const objDataUrl = obj.toDataURL({
-                        format: 'png',
+                        format: "png",
                         quality: 1,
                         multiplier: 1,
-                        enableRetinaScaling: true
+                        enableRetinaScaling: true,
                       })
 
                       const objImg = new Image()
@@ -1238,58 +1339,49 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                       const scaledHeight = obj.height * obj.scaleY * scaleY
 
                       // Draw annotation at exact position with proper scaling
-                      tempCtx.drawImage(
-                        objImg,
-                        objLeft,
-                        objTop,
-                        scaledWidth,
-                        scaledHeight
-                      )
+                      tempCtx.drawImage(objImg, objLeft, objTop, scaledWidth, scaledHeight)
                     } catch (objError) {
                       console.error("Error processing annotation object:", objError)
                     }
                   }
 
                   // Store the annotated image data URL
-                  const annotatedImageUrl = tempCanvas.toDataURL('image/png', 1.0);
-                  previewUrl = annotatedImageUrl;
+                  const annotatedImageUrl = tempCanvas.toDataURL("image/png", 1.0)
+                  previewUrl = annotatedImageUrl
 
                   // Convert data URL to Blob
-                  const response = await fetch(annotatedImageUrl);
-                  const blob = await response.blob();
+                  const response = await fetch(annotatedImageUrl)
+                  const blob = await response.blob()
 
                   // Upload to S3
-                  const uploadUrlResponse = await api.post(
-                    '/review/annotated-image-upload-url',
-                    {
-                      fileName: `annotated_${index}.png`,
-                      contentType: 'image/png',
-                      clientId: submission.clientId || 'CLI677117YN7N',
-                      answerId: submission._id
-                    }
-                  );
+                  const uploadUrlResponse = await api.post("/review/annotated-image-upload-url", {
+                    fileName: `annotated_${index}.png`,
+                    contentType: "image/png",
+                    clientId: submission.clientId || "CLI677117YN7N",
+                    answerId: submission._id,
+                  })
 
                   if (!uploadUrlResponse.data.success) {
-                    throw new Error(uploadUrlResponse.data.message || 'Failed to get upload URL');
+                    throw new Error(uploadUrlResponse.data.message || "Failed to get upload URL")
                   }
 
-                  const uploadUrl = uploadUrlResponse.data.data.uploadUrl;
-                  const key = uploadUrlResponse.data.data.key;
+                  const uploadUrl = uploadUrlResponse.data.data.uploadUrl
+                  const key = uploadUrlResponse.data.data.key
 
                   // Upload to S3
                   const uploadResponse = await fetch(uploadUrl, {
-                    method: 'PUT',
+                    method: "PUT",
                     body: blob,
                     headers: {
-                      'Content-Type': 'image/png'
-                    }
-                  });
+                      "Content-Type": "image/png",
+                    },
+                  })
 
                   if (!uploadResponse.ok) {
-                    throw new Error('Failed to upload annotated image to S3');
+                    throw new Error("Failed to upload annotated image to S3")
                   }
 
-                  s3Key = key;
+                  s3Key = key
 
                   resolve()
                 } catch (error) {
@@ -1302,11 +1394,10 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
               reject(error)
             }
           })
-
         } catch (error) {
           console.error(`Error processing image ${index}:`, error)
           if (isComponentMounted) {
-            toast.error(`Failed to process image ${parseInt(index) + 1}`)
+            toast.error(`Failed to process image ${Number.parseInt(index) + 1}`)
           }
         } finally {
           // Cleanup
@@ -1321,13 +1412,13 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
             try {
               tempCanvasElement.parentNode.removeChild(tempCanvasElement)
               // Remove from tracking array
-              tempElementsRef.current = tempElementsRef.current.filter(el => el !== tempCanvasElement)
+              tempElementsRef.current = tempElementsRef.current.filter((el) => el !== tempCanvasElement)
             } catch (error) {
               console.error("Error removing canvas element:", error)
             }
           }
         }
-        return { s3Key, previewUrl };
+        return { s3Key, previewUrl }
       })
 
       // Wait for all processing to complete
@@ -1350,16 +1441,16 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
 
     // Download all annotated images
     Object.keys(updatedAnnotations).forEach((index) => {
-      const link = document.createElement('a')
-      link.download = `annotated_image_${parseInt(index) + 1}.png`
+      const link = document.createElement("a")
+      link.download = `annotated_image_${Number.parseInt(index) + 1}.png`
       link.href = updatedAnnotations[index].imageUrl
       link.click()
     })
 
     // Call the original onSave callback
-      onSave({
-        annotations: updatedAnnotations,
-      })
+    onSave({
+      annotations: updatedAnnotations,
+    })
 
     toast.success("Annotations saved and images downloaded successfully!")
   }
@@ -1367,64 +1458,64 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
   const handleCompleteReview = async () => {
     try {
       // Process and upload all annotated images (not just the current one)
-      setLoading(true);
-      const annotatedResults = await getAnnotatedImages();
+      setLoading(true)
+      const annotatedResults = await getAnnotatedImages()
       if (!annotatedResults) {
-        setLoading(false);
-        return;
+        setLoading(false)
+        return
       }
 
       // Collect all S3 keys and previews from annotatedResults
-      const s3Keys = [];
-      const previews = [];
+      const s3Keys = []
+      const previews = []
       for (let i = 0; i < annotatedResults.length; i++) {
-        const result = annotatedResults[i];
+        const result = annotatedResults[i]
         if (result && result.s3Key) {
-          s3Keys.push({ s3Key: result.s3Key });
-          previews.push(result.previewUrl);
+          s3Keys.push({ s3Key: result.s3Key })
+          previews.push(result.previewUrl)
         }
       }
-      setAnnotatedImages(s3Keys);
-      setImagePreviews(previews);
-      setIsReviewModalOpen(true);
-      setLoading(false);
+      setAnnotatedImages(s3Keys)
+      setImagePreviews(previews)
+      setIsReviewModalOpen(true)
+      setLoading(false)
     } catch (error) {
-      setLoading(false);
-      console.error('Error in handleCompleteReview:', error);
-      let errorMessage = 'Failed to process review';
+      setLoading(false)
+      console.error("Error in handleCompleteReview:", error)
+      let errorMessage = "Failed to process review"
       if (error.response) {
-        errorMessage = error.response.data.message || `Server error: ${error.response.status}`;
+        errorMessage = error.response.data.message || `Server error: ${error.response.status}`
       } else if (error.request) {
-        errorMessage = 'No response from server. Please check if the server is running.';
+        errorMessage = "No response from server. Please check if the server is running."
       } else {
-        errorMessage = error.message;
+        errorMessage = error.message
       }
-      toast.error(errorMessage);
+      toast.error(errorMessage)
     }
-  };
+  }
 
   // Separate function for closing the modal
   const handleClose = () => {
     // Set component as unmounted first
     setIsComponentMounted(false)
-    
+
     // Cleanup fabric canvas
     if (fabricCanvasRef.current) {
       try {
         fabricCanvasRef.current.dispose()
-        console.log('[AnswerAnnotation] Fabric canvas disposed on close');
+        console.log("[AnswerAnnotation] Fabric canvas disposed on close")
       } catch (error) {
         console.warn("Error disposing fabric canvas on close:", error)
       }
       fabricCanvasRef.current = null
     }
-    
+
     // Cleanup temporary elements
     cleanupTempElements()
-    
+
     // Reset everything (including refs, state, DOM)
-    resetAllRefsAndState();
-    
+    resetAllRefsAndState()
+
     // Call the original onClose callback
     onClose()
   }
@@ -1432,34 +1523,31 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
   // Add zoom controls handler
   const handleZoom = (direction) => {
     if (!isCanvasReady()) {
-      console.log("Canvas not ready for zoom");
-      return;
+      console.log("Canvas not ready for zoom")
+      return
     }
 
     const canvas = fabricCanvasRef.current
-    
+
     // Additional safety check for canvas context
-    if (!canvas.getContext || !canvas.getContext('2d')) {
-      console.warn("Canvas context not available for zoom");
-      return;
+    if (!canvas.getContext || !canvas.getContext("2d")) {
+      console.warn("Canvas context not available for zoom")
+      return
     }
 
     try {
       const currentZoom = canvas.getZoom()
       let newZoom
 
-      if (direction === 'in') {
+      if (direction === "in") {
         newZoom = Math.min(currentZoom * 1.1, 20)
-      } else if (direction === 'out') {
+      } else if (direction === "out") {
         newZoom = Math.max(currentZoom / 1.1, 0.1)
       } else {
         newZoom = 1
       }
 
-      canvas.zoomToPoint(
-        { x: canvas.width / 2, y: canvas.height / 2 },
-        newZoom
-      )
+      canvas.zoomToPoint({ x: canvas.width / 2, y: canvas.height / 2 }, newZoom)
       setZoom(newZoom)
     } catch (zoomError) {
       console.error("Error during zoom operation:", zoomError)
@@ -1471,7 +1559,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
   const renderZoomControls = () => (
     <div className="flex items-center space-x-2">
       <button
-        onClick={() => handleZoom('out')}
+        onClick={() => handleZoom("out")}
         disabled={isFabricLoading || !isFabricLoaded}
         className={`p-2 rounded ${
           isFabricLoading || !isFabricLoaded
@@ -1486,7 +1574,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
       </button>
       <span className="text-sm text-gray-700">{Math.round(zoom * 100)}%</span>
       <button
-        onClick={() => handleZoom('in')}
+        onClick={() => handleZoom("in")}
         disabled={isFabricLoading || !isFabricLoaded}
         className={`p-2 rounded ${
           isFabricLoading || !isFabricLoaded
@@ -1500,7 +1588,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
         </svg>
       </button>
       <button
-        onClick={() => handleZoom('reset')}
+        onClick={() => handleZoom("reset")}
         disabled={isFabricLoading || !isFabricLoaded}
         className={`p-2 rounded ${
           isFabricLoading || !isFabricLoaded
@@ -1523,283 +1611,286 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
 
   const handleCloseReviewModal = () => {
     setIsReviewModalOpen(false)
-    setScore('')
-    setExpertRemarks('')
+    setScore("")
+    setExpertRemarks("")
   }
 
   // Create preview URL for image
   const createImagePreview = (file) => {
     return new Promise((resolve) => {
-      const reader = new FileReader();
+      const reader = new FileReader()
       reader.onloadend = () => {
-        resolve(reader.result);
-      };
-      reader.readAsDataURL(file);
-    });
-  };
+        resolve(reader.result)
+      }
+      reader.readAsDataURL(file)
+    })
+  }
 
   // Handle image upload
   const handleImageUpload = async (file) => {
     try {
-      console.log('Starting image upload for file:', file.name);
-      
-      // Get presigned URL for upload
-      const uploadUrlResponse = await api.post(
-        '/review/annotated-image-upload-url',
-        {
-          fileName: file.name,
-          contentType: file.type,
-          clientId: submission.clientId || 'CLI677117YN7N',
-          answerId: submission._id
-        }
-      );
+      console.log("Starting image upload for file:", file.name)
 
-      console.log('Upload URL Response:', uploadUrlResponse.data);
+      // Get presigned URL for upload
+      const uploadUrlResponse = await api.post("/review/annotated-image-upload-url", {
+        fileName: file.name,
+        contentType: file.type,
+        clientId: submission.clientId || "CLI677117YN7N",
+        answerId: submission._id,
+      })
+
+      console.log("Upload URL Response:", uploadUrlResponse.data)
 
       if (!uploadUrlResponse.data.success) {
-        throw new Error(uploadUrlResponse.data.message || 'Failed to get upload URL');
+        throw new Error(uploadUrlResponse.data.message || "Failed to get upload URL")
       }
 
-      const uploadUrl = uploadUrlResponse.data.data.uploadUrl;
-      const key = uploadUrlResponse.data.data.key;
+      const uploadUrl = uploadUrlResponse.data.data.uploadUrl
+      const key = uploadUrlResponse.data.data.key
 
+      console.log("Extracted uploadUrl:", uploadUrl)
+      console.log("Extracted key:", key)
 
-      console.log('Extracted uploadUrl:', uploadUrl);
-      console.log('Extracted key:', key);
-
-      if (!uploadUrl || typeof uploadUrl !== 'string') {
-        throw new Error('Invalid upload URL received from server');
+      if (!uploadUrl || typeof uploadUrl !== "string") {
+        throw new Error("Invalid upload URL received from server")
       }
 
       // Upload to S3
       const uploadResponse = await fetch(uploadUrl, {
-        method: 'PUT',
+        method: "PUT",
         body: file,
         headers: {
-          'Content-Type': file.type
-        }
-      });
+          "Content-Type": file.type,
+        },
+      })
 
       if (!uploadResponse.ok) {
-        const errorText = await uploadResponse.text();
-        console.error('S3 Upload Error:', {
+        const errorText = await uploadResponse.text()
+        console.error("S3 Upload Error:", {
           status: uploadResponse.status,
           statusText: uploadResponse.statusText,
-          errorText
-        });
-        throw new Error(`Failed to upload image to S3: ${errorText}`);
+          errorText,
+        })
+        throw new Error(`Failed to upload image to S3: ${errorText}`)
       }
 
       // Add to annotated images array
-      setAnnotatedImages(prev => {
-        const newImages = Array.isArray(prev) ? [...prev] : [];
-        newImages.push({ s3Key: key });
-        return newImages;
-      });
+      setAnnotatedImages((prev) => {
+        const newImages = Array.isArray(prev) ? [...prev] : []
+        newImages.push({ s3Key: key })
+        return newImages
+      })
 
-      return key;
+      return key
     } catch (error) {
-      console.error('Error uploading image:', error);
+      console.error("Error uploading image:", error)
       if (error.response) {
-        console.error('Error response data:', error.response.data);
-        console.error('Error response status:', error.response.status);
-        console.error('Error response headers:', error.response.headers);
+        console.error("Error response data:", error.response.data)
+        console.error("Error response status:", error.response.status)
+        console.error("Error response headers:", error.response.headers)
       }
-      throw error;
+      throw error
     }
-  };
+  }
 
   // Handle file selection
   const handleFileSelect = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
+    const file = event.target.files[0]
+    if (!file) return
 
     try {
-      setUploadingImages(true);
-      
+      setUploadingImages(true)
+
       // Create preview immediately when file is selected
-      const preview = await createImagePreview(file);
-      setSelectedImage(preview);
-      
+      const preview = await createImagePreview(file)
+      setSelectedImage(preview)
+
       // Upload image and get S3 key
-      const s3Key = await handleImageUpload(file);
-      
+      const s3Key = await handleImageUpload(file)
+
       // After successful upload, add to previews array
-      setImagePreviews(prev => {
-        const newPreviews = Array.isArray(prev) ? [...prev] : [];
-        newPreviews.push(preview);
-        return newPreviews;
-      });
-      
+      setImagePreviews((prev) => {
+        const newPreviews = Array.isArray(prev) ? [...prev] : []
+        newPreviews.push(preview)
+        return newPreviews
+      })
+
       // Clear the selected image after successful upload
-      setSelectedImage(null);
-      
-      toast.success('Image uploaded successfully');
+      setSelectedImage(null)
+
+      toast.success("Image uploaded successfully")
     } catch (error) {
-      console.error('Error in handleFileSelect:', error);
-      setSelectedImage(null);
-      
-      let errorMessage = 'Failed to upload image';
-      
+      console.error("Error in handleFileSelect:", error)
+      setSelectedImage(null)
+
+      let errorMessage = "Failed to upload image"
+
       if (error.response) {
-        errorMessage = error.response.data.message || `Server error: ${error.response.status}`;
+        errorMessage = error.response.data.message || `Server error: ${error.response.status}`
       } else if (error.request) {
-        errorMessage = 'No response from server. Please check if the server is running.';
+        errorMessage = "No response from server. Please check if the server is running."
       } else {
-        errorMessage = error.message;
+        errorMessage = error.message
       }
-      
-      toast.error(errorMessage);
+
+      toast.error(errorMessage)
     } finally {
-      setUploadingImages(false);
+      setUploadingImages(false)
     }
-  };
+  }
 
   // Remove image
   const handleRemoveImage = (index) => {
-    setAnnotatedImages(prev => {
-      const newImages = Array.isArray(prev) ? [...prev] : [];
-      newImages.splice(index, 1);
-      return newImages;
-    });
-    
-    setImagePreviews(prev => {
-      const newPreviews = Array.isArray(prev) ? [...prev] : [];
-      newPreviews.splice(index, 1);
-      return newPreviews;
-    });
-  };
+    setAnnotatedImages((prev) => {
+      const newImages = Array.isArray(prev) ? [...prev] : []
+      newImages.splice(index, 1)
+      return newImages
+    })
+
+    setImagePreviews((prev) => {
+      const newPreviews = Array.isArray(prev) ? [...prev] : []
+      newPreviews.splice(index, 1)
+      return newPreviews
+    })
+  }
 
   // Handle form input changes
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setReviewData(prev => ({
+    const { name, value } = e.target
+    setReviewData((prev) => ({
       ...prev,
-      [name]: value
-    }));
-  };
+      [name]: value,
+    }))
+  }
 
   // Handle review submission
   const handleReviewSubmit = async (e) => {
-    e.preventDefault();
-    
+    e.preventDefault()
+
     if (!reviewData.review_result || !reviewData.expert_score || !reviewData.expert_remarks) {
-      toast.error('Please fill in all required fields');
-      return;
+      toast.error("Please fill in all required fields")
+      return
     }
 
     if (annotatedImages.length === 0) {
-      toast.error('Please upload at least one annotated image');
-      return;
+      toast.error("Please upload at least one annotated image")
+      return
     }
 
     try {
-      setLoading(true);
+      setLoading(true)
       console.log("submission by sapna", submission)
 
       // First, fetch the review request ID using the submission ID
-      const reviewRequestResponse = await api.get(`/review/by-submission/${submission._id}`);
-      console.log("Review request response:", reviewRequestResponse.data);
-      
+      const reviewRequestResponse = await api.get(`/review/by-submission/${submission._id}`)
+      console.log("Review request response:", reviewRequestResponse.data)
+
       if (!reviewRequestResponse.data.success) {
-        throw new Error(reviewRequestResponse.data.message || 'Failed to fetch review request');
+        throw new Error(reviewRequestResponse.data.message || "Failed to fetch review request")
       }
 
-      const requestId = reviewRequestResponse.data.data.requestId;
-      console.log("Request ID:", requestId);
-      console.log("Review data:", reviewData);
-      console.log("Annotated images:", annotatedImages);
+      const requestId = reviewRequestResponse.data.data.requestId
+      console.log("Request ID:", requestId)
+      console.log("Review data:", reviewData)
+      console.log("Annotated images:", annotatedImages)
 
       // Check if answer is in correct status
-      if (submission.reviewStatus !== 'review_accepted') {
-        throw new Error('Answer is not in the correct status for review submission. Current status: ' + submission.reviewStatus);
+      if (submission.reviewStatus !== "review_accepted") {
+        throw new Error(
+          "Answer is not in the correct status for review submission. Current status: " + submission.reviewStatus,
+        )
       }
 
       // Now submit the review with the fetched request ID
-      const response = await api.post(
-        `/review/${requestId}/submit`,
-        {
-          ...reviewData,
-          annotated_images: annotatedImages
-        }
-      );
-      console.log("Submit response:", response.data);
+      const response = await api.post(`/review/${requestId}/submit`, {
+        ...reviewData,
+        annotated_images: annotatedImages,
+      })
+      console.log("Submit response:", response.data)
 
       if (response.data.success) {
-        toast.success('Review submitted successfully');
+        toast.success("Review submitted successfully")
         if (onSave) {
-          onSave(response.data.data);
+          onSave(response.data.data)
         }
-        handleCloseReviewModal();
+        handleCloseReviewModal()
       } else {
-        throw new Error(response.data.message || 'Failed to submit review');
+        throw new Error(response.data.message || "Failed to submit review")
       }
     } catch (error) {
-      console.error('Error submitting review:', error);
-      let errorMessage = 'Failed to submit review';
-      
+      console.error("Error submitting review:", error)
+      let errorMessage = "Failed to submit review"
+
       if (error.response) {
-        errorMessage = error.response.data.message || `Server error: ${error.response.status}`;
-        
-        if (error.response.data.message?.includes('not in correct status')) {
-          errorMessage = 'This review has already been submitted or is not in the correct state. Please refresh the page.';
+        errorMessage = error.response.data.message || `Server error: ${error.response.status}`
+
+        if (error.response.data.message?.includes("not in correct status")) {
+          errorMessage =
+            "This review has already been submitted or is not in the correct state. Please refresh the page."
         }
       } else if (error.request) {
-        errorMessage = 'No response from server. Please check if the server is running.';
+        errorMessage = "No response from server. Please check if the server is running."
       } else {
-        errorMessage = error.message;
+        errorMessage = error.message
       }
-      
-      toast.error(errorMessage);
+
+      toast.error(errorMessage)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   // --- [A] Add a helper to reset all refs and state ---
   const resetAllRefsAndState = () => {
     // DO NOT remove canvas from DOM! Let React handle it.
-    fabricCanvasRef.current = null;
-    backgroundImageRef.current = null;
-    historyRef.current = [];
-    historyIndexRef.current = -1;
-    tempElementsRef.current = [];
-    setAnnotations({});
-    setAnnotatedImages([]);
-    setImagePreviews([]);
-    setSelectedImage(null);
-    setCurrentImageIndex(0);
-    setZoom(1);
-    setCanUndo(false);
-    setCanRedo(false);
-    setIsDragging(false);
-    setLastPos({ x: 0, y: 0 });
-    setIsReviewModalOpen(false);
-    setScore('');
-    setExpertRemarks('');
+    fabricCanvasRef.current = null
+    backgroundImageRef.current = null
+    historyRef.current = []
+    historyIndexRef.current = -1
+    tempElementsRef.current = []
+    setAnnotations({})
+    setAnnotatedImages([])
+    setImagePreviews([])
+    setSelectedImage(null)
+    setCurrentImageIndex(0)
+    setZoom(1)
+    setCanUndo(false)
+    setCanRedo(false)
+    setIsDragging(false)
+    setLastPos({ x: 0, y: 0 })
+    setIsReviewModalOpen(false)
+    setScore("")
+    setExpertRemarks("")
     setReviewData({
-      review_result: '',
-      expert_score: '',
-      expert_remarks: '',
-    });
-    setIsComponentMounted(true);
-    setIsFabricLoaded(!!window.fabric && !!window.fabric.Canvas);
-    setIsFabricLoading(false);
+      review_result: "",
+      expert_score: "",
+      expert_remarks: "",
+    })
+    setIsComponentMounted(true)
+    setIsFabricLoaded(!!window.fabric && !!window.fabric.Canvas)
+    setIsFabricLoading(false)
+    // --- [NEW] Reset comment states ---
+    setShowCommentDropdown(false)
+    setSelectedComment("")
     // [NEW] Increment canvasKey to force remount
-    setCanvasKey(k => k + 1);
-    console.log('[AnswerAnnotation] All refs and state reset, canvasKey incremented');
-  };
+    setCanvasKey((k) => k + 1)
+    console.log("[AnswerAnnotation] All refs and state reset, canvasKey incremented")
+  }
 
   // --- [B] On modal open (when submission changes), reset everything ---
   useEffect(() => {
-    resetAllRefsAndState();
+    resetAllRefsAndState()
     // If you want to force a new <canvas> element, you can do so here if needed
     // (React will re-render the canvas, so usually not needed)
-    console.log('[AnswerAnnotation] Modal opened, state and refs reset');
-  }, [submission]);
+    console.log("[AnswerAnnotation] Modal opened, state and refs reset")
+  }, [submission])
 
   return (
     <div className="fixed inset-0 bg-white z-50 flex flex-col">
+      {/* Load Google Fonts for handwriting style */}
+      <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@300;400;700&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Playpen+Sans:wght@300..800&family=Swanky+and+Moo+Moo&display=swap" rel="stylesheet"></link>
+
       {/* Header */}
       <div className="bg-gray-800 text-white p-4 flex justify-between items-center">
         <div>
@@ -1809,24 +1900,21 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
           </p>
         </div>
         <div className="flex space-x-4">
-          <button 
-            onClick={handleSave} 
+          <button
+            onClick={handleSave}
             className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
             disabled={!isComponentMounted}
           >
             Save Annotations
           </button>
-          <button 
-            onClick={handleCompleteReview} 
+          <button
+            onClick={handleCompleteReview}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             disabled={!isComponentMounted}
           >
             Complete Review
           </button>
-          <button 
-            onClick={handleClose} 
-            className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
-          >
+          <button onClick={handleClose} className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">
             Close
           </button>
         </div>
@@ -1913,9 +2001,11 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   onClick={() => handleToolSelect("pen")}
                   disabled={isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current}
                   className={`p-2 rounded ${
-                    isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : "bg-white text-gray-700 hover:bg-gray-100"
+                    activeTool === "pen"
+                      ? "bg-blue-500 text-white"
+                      : isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        : "bg-white text-gray-700 hover:bg-gray-100"
                   }`}
                   title="Pen"
                 >
@@ -1932,9 +2022,11 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   onClick={() => handleToolSelect("text")}
                   disabled={isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current}
                   className={`p-2 rounded ${
-                    isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : "bg-white text-gray-700 hover:bg-gray-100"
+                    activeTool === "text"
+                      ? "bg-blue-500 text-white"
+                      : isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        : "bg-white text-gray-700 hover:bg-gray-100"
                   }`}
                   title="Text"
                 >
@@ -1947,13 +2039,70 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                     />
                   </svg>
                 </button>
+
+                {/* --- [NEW] Comment Tool Button --- */}
+                <div className="relative">
+                  <button
+                    onClick={() => handleToolSelect("comment")}
+                    disabled={isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current}
+                    className={`p-2 rounded ${
+                      activeTool === "comment"
+                        ? "bg-blue-500 text-white"
+                        : isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-white text-gray-700 hover:bg-gray-100"
+                    }`}
+                    title="Comment"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                      />
+                    </svg>
+                  </button>
+
+                  {/* --- [NEW] Comment Dropdown --- */}
+                  {showCommentDropdown && (
+                    <div className="absolute top-full left-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+                      <div className="p-3 border-b border-gray-200">
+                        <h4 className="text-sm font-medium text-gray-700">Select a Comment</h4>
+                      </div>
+                      <div className="p-2">
+                        {predefinedComments.map((comment, index) => (
+                          <button
+                            key={index}
+                            onClick={() => handleCommentSelect(comment)}
+                            className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-150"
+                            style={{ fontFamily: "Kalam, cursive" }}
+                          >
+                            {comment}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="p-2 border-t border-gray-200">
+                        <button
+                          onClick={() => setShowCommentDropdown(false)}
+                          className="w-full px-3 py-2 text-sm text-gray-500 hover:bg-gray-100 rounded-md"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <button
                   onClick={() => handleToolSelect("circle")}
                   disabled={isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current}
                   className={`p-2 rounded ${
-                    isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : "bg-white text-gray-700 hover:bg-gray-100"
+                    activeTool === "circle"
+                      ? "bg-blue-500 text-white"
+                      : isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        : "bg-white text-gray-700 hover:bg-gray-100"
                   }`}
                   title="Circle"
                 >
@@ -1970,9 +2119,11 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   onClick={() => handleToolSelect("rectangle")}
                   disabled={isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current}
                   className={`p-2 rounded ${
-                    isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : "bg-white text-gray-700 hover:bg-gray-100"
+                    activeTool === "rectangle"
+                      ? "bg-blue-500 text-white"
+                      : isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        : "bg-white text-gray-700 hover:bg-gray-100"
                   }`}
                   title="Rectangle"
                 >
@@ -1989,9 +2140,11 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   onClick={() => handleToolSelect("select")}
                   disabled={isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current}
                   className={`p-2 rounded ${
-                    isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : "bg-white text-gray-700 hover:bg-gray-100"
+                    activeTool === "select"
+                      ? "bg-blue-500 text-white"
+                      : isFabricLoading || !isFabricLoaded || !fabricCanvasRef.current || !canvasRef.current
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        : "bg-white text-gray-700 hover:bg-gray-100"
                   }`}
                   title="Select"
                 >
@@ -2092,9 +2245,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                     onChange={(e) => handleBrushSizeChange(Number.parseInt(e.target.value))}
                     disabled={isFabricLoading || !isFabricLoaded || !isComponentMounted}
                     className={`w-24 ${
-                      isFabricLoading || !isFabricLoaded || !isComponentMounted
-                        ? "cursor-not-allowed opacity-50"
-                        : ""
+                      isFabricLoading || !isFabricLoaded || !isComponentMounted ? "cursor-not-allowed opacity-50" : ""
                     }`}
                     title="Brush Size"
                   />
@@ -2115,14 +2266,14 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                 </div>
               </div>
             )}
-            
+
             {/* Image Loading State */}
             {isImageLoading && !isFabricLoading && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-75 z-10">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
               </div>
             )}
-            
+
             <canvas
               key={canvasKey}
               ref={canvasRef}
@@ -2133,9 +2284,11 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                     ? "crosshair"
                     : activeTool === "text"
                       ? "text"
-                      : activeTool === "select"
-                        ? "default"
-                        : "crosshair",
+                      : activeTool === "comment"
+                        ? "pointer"
+                        : activeTool === "select"
+                          ? "default"
+                          : "crosshair",
               }}
             />
           </div>
@@ -2172,10 +2325,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
           <div className="bg-white rounded-lg p-6 w-[800px] max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-semibold">Complete Review</h3>
-              <button 
-                onClick={handleCloseReviewModal}
-                className="text-gray-500 hover:text-gray-700"
-              >
+              <button onClick={handleCloseReviewModal} className="text-gray-500 hover:text-gray-700">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -2185,9 +2335,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
             <form onSubmit={handleReviewSubmit} className="space-y-6">
               {/* Review Result */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Review Result
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Review Result</label>
                 <input
                   type="text"
                   name="review_result"
@@ -2200,9 +2348,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
 
               {/* Expert Score */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Score (0-100)
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Score (0-100)</label>
                 <input
                   type="number"
                   name="expert_score"
@@ -2217,9 +2363,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
 
               {/* Expert Remarks */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Remarks
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Remarks</label>
                 <textarea
                   name="expert_remarks"
                   value={reviewData.expert_remarks}
@@ -2233,9 +2377,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
               {/* Image Upload Section */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Annotated Images
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700">Annotated Images</label>
                   <div className="flex items-center space-x-2">
                     <input
                       type="file"
@@ -2249,11 +2391,11 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                       htmlFor="image-upload"
                       className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
                         uploadingImages
-                          ? 'bg-gray-400 cursor-not-allowed'
-                          : 'bg-blue-600 hover:bg-blue-700 cursor-pointer'
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
                       }`}
                     >
-                      {uploadingImages ? 'Uploading...' : 'Upload Image'}
+                      {uploadingImages ? "Uploading..." : "Upload Image"}
                     </label>
                   </div>
                 </div>
@@ -2264,7 +2406,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                     <p className="text-sm text-gray-500 mb-2">Selected Image Preview:</p>
                     <div className="relative w-full max-w-md">
                       <img
-                        src={selectedImage}
+                        src={selectedImage || "/placeholder.svg"}
                         alt="Selected"
                         className="w-full h-auto rounded-lg shadow-md"
                       />
@@ -2285,7 +2427,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                       {imagePreviews.map((preview, index) => (
                         <div key={index} className="relative">
                           <img
-                            src={preview}
+                            src={preview || "/placeholder.svg"}
                             alt={`Uploaded ${index + 1}`}
                             className="w-full h-32 object-cover rounded-lg shadow-md"
                           />
@@ -2294,7 +2436,12 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                             className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600"
                           >
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
                             </svg>
                           </button>
                         </div>
@@ -2310,10 +2457,10 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   type="submit"
                   disabled={loading || uploadingImages}
                   className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 ${
-                    (loading || uploadingImages) ? 'opacity-50 cursor-not-allowed' : ''
+                    loading || uploadingImages ? "opacity-50 cursor-not-allowed" : ""
                   }`}
                 >
-                  {loading ? 'Submitting...' : 'Submit Review'}
+                  {loading ? "Submitting..." : "Submit Review"}
                 </button>
               </div>
             </form>
