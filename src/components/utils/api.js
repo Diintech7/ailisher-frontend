@@ -1,7 +1,7 @@
 // utils/api.js
 import Cookies from 'js-cookie';
 
-const API_BASE_URL = 'https://aipbbackend-c5ed.onrender.com'; // Remove /api from here
+const API_BASE_URL = 'http://localhost:5000'; // Remove /api from here
 
 export const apiRequest = async (method, endpoint, data = null) => {
     const token = Cookies.get('usertoken');

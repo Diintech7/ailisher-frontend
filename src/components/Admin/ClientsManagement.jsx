@@ -45,7 +45,7 @@ const ClientManagement = () => {
       setLoading(true);
       const token = Cookies.get("admintoken");
       const response = await axios.get(
-        "https://aipbbackend-c5ed.onrender.com/api/admin/clients",
+        "http://localhost:5000/api/admin/clients",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -73,7 +73,7 @@ const ClientManagement = () => {
     try {
       const token = Cookies.get("admintoken");
       await axios.delete(
-        `https://aipbbackend-c5ed.onrender.com/api/admin/clients/${id}`,
+        `http://localhost:5000/api/admin/clients/${id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -91,7 +91,7 @@ const ClientManagement = () => {
     try {
       const token = Cookies.get("admintoken");
       const response = await axios.put(
-        `https://aipbbackend-c5ed.onrender.com/api/admin/clients/${id}/status`,
+        `http://localhost:5000/api/admin/clients/${id}/status`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -113,7 +113,7 @@ const ClientManagement = () => {
       const adminToken = Cookies.get("admintoken");
 
       const response = await axios.post(
-        `https://aipbbackend-c5ed.onrender.com/api/admin/clients/${id}/login-token`,
+        `http://localhost:5000/api/admin/clients/${id}/login-token`,
         {},
         { headers: { Authorization: `Bearer ${adminToken}` } }
       );
@@ -140,7 +140,7 @@ const ClientManagement = () => {
                   document.cookie = "user=${encodeURIComponent(
                     JSON.stringify(clientData)
                   )}; path=/; max-age=3600";
-                  window.location.href = 'https://www.ailisher.com/dashboard';
+                  window.location.href = 'http://localhost:3000/dashboard';
                 </script>
               </body>
             </html>

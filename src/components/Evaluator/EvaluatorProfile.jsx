@@ -21,7 +21,7 @@ export default function EvaluatorProfile() {
       setError(null);
       try {
         const token = Cookies.get('evaluatortoken');
-        const response = await axios.get('https://aipbbackend-c5ed.onrender.com/api/evaluator-reviews/profile', {
+        const response = await axios.get('http://localhost:5000/api/evaluator-reviews/profile', {
           headers: {
             Authorization: `Bearer ${token}`
           }

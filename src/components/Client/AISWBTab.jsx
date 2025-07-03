@@ -32,7 +32,7 @@ const AISWBTab = ({ topicId }) => {
         }
 
         // Verify topic access
-        const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/topic/${topicId}/sets`, {
+        const response = await fetch(`http://localhost:5000/api/aiswb/topic/${topicId}/sets`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

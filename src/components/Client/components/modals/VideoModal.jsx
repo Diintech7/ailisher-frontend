@@ -173,7 +173,7 @@ const VideoModal = ({
       const token = Cookies.get("usertoken")
       
       // Use the new video assets endpoint
-      const endpoint = `https://aipbbackend-c5ed.onrender.com/api/video-assets/${itemType}/${itemId}/videos?isWorkbook=${isWorkbook}`
+      const endpoint = `http://localhost:5000/api/video-assets/${itemType}/${itemId}/videos?isWorkbook=${isWorkbook}`
 
       const requestData = {
         title: localVideoData.title,

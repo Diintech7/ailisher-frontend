@@ -294,7 +294,7 @@ export default function EvaluatedAnswers() {
       setLoading(true);
       setError(null);
       try {
-        const response = await axios.get('https://aipbbackend-c5ed.onrender.com/api/clients/CLI677117YN7N/mobile/userAnswers/crud/answers', {
+        const response = await axios.get('http://localhost:5000/api/clients/CLI677117YN7N/mobile/userAnswers/crud/answers', {
           params: {
             evaluationMode: 'manual',
             submissionStatus: 'evaluated',
@@ -318,7 +318,7 @@ export default function EvaluatedAnswers() {
 
   const publishanswer = async (id)=>{
     try {
-      const response = await axios.put(`https://aipbbackend-c5ed.onrender.com/api/clients/CLI677117YN7N/mobile/userAnswers/crud/answers/${id}/publish`)
+      const response = await axios.put(`http://localhost:5000/api/clients/CLI677117YN7N/mobile/userAnswers/crud/answers/${id}/publish`)
       console.log(response);
       fetchEvaluatedManualAnswers();
     } 

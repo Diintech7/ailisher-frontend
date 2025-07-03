@@ -66,7 +66,7 @@ const ImageUploadModal = ({ isOpen, onClose, questionId, onSubmissionComplete })
           });
           formData.append('questionId', questionId);
           
-          const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/aiswb/submissions', {
+          const response = await fetch('http://localhost:5000/api/aiswb/submissions', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`

@@ -1616,7 +1616,7 @@ const IndexPreview = ({
       const uploadedPDFs = await Promise.all(uploadPromises);
 
       // Now save to backend
-      const saveResponse = await fetch(`https://aipbbackend-c5ed.onrender.com/api/books/${bookId}/save-split-pdfs`, {
+      const saveResponse = await fetch(`http://localhost:5000/api/books/${bookId}/save-split-pdfs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
