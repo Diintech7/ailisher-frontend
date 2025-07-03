@@ -46,20 +46,20 @@ const SummaryModal = ({
       // Determine endpoint based on item type
       if (itemType === "book") {
         endpoint = isWorkbook
-          ? `http://localhost:5000/api/assets/${workbookId}/summaries`
-          : `http://localhost:5000/api/assets/${bookId}/summaries`
+          ? `https://aipbbackend-c5ed.onrender.com/api/assets/${workbookId}/summaries`
+          : `https://aipbbackend-c5ed.onrender.com/api/assets/${bookId}/summaries`
       } else if (itemType === "chapter") {
         endpoint = isWorkbook
-          ? `http://localhost:5000/api/assets/${workbookId}/chapters/${chapterId}/summaries`
-          : `http://localhost:5000/api/assets/${bookId}/chapters/${chapterId}/summaries`
+          ? `https://aipbbackend-c5ed.onrender.com/api/assets/${workbookId}/chapters/${chapterId}/summaries`
+          : `https://aipbbackend-c5ed.onrender.com/api/assets/${bookId}/chapters/${chapterId}/summaries`
       } else if (itemType === "topic") {
         endpoint = isWorkbook
-          ? `http://localhost:5000/api/assets/${workbookId}/chapters/${chapterId}/topics/${topicId}/summaries`
-          : `http://localhost:5000/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}/summaries`
+          ? `https://aipbbackend-c5ed.onrender.com/api/assets/${workbookId}/chapters/${chapterId}/topics/${topicId}/summaries`
+          : `https://aipbbackend-c5ed.onrender.com/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}/summaries`
       } else if (itemType === "subtopic") {
         endpoint = isWorkbook
-          ? `http://localhost:5000/api/assets/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}/summaries`
-          : `http://localhost:5000/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}/summaries`
+          ? `https://aipbbackend-c5ed.onrender.com/api/assets/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}/summaries`
+          : `https://aipbbackend-c5ed.onrender.com/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}/summaries`
       }
 
       const response = await axios.post(

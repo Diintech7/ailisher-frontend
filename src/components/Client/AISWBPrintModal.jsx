@@ -28,9 +28,9 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
       }
 
       console.log('🔍 Fetching sets for topic:', topicId);
-      console.log('📡 API URL:', `http://localhost:5000/api/aiswb/topic/${topicId}/sets`);
+      console.log('📡 API URL:', `https://aipbbackend-c5ed.onrender.com/api/aiswb/topic/${topicId}/sets`);
       
-      const response = await fetch(`http://localhost:5000/api/aiswb/topic/${topicId}/sets`, {
+      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/topic/${topicId}/sets`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -103,7 +103,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
       const questionsPromises = questionIds.map(async (questionId) => {
         try {
           console.log('📡 Fetching question:', questionId);
-          const response = await fetch(`http://localhost:5000/api/aiswb/questions/${questionId}`, {
+          const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/questions/${questionId}`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -245,7 +245,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
       }).toString();
       
       // Use the same API endpoint as QRCodeGenerator
-      const response = await fetch(`http://localhost:5000/api/aiswb/qr/questions/${questionId}/qrcode?${queryParams}`, {
+      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/qr/questions/${questionId}/qrcode?${queryParams}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

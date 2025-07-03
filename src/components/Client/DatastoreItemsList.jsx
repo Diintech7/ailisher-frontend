@@ -66,13 +66,13 @@ const DatastoreItemsList = () => {
 
       let endpoint = '';
       if (type === 'book') {
-        endpoint = `http://localhost:5000/api/datastores/book/${id}/items`;
+        endpoint = `https://aipbbackend-c5ed.onrender.com/api/datastores/book/${id}/items`;
       } else if (type === 'chapter') {
-        endpoint = `http://localhost:5000/api/datastores/chapter/${id}/items`;
+        endpoint = `https://aipbbackend-c5ed.onrender.com/api/datastores/chapter/${id}/items`;
       } else if (type === 'topic') {
-        endpoint = `http://localhost:5000/api/datastores/topic/${id}/items`;
+        endpoint = `https://aipbbackend-c5ed.onrender.com/api/datastores/topic/${id}/items`;
       } else {
-        endpoint = `http://localhost:5000/api/datastores/book/${id}/items`;
+        endpoint = `https://aipbbackend-c5ed.onrender.com/api/datastores/book/${id}/items`;
        
       }
 

@@ -59,7 +59,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
       // Fetch each question's details
       const questionsPromises = questionIds.map(async (questionId) => {
         try {
-          const response = await fetch(`http://localhost:5000/api/aiswb/questions/${questionId}`, {
+          const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/questions/${questionId}`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -162,9 +162,9 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
       }
 
       console.log('Adding question with data:', newQuestion);
-      console.log('API endpoint:', `http://localhost:5000/api/aiswb/topic/${topicId}/sets/${selectedSet.id}/questions`);
+      console.log('API endpoint:', `https://aipbbackend-c5ed.onrender.com/api/aiswb/topic/${topicId}/sets/${selectedSet.id}/questions`);
 
-      const response = await fetch(`http://localhost:5000/api/aiswb/topic/${topicId}/sets/${selectedSet.id}/questions`, {
+      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/topic/${topicId}/sets/${selectedSet.id}/questions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -234,7 +234,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
       console.log('Sending update request for question:', editedQuestion.id);
       console.log('Update request data:', editedQuestion);
 
-      const response = await fetch(`http://localhost:5000/api/aiswb/questions/${editedQuestion.id}`, {
+      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/questions/${editedQuestion.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -283,7 +283,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
           return;
         }
 
-        const response = await fetch(`http://localhost:5000/api/aiswb/topic/${topicId}/sets/${selectedSet.id}/questions/${questionId}`, {
+        const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/topic/${topicId}/sets/${selectedSet.id}/questions/${questionId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -347,7 +347,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
         qrText = `AISWB Question: ${question.question.substring(0, 50)}... (ID: ${question.id})`;
         qrContent = qrText;
       } else if (format === 'url') {
-        qrText = `http://localhost:5000/view/questions/${question.id}`;
+        qrText = `https://aipbbackend-c5ed.onrender.com/view/questions/${question.id}`;
         qrContent = qrText;
       } else {
         // Default to JSON
@@ -404,7 +404,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
       }).toString();
       
       // Correct API endpoint based on documentation
-      const response = await fetch(`http://localhost:5000/api/aiswb/qr/questions/${question.id}/qrcode?${queryParams}`, {
+      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/qr/questions/${question.id}/qrcode?${queryParams}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -577,7 +577,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
         requestBody
       });
 
-      const response = await fetch(`http://localhost:5000/api/aiswb/questions/${questionId}`, {
+      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/questions/${questionId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -62,7 +62,7 @@ const PYQModal = ({
       const token = Cookies.get("usertoken")
       
       // Use the new PYQ assets endpoint
-      const endpoint = `http://localhost:5000/api/pyq-assets/${itemType}/${itemId}/pyqs?isWorkbook=${isWorkbook}`
+      const endpoint = `https://aipbbackend-c5ed.onrender.com/api/pyq-assets/${itemType}/${itemId}/pyqs?isWorkbook=${isWorkbook}`
 
       const response = await axios.post(
         endpoint,
