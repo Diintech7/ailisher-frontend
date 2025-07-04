@@ -1948,7 +1948,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
               <h3 className="text-sm font-medium text-blue-700 mb-2">Marks Awarded</h3>
               <p className="text-2xl font-bold text-blue-800">
-                {submission.evaluation.marks} / {submission.evaluation.totalMarks || 10}
+                {submission.evaluation.marks} / {submission.evaluation.totalMarks || submission.questionId?.metadata?.maximumMarks}
               </p>
             </div>
 
@@ -2312,7 +2312,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   {/* Marks */}
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-medium text-gray-600">Marks:</span>
-                    <span className="text-sm font-bold text-blue-700">{submission.evaluation.marks} / {submission.question.metadata?.maximumMarks || 10}</span>
+                    <span className="text-sm font-bold text-blue-700">{submission.evaluation.marks} / {submission.questionId?.metadata?.maximumMarks || submission.questionId?.metadata?.maximumMarks}</span>
                   </div>
                   {/* Strengths */}
                   {submission.evaluation.strengths?.length > 0 && (

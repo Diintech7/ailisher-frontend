@@ -225,7 +225,7 @@ export default function EvaluatorReview() {
               {hasExpertReview && (
                 <Badge className="bg-purple-100 text-purple-800 flex items-center gap-1">
                   <Star size={12} />
-                  {hasExpertReview.score}/100
+                  {hasExpertReview.score}/ {review.questionId?.metadata?.maximumMarks}
                 </Badge>
               )}
             </div>
@@ -272,7 +272,7 @@ export default function EvaluatorReview() {
                 <p className="text-sm text-gray-700 mb-2">{hasExpertReview.remarks}</p>
                 <div className="flex items-center gap-2">
                   <Badge className="bg-green-100 text-green-800">
-                    Score: {hasExpertReview.score}/100
+                    Score: {hasExpertReview.score}/ {review.questionId?.metadata?.maximumMarks}
                   </Badge>
                   <span className="text-xs text-gray-500">
                     {formatDate(hasExpertReview.reviewedAt)}
@@ -568,7 +568,7 @@ export default function EvaluatorReview() {
                       <div className="flex items-center gap-4">
                         <div>
                           <p className="text-sm text-gray-600">Score</p>
-                          <p className="font-medium text-lg">{review.feedback.expertReview.score}/100</p>
+                          <p className="font-medium text-lg">{review.feedback.expertReview.score}/ {review.questionId?.metadata?.maximumMarks}</p>
                         </div>
                         <div>
                           <p className="text-sm text-gray-600">Reviewed At</p>
