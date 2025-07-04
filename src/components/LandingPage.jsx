@@ -574,7 +574,7 @@ const AdvancedLandingPage = () => {
             </button>
           </div>
           <p className="mt-6 text-sm opacity-75">
-            📧 vijay.w@gmail.com | 📍 B4, D-53, Sector 2, Noida, UP | 📱 +91 8174540362
+            📧 vijay.wiz@gmail.com | 📍 B4, D-53, Sector 2, Noida, UP | 📱 +91 8174540362
           </p>
         </div>
       </section>
