@@ -9,6 +9,7 @@ import EvaluatorReview from './components/Evaluator/EvaluatorReview';
 import EvaluatorProfile from './components/Evaluator/EvaluatorProfile';
 import PendingAnswers from './components/Evaluator/PendingAnswers';
 import EvaluatedAnswers from './components/Evaluator/EvaluatedAnswers';
+import AcceptedAnswers from './components/Evaluator/AcceptedAnswers';
 
 const EvaluatorApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -93,7 +94,8 @@ const EvaluatorApp = () => {
             <Route path="/review" element={<EvaluatorReview/>} />
             <Route path="/profile" element={<EvaluatorProfile/>} />
             <Route path="/pending" element={<PendingAnswers/>} />
-            <Route path="/evaluated" element={<EvaluatedAnswers/>} />
+            <Route path="/accepted" element={<AcceptedAnswers/>} />
+            <Route path="/completed" element={<EvaluatedAnswers/>} />
 
           </Route>
         ) : (

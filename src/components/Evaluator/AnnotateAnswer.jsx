@@ -6,7 +6,7 @@ import axios from 'axios'
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: 'https://aipbbackend-c5ed.onrender.com/api',
+  baseURL: 'http://localhost:5000/api',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -1760,6 +1760,74 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
     console.log('[AnswerAnnotation] Modal opened, state and refs reset');
   }, [submission]);
 
+  // 1. Add state for edit loading
+  const [editLoading, setEditLoading] = useState(false);
+
+  // Add local state for editable evaluation fields in the review modal
+  const [editEvaluation, setEditEvaluation] = useState({
+    introduction: submission.evaluation.analysis?.introduction?.join('\n') || '',
+    body: submission.evaluation.analysis?.body?.join('\n') || '',
+    conclusion: submission.evaluation.analysis?.conclusion?.join('\n') || '',
+    strengths: submission.evaluation.analysis?.strengths?.join('\n') || '',
+    weaknesses: submission.evaluation.analysis?.weaknesses?.join('\n') || '',
+    suggestions: submission.evaluation.analysis?.suggestions?.join('\n') || '',
+    feedback: submission.evaluation.analysis?.feedback || '',
+    remark: submission.evaluation.remark || '',
+    score: submission.evaluation.score || '',
+    relevancy: submission.evaluation.relevancy || ''
+  });
+
+  // Update local state on modal open (when submission changes)
+  useEffect(() => {
+    setEditEvaluation({
+      introduction: submission.evaluation.analysis?.introduction?.join('\n') || '',
+      body: submission.evaluation.analysis?.body?.join('\n') || '',
+      conclusion: submission.evaluation.analysis?.conclusion?.join('\n') || '',
+      strengths: submission.evaluation.analysis?.strengths?.join('\n') || '',
+      weaknesses: submission.evaluation.analysis?.weaknesses?.join('\n') || '',
+      suggestions: submission.evaluation.analysis?.suggestions?.join('\n') || '',
+      feedback: submission.evaluation.analysis?.feedback || '',
+      remark: submission.evaluation.remark || '',
+      score: submission.evaluation.score || '',
+      relevancy: submission.evaluation.relevancy || ''
+    });
+  }, [isReviewModalOpen, submission]);
+
+  // Handler for input changes
+  const handleEvalFieldChange = (field, value) => {
+    setEditEvaluation(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Update handleEditEvaluation to use local state
+  const handleEditEvaluation = async () => {
+    setEditLoading(true);
+    try {
+      console.log(submission);
+      const url = `http://localhost:5000/api/clients/CLI677117YN7N/mobile/userAnswers/questions/${submission.question._id}/answers/${submission._id}/evaluation-update`;
+      const payload = {
+        analysis: {
+          introduction: editEvaluation.introduction.split('\n').filter(Boolean),
+          body: editEvaluation.body.split('\n').filter(Boolean),
+          conclusion: editEvaluation.conclusion.split('\n').filter(Boolean),
+          strengths: editEvaluation.strengths.split('\n').filter(Boolean),
+          weaknesses: editEvaluation.weaknesses.split('\n').filter(Boolean),
+          suggestions: editEvaluation.suggestions.split('\n').filter(Boolean),
+          feedback: editEvaluation.feedback
+        },
+        marks: Number(editEvaluation.score),
+        accuracy: Number(editEvaluation.relevancy),
+        feedback: editEvaluation.remark
+      };
+      await axios.put(url, payload);
+      toast.success('Evaluation updated successfully!');
+    } catch (error) {
+      console.error('Error updating evaluation:', error);
+      toast.error('Failed to update evaluation.');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-white z-50 flex flex-col">
       {/* Header */}
@@ -1771,19 +1839,19 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
           </p>
         </div>
         <div className="flex space-x-4">
-          <button 
+          {/* <button 
             onClick={handleSave} 
             className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
             disabled={!isComponentMounted}
           >
             Save Annotations
-          </button>
+          </button> */}
           <button 
             onClick={handleOpenPublishModal} 
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             disabled={!isComponentMounted}
           >
-            Publish With Annotation
+            Submit
           </button>
           <button 
             onClick={handleClose} 
@@ -1799,69 +1867,193 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         {/* Left Side - Analysis */}
         <div className="w-1/3 border-r border-gray-200 overflow-y-auto p-6">
           <div className="space-y-6">
-            {/* Accuracy */}
-            <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
-              <h3 className="text-sm font-medium text-purple-700 mb-2">Accuracy</h3>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div
-                  className="bg-purple-600 h-2.5 rounded-full"
-                  style={{ width: `${submission.evaluation.accuracy}%` }}
-                ></div>
+            {/* Question Section */}
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Question</h3>
+              <p className="text-sm text-gray-800 mb-3">{submission.question?.question || 'N/A'}</p>
+              <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+                <div>QID: {submission.question?._id}</div>
+                <div>UID: {submission.userId}</div>
+                <div>Difficulty: {submission.question.metadata?.difficultyLevel || 'N/A'}</div>
+                <div>Max Marks: {submission.question.metadata?.maximumMarks || 'N/A'}</div>
               </div>
-              <p className="text-lg font-semibold text-gray-800 mt-1">{submission.evaluation.accuracy}%</p>
             </div>
 
+            {/* Performance Metrics */}
+            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+              <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-green-700">Score:</span>
+                  <span className="text-lg font-bold text-green-900">
+                    {typeof submission.evaluation.score === 'number' ? `${submission.evaluation.score}/${submission.question.metadata?.maximumMarks || 'N/A'}` : submission.evaluation.score || 'Not evaluated'}
+                  </span>
+                </div>
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-green-700">Relevancy:</span>
+                    <span className="text-lg font-bold text-green-900">
+                      {typeof submission.evaluation.relevancy === 'number' ? `${submission.evaluation.relevancy}%` : submission.evaluation.relevancy || 'Not evaluated'}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div 
+                      className="bg-gradient-to-r from-green-400 to-green-600 h-3 rounded-full transition-all duration-500 ease-out"
+                      style={{ 
+                        width: typeof submission.evaluation.relevancy === 'number' ? `${submission.evaluation.relevancy}%` : '0%',
+                        minWidth: '4px'
+                      }}
+                    ></div>
+                  </div>
+                </div>
+               
+              </div>
+            </div>
+
+            {/* Evaluation Remark */}
+            {submission.evaluation.remark && submission.evaluation.remark !== 'No remark provided' && (
+              <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                <h4 className="text-sm font-medium text-orange-700 mb-2">Evaluation Remark</h4>
+                <p className="text-sm text-orange-800">{submission.evaluation.remark}</p>
+              </div>
+            )}
+
+            {/* Evaluation Comments */}
+            {submission.evaluation.comments && submission.evaluation.comments.length > 0 && (
+              <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+                <h4 className="text-sm font-medium text-indigo-700 mb-2">Evaluation Comments</h4>
+                <ul className="space-y-2">
+                  {submission.evaluation.comments.map((comment, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <svg className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      <span className="text-sm text-indigo-800">{comment}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Analysis Details */}
+            {submission.evaluation.analysis && (
+              (submission.evaluation.analysis.introduction|| 
+                submission.evaluation.analysis.body|| 
+                submission.evaluation.analysis.conclusio) && (
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Analysis Details</h4>
+                  <div className="space-y-3">
+                    {submission.evaluation.analysis.introduction && (
+                      <div className="bg-pink-50 rounded-lg p-3 border border-pink-200">
+                        <h5 className="text-xs font-semibold text-pink-800 mb-1">Introduction</h5>
+                        <ul className="space-y-1">
+                          {submission.evaluation.analysis.introduction.map((item, index) => (
+                            <li key={index} className="text-xs text-pink-700">• {item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {submission.evaluation.analysis.body && (
+                      <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
+                        <h5 className="text-xs font-semibold text-orange-800 mb-1">Body</h5>
+                        <ul className="space-y-1">
+                          {submission.evaluation.analysis.body.map((item, index) => (
+                            <li key={index} className="text-xs text-orange-700">• {item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {submission.evaluation.analysis.conclusion && (
+                      <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                        <h5 className="text-xs font-semibold text-purple-800 mb-1">Conclusion</h5>
+                        <ul className="space-y-1">
+                          {submission.evaluation.analysis.conclusion.map((item, index) => (
+                            <li key={index} className="text-xs text-purple-700">• {item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            )}
+
             {/* Strengths */}
-            {submission.evaluation.strengths?.length > 0 && (
-              <div className="bg-green-50 p-4 rounded-lg border border-green-100">
-                <h3 className="text-sm font-medium text-green-700 mb-2">Strengths</h3>
-                <ul className="list-disc list-inside text-sm text-gray-800 space-y-1">
-                  {submission.evaluation.strengths.map((strength, index) => (
-                    <li key={index}>{strength}</li>
+            {submission.evaluation.analysis.strengths && submission.evaluation.analysis.strengths.length > 0 && (
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <h4 className="text-sm font-medium text-green-700 mb-2">Strengths</h4>
+                <ul className="space-y-2">
+                  {submission.evaluation.analysis.strengths.map((strength, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <svg className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-sm text-green-800">{strength}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
 
             {/* Weaknesses */}
-            {submission.evaluation.weaknesses?.length > 0 && (
-              <div className="bg-red-50 p-4 rounded-lg border border-red-100">
-                <h3 className="text-sm font-medium text-red-700 mb-2">Areas for Improvement</h3>
-                <ul className="list-disc list-inside text-sm text-gray-800 space-y-1">
-                  {submission.evaluation.weaknesses.map((weakness, index) => (
-                    <li key={index}>{weakness}</li>
+            {submission.evaluation.analysis.weaknesses && submission.evaluation.analysis.weaknesses.length > 0 && (
+              <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                <h4 className="text-sm font-medium text-red-700 mb-2">Areas for Improvement</h4>
+                <ul className="space-y-2">
+                  {submission.evaluation.analysis.weaknesses.map((weakness, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <svg className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      <span className="text-sm text-red-800">{weakness}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
 
             {/* Suggestions */}
-            {submission.evaluation.suggestions?.length > 0 && (
-              <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-100">
-                <h3 className="text-sm font-medium text-yellow-700 mb-2">Suggestions</h3>
-                <ul className="list-disc list-inside text-sm text-gray-800 space-y-1">
-                  {submission.evaluation.suggestions.map((suggestion, index) => (
-                    <li key={index}>{suggestion}</li>
+            {submission.evaluation.analysis.suggestions && submission.evaluation.analysis.suggestions.length > 0 && (
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h4 className="text-sm font-medium text-blue-700 mb-2">Suggestions</h4>
+                <ul className="space-y-2">
+                  {submission.evaluation.analysis.suggestions.map((suggestion, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-sm text-blue-800">{suggestion}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
 
-            {/* Marks */}
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-              <h3 className="text-sm font-medium text-blue-700 mb-2">Marks Awarded</h3>
-              <p className="text-2xl font-bold text-blue-800">
-                {submission.evaluation.marks} / {submission.evaluation.totalMarks || 10}
-              </p>
-            </div>
-
-            {/* Feedback */}
-            {submission.evaluation.feedback && (
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Feedback</h3>
-                <p className="text-sm text-gray-800 whitespace-pre-wrap">{submission.evaluation.feedback}</p>
+            {/* Evaluation Feedback */}
+            {submission.evaluation.analysis.feedback && submission.evaluation.analysis.feedback.length > 0 && (
+              <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                <h4 className="text-sm font-medium text-purple-700 mb-2">Detailed Feedback</h4>
+                <p className="text-sm text-purple-800 whitespace-pre-wrap">{submission.evaluation.analysis.feedback}</p>
               </div>
             )}
+
+            {/* Text Answer */}
+            {submission.textAnswer && (
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Text Answer</h4>
+                <p className="text-sm text-gray-800 whitespace-pre-wrap">{submission.textAnswer}</p>
+              </div>
+            )}
+
+            {/* Submission Info */}
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Submission Info</h4>
+              <div className="space-y-2 text-xs text-gray-600">
+                <div>Submitted: {submission.submittedAt ? new Date(submission.submittedAt).toLocaleString() : 'N/A'}</div>
+                <div>Evaluated: {submission.evaluatedAt ? new Date(submission.evaluatedAt).toLocaleString() : 'N/A'}</div>
+                <div>Status: {submission.submissionStatus || 'N/A'}</div>
+                <div>Publish Status: {submission.publishStatus || 'N/A'}</div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -2145,42 +2337,52 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
             </div>
 
             <div className="space-y-6">
-              {/* AI Evaluation Details */}
+              {/* AI Evaluation (Editable) */}
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <h4 className="text-lg font-medium text-gray-800 mb-4">AI Evaluation Summary</h4>
+                <h4 className="text-lg font-medium text-gray-800 mb-4">AI Evaluation (Editable)</h4>
                 <div className="space-y-4">
-                  {/* Accuracy */}
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-gray-600">Accuracy:</span>
-                    <span className="text-sm font-bold text-purple-700">{submission.evaluation.accuracy}%</span>
-                  </div>
-                  {/* Marks */}
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-gray-600">Marks:</span>
-                    <span className="text-sm font-bold text-blue-700">{submission.evaluation.marks} / {submission.question.metadata?.maximumMarks || 10}</span>
-                  </div>
-                  {/* Strengths */}
-                  {submission.evaluation.strengths?.length > 0 && (
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <h5 className="text-sm font-medium text-green-700 mb-1">Strengths</h5>
-                      <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-                        {submission.evaluation.strengths.map((strength, index) => (
-                          <li key={index}>{strength}</li>
-                        ))}
-                      </ul>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Accuracy (%)</label>
+                      <input type="number" value={editEvaluation.relevancy} onChange={e => handleEvalFieldChange('relevancy', e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
                     </div>
-                  )}
-                  {/* Weaknesses */}
-                  {submission.evaluation.weaknesses?.length > 0 && (
                     <div>
-                      <h5 className="text-sm font-medium text-red-700 mb-1">Areas for Improvement</h5>
-                      <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-                        {submission.evaluation.weaknesses.map((weakness, index) => (
-                          <li key={index}>{weakness}</li>
-                        ))}
-                      </ul>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Marks</label>
+                      <input type="number" value={editEvaluation.score} onChange={e => handleEvalFieldChange('score', e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
                     </div>
-                  )}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Remark</label>
+                    <input type="text" value={editEvaluation.remark} onChange={e => handleEvalFieldChange('remark', e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Introduction</label>
+                    <textarea value={editEvaluation.introduction} onChange={e => handleEvalFieldChange('introduction', e.target.value)} className="w-full border rounded px-2 py-1 text-sm" rows={2} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Body</label>
+                    <textarea value={editEvaluation.body} onChange={e => handleEvalFieldChange('body', e.target.value)} className="w-full border rounded px-2 py-1 text-sm" rows={2} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Conclusion</label>
+                    <textarea value={editEvaluation.conclusion} onChange={e => handleEvalFieldChange('conclusion', e.target.value)} className="w-full border rounded px-2 py-1 text-sm" rows={2} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Strengths (one per line)</label>
+                    <textarea value={editEvaluation.strengths} onChange={e => handleEvalFieldChange('strengths', e.target.value)} className="w-full border rounded px-2 py-1 text-sm" rows={2} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Weaknesses (one per line)</label>
+                    <textarea value={editEvaluation.weaknesses} onChange={e => handleEvalFieldChange('weaknesses', e.target.value)} className="w-full border rounded px-2 py-1 text-sm" rows={2} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Suggestions (one per line)</label>
+                    <textarea value={editEvaluation.suggestions} onChange={e => handleEvalFieldChange('suggestions', e.target.value)} className="w-full border rounded px-2 py-1 text-sm" rows={2} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Feedback</label>
+                    <textarea value={editEvaluation.feedback} onChange={e => handleEvalFieldChange('feedback', e.target.value)} className="w-full border rounded px-2 py-1 text-sm" rows={2} />
+                  </div>
                 </div>
               </div>
 
@@ -2219,6 +2421,13 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   }`}
                 >
                   {loading ? 'Publishing...' : 'Publish'}
+                </button>
+                <button
+                  onClick={handleEditEvaluation}
+                  disabled={editLoading}
+                  className={`px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 mr-2 ${editLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {editLoading ? 'Updating...' : 'Edit Evaluation'}
                 </button>
               </div>
             </div>

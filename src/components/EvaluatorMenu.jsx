@@ -15,16 +15,17 @@ const EvaluatorMenu = ({ isExpanded, currentPath, handleNavigate }) => {
 
   const menuItems = [
     { path: '/evaluator/dashboard', name: 'Overview', icon: <Home size={20} /> },
-    { path: '/evaluator/review', name: 'New Requests', icon: <ClipboardCheck size={20} /> },
     {
-      name: ' Review Evaluation',
+      name: 'New Evaluation',
       icon: <FileCheck size={20} />,
       sectionKey: 'manualEvaluation',
       subItems: [
         { path: '/evaluator/pending', name: 'Pending' },
-        { path: '/evaluator/evaluated', name: 'Evaluated' },
+        { path: '/evaluator/accepted', name: 'Accepted' },
+        { path: '/evaluator/completed', name: 'Completed' },
       ],
     },
+    { path: '/evaluator/review', name: 'Review Requests', icon: <ClipboardCheck size={20} /> },
     { path: '/evaluator/credit', name: 'Credit', icon: <CreditCard size={20} /> },
     { path: '/evaluator/profile', name: 'Profile', icon: <UserRoundPen size={20} /> },
   ];

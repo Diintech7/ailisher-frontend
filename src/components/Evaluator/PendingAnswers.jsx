@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import ManualEvaluationModal from '../Client/QuestionSubmissions/ManualEvaluationModal';
 import { Badge } from '../UI/Badge';
+import Cookies from 'js-cookie';
+
 
 export default function PendingAnswers() {
   const [pendingAnswers, setPendingAnswers] = useState([]);
@@ -13,12 +15,13 @@ export default function PendingAnswers() {
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [activeImages, setActiveImages] = useState([]);
+  const [acceptingAnswer, setAcceptingAnswer] = useState(null);
 
   const fetchPendingAnswers = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get('https://aipbbackend-c5ed.onrender.com/api/clients/CLI677117YN7N/mobile/userAnswers/crud/answers', {
+      const response = await axios.get('http://localhost:5000/api/clients/CLI677117YN7N/mobile/userAnswers/crud/answers', {
         params: {
           evaluationMode: 'manual',
           submissionStatus: 'submitted',
@@ -44,6 +47,38 @@ export default function PendingAnswers() {
     // Optimistically update UI
     setPendingAnswers(prev => prev.filter(ans => ans._id !== updatedAnswer._id));
     fetchPendingAnswers();
+  };
+
+  const handleAcceptAnswer = async (answerId) => {
+    setAcceptingAnswer(answerId);
+    try {
+      const token = Cookies.get('evaluatortoken'); // Assuming you store evaluator token
+      console.log(token)
+      const response = await axios.put(
+        `http://localhost:5000/api/clients/CLI677117YN7N/mobile/userAnswers/crud/answers/${answerId}/accept`,
+        {},
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.data.success) {
+        // Remove the accepted answer from the list
+        setPendingAnswers(prev => prev.filter(ans => ans._id !== answerId));
+        // You can show a success message here
+        alert('Answer accepted successfully!');
+      } else {
+        alert(response.data.message || 'Failed to accept answer');
+      }
+    } catch (error) {
+      console.error('Error accepting answer:', error);
+      alert(error.response?.data?.message || 'Failed to accept answer');
+    } finally {
+      setAcceptingAnswer(null);
+    }
   };
 
   const getStatusBadge = (status) => {
@@ -88,7 +123,11 @@ export default function PendingAnswers() {
                   <h3 className="text-lg font-bold text-gray-900 leading-tight">
                     {answer.question?.question || 'N/A'}
                   </h3>
-                  <p className="text-xs text-gray-400 mt-1">ID: {answer.question?._id}</p>
+                  <div className='flex grid-cols-2 gap-6'>
+                  <p className="text-xs text-gray-400 mt-1">QID: {answer.question?._id}</p>
+                  <p className="text-xs text-gray-400 mt-1">UID: {answer.userId}</p>
+                  <p className="text-xs text-gray-400 mt-1">Difficulty level: {answer.question.metadata.difficultyLevel}</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -97,37 +136,33 @@ export default function PendingAnswers() {
             </div>
           </div>
           {/* Info Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-            <div className="bg-gray-50 rounded-lg p-3">
-              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">User</div>
-              <div className="text-sm font-semibold text-gray-900">{answer.userId || 'N/A'}</div>
-            </div>
-            {/* <div className="bg-gray-50 rounded-lg p-3">
-              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Attempt</div>
-              <div className="text-sm font-semibold text-gray-900">#{answer.attemptNumber}</div>
-            </div> */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+            
+            
             <div className="bg-gray-50 rounded-lg p-3">
               <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Submitted</div>
               <div className="text-sm font-semibold text-gray-900">
                 {answer.submittedAt ? new Date(answer.submittedAt).toLocaleString() : 'N/A'}
               </div>
             </div>
-            {/* <div className="bg-gray-50 rounded-lg p-3">
-              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Difficulty</div>
-              <div className="text-sm font-semibold text-gray-900">{answer.question.metadata?.difficultyLevel || 'N/A'}</div>
+            
+            <div className="bg-gray-50 rounded-lg p-3">
+              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Score</div>
+              <div className="text-sm font-semibold text-gray-900">{`${answer.evaluation.score}/${answer.question.metadata?.maximumMarks}` || 'N/A'}</div>
             </div>
             <div className="bg-gray-50 rounded-lg p-3">
-              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Time</div>
-              <div className="text-sm font-semibold text-gray-900">{answer.question.metadata?.estimatedTime || 'N/A'} min</div>
-            </div> */}
-            <div className="bg-gray-50 rounded-lg p-3">
-              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Max Marks</div>
-              <div className="text-sm font-semibold text-gray-900">{answer.question.metadata?.maximumMarks || 'N/A'}</div>
+              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Relevancy</div>
+              <div className="text-sm font-semibold text-gray-900">{`${answer.evaluation.relevancy}%`|| 'N/A'}</div>
             </div>
+            
           </div>
+          <div className="bg-gray-50 rounded-lg p-3 mb-4">
+              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Remark</div>
+              <div className="text-sm font-semibold text-gray-900">{answer.evaluation.remark|| 'N/A'}</div>
+            </div>
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3">
-            {/* <button
+            <button
               className="flex-1 sm:flex-none px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white rounded-lg shadow-md hover:from-gray-600 hover:to-gray-700 transition-all duration-200 font-medium flex items-center justify-center gap-2"
               onClick={() => setAnswer(answer)}
             >
@@ -136,15 +171,25 @@ export default function PendingAnswers() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
               View Details
-            </button> */}
+            </button>
             <button
-              className="flex-1 sm:flex-none px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg shadow-md hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium flex items-center justify-center gap-2"
-              onClick={() => { setSelectedAnswer(answer); setEvalModalOpen(true); }}
+              className="flex-1 sm:flex-none px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg shadow-md hover:from-blue-600 hover:to-blue-700 transition-all duration-200 font-medium flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => handleAcceptAnswer(answer._id)}
+              disabled={acceptingAnswer === answer._id}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              Review
+              {acceptingAnswer === answer._id ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Accepting...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Accept
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -166,7 +211,7 @@ export default function PendingAnswers() {
             Manual Evaluation Queue
           </h1>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Review and evaluate submitted answers that require manual assessment
+            Review and accept submitted answers that require manual assessment
           </p>
         </div>
 
@@ -254,6 +299,17 @@ const AnswerDetailsModal = ({ answer, open, onClose }) => {
   const metadata = answer.metadata || {};
   const question = answer.question || {};
   const user = answer.user || {};
+  
+  // Get evaluation details
+  const relevancy = evaluation.relevancy || 'Not evaluated';
+  const score = evaluation.score || 'Not evaluated';
+  const remark = evaluation.remark || 'No remark provided';
+  const comments = evaluation.comments || [];
+  const analysis = evaluation.analysis || {};
+  const strengths = analysis.strengths || [];
+  const weaknesses = analysis.weaknesses || [];
+  const suggestions = analysis.suggestions || [];
+  const evaluationFeedback = analysis.feedback || 'No feedback provided';
   
   const handleImageClick = (imgUrl) => {
     setActiveImage(imgUrl);
@@ -389,6 +445,182 @@ const AnswerDetailsModal = ({ answer, open, onClose }) => {
                     })}
                   </pre>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Evaluation Details */}
+          <div className="mb-8">
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Evaluation Details</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div className="bg-green-50 rounded-lg p-6 border border-green-200">
+                  <div className="text-sm font-medium text-green-600 mb-2">Accuracy</div>
+                  <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
+                    <div 
+                      className="bg-gradient-to-r from-green-400 to-green-600 h-3 rounded-full transition-all duration-500" 
+                      style={{ width: `${evaluation.relevancy || 0}%` }}
+                    ></div>
+                  </div>
+                  <div className="text-2xl font-bold text-green-600">{evaluation.relevancy || 0}%</div>
+                </div>
+                <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
+                  <div className="text-sm font-medium text-blue-600 mb-2">Score</div>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {evaluation.score || 0} / {question.metadata?.maximumMarks || 10}
+                  </div>
+                </div>
+              </div>
+          </div>
+
+          {/* Evaluation Remark */}
+          {remark && remark !== 'No remark provided' && (
+            <div className="mb-6">
+              <h4 className="text-lg font-semibold text-orange-800 mb-3">Evaluation Remark</h4>
+              <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
+                <p className="text-orange-800">{remark}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Evaluation Comments */}
+          {comments.length > 0 && (
+            <div className="mb-6">
+              <h4 className="text-lg font-semibold text-indigo-800 mb-3">Evaluation Comments</h4>
+              <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
+                <ul className="space-y-2">
+                  {comments.map((comment, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <svg className="w-5 h-5 text-indigo-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      <span className="text-indigo-800">{comment}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {/* Analysis Details */}
+          { analysis.introduction && (
+            <div className="mb-6">
+              <h4 className="text-lg font-semibold text-pink-800 mb-3">Introduction</h4>
+              <div className="bg-pink-50 rounded-lg p-4 border border-pink-200">
+                <ul className="space-y-1">
+                  {analysis.introduction.map((item, idx) => (
+                    <li key={idx} className="text-sm text-gray-800 flex items-start gap-2">
+                      <span className="text-pink-500 mt-1">•</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+          {analysis.body && (
+            <div className="mb-6">
+              <h4 className="text-lg font-semibold text-orange-800 mb-3">Body</h4>
+              <div className="bg-orange-50 rounded-lg p-4 border border-orange-200">
+                <ul className="space-y-1">
+                  {analysis.body.map((item, idx) => (
+                    <li key={idx} className="text-sm text-gray-800 flex items-start gap-2">
+                      <span className="text-orange-500 mt-1">•</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+          {analysis.conclusion  && (
+            <div className="mb-6">
+              <h4 className="text-lg font-semibold text-purple-800 mb-3">Conclusion</h4>
+              <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                <ul className="space-y-1">
+                  {analysis.conclusion.map((item, idx) => (
+                    <li key={idx} className="text-sm text-gray-800 flex items-start gap-2">
+                      <span className="text-purple-500 mt-1">•</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {/* Strengths */}
+          {strengths.length > 0 && (
+            <div className="mb-6">
+              <h4 className="text-lg font-semibold text-green-800 mb-3">Strengths</h4>
+              <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                <ul className="space-y-2">
+                  {strengths.map((strength, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <svg className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-green-800">{strength}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {/* Weaknesses */}
+          {weaknesses.length > 0 && (
+            <div className="mb-6">
+              <h4 className="text-lg font-semibold text-red-800 mb-3">Areas for Improvement</h4>
+              <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+                <ul className="space-y-2">
+                  {weaknesses.map((weakness, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      <span className="text-red-800">{weakness}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {/* Suggestions */}
+          {suggestions.length > 0 && (
+            <div className="mb-6">
+              <h4 className="text-lg font-semibold text-blue-800 mb-3">Suggestions</h4>
+              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                <ul className="space-y-2">
+                  {suggestions.map((suggestion, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-blue-800">{suggestion}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {/* Evaluation Feedback */}
+          {evaluationFeedback && evaluationFeedback !== 'No feedback provided' && (
+            <div className="mb-6">
+              <h4 className="text-lg font-semibold text-purple-800 mb-3">Detailed Feedback</h4>
+              <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                <p className="text-purple-800 whitespace-pre-wrap">{evaluationFeedback}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Text Answer */}
+          {answer.textAnswer && (
+            <div className="mb-6">
+              <h4 className="text-lg font-semibold text-gray-800 mb-3">Text Answer</h4>
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <p className="text-gray-800 whitespace-pre-wrap">{answer.textAnswer}</p>
               </div>
             </div>
           )}
