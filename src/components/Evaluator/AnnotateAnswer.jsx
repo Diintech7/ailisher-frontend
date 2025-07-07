@@ -1,5 +1,4 @@
 "use client"
-
 import { useState, useRef, useEffect, useCallback } from "react"
 import { toast } from "react-toastify"
 import axios from "axios"
@@ -40,7 +39,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
   // Add state for annotated image previews
   const [annotatedImagePreviews, setAnnotatedImagePreviews] = useState([])
   // Add state for full image view
-  const [openPreviewIndex, setOpenPreviewIndex] = useState(null);
+  const [openPreviewIndex, setOpenPreviewIndex] = useState(null)
 
   const predefinedComments = [
     "Excellent work! ✓",
@@ -82,18 +81,15 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
   useEffect(() => {
     setIsComponentMounted(true)
     console.log("[AnswerAnnotation] Component mounted")
-
     return () => {
       console.log("[AnswerAnnotation] Component unmounting")
       setIsComponentMounted(false)
-
       // Cancel any pending image loads
       if (currentImageRef.current) {
         currentImageRef.current.onload = null
         currentImageRef.current.onerror = null
         currentImageRef.current = null
       }
-
       // Complete cleanup on unmount
       if (fabricCanvasRef.current) {
         try {
@@ -132,6 +128,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
       setIsFabricLoading(false)
       return
     }
+
     if (!fabricLoaderPromise) {
       setIsFabricLoading(true)
       fabricLoaderPromise = new Promise((resolve, reject) => {
@@ -162,6 +159,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         }
       })
     }
+
     return () => {
       isMounted = false
     }
@@ -269,14 +267,13 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
           }
         })
 
-        // Add zoom and pan functionality
+        // Add zoom and pan functionality - EXACTLY like original
         fabricCanvas.on("mouse:wheel", (opt) => {
-          if (!isComponentMounted || !canvasReady) return
-          const delta = opt.e.deltaY
-          let zoom = fabricCanvas.getZoom()
+          var delta = opt.e.deltaY
+          var zoom = fabricCanvas.getZoom()
           zoom *= 0.999 ** delta
           if (zoom > 20) zoom = 20
-          if (zoom < 0.1) zoom = 0.1
+          if (zoom < 0.01) zoom = 0.01
           fabricCanvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom)
           setZoom(zoom)
           opt.e.preventDefault()
@@ -284,30 +281,28 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         })
 
         fabricCanvas.on("mouse:down", (opt) => {
-          if (!isComponentMounted || !canvasReady) return
-          if (opt.e.button === 1 || (opt.e.button === 0 && opt.e.altKey)) {
+          var evt = opt.e
+          if (evt.altKey === true) {
             setIsDragging(true)
-            setLastPos({ x: opt.e.clientX, y: opt.e.clientY })
             fabricCanvas.selection = false
-            fabricCanvas.discardActiveObject()
-            fabricCanvas.requestRenderAll()
+            setLastPos({ x: evt.clientX, y: evt.clientY })
           }
         })
 
         fabricCanvas.on("mouse:move", (opt) => {
-          if (!isComponentMounted || !isDragging || !canvasReady) return
-          const e = opt.e
-          const vpt = fabricCanvas.viewportTransform
-          vpt[4] += e.clientX - lastPos.x
-          vpt[5] += e.clientY - lastPos.y
-          fabricCanvas.requestRenderAll()
-          setLastPos({ x: e.clientX, y: e.clientY })
+          if (isDragging) {
+            var e = opt.e
+            var vpt = fabricCanvas.viewportTransform
+            vpt[4] += e.clientX - lastPos.x
+            vpt[5] += e.clientY - lastPos.y
+            fabricCanvas.requestRenderAll()
+            setLastPos({ x: e.clientX, y: e.clientY })
+          }
         })
 
-        fabricCanvas.on("mouse:up", () => {
-          if (isComponentMounted) {
-            setIsDragging(false)
-          }
+        fabricCanvas.on("mouse:up", (opt) => {
+          setIsDragging(false)
+          fabricCanvas.selection = true
         })
 
         // Set initial ref value
@@ -349,7 +344,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         }
       }
     }
-  }, [isFabricLoaded, isComponentMounted, submission.answerImages])
+  }, [isFabricLoaded, isComponentMounted, submission.answerImages, isDragging, lastPos])
 
   // Debug: Monitor pageAnnotations changes
   useEffect(() => {
@@ -436,6 +431,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         })
 
         backgroundImageRef.current = fabricImage
+
         canvas.clear()
         canvas.add(fabricImage)
         canvas.sendToBack(fabricImage)
@@ -564,6 +560,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         })
 
         backgroundImageRef.current = fabricImage
+
         canvas.clear()
         canvas.add(fabricImage)
         canvas.sendToBack(fabricImage)
@@ -645,23 +642,26 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
   }, [])
 
   // Save annotations for a specific image index
-  const saveAnnotationsForIndex = useCallback((index) => {
-    if (fabricCanvasRef.current && isComponentMounted && canvasReady) {
-      try {
-        const json = fabricCanvasRef.current.toJSON()
-        setPageAnnotations((prev) => {
-          const updated = {
-            ...prev,
-            [index]: json,
-          }
-          console.log("Annotations saved for image", index)
-          return updated
-        })
-      } catch (error) {
-        console.warn("Error saving annotations for index", index, ":", error)
+  const saveAnnotationsForIndex = useCallback(
+    (index) => {
+      if (fabricCanvasRef.current && isComponentMounted && canvasReady) {
+        try {
+          const json = fabricCanvasRef.current.toJSON()
+          setPageAnnotations((prev) => {
+            const updated = {
+              ...prev,
+              [index]: json,
+            }
+            console.log("Annotations saved for image", index)
+            return updated
+          })
+        } catch (error) {
+          console.warn("Error saving annotations for index", index, ":", error)
+        }
       }
-    }
-  }, [isComponentMounted, canvasReady])
+    },
+    [isComponentMounted, canvasReady],
+  )
 
   // Handle image change with proper cleanup
   const handleImageChange = useCallback(
@@ -688,7 +688,6 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
 
         // Update the ref immediately
         currentImageIndexRef.current = index
-
         setIsImageLoading(true)
 
         // Clear existing canvas
@@ -751,14 +750,13 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
             if (isComponentMounted && canvasReady) saveToHistory()
           })
 
-          // Add zoom and pan
+          // Add zoom and pan - EXACTLY like original
           fabricCanvas.on("mouse:wheel", (opt) => {
-            if (!isComponentMounted || !canvasReady) return
-            const delta = opt.e.deltaY
-            let zoom = fabricCanvas.getZoom()
+            var delta = opt.e.deltaY
+            var zoom = fabricCanvas.getZoom()
             zoom *= 0.999 ** delta
             if (zoom > 20) zoom = 20
-            if (zoom < 0.1) zoom = 0.1
+            if (zoom < 0.01) zoom = 0.01
             fabricCanvas.zoomToPoint({ x: opt.e.offsetX, y: opt.e.offsetY }, zoom)
             setZoom(zoom)
             opt.e.preventDefault()
@@ -766,30 +764,28 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
           })
 
           fabricCanvas.on("mouse:down", (opt) => {
-            if (!isComponentMounted || !canvasReady) return
-            if (opt.e.button === 1 || (opt.e.button === 0 && opt.e.altKey)) {
+            var evt = opt.e
+            if (evt.altKey === true) {
               setIsDragging(true)
-              setLastPos({ x: opt.e.clientX, y: opt.e.clientY })
               fabricCanvas.selection = false
-              fabricCanvas.discardActiveObject()
-              fabricCanvas.requestRenderAll()
+              setLastPos({ x: evt.clientX, y: evt.clientY })
             }
           })
 
           fabricCanvas.on("mouse:move", (opt) => {
-            if (!isComponentMounted || !isDragging || !canvasReady) return
-            const e = opt.e
-            const vpt = fabricCanvas.viewportTransform
-            vpt[4] += e.clientX - lastPos.x
-            vpt[5] += e.clientY - lastPos.y
-            fabricCanvas.requestRenderAll()
-            setLastPos({ x: e.clientX, y: e.clientY })
+            if (isDragging) {
+              var e = opt.e
+              var vpt = fabricCanvas.viewportTransform
+              vpt[4] += e.clientX - lastPos.x
+              vpt[5] += e.clientY - lastPos.y
+              fabricCanvas.requestRenderAll()
+              setLastPos({ x: e.clientX, y: e.clientY })
+            }
           })
 
-          fabricCanvas.on("mouse:up", () => {
-            if (isComponentMounted) {
-              setIsDragging(false)
-            }
+          fabricCanvas.on("mouse:up", (opt) => {
+            setIsDragging(false)
+            fabricCanvas.selection = true
           })
 
           // Load new image with annotations - pass the target index directly
@@ -803,7 +799,6 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         // Update current image index after everything is set up
         setCurrentImageIndex(index)
         currentImageIndexRef.current = index
-
         setIsImageLoading(false)
         isChangingImageRef.current = false
         console.log("Image change completed successfully")
@@ -816,7 +811,16 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         isChangingImageRef.current = false
       }
     },
-    [currentImageIndex, submission.answerImages, isComponentMounted, canvasReady, saveToHistory, saveAnnotationsForIndex, lastPos],
+    [
+      currentImageIndex,
+      submission.answerImages,
+      isComponentMounted,
+      canvasReady,
+      saveToHistory,
+      saveAnnotationsForIndex,
+      isDragging,
+      lastPos,
+    ],
   )
 
   // Update canvas when tool changes
@@ -865,7 +869,6 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
               isDrawing = true
               const pointer = canvas.getPointer(o.e)
               startPoint = { x: pointer.x, y: pointer.y }
-
               currentRect = new window.fabric.Rect({
                 left: startPoint.x,
                 top: startPoint.y,
@@ -877,7 +880,6 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                 selectable: false,
                 evented: false,
               })
-
               canvas.add(currentRect)
               o.e.preventDefault()
               o.e.stopPropagation()
@@ -886,18 +888,15 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
 
           canvas.on("mouse:move", (o) => {
             if (!isDrawing || !currentRect) return
-
             const pointer = canvas.getPointer(o.e)
             const width = pointer.x - startPoint.x
             const height = pointer.y - startPoint.y
-
             currentRect.set({
               width: Math.abs(width),
               height: Math.abs(height),
               left: width > 0 ? startPoint.x : pointer.x,
               top: height > 0 ? startPoint.y : pointer.y,
             })
-
             canvas.renderAll()
             o.e.preventDefault()
             o.e.stopPropagation()
@@ -926,7 +925,6 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
               isDrawingCircle = true
               const pointer = canvas.getPointer(o.e)
               startPointCircle = { x: pointer.x, y: pointer.y }
-
               currentCircle = new window.fabric.Circle({
                 left: startPointCircle.x,
                 top: startPointCircle.y,
@@ -937,7 +935,6 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                 selectable: false,
                 evented: false,
               })
-
               canvas.add(currentCircle)
               o.e.preventDefault()
               o.e.stopPropagation()
@@ -946,16 +943,13 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
 
           canvas.on("mouse:move", (o) => {
             if (!isDrawingCircle || !currentCircle) return
-
             const pointer = canvas.getPointer(o.e)
             const radius = Math.sqrt(
               Math.pow(pointer.x - startPointCircle.x, 2) + Math.pow(pointer.y - startPointCircle.y, 2),
             )
-
             currentCircle.set({
               radius: radius,
             })
-
             canvas.renderAll()
             o.e.preventDefault()
             o.e.stopPropagation()
@@ -1029,12 +1023,15 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
             brush.width = penSize
             fabricCanvasRef.current.freeDrawingBrush = brush
             break
+
           case "rectangle":
             fabricCanvasRef.current.isDrawingMode = false
             break
+
           case "circle":
             fabricCanvasRef.current.isDrawingMode = false
             break
+
           case "text":
             fabricCanvasRef.current.isDrawingMode = false
             const text = new window.fabric.IText("Double click to edit", {
@@ -1061,10 +1058,12 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
             fabricCanvasRef.current.add(text)
             fabricCanvasRef.current.setActiveObject(text)
             break
+
           case "comment":
             fabricCanvasRef.current.isDrawingMode = false
             setShowCommentDropdown(true)
             break
+
           case "select":
             fabricCanvasRef.current.isDrawingMode = false
             fabricCanvasRef.current.selection = true
@@ -1075,6 +1074,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
               }
             })
             break
+
           case "clear":
             fabricCanvasRef.current.clear()
             // Re-add the background image
@@ -1128,7 +1128,6 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         fabricCanvasRef.current.renderAll()
 
         setShowCommentDropdown(false)
-
         toast.success("Comment added! You can move and edit it.")
       } catch (error) {
         console.error("Error adding comment:", error)
@@ -1141,7 +1140,6 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
   const handleColorChange = useCallback(
     (color) => {
       setPenColor(color)
-
       if (!canvasReady) return
 
       const canvas = fabricCanvasRef.current
@@ -1171,7 +1169,6 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
   const handleBrushSizeChange = useCallback(
     (size) => {
       setPenSize(size)
-
       if (!canvasReady) return
 
       const canvas = fabricCanvasRef.current
@@ -1223,78 +1220,93 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
 
   // Improved utility to scale and position annotation objects for original image size
   function scaleAnnotationObjects(objects, scale, offsetX, offsetY) {
-    return objects.map(obj => {
-      const newObj = { ...obj };
+    return objects.map((obj) => {
+      const newObj = { ...obj }
+
       // Position
-      if (typeof newObj.left === 'number') newObj.left = (newObj.left - offsetX) / scale;
-      if (typeof newObj.top === 'number') newObj.top = (newObj.top - offsetY) / scale;
+      if (typeof newObj.left === "number") newObj.left = (newObj.left - offsetX) / scale
+      if (typeof newObj.top === "number") newObj.top = (newObj.top - offsetY) / scale
+
       // Size
-      if (typeof newObj.width === 'number') newObj.width = newObj.width / scale;
-      if (typeof newObj.height === 'number') newObj.height = newObj.height / scale;
-      if (typeof newObj.radius === 'number') newObj.radius = newObj.radius / scale;
+      if (typeof newObj.width === "number") newObj.width = newObj.width / scale
+      if (typeof newObj.height === "number") newObj.height = newObj.height / scale
+      if (typeof newObj.radius === "number") newObj.radius = newObj.radius / scale
+
       // Font
-      if (typeof newObj.fontSize === 'number') newObj.fontSize = newObj.fontSize / scale;
+      if (typeof newObj.fontSize === "number") newObj.fontSize = newObj.fontSize / scale
+
       // Stroke
-      if (typeof newObj.strokeWidth === 'number') newObj.strokeWidth = newObj.strokeWidth / scale;
+      if (typeof newObj.strokeWidth === "number") newObj.strokeWidth = newObj.strokeWidth / scale
+
       // Scale factors
-      if (typeof newObj.scaleX === 'number') newObj.scaleX = newObj.scaleX;
-      if (typeof newObj.scaleY === 'number') newObj.scaleY = newObj.scaleY;
+      if (typeof newObj.scaleX === "number") newObj.scaleX = newObj.scaleX
+      if (typeof newObj.scaleY === "number") newObj.scaleY = newObj.scaleY
+
       // Path (for pen/free drawing)
       if (Array.isArray(newObj.path)) {
-        newObj.path = newObj.path.map(cmd => {
+        newObj.path = newObj.path.map((cmd) => {
           // cmd is [command, ...args], e.g. ['M', x, y] or ['Q', x1, y1, x, y]
           return cmd.map((v, i) => {
-            if (i === 0) return v; // command letter
-            if (typeof v === 'number') {
+            if (i === 0) return v // command letter
+            if (typeof v === "number") {
               // For path, x/y are in container coordinates, so scale and offset
               // We can't know if it's x or y, but both need the same transform
               // So we must assume all numbers after the command are coordinates
               // (This is true for fabric.js path data)
               // For more complex paths, this may need refinement
-              return (v - (i % 2 === 1 ? offsetX : offsetY)) / scale;
+              return (v - (i % 2 === 1 ? offsetX : offsetY)) / scale
             }
-            return v;
-          });
-        });
+            return v
+          })
+        })
       }
+
       // Points (for polyline, polygon, etc.)
       if (Array.isArray(newObj.points)) {
-        newObj.points = newObj.points.map(pt => ({
+        newObj.points = newObj.points.map((pt) => ({
           x: (pt.x - offsetX) / scale,
-          y: (pt.y - offsetY) / scale
-        }));
+          y: (pt.y - offsetY) / scale,
+        }))
       }
-      return newObj;
-    });
+
+      return newObj
+    })
   }
 
   // Update generateAnnotatedImagePreviews to return array of data URLs
   const generateAnnotatedImagePreviews = async () => {
-    if (!fabricCanvasRef.current || !isComponentMounted) return [];
-    const currentJson = fabricCanvasRef.current.toJSON();
+    if (!fabricCanvasRef.current || !isComponentMounted) return []
+
+    const currentJson = fabricCanvasRef.current.toJSON()
     const allAnnotations = {
       ...pageAnnotations,
       [currentImageIndexRef.current]: currentJson,
-    };
-    const previews = [];
+    }
+
+    const previews = []
+
     for (let i = 0; i < submission.answerImages.length; i++) {
-      const imageData = submission.answerImages[i];
-      const annotations = allAnnotations[i];
+      const imageData = submission.answerImages[i]
+      const annotations = allAnnotations[i]
+
       const img = await new Promise((resolve, reject) => {
-        const image = new window.Image();
-        image.crossOrigin = "anonymous";
-        image.onload = () => resolve(image);
-        image.onerror = reject;
-        image.src = imageData.imageUrl;
-      });
-      const tempCanvas = document.createElement("canvas");
-      tempCanvas.width = img.width;
-      tempCanvas.height = img.height;
+        const image = new window.Image()
+        image.crossOrigin = "anonymous"
+        image.onload = () => resolve(image)
+        image.onerror = reject
+        image.src = imageData.imageUrl
+      })
+
+      const tempCanvas = document.createElement("canvas")
+      tempCanvas.width = img.width
+      tempCanvas.height = img.height
+
       const tempFabricCanvas = new window.fabric.Canvas(tempCanvas, {
         width: img.width,
         height: img.height,
         backgroundColor: "#ffffff",
-      });
+      })
+
       const fabricImage = new window.fabric.Image(img, {
         left: 0,
         top: 0,
@@ -1302,102 +1314,128 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         scaleY: 1,
         selectable: false,
         evented: false,
-      });
-      tempFabricCanvas.add(fabricImage);
-      tempFabricCanvas.sendToBack(fabricImage);
-      tempFabricCanvas.renderAll();
+      })
+
+      tempFabricCanvas.add(fabricImage)
+      tempFabricCanvas.sendToBack(fabricImage)
+      tempFabricCanvas.renderAll()
+
       if (annotations && annotations.objects) {
-        const container = fabricCanvasRef.current.getElement().parentElement;
-        const containerWidth = container.clientWidth;
-        const containerHeight = container.clientHeight;
-        const scaleX = containerWidth / img.width;
-        const scaleY = containerHeight / img.height;
-        const scale = Math.min(scaleX, scaleY);
-        const offsetX = (containerWidth - img.width * scale) / 2;
-        const offsetY = (containerHeight - img.height * scale) / 2;
-        const annotationObjects = annotations.objects.filter(obj => obj.type !== 'image');
-        const scaledObjects = scaleAnnotationObjects(annotationObjects, scale, offsetX, offsetY);
+        const container = fabricCanvasRef.current.getElement().parentElement
+        const containerWidth = container.clientWidth
+        const containerHeight = container.clientHeight
+
+        const scaleX = containerWidth / img.width
+        const scaleY = containerHeight / img.height
+        const scale = Math.min(scaleX, scaleY)
+
+        const offsetX = (containerWidth - img.width * scale) / 2
+        const offsetY = (containerHeight - img.height * scale) / 2
+
+        const annotationObjects = annotations.objects.filter((obj) => obj.type !== "image")
+        const scaledObjects = scaleAnnotationObjects(annotationObjects, scale, offsetX, offsetY)
+
         if (scaledObjects.length > 0) {
           await new Promise((resolve) => {
-            window.fabric.util.enlivenObjects(scaledObjects, (enlivenedObjects) => {
-              enlivenedObjects.forEach((obj) => tempFabricCanvas.add(obj));
-              tempFabricCanvas.renderAll();
-              resolve();
-            }, null);
-          });
+            window.fabric.util.enlivenObjects(
+              scaledObjects,
+              (enlivenedObjects) => {
+                enlivenedObjects.forEach((obj) => tempFabricCanvas.add(obj))
+                tempFabricCanvas.renderAll()
+                resolve()
+              },
+              null,
+            )
+          })
         }
       }
-      const dataUrl = tempCanvas.toDataURL("image/png");
-      previews.push(dataUrl);
-      tempFabricCanvas.dispose();
+
+      const dataUrl = tempCanvas.toDataURL("image/png")
+      previews.push(dataUrl)
+      tempFabricCanvas.dispose()
     }
-    return previews;
-  };
+
+    return previews
+  }
 
   // Update getAnnotatedImages to use original image size and scaling
   const getAnnotatedImages = async () => {
-    console.log('=== getAnnotatedImages called ===');
+    console.log("=== getAnnotatedImages called ===")
     console.log("[getAnnotatedImages] Initial checks:", {
       fabricCanvasRef: !!fabricCanvasRef.current,
       isComponentMounted,
-      submissionAnswerImages: submission.answerImages?.length || 0
-    });
+      submissionAnswerImages: submission.answerImages?.length || 0,
+    })
+
     if (!fabricCanvasRef.current || !isComponentMounted) {
-      console.error("[getAnnotatedImages] Canvas not ready or component not mounted");
+      console.error("[getAnnotatedImages] Canvas not ready or component not mounted")
       toast.error("Canvas not ready")
       return null
     }
+
     if (!submission.answerImages || submission.answerImages.length === 0) {
-      console.error("[getAnnotatedImages] No answer images found");
+      console.error("[getAnnotatedImages] No answer images found")
       toast.error("No answer images found")
       return null
     }
+
     try {
-      console.log("[getAnnotatedImages] Step 1: Setting uploading state...");
+      console.log("[getAnnotatedImages] Step 1: Setting uploading state...")
       setUploadingImages(true)
-      console.log("[getAnnotatedImages] Step 2: Getting current canvas JSON...");
+
+      console.log("[getAnnotatedImages] Step 2: Getting current canvas JSON...")
       // Save current annotations first using ref
       const currentJson = fabricCanvasRef.current.toJSON()
-      console.log("[getAnnotatedImages] Current canvas JSON:", currentJson);
+      console.log("[getAnnotatedImages] Current canvas JSON:", currentJson)
+
       const allAnnotations = {
         ...pageAnnotations,
         [currentImageIndexRef.current]: currentJson,
       }
-      console.log("[getAnnotatedImages] Step 3: Processing annotations for", submission.answerImages.length, "images");
-      console.log("[getAnnotatedImages] All annotations:", allAnnotations);
+
+      console.log("[getAnnotatedImages] Step 3: Processing annotations for", submission.answerImages.length, "images")
+      console.log("[getAnnotatedImages] All annotations:", allAnnotations)
+
       const annotatedResults = []
+
       for (let i = 0; i < submission.answerImages.length; i++) {
-        console.log(`[getAnnotatedImages] Step 4.${i + 1}: Processing image ${i}...`);
+        console.log(`[getAnnotatedImages] Step 4.${i + 1}: Processing image ${i}...`)
         const imageData = submission.answerImages[i]
         const annotations = allAnnotations[i]
+
         console.log(`[getAnnotatedImages] Image ${i} data:`, {
           imageUrl: imageData?.imageUrl,
           hasImageData: !!imageData,
           hasAnnotations: !!annotations,
-          annotationObjects: annotations?.objects?.length || 0
+          annotationObjects: annotations?.objects?.length || 0,
         })
+
         if (!imageData || !imageData.imageUrl) {
-          console.warn(`[getAnnotatedImages] Skipping image ${i} - no valid image data`);
-          continue;
+          console.warn(`[getAnnotatedImages] Skipping image ${i} - no valid image data`)
+          continue
         }
+
         try {
           // 1. Load original image to get its size
           const img = await new Promise((resolve, reject) => {
-            const image = new window.Image();
-            image.crossOrigin = "anonymous";
-            image.onload = () => resolve(image);
-            image.onerror = reject;
-            image.src = imageData.imageUrl;
-          });
+            const image = new window.Image()
+            image.crossOrigin = "anonymous"
+            image.onload = () => resolve(image)
+            image.onerror = reject
+            image.src = imageData.imageUrl
+          })
+
           // 2. Create temp canvas at original image size
-          const tempCanvas = document.createElement("canvas");
-          tempCanvas.width = img.width;
-          tempCanvas.height = img.height;
+          const tempCanvas = document.createElement("canvas")
+          tempCanvas.width = img.width
+          tempCanvas.height = img.height
+
           const tempFabricCanvas = new window.fabric.Canvas(tempCanvas, {
             width: img.width,
             height: img.height,
             backgroundColor: "#ffffff",
-          });
+          })
+
           // 3. Add original image as background
           const fabricImage = new window.fabric.Image(img, {
             left: 0,
@@ -1406,33 +1444,44 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
             scaleY: 1,
             selectable: false,
             evented: false,
-          });
-          tempFabricCanvas.add(fabricImage);
-          tempFabricCanvas.sendToBack(fabricImage);
-          tempFabricCanvas.renderAll();
+          })
+
+          tempFabricCanvas.add(fabricImage)
+          tempFabricCanvas.sendToBack(fabricImage)
+          tempFabricCanvas.renderAll()
+
           // 4. Add annotation objects, scaled to original image size
           if (annotations && annotations.objects) {
             // Calculate scale and offset used in the annotation canvas
-            const container = fabricCanvasRef.current.getElement().parentElement;
-            const containerWidth = container.clientWidth;
-            const containerHeight = container.clientHeight;
-            const scaleX = containerWidth / img.width;
-            const scaleY = containerHeight / img.height;
-            const scale = Math.min(scaleX, scaleY);
-            const offsetX = (containerWidth - img.width * scale) / 2;
-            const offsetY = (containerHeight - img.height * scale) / 2;
-            const annotationObjects = annotations.objects.filter(obj => obj.type !== 'image');
-            const scaledObjects = scaleAnnotationObjects(annotationObjects, scale, offsetX, offsetY);
+            const container = fabricCanvasRef.current.getElement().parentElement
+            const containerWidth = container.clientWidth
+            const containerHeight = container.clientHeight
+
+            const scaleX = containerWidth / img.width
+            const scaleY = containerHeight / img.height
+            const scale = Math.min(scaleX, scaleY)
+
+            const offsetX = (containerWidth - img.width * scale) / 2
+            const offsetY = (containerHeight - img.height * scale) / 2
+
+            const annotationObjects = annotations.objects.filter((obj) => obj.type !== "image")
+            const scaledObjects = scaleAnnotationObjects(annotationObjects, scale, offsetX, offsetY)
+
             if (scaledObjects.length > 0) {
               await new Promise((resolve) => {
-                window.fabric.util.enlivenObjects(scaledObjects, (enlivenedObjects) => {
-                  enlivenedObjects.forEach((obj) => tempFabricCanvas.add(obj));
-                  tempFabricCanvas.renderAll();
-                  resolve();
-                }, null);
-              });
+                window.fabric.util.enlivenObjects(
+                  scaledObjects,
+                  (enlivenedObjects) => {
+                    enlivenedObjects.forEach((obj) => tempFabricCanvas.add(obj))
+                    tempFabricCanvas.renderAll()
+                    resolve()
+                  },
+                  null,
+                )
+              })
             }
           }
+
           // 5. Export and upload
           await new Promise((resolve) => {
             tempCanvas.toBlob(
@@ -1441,23 +1490,32 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   if (blob) {
                     console.log(`[getAnnotatedImages] Blob created for image ${i}:`, {
                       size: blob.size,
-                      type: blob.type
-                    });
+                      type: blob.type,
+                    })
+
                     const file = new File([blob], `annotated-image-${i + 1}.png`, {
                       type: "image/png",
                     })
-                    console.log(`[getAnnotatedImages] File created for image ${i}:`, file);
-                    console.log(`[getAnnotatedImages] Uploading file for image ${i}...`);
+
+                    console.log(`[getAnnotatedImages] File created for image ${i}:`, file)
+                    console.log(`[getAnnotatedImages] Uploading file for image ${i}...`)
+
                     const s3Key = await handleImageUpload(file, i)
+
                     annotatedResults.push({
                       originalIndex: i,
                       s3Key: s3Key,
                       fileName: `annotated-image-${i + 1}.png`,
                     })
-                    console.log(`[getAnnotatedImages] Successfully processed and uploaded image ${i} with S3 key:`, s3Key)
+
+                    console.log(
+                      `[getAnnotatedImages] Successfully processed and uploaded image ${i} with S3 key:`,
+                      s3Key,
+                    )
                   } else {
-                    console.error(`[getAnnotatedImages] Failed to create blob for image ${i}`);
+                    console.error(`[getAnnotatedImages] Failed to create blob for image ${i}`)
                   }
+
                   tempFabricCanvas.dispose()
                   resolve()
                 } catch (uploadError) {
@@ -1471,9 +1529,10 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
             )
           })
         } catch (imageError) {
-          console.error(`[getAnnotatedImages] Error processing image ${i}:`, imageError);
+          console.error(`[getAnnotatedImages] Error processing image ${i}:`, imageError)
         }
       }
+
       console.log("[getAnnotatedImages] Step 5: Annotation processing completed. Results:", annotatedResults)
       setUploadingImages(false)
       return annotatedResults
@@ -1489,71 +1548,78 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
   // 1. On modal open: only generate previews, no S3 upload
   const handleOpenPublishModal = async () => {
     try {
-      setLoading(true);
-      console.log('[PublishWithAnnotation] Opening modal: generating annotated image previews (no S3 upload)...');
-      const previews = await generateAnnotatedImagePreviews();
-      setImagePreviews(previews);
-      setIsReviewModalOpen(true);
-      setLoading(false);
-      console.log('[PublishWithAnnotation] Preview modal opened. Previews generated.');
+      setLoading(true)
+      console.log("[PublishWithAnnotation] Opening modal: generating annotated image previews (no S3 upload)...")
+      const previews = await generateAnnotatedImagePreviews()
+      setImagePreviews(previews)
+      setIsReviewModalOpen(true)
+      setLoading(false)
+      console.log("[PublishWithAnnotation] Preview modal opened. Previews generated.")
     } catch (error) {
-      setLoading(false);
-      console.error('[PublishWithAnnotation] Error during preview generation:', error);
-      toast.error(error.message || 'Failed to generate annotation previews');
+      setLoading(false)
+      console.error("[PublishWithAnnotation] Error during preview generation:", error)
+      toast.error(error.message || "Failed to generate annotation previews")
     }
-  };
+  }
 
   // 2. On Publish: export, upload to S3, then call publish API
   const handlePublish = async () => {
-    setLoading(true);
+    setLoading(true)
     try {
-      console.log('[PublishWithAnnotation] Exporting annotated images and uploading to S3...');
+      console.log("[PublishWithAnnotation] Exporting annotated images and uploading to S3...")
       // Export annotated images again (to ensure up-to-date)
-      const annotatedResults = await getAnnotatedImages();
+      const annotatedResults = await getAnnotatedImages()
       if (!annotatedResults) {
-        setLoading(false);
-        toast.error('Failed to export annotated images.');
-        return;
+        setLoading(false)
+        toast.error("Failed to export annotated images.")
+        return
       }
-      const s3Keys = [];
+
+      const s3Keys = []
       for (let i = 0; i < annotatedResults.length; i++) {
-        const result = annotatedResults[i];
+        const result = annotatedResults[i]
         if (result && result.s3Key) {
-          s3Keys.push({ s3Key: result.s3Key });
-          console.log(`[PublishWithAnnotation] Image ${i} uploaded to S3. S3 Key:`, result.s3Key);
+          s3Keys.push({ s3Key: result.s3Key })
+          console.log(`[PublishWithAnnotation] Image ${i} uploaded to S3. S3 Key:`, result.s3Key)
         }
       }
+
       if (s3Keys.length === 0) {
-        setLoading(false);
-        toast.error('No annotated images uploaded to S3.');
-        return;
+        setLoading(false)
+        toast.error("No annotated images uploaded to S3.")
+        return
       }
+
       // Call publish API
-      const publishEndpoint = '/evaluator-reviews/publishwithannotation';
-      const publishPayloads = s3Keys.map(image => ({
+      const publishEndpoint = "/evaluator-reviews/publishwithannotation"
+      const publishPayloads = s3Keys.map((image) => ({
         answerId: submission._id,
         annotatedImageKey: image.s3Key,
-      }));
-      console.log('[PublishWithAnnotation] About to call publish API:', publishEndpoint);
-      console.log('[PublishWithAnnotation] Payloads:', publishPayloads);
-      const publishPromises = publishPayloads.map(payload =>
-        api.post(publishEndpoint, payload).then(res => {
-          console.log('[PublishWithAnnotation] Publish API response for payload:', payload, res.data);
-          return res;
-        })
-      );
-      await Promise.all(publishPromises);
-      toast.success('Annotations published successfully!');
-      setIsReviewModalOpen(false);
-      if (onSave) onSave();
-      onClose();
+      }))
+
+      console.log("[PublishWithAnnotation] About to call publish API:", publishEndpoint)
+      console.log("[PublishWithAnnotation] Payloads:", publishPayloads)
+
+      const publishPromises = publishPayloads.map((payload) =>
+        api.post(publishEndpoint, payload).then((res) => {
+          console.log("[PublishWithAnnotation] Publish API response for payload:", payload, res.data)
+          return res
+        }),
+      )
+
+      await Promise.all(publishPromises)
+
+      toast.success("Annotations published successfully!")
+      setIsReviewModalOpen(false)
+      if (onSave) onSave()
+      onClose()
     } catch (error) {
-      console.error('[PublishWithAnnotation] Error during publish:', error);
-      toast.error(error.message || 'Failed to publish annotations.');
+      console.error("[PublishWithAnnotation] Error during publish:", error)
+      toast.error(error.message || "Failed to publish annotations.")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleSave = async () => {
     try {
@@ -1561,7 +1627,6 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
       if (fabricCanvasRef.current && fabricCanvasRef.current.getObjects && canvasReady) {
         saveAnnotationsForIndex(currentImageIndex)
       }
-
       // Simple save functionality
       if (onSave) {
         onSave({ annotations: pageAnnotations })
@@ -1608,15 +1673,15 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
 
   // Handle image upload
   const handleImageUpload = async (file, imgIndex) => {
-    console.log(`[handleImageUpload] === Starting image upload for image ${imgIndex} ===`);
+    console.log(`[handleImageUpload] === Starting image upload for image ${imgIndex} ===`)
     console.log(`[handleImageUpload] File details:`, {
       name: file.name,
       size: file.size,
-      type: file.type
-    });
-    
+      type: file.type,
+    })
+
     try {
-      console.log(`[handleImageUpload] Step 1: Preparing upload payload...`);
+      console.log(`[handleImageUpload] Step 1: Preparing upload payload...`)
       // Get presigned URL for upload
       const uploadPayload = {
         fileName: file.name,
@@ -1625,27 +1690,27 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         answerId: submission._id,
       }
       console.log(`[handleImageUpload] Upload payload:`, uploadPayload)
-      
-      console.log(`[handleImageUpload] Step 2: Requesting presigned URL...`);
+
+      console.log(`[handleImageUpload] Step 2: Requesting presigned URL...`)
       const uploadUrlResponse = await api.post("/review/annotated-image-upload-url", uploadPayload)
       console.log(`[handleImageUpload] Upload URL Response:`, uploadUrlResponse.data)
-      
+
       if (!uploadUrlResponse.data.success) {
-        console.error(`[handleImageUpload] Server returned error:`, uploadUrlResponse.data);
+        console.error(`[handleImageUpload] Server returned error:`, uploadUrlResponse.data)
         throw new Error(uploadUrlResponse.data.message || "Failed to get upload URL")
       }
-      
+
       const uploadUrl = uploadUrlResponse.data.data.uploadUrl
       const key = uploadUrlResponse.data.data.key
       console.log(`[handleImageUpload] Extracted uploadUrl:`, uploadUrl)
       console.log(`[handleImageUpload] Extracted key:`, key)
-      
+
       if (!uploadUrl || typeof uploadUrl !== "string") {
-        console.error(`[handleImageUpload] Invalid upload URL:`, uploadUrl);
+        console.error(`[handleImageUpload] Invalid upload URL:`, uploadUrl)
         throw new Error("Invalid upload URL received from server")
       }
-      
-      console.log(`[handleImageUpload] Step 3: Uploading file to S3...`);
+
+      console.log(`[handleImageUpload] Step 3: Uploading file to S3...`)
       const uploadResponse = await fetch(uploadUrl, {
         method: "PUT",
         body: file,
@@ -1653,13 +1718,13 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
           "Content-Type": file.type,
         },
       })
-      
+
       console.log(`[handleImageUpload] S3 upload response:`, {
         status: uploadResponse.status,
         statusText: uploadResponse.statusText,
-        ok: uploadResponse.ok
-      });
-      
+        ok: uploadResponse.ok,
+      })
+
       if (!uploadResponse.ok) {
         const errorText = await uploadResponse.text()
         console.error(`[handleImageUpload] S3 Upload Error:`, {
@@ -1669,30 +1734,29 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         })
         throw new Error(`Failed to upload image to S3: ${errorText}`)
       }
-      
+
       console.log(`[handleImageUpload] Step 4: Successfully uploaded to S3. Key:`, key)
-      
-      console.log(`[handleImageUpload] Step 5: Updating annotated images state...`);
+
+      console.log(`[handleImageUpload] Step 5: Updating annotated images state...`)
       setAnnotatedImages((prev) => {
         const newImages = Array.isArray(prev) ? [...prev] : []
         newImages.push({ s3Key: key })
-        console.log(`[handleImageUpload] Updated annotated images state:`, newImages);
+        console.log(`[handleImageUpload] Updated annotated images state:`, newImages)
         return newImages
       })
-      
-      console.log(`[handleImageUpload] === Upload completed successfully for image ${imgIndex} ===`);
+
+      console.log(`[handleImageUpload] === Upload completed successfully for image ${imgIndex} ===`)
       return key
-      
     } catch (error) {
       console.error(`[handleImageUpload] === Error uploading image ${imgIndex}:`, error)
-      console.error(`[handleImageUpload] Error stack:`, error.stack);
-      
+      console.error(`[handleImageUpload] Error stack:`, error.stack)
+
       if (error.response) {
         console.error(`[handleImageUpload] Error response data:`, error.response.data)
         console.error(`[handleImageUpload] Error response status:`, error.response.status)
         console.error(`[handleImageUpload] Error response headers:`, error.response.headers)
       }
-      
+
       throw error
     }
   }
@@ -1704,7 +1768,6 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
 
     try {
       setUploadingImages(true)
-
       // Create preview immediately when file is selected
       const preview = await createImagePreview(file)
       setSelectedImage(preview)
@@ -1721,14 +1784,11 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
 
       // Clear the selected image after successful upload
       setSelectedImage(null)
-
       toast.success("Image uploaded successfully")
     } catch (error) {
       console.error("Error in handleFileSelect:", error)
       setSelectedImage(null)
-
       let errorMessage = "Failed to upload image"
-
       if (error.response) {
         errorMessage = error.response.data.message || `Server error: ${error.response.status}`
       } else if (error.request) {
@@ -1736,7 +1796,6 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
       } else {
         errorMessage = error.message
       }
-
       toast.error(errorMessage)
     } finally {
       setUploadingImages(false)
@@ -1750,7 +1809,6 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
       newImages.splice(index, 1)
       return newImages
     })
-
     setImagePreviews((prev) => {
       const newPreviews = Array.isArray(prev) ? [...prev] : []
       newPreviews.splice(index, 1)
@@ -1765,7 +1823,6 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
       if (historyIndexRef.current > 0) {
         historyIndexRef.current--
         const historyState = historyRef.current[historyIndexRef.current]
-
         fabricCanvasRef.current.loadFromJSON(historyState, () => {
           fabricCanvasRef.current.renderAll()
           updateUndoRedoState()
@@ -1783,7 +1840,6 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
       if (historyIndexRef.current < historyRef.current.length - 1) {
         historyIndexRef.current++
         const historyState = historyRef.current[historyIndexRef.current]
-
         fabricCanvasRef.current.loadFromJSON(historyState, () => {
           fabricCanvasRef.current.renderAll()
           updateUndoRedoState()
@@ -1807,7 +1863,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
             {submission.user?.name || "Anonymous"} - {new Date(submission.evaluatedAt).toLocaleDateString()}
           </p>
         </div>
-        
+
         <div className="flex space-x-4">
           <button
             onClick={handleSave}
@@ -2346,6 +2402,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   )}
                 </div>
               </div>
+
               {/* Annotated Images Preview */}
               {imagePreviews.length > 0 && (
                 <div>
@@ -2354,7 +2411,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                     {imagePreviews.map((preview, index) => (
                       <div key={index} className="relative">
                         <img
-                          src={preview}
+                          src={preview || "/placeholder.svg"}
                           alt={`Annotated ${index + 1}`}
                           className="w-full h-40 object-cover rounded-lg shadow-md border"
                         />
@@ -2363,6 +2420,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   </div>
                 </div>
               )}
+
               {/* Action Buttons */}
               <div className="flex justify-end pt-4 border-t mt-6">
                 <button
@@ -2376,21 +2434,25 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   onClick={handlePublish}
                   disabled={loading || uploadingImages}
                   className={`px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 ${
-                    (loading || uploadingImages) ? 'opacity-50 cursor-not-allowed' : ''
+                    loading || uploadingImages ? "opacity-50 cursor-not-allowed" : ""
                   }`}
                 >
-                  {loading ? 'Publishing...' : 'Publish'}
+                  {loading ? "Publishing..." : "Publish"}
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
+
       {openPreviewIndex !== null && (
-        <div className="fixed inset-0 z-[999] bg-black bg-opacity-80 flex items-center justify-center" onClick={() => setOpenPreviewIndex(null)}>
-          <div className="relative" onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-[999] bg-black bg-opacity-80 flex items-center justify-center"
+          onClick={() => setOpenPreviewIndex(null)}
+        >
+          <div className="relative" onClick={(e) => e.stopPropagation()}>
             <img
-              src={annotatedImagePreviews[openPreviewIndex]}
+              src={annotatedImagePreviews[openPreviewIndex] || "/placeholder.svg"}
               alt={`Full Annotated Preview ${openPreviewIndex + 1}`}
               className="max-w-[90vw] max-h-[80vh] rounded shadow-lg border-2 border-white"
             />
