@@ -608,6 +608,15 @@ const BookDetail = () => {
                     <span>Book Assets</span>
                   </button>
 
+                  {/* Courses Button */}
+                  <button
+                    className="flex items-center px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors shadow-sm"
+                    onClick={() => navigate(`/ai-books/${bookId}/courses`)}
+                  >
+                    <Book size={16} className="mr-2" />
+                    <span>Courses</span>
+                  </button>
+
                   <button 
                     className="flex items-center px-4 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700 transition-colors shadow-sm"
                     onClick={() => setShowPrintBookModal(true)}

@@ -1802,7 +1802,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
   const handleEditEvaluation = async () => {
     setEditLoading(true);
     try {
-      console.log(submission);
+      console.log(submission)
       const url = `http://localhost:5000/api/clients/CLI677117YN7N/mobile/userAnswers/questions/${submission.question._id}/answers/${submission._id}/evaluation-update`;
       const payload = {
         analysis: {
@@ -1839,13 +1839,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
           </p>
         </div>
         <div className="flex space-x-4">
-          {/* <button 
-            onClick={handleSave} 
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-            disabled={!isComponentMounted}
-          >
-            Save Annotations
-          </button> */}
+         
           <button 
             onClick={handleOpenPublishModal} 
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"

@@ -2,13 +2,24 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AISWBSets from './AISWBSets';
 import AISWBQuestions from './AISWBQuestions';
+import ObjectiveSets from './ObjectiveSets';
+import ObjectiveQuestionManagement from './ObjectiveQuestionManagement';
 import Cookies from 'js-cookie';
 import { toast } from 'react-toastify';
+import { ArrowLeft, Download } from 'lucide-react';
+import AISWBPrintModal from './AISWBPrintModal';
+import ObjectivePrintModal from './ObjectivePrintModal';
+import UniversalPrintModal from './UniversalPrintModal';
 
 const AISWBTab = ({ topicId }) => {
   const [selectedSet, setSelectedSet] = useState(null);
+  const [selectedObjectiveSet, setSelectedObjectiveSet] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('subjective');
+  const [showSubjectivePrint, setShowSubjectivePrint] = useState(false);
+  const [showObjectivePrint, setShowObjectivePrint] = useState(false);
+  const [showUniversalPrint, setShowUniversalPrint] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -31,7 +42,7 @@ const AISWBTab = ({ topicId }) => {
           return;
         }
 
-        // Verify topic access
+        // Verify topic access (This is a generic check, might need adjustment if endpoints differ)
         const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/topic/${topicId}/sets`, {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -43,7 +54,7 @@ const AISWBTab = ({ topicId }) => {
         }
 
         const data = await response.json();
-        if (!data.success) {
+        if (!data.success && response.status !== 404) { // 404 can be OK if no sets exist yet
           throw new Error(data.message || 'Failed to verify topic access');
         }
 
@@ -60,33 +71,19 @@ const AISWBTab = ({ topicId }) => {
   }, [topicId, navigate]);
 
   const handleSetSelect = (set) => {
-    try {
-      const token = Cookies.get('usertoken');
-      if (!token) {
-        toast.error('Please login to access AISWB management');
-        navigate('/login');
-        return;
-      }
-
-      if (!set || !set.id) {
-        toast.error('Invalid set selection');
-        return;
-      }
-
     setSelectedSet(set);
-    } catch (error) {
-      console.error('Set selection error:', error);
-      toast.error('Failed to select set. Please try again.');
-    }
+  };
+  
+  const handleObjectiveSetSelect = (set) => {
+    setSelectedObjectiveSet(set);
   };
 
   const handleBackToSets = () => {
-    try {
     setSelectedSet(null);
-    } catch (error) {
-      console.error('Navigation error:', error);
-      toast.error('Failed to navigate back. Please try again.');
-    }
+  };
+  
+  const handleBackToObjectiveSets = () => {
+    setSelectedObjectiveSet(null);
   };
 
   if (isLoading) {
@@ -106,18 +103,122 @@ const AISWBTab = ({ topicId }) => {
     );
   }
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      {selectedSet ? (
+  if (selectedSet) {
+    return (
+      <div className="container mx-auto px-4 py-8">
         <AISWBQuestions
           topicId={topicId}
           selectedSet={selectedSet}
           onBack={handleBackToSets}
         />
-      ) : (
-        <AISWBSets
+      </div>
+    );
+  }
+
+  if (selectedObjectiveSet) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <button
+          onClick={handleBackToObjectiveSets}
+          className="mb-4 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+        >
+          <ArrowLeft size={16} className="mr-2" />
+          Back to Sets
+        </button>
+        <ObjectiveQuestionManagement selectedSet={selectedObjectiveSet} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      {/* Universal Print Button */}
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={() => setShowUniversalPrint(true)}
+          className="flex items-center px-4 py-2 bg-indigo-700 text-white rounded-md hover:bg-indigo-800 transition-colors"
+        >
+          <Download size={18} className="mr-2" />
+          Print (Both)
+        </button>
+      </div>
+      {/* Tab Navigation */}
+      <div className="flex border-b border-gray-200 mb-6">
+        <button
+          onClick={() => setActiveTab('subjective')}
+          className={`px-6 py-3 text-lg font-medium transition-colors ${
+            activeTab === 'subjective'
+              ? 'border-b-2 border-indigo-600 text-indigo-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Subjective
+        </button>
+        <button
+          onClick={() => setActiveTab('objective')}
+          className={`px-6 py-3 text-lg font-medium transition-colors ${
+            activeTab === 'objective'
+              ? 'border-b-2 border-indigo-600 text-indigo-600'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Objective
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'subjective' && (
+        <>
+          <div className="flex justify-start mb-4">
+            <button
+              onClick={() => setShowSubjectivePrint(true)}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            >
+              <Download size={18} className="mr-2" />
+              Print Subjective
+            </button>
+          </div>
+          <AISWBSets
+            topicId={topicId}
+            onSetSelect={handleSetSelect}
+          />
+          {showSubjectivePrint && (
+            <AISWBPrintModal
+              isOpen={showSubjectivePrint}
+              onClose={() => setShowSubjectivePrint(false)}
+              topicId={topicId}
+            />
+          )}
+        </>
+      )}
+
+      {activeTab === 'objective' && (
+        <>
+          <div className="flex justify-start mb-4">
+            <button
+              onClick={() => setShowObjectivePrint(true)}
+              className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            >
+              <Download size={18} className="mr-2" />
+              Print Objective
+            </button>
+          </div>
+          <ObjectiveSets topicId={topicId} onSetSelect={handleObjectiveSetSelect} />
+          {showObjectivePrint && (
+            <ObjectivePrintModal
+              isOpen={showObjectivePrint}
+              onClose={() => setShowObjectivePrint(false)}
+              topicId={topicId}
+            />
+          )}
+        </>
+      )}
+
+      {showUniversalPrint && (
+        <UniversalPrintModal
+          isOpen={showUniversalPrint}
+          onClose={() => setShowUniversalPrint(false)}
           topicId={topicId}
-          onSetSelect={handleSetSelect}
         />
       )}
     </div>
