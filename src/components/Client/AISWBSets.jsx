@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, ChevronRight } from 'lucide-react';
 import { toast } from 'react-toastify';
 import Cookies from 'js-cookie';
+import BulkUploadAISWBModal from './BulkUploadAISWBModal';
 
 const AISWBSets = ({ topicId, onSetSelect }) => {
   const [sets, setSets] = useState([]);
@@ -10,6 +11,9 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
   const [editingSet, setEditingSet] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [setToDelete, setSetToDelete] = useState(null);
 
   useEffect(() => {
     fetchSets();
@@ -83,34 +87,38 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
     }
   };
 
-  const handleDeleteSet = async (setId) => {
-    if (window.confirm('Are you sure you want to delete this set? All questions in this set will be deleted.')) {
-      try {
-        const token = Cookies.get('usertoken');
-        if (!token) {
-          toast.error('Authentication required');
-          return;
-        }
+  const handleDeleteSet = (setId) => {
+    setSetToDelete(setId);
+    setShowDeleteModal(true);
+  };
 
-        const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/topic/${topicId}/sets/${setId}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        const data = await response.json();
-        
-        if (data.success) {
-          setSets(prevSets => prevSets.filter(set => set.id !== setId));
-          toast.success('Set deleted successfully');
-        } else {
-          toast.error(data.message || 'Failed to delete set');
-        }
-      } catch (error) {
-        console.error('Error deleting set:', error);
-        toast.error('Failed to connect to the server');
+  const confirmDeleteSet = async () => {
+    if (!setToDelete) return;
+    try {
+      const token = Cookies.get('usertoken');
+      if (!token) {
+        toast.error('Authentication required');
+        return;
       }
+      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/topic/${topicId}/sets/${setToDelete}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setSets(prevSets => prevSets.filter(set => set.id !== setToDelete));
+        toast.success('Set deleted successfully');
+      } else {
+        toast.error(data.message || 'Failed to delete set');
+      }
+    } catch (error) {
+      console.error('Error deleting set:', error);
+      toast.error('Failed to connect to the server');
+    } finally {
+      setShowDeleteModal(false);
+      setSetToDelete(null);
     }
   };
 
@@ -185,17 +193,26 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-semibold text-gray-800">Subjective Sets</h2>
-        <button
-          onClick={() => {
-            setEditingSet(null);
-            setNewSetName('');
-            setShowAddSetModal(true);
-          }}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-        >
-          <Plus size={16} className="mr-2" />
-          <span>Add New Set</span>
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              setEditingSet(null);
+              setNewSetName('');
+              setShowAddSetModal(true);
+            }}
+            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            <Plus size={16} className="mr-2" />
+            <span>Add New Set</span>
+          </button>
+          <button
+            onClick={() => setShowBulkUploadModal(true)}
+            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+          >
+            <Plus size={16} className="mr-2" />
+            <span>Bulk Upload from Excel</span>
+          </button>
+        </div>
       </div>
 
       {sets.length === 0 ? (
@@ -266,6 +283,39 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
                 className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               >
                 {editingSet ? 'Update' : 'Create'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showBulkUploadModal && (
+        <BulkUploadAISWBModal
+          isOpen={showBulkUploadModal}
+          onClose={() => setShowBulkUploadModal(false)}
+          topicId={topicId}
+          existingSets={sets}
+          onUploadComplete={() => fetchSets()}
+        />
+      )}
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">Delete Set</h3>
+            <p className="mb-6 text-gray-700">Are you sure you want to delete this set? All questions in this set will be deleted.</p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => { setShowDeleteModal(false); setSetToDelete(null); }}
+                className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteSet}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+              >
+                Delete
               </button>
             </div>
           </div>
