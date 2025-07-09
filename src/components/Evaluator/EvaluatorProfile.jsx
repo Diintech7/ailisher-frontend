@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { User, Mail, Phone, MapPin, BookOpen, Briefcase, Award, CheckCircle, ShieldCheck, Calendar } from 'lucide-react';
+import { User, Mail, Phone, MapPin, BookOpen, Briefcase, Award, CheckCircle, ShieldCheck, Calendar, Edit2, Save, X } from 'lucide-react';
+import { toast } from 'react-toastify';
 
 function formatDate(date) {
   if (!date) return 'N/A';
@@ -14,6 +15,8 @@ export default function EvaluatorProfile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [form, setForm] = useState({});
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -28,6 +31,15 @@ export default function EvaluatorProfile() {
         });
         if (response.data.success) {
           setProfile(response.data.evaluator);
+          const profile = response.data.evaluator;
+          setForm({
+            name: profile.name || '',
+            currentcity: profile.currentcity || '',
+            subjectMatterExpert: profile.subjectMatterExpert || '',
+            instituteworkedwith: profile.instituteworkedwith || '',
+            examFocus: profile.examFocus || '',
+            experience: profile.experience || ''
+          });
         } else {
           setError(response.data.message || 'Failed to fetch profile');
         }
@@ -39,6 +51,55 @@ export default function EvaluatorProfile() {
     };
     fetchProfile();
   }, []);
+  console.log(form)
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleCancel = () => {
+    setEditOpen(false);
+    setForm({
+      name: profile.name || '',
+      currentcity: profile.currentcity || '',
+      subjectMatterExpert: profile.subjectMatterExpert || '',
+      instituteworkedwith: profile.instituteworkedwith || '',
+      examFocus: profile.examFocus || '',
+      experience: profile.experience || ''
+    });
+    setError(null);
+  };
+
+  const handleSave = async () => {
+    try {
+      const token = Cookies.get('evaluatortoken');
+      const response = await axios.patch(
+        'https://aipbbackend-c5ed.onrender.com/api/evaluator-reviews/profile',
+        {
+          name: form.name,
+          currentcity: form.currentcity,
+          subjectMatterExpert: form.subjectMatterExpert,
+          instituteworkedwith: form.instituteworkedwith,
+          examFocus: form.examFocus,
+          experience: form.experience
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+      if (response.data.success) {
+        setProfile(response.data.evaluator);
+        setEditOpen(false);
+        setError(null);
+        toast.success("Profile Updated Successfully")
+      } else {
+        setError(response.data.message || 'Failed to update profile');
+        toast.error("Profile Not Updated")
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update profile');
+    }
+  };
 
   if (loading) return <div>Loading profile...</div>;
   if (error) return <div className="text-red-600">{error}</div>;
@@ -46,6 +107,68 @@ export default function EvaluatorProfile() {
 
   return (
     <div className="w-full max-w-7xl mx-auto py-8 px-4 md:px-8">
+      {/* Edit Profile Button */}
+      <button
+        className="flex items-center gap-1 mb-4 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition"
+        onClick={() => setEditOpen(true)}
+      >
+        <Edit2 size={16} /> Edit Profile
+      </button>
+
+      {/* Custom Modal using Tailwind only */}
+      {editOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-8 relative">
+            <button
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+              onClick={() => setEditOpen(false)}
+            >
+              <X size={22} />
+            </button>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Edit Profile</h2>
+            <form className="space-y-4" onSubmit={e => { e.preventDefault(); handleSave(); }}>
+              <div>
+                <label className="block text-gray-700 font-medium mb-1">Name</label>
+                <input name="name" value={form.name} onChange={handleChange} autoFocus
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500" />
+              </div>
+              <div>
+                <label className="block text-gray-700 font-medium mb-1">Current City</label>
+                <input name="currentcity" value={form.currentcity} onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500" />
+              </div>
+              <div>
+                <label className="block text-gray-700 font-medium mb-1">Subject Matter Expert</label>
+                <input name="subjectMatterExpert" value={form.subjectMatterExpert} onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500" />
+              </div>
+              <div>
+                <label className="block text-gray-700 font-medium mb-1">Institutes Worked With</label>
+                <input name="instituteworkedwith" value={form.instituteworkedwith} onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500" />
+              </div>
+              <div>
+                <label className="block text-gray-700 font-medium mb-1">Exam Focus</label>
+                <input name="examFocus" value={form.examFocus} onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500" />
+              </div>
+              <div>
+                <label className="block text-gray-700 font-medium mb-1">Experience (years)</label>
+                <input name="experience" type="number" value={form.experience} onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-purple-500" />
+              </div>
+              <button
+                type="submit"
+                className="w-full flex justify-center items-center gap-2 px-4 py-2 bg-purple-600 text-white font-semibold rounded hover:bg-purple-700 transition mt-2"
+              >
+                <Save size={16} /> Save
+              </button>
+              {error && <div className="text-red-600 mt-2 text-center">{error}</div>}
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col md:flex-row items-center md:items-start gap-8 bg-purple-50 rounded-xl p-8 shadow mb-10 border border-purple-100">
         <div className="bg-purple-200 rounded-full p-6 flex-shrink-0 flex items-center justify-center shadow">

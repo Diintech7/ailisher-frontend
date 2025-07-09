@@ -332,7 +332,9 @@ const ClientManagement = () => {
                         <>
                           <button
                             className="px-4 py-2 text-black rounded-md transition-colors"
-                            onClick={() => handleconfig(client._id)}
+                            onClick={() => handleconfig(client.userId)}
+                            // onClick={() => handleconfig(client._id)}
+
                           >
                             <SettingsIcon size={18}/>
                           </button>

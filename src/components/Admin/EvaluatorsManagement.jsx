@@ -420,27 +420,27 @@ const EvaluatorsManagement = () => {
         return;
       }
 
-      // Validate name
-      if (!approveFormData.name || approveFormData.name.trim().length === 0) {
-        setError('Please provide the user\'s name');
-        return;
-      }
+      // // Validate name
+      // if (!approveFormData.name || approveFormData.name.trim().length === 0) {
+      //   setError('Please provide the user\'s name');
+      //   return;
+      // }
 
       // Log the data being sent
       console.log('Sending data:', {
-        name: approveFormData.name.trim(),
+        // name: approveFormData.name.trim(),
         email: approveFormData.email ? approveFormData.email.toLowerCase() : '',
         mobile: approveFormData.mobile
       });
 
-      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/evaluators/addexistinguserasevaluator', {
+      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/clients/CLI677117YN7N/mobile/evaluations/addexistinguserasevaluator', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          name: approveFormData.name.trim(),
+          // name: approveFormData.name.trim(),
           email: approveFormData.email ? approveFormData.email.toLowerCase() : '',
           mobile: approveFormData.mobile
         })
@@ -469,7 +469,7 @@ const EvaluatorsManagement = () => {
         setApproveFormData({
           mobile: '',
           email: '',
-          name: ''
+          // name: ''
         });
         toast.success('User approved as evaluator successfully');
       }
@@ -964,7 +964,7 @@ const EvaluatorsManagement = () => {
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h2 className="text-xl font-bold mb-4">Add Existing User as Evaluator</h2>
             <form onSubmit={handleApproveSubmit} className="space-y-4">
-              <div>
+              {/* <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
                 <input
                   type="text"
@@ -977,7 +977,7 @@ const EvaluatorsManagement = () => {
                 {error && !approveFormData.name && (
                   <p className="mt-1 text-sm text-red-600">Name is required</p>
                 )}
-              </div>
+              </div> */}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
@@ -1025,7 +1025,7 @@ const EvaluatorsManagement = () => {
                     setApproveFormData({
                       mobile: '',
                       email: '',
-                      name: ''
+                      // name: ''
                     });
                     setError(null);
                   }}
@@ -1035,7 +1035,7 @@ const EvaluatorsManagement = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={loading || (!approveFormData.email && !approveFormData.mobile) || !approveFormData.name}
+                  disabled={loading || (!approveFormData.email && !approveFormData.mobile)}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
                 >
                   {loading ? 'Approving...' : 'Approve as Evaluator'}

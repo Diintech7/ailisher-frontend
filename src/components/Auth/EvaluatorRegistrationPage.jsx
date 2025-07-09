@@ -12,7 +12,7 @@ const EvaluatorRegistrationPage = ({ onAuthSuccess }) => {
     instituteworkedwith: '',
     examFocus: '',
     experience: '',
-    grade: '1st grade',
+    // grade: '1st grade',
     password: '',
     confirmPassword: ''
   });
@@ -282,7 +282,7 @@ const EvaluatorRegistrationPage = ({ onAuthSuccess }) => {
               />
             </div>
 
-            <div>
+            {/* <div>
               <label htmlFor="grade" className="block text-sm font-medium text-gray-700">
                 Grade
               </label>
@@ -298,7 +298,7 @@ const EvaluatorRegistrationPage = ({ onAuthSuccess }) => {
                 <option value="2nd grade">2nd Grade</option>
                 <option value="3rd grade">3rd Grade</option>
               </select>
-            </div>
+            </div> */}
           </div>
 
           <div className="flex items-center">

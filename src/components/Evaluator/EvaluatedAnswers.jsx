@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Badge } from "../UI/Badge";
-import AnnotateAnswer from "./AnnotateAnswer";
+import Cookies from "js-cookie";
 
 // AnswerDetailsModal component
 const AnswerDetailsModal = ({ answer, open, onClose }) => {
@@ -66,6 +66,9 @@ const AnswerDetailsModal = ({ answer, open, onClose }) => {
               <p className="text-sm text-gray-500 mt-1">
                 Question ID: {question._id}
               </p>
+              <p className="text-sm text-gray-500 mt-1">
+                user ID: {answer.userId}
+              </p>
             </div>
             <button
               className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -101,12 +104,22 @@ const AnswerDetailsModal = ({ answer, open, onClose }) => {
 
           {/* Answer Info Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+            {/* <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
               <div className="text-sm font-medium text-blue-600 mb-1">
                 User ID
               </div>
               <div className="font-semibold text-gray-900">
                 {user._id || answer.userId || "N/A"}
+              </div>
+            </div> */}
+            <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+              <div className="text-sm font-medium text-purple-600 mb-1">
+                Evaluated On
+              </div>
+              <div className="font-semibold text-gray-900">
+                {answer.evaluatedAt
+                  ? new Date(answer.evaluatedAt).toLocaleString()
+                  : "N/A"}
               </div>
             </div>
             <div className="bg-green-50 rounded-lg p-4 border border-green-200">
@@ -117,40 +130,31 @@ const AnswerDetailsModal = ({ answer, open, onClose }) => {
                 #{answer.attemptNumber}
               </div>
             </div>
-            <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-              <div className="text-sm font-medium text-purple-600 mb-1">
-                Submitted
-              </div>
-              <div className="font-semibold text-gray-900">
-                {answer.submittedAt
-                  ? new Date(answer.submittedAt).toLocaleString()
-                  : "N/A"}
-              </div>
-            </div>
-            <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+            
+            {/* <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
               <div className="text-sm font-medium text-yellow-600 mb-1">
                 Difficulty
               </div>
               <div className="font-semibold text-gray-900">
                 {question.metadata?.difficultyLevel || "N/A"}
               </div>
-            </div>
+            </div> */}
             <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
               <div className="text-sm font-medium text-indigo-600 mb-1">
-                Time
+                Estimated Time
               </div>
               <div className="font-semibold text-gray-900">
                 {question.metadata?.estimatedTime || "N/A"} min
               </div>
             </div>
-            <div className="bg-pink-50 rounded-lg p-4 border border-pink-200">
+            {/* <div className="bg-pink-50 rounded-lg p-4 border border-pink-200">
               <div className="text-sm font-medium text-pink-600 mb-1">
                 Max Marks
               </div>
               <div className="font-semibold text-gray-900">
                 {question.metadata?.maximumMarks || "N/A"}
               </div>
-            </div>
+            </div> */}
           </div>
           {/* Answer Images */}
           {answer.answerImages && answer.answerImages.length > 0 && (
@@ -471,20 +475,25 @@ export default function EvaluatedAnswers() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
-  const fetchEvaluatedManualAnswers = async (page = 1) => {
+  const fetchEvaluatedManualAnswers = async (
+    page = 1,
+    search = "",
+  ) => {
     setLoading(true);
     setError(null);
     try {
+      const token = Cookies.get("evaluatortoken");
       const response = await axios.get(
-        "https://aipbbackend-c5ed.onrender.com/api/clients/CLI677117YN7N/mobile/userAnswers/crud/answers",
+        `https://aipbbackend-c5ed.onrender.com/api/clients/CLI677117YN7N/mobile/userAnswers/crud/answers/evaluator/evaluated`,
         {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
           params: {
-            evaluationMode: "manual",
-            submissionStatus: "evaluated",
-            publishStatus: "published",
             page,
             limit: 20,
-            sort: "desc",
+            search: search || undefined,
           },
         }
       );
@@ -575,11 +584,11 @@ export default function EvaluatedAnswers() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
           <div className="bg-gray-50 rounded-lg p-3">
             <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-              Submitted
+              Evaluated
             </div>
             <div className="text-sm font-semibold text-gray-900">
-              {answer.submittedAt
-                ? new Date(answer.submittedAt).toLocaleString()
+              {answer.evaluatedAt
+                ? new Date(answer.evaluatedAt).toLocaleString()
                 : "N/A"}
             </div>
           </div>

@@ -150,11 +150,11 @@ export default function AcceptedAnswers() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
             <div className="bg-gray-50 rounded-lg p-3">
               <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-                Submitted
+                Accepted
               </div>
               <div className="text-sm font-semibold text-gray-900">
-                {answer.submittedAt
-                  ? new Date(answer.submittedAt).toLocaleString()
+                {answer.reviewedAt
+                  ? new Date(answer.reviewedAt).toLocaleString()
                   : "N/A"}
               </div>
             </div>
@@ -218,7 +218,7 @@ export default function AcceptedAnswers() {
                 setAnnotatedAnswer(answer);
               }}
             >
-              Publish With Annotation
+              Evaluate
             </button>
           </div>
         </div>
@@ -500,6 +500,9 @@ const AnswerDetailsModal = ({ answer, open, onClose }) => {
               <p className="text-sm text-gray-500 mt-1">
                 Question ID: {question._id}
               </p>
+              <p className="text-sm text-gray-500 mt-1">
+                User ID: {answer.userId}
+              </p>
             </div>
             <button
               className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -535,7 +538,7 @@ const AnswerDetailsModal = ({ answer, open, onClose }) => {
 
           {/* Answer Info Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+            {/* <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
               <div className="text-sm font-medium text-blue-600 mb-1">User</div>
               <div className="font-semibold text-gray-900">
                 {user.name || answer.userId || "N/A"}
@@ -543,9 +546,9 @@ const AnswerDetailsModal = ({ answer, open, onClose }) => {
               {user.email && (
                 <div className="text-xs text-gray-500 mt-1">{user.email}</div>
               )}
-            </div>
-            <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-              <div className="text-sm font-medium text-green-600 mb-1">
+            </div> */}
+            <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+              <div className="text-sm font-medium text-purple-600 mb-1">
                 Accepted On
               </div>
               <div className="font-semibold text-gray-900">
@@ -554,7 +557,7 @@ const AnswerDetailsModal = ({ answer, open, onClose }) => {
                   : "N/A"}
               </div>
             </div>
-            <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+            {/* <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
               <div className="text-sm font-medium text-purple-600 mb-1">
                 Submitted
               </div>
@@ -563,31 +566,31 @@ const AnswerDetailsModal = ({ answer, open, onClose }) => {
                   ? new Date(answer.submittedAt).toLocaleString()
                   : "N/A"}
               </div>
-            </div>
-            <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
-              <div className="text-sm font-medium text-yellow-600 mb-1">
-                Difficulty
+            </div> */}
+            <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+              <div className="text-sm font-medium text-green-600 mb-1">
+                Attempt
               </div>
               <div className="font-semibold text-gray-900">
-                {question.metadata?.difficultyLevel || "N/A"}
+                #{answer.attemptNumber}
               </div>
             </div>
             <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
               <div className="text-sm font-medium text-indigo-600 mb-1">
-                Time
+                Estimated Time
               </div>
               <div className="font-semibold text-gray-900">
                 {question.metadata?.estimatedTime || "N/A"} min
               </div>
             </div>
-            <div className="bg-pink-50 rounded-lg p-4 border border-pink-200">
+            {/* <div className="bg-pink-50 rounded-lg p-4 border border-pink-200">
               <div className="text-sm font-medium text-pink-600 mb-1">
                 Max Marks
               </div>
               <div className="font-semibold text-gray-900">
                 {question.metadata?.maximumMarks || "N/A"}
               </div>
-            </div>
+            </div> */}
           </div>
 
           {/* Answer Images */}

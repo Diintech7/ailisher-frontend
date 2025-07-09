@@ -14,6 +14,57 @@ const api = axios.create({
 // Global Fabric.js loader promise
 let fabricLoaderPromise = null
 
+// Add these components at the top (after imports, before AnnotateAnswer)
+function ExtractedTextBox({ extractedTexts }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!extractedTexts || extractedTexts.length === 0) return null;
+  const text = extractedTexts[0];
+  const isLong = text.length > 250;
+
+  return (
+    <div className="bg-blue-50 p-3 rounded-lg border border-blue-200 mt-4">
+      <div className="flex justify-between items-center mb-1">
+        <span className="text-sm font-semibold text-blue-700">Extracted Text</span>
+        {isLong && (
+          <button
+            className="text-xs text-blue-600 hover:underline focus:outline-none"
+            onClick={() => setExpanded((v) => !v)}
+          >
+            {expanded ? 'Read less' : 'Read more'}
+          </button>
+        )}
+      </div>
+      <div className="text-xs text-blue-900 whitespace-pre-wrap">
+        {isLong && !expanded ? text.slice(0, 250) + '...' : text}
+      </div>
+    </div>
+  );
+}
+
+function ModalAnswerBox({ modalAnswer }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!modalAnswer) return null;
+  const isLong = modalAnswer.length > 250;
+  return (
+    <div className="bg-purple-50 p-3 rounded-lg border border-purple-200 mt-4">
+      <div className="flex justify-between items-center mb-1">
+        <span className="text-sm font-semibold text-purple-700">Modal Answer</span>
+        {isLong && (
+          <button
+            className="text-xs text-purple-600 hover:underline focus:outline-none"
+            onClick={() => setExpanded((v) => !v)}
+          >
+            {expanded ? 'Read less' : 'Read more'}
+          </button>
+        )}
+      </div>
+      <div className="text-xs text-purple-900 whitespace-pre-wrap">
+        {isLong && !expanded ? modalAnswer.slice(0, 250) + '...' : modalAnswer}
+      </div>
+    </div>
+  );
+}
+
 const AnswerAnnotation = ({ submission, onClose, onSave }) => {
   const [activeTool, setActiveTool] = useState("pen")
   const [penColor, setPenColor] = useState("#FF0000")
@@ -41,6 +92,8 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
   const [isFabricLoading, setIsFabricLoading] = useState(false)
   const [isComponentMounted, setIsComponentMounted] = useState(true)
   const [canvasReady, setCanvasReady] = useState(false)
+  const [modalAnswer, setModalAnswer] = useState(null);
+
 
   // --- [NEW] Comment tool states ---
   const [showCommentDropdown, setShowCommentDropdown] = useState(false)
@@ -1589,6 +1642,29 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
     console.log("annotations state updated:", annotations)
   }, [annotations])
 
+  useEffect(() => {
+    const fetchModalAnswer = async () => {
+      if (!submission?.question?._id) return;
+      try {
+        const res = await axios.get(
+          `https://aipbbackend-c5ed.onrender.com/api/aiswb/questions/${submission.question._id}`
+        );
+        if (res.data && res.data.data && res.data.data.modalAnswer) {
+          setModalAnswer(res.data.data.modalAnswer);
+        } else {
+          setModalAnswer("No model answer available.");
+        }
+      } catch (err) {
+        setModalAnswer("Could not fetch model answer.");
+      }
+    };
+    fetchModalAnswer();
+  }, [submission?.question?._id]);
+
+  useEffect(()=>{
+    console.log(submission)
+  })
+
   return (
     <div className="fixed inset-0 bg-white z-50 flex flex-col">
       {/* Load Google Fonts */}
@@ -1631,70 +1707,207 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
       <div className="flex-1 flex overflow-hidden">
         {/* Left Side - Analysis */}
         <div className="w-1/3 border-r border-gray-200 overflow-y-auto p-6">
+        <h1 className="text-2xl font-bold text-blue-700 mb-4 tracking-tight flex items-center gap-2">
+            <svg className="w-7 h-7 text-blue-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            AI Analysis
+          </h1>
           <div className="space-y-6">
-            {/* Accuracy */}
-            <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
-              <h3 className="text-sm font-medium text-purple-700 mb-2">Accuracy</h3>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div
-                  className="bg-purple-600 h-2.5 rounded-full"
-                  style={{ width: `${submission.evaluation.accuracy}%` }}
-                ></div>
+            {/* Question Section */}
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Question</h3>
+              <p className="text-sm text-gray-800 mb-3">{submission.questionId?.question || 'N/A'}</p>
+              <div className="text-xs text-gray-600">
+                <div>QID: {submission.questionId._id}</div>
+                <div>UID: {submission.userId._id}</div>
+                <div>Difficulty: {submission.questionId.metadata?.difficultyLevel || 'N/A'}</div>
+                <div>Max Marks: {submission.questionId.metadata?.maximumMarks || 'N/A'}</div>
               </div>
-              <p className="text-lg font-semibold text-gray-800 mt-1">{submission.evaluation.accuracy}%</p>
             </div>
 
+            {/* Performance Metrics */}
+            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+              <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium text-green-700">Score:</span>
+                  <span className="text-lg font-bold text-green-900">
+                    {typeof submission.evaluation.score === 'number' ? `${submission.evaluation.score}/${submission.questionId.metadata?.maximumMarks || 'N/A'}` : submission.evaluation.score || 'Not evaluated'}
+                  </span>
+                </div>
+                <div>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-green-700">Relevancy:</span>
+                    <span className="text-lg font-bold text-green-900">
+                      {typeof submission.evaluation.relevancy === 'number' ? `${submission.evaluation.relevancy}%` : submission.evaluation.relevancy || 'Not evaluated'}
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div 
+                      className="bg-gradient-to-r from-green-400 to-green-600 h-3 rounded-full transition-all duration-500 ease-out"
+                      style={{ 
+                        width: typeof submission.evaluation.relevancy === 'number' ? `${submission.evaluation.relevancy}%` : '0%',
+                        minWidth: '4px'
+                      }}
+                    ></div>
+                  </div>
+                </div>
+               
+              </div>
+            </div>
+            {/* Extracted Text Box */}
+                {submission.extractedTexts && submission.extractedTexts.length > 0 && (
+                  <ExtractedTextBox extractedTexts={submission.extractedTexts} />
+                )}
+                {/* Modal Answer Box */}
+                {modalAnswer && (
+                  <ModalAnswerBox modalAnswer={modalAnswer} />
+                )}
+            {/* Evaluation Remark */}
+            {submission.evaluation.remark && submission.evaluation.remark !== 'No remark provided' && (
+              <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                <h4 className="text-sm font-medium text-orange-700 mb-2">Evaluation Remark</h4>
+                <p className="text-sm text-orange-800">{submission.evaluation.remark}</p>
+              </div>
+            )}
+
+            {/* Evaluation Comments */}
+            {submission.evaluation.comments && submission.evaluation.comments.length > 0 && (
+              <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
+                <h4 className="text-sm font-medium text-indigo-700 mb-2">Evaluation Comments</h4>
+                <ul className="space-y-2">
+                  {submission.evaluation.comments.map((comment, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <svg className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      <span className="text-sm text-indigo-800">{comment}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Analysis Details */}
+            {submission.evaluation.analysis && (
+              (submission.evaluation.analysis.introduction|| 
+                submission.evaluation.analysis.body|| 
+                submission.evaluation.analysis.conclusio) && (
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                  <h4 className="text-sm font-medium text-gray-700 mb-3">Analysis Details</h4>
+                  <div className="space-y-3">
+                    {submission.evaluation.analysis.introduction && (
+                      <div className="bg-pink-50 rounded-lg p-3 border border-pink-200">
+                        <h5 className="text-xs font-semibold text-pink-800 mb-1">Introduction</h5>
+                        <ul className="space-y-1">
+                          {submission.evaluation.analysis.introduction.map((item, index) => (
+                            <li key={index} className="text-xs text-pink-700">• {item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {submission.evaluation.analysis.body && (
+                      <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
+                        <h5 className="text-xs font-semibold text-orange-800 mb-1">Body</h5>
+                        <ul className="space-y-1">
+                          {submission.evaluation.analysis.body.map((item, index) => (
+                            <li key={index} className="text-xs text-orange-700">• {item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {submission.evaluation.analysis.conclusion && (
+                      <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                        <h5 className="text-xs font-semibold text-purple-800 mb-1">Conclusion</h5>
+                        <ul className="space-y-1">
+                          {submission.evaluation.analysis.conclusion.map((item, index) => (
+                            <li key={index} className="text-xs text-purple-700">• {item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            )}
+
             {/* Strengths */}
-            {submission.evaluation.strengths?.length > 0 && (
-              <div className="bg-green-50 p-4 rounded-lg border border-green-100">
-                <h3 className="text-sm font-medium text-green-700 mb-2">Strengths</h3>
-                <ul className="list-disc list-inside text-sm text-gray-800 space-y-1">
-                  {submission.evaluation.strengths.map((strength, index) => (
-                    <li key={index}>{strength}</li>
+            {submission.evaluation.analysis.strengths && submission.evaluation.analysis.strengths.length > 0 && (
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <h4 className="text-sm font-medium text-green-700 mb-2">Strengths</h4>
+                <ul className="space-y-2">
+                  {submission.evaluation.analysis.strengths.map((strength, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <svg className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span className="text-sm text-green-800">{strength}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
 
             {/* Weaknesses */}
-            {submission.evaluation.weaknesses?.length > 0 && (
-              <div className="bg-red-50 p-4 rounded-lg border border-red-100">
-                <h3 className="text-sm font-medium text-red-700 mb-2">Areas for Improvement</h3>
-                <ul className="list-disc list-inside text-sm text-gray-800 space-y-1">
-                  {submission.evaluation.weaknesses.map((weakness, index) => (
-                    <li key={index}>{weakness}</li>
+            {submission.evaluation.analysis.weaknesses && submission.evaluation.analysis.weaknesses.length > 0 && (
+              <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+                <h4 className="text-sm font-medium text-red-700 mb-2">Areas for Improvement</h4>
+                <ul className="space-y-2">
+                  {submission.evaluation.analysis.weaknesses.map((weakness, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <svg className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      <span className="text-sm text-red-800">{weakness}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
 
             {/* Suggestions */}
-            {submission.evaluation.suggestions?.length > 0 && (
-              <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-100">
-                <h3 className="text-sm font-medium text-yellow-700 mb-2">Suggestions</h3>
-                <ul className="list-disc list-inside text-sm text-gray-800 space-y-1">
-                  {submission.evaluation.suggestions.map((suggestion, index) => (
-                    <li key={index}>{suggestion}</li>
+            {submission.evaluation.analysis.suggestions && submission.evaluation.analysis.suggestions.length > 0 && (
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h4 className="text-sm font-medium text-blue-700 mb-2">Suggestions</h4>
+                <ul className="space-y-2">
+                  {submission.evaluation.analysis.suggestions.map((suggestion, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <span className="text-sm text-blue-800">{suggestion}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
 
-            {/* Marks */}
-            <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-              <h3 className="text-sm font-medium text-blue-700 mb-2">Marks Awarded</h3>
-              <p className="text-2xl font-bold text-blue-800">
-                {submission.evaluation.marks} / {submission.questionId.metadata?.maximumMarks || 10}
-              </p>
-            </div>
-
-            {/* Feedback */}
-            {submission.evaluation.feedback && (
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <h3 className="text-sm font-medium text-gray-700 mb-2">Feedback</h3>
-                <p className="text-sm text-gray-800 whitespace-pre-wrap">{submission.evaluation.feedback}</p>
+            {/* Evaluation Feedback */}
+            {submission.evaluation.analysis.feedback && submission.evaluation.analysis.feedback.length > 0 && (
+              <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                <h4 className="text-sm font-medium text-purple-700 mb-2">Detailed Feedback</h4>
+                <p className="text-sm text-purple-800 whitespace-pre-wrap">{submission.evaluation.analysis.feedback}</p>
               </div>
             )}
+
+            {/* Text Answer */}
+            {submission.textAnswer && (
+              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                <h4 className="text-sm font-medium text-gray-700 mb-2">Text Answer</h4>
+                <p className="text-sm text-gray-800 whitespace-pre-wrap">{submission.textAnswer}</p>
+              </div>
+            )}
+
+            {/* Submission Info */}
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+              <h4 className="text-sm font-medium text-gray-700 mb-2">Submission Info</h4>
+              <div className="space-y-2 text-xs text-gray-600">
+                <div>Submitted: {submission.submittedAt ? new Date(submission.submittedAt).toLocaleString() : 'N/A'}</div>
+                <div>Evaluated: {submission.evaluatedAt ? new Date(submission.evaluatedAt).toLocaleString() : 'N/A'}</div>
+                <div>Status: {submission.submissionStatus || 'N/A'}</div>
+                <div>Publish Status: {submission.publishStatus || 'N/A'}</div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -2109,7 +2322,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
               {/* Expert Score */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Score (0-{submission.questionId.metadata?.maximumMarks || 100})
+                  Score (0-{submission.questionId.metadata?.maximumMarks})
                 </label>
                 <input
                   type="number"
@@ -2117,7 +2330,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   value={reviewData.expert_score}
                   onChange={handleInputChange}
                   min="0"
-                  max={submission.questionId.metadata?.maximumMarks || 100}
+                  max={submission.questionId.metadata?.maximumMarks}
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   required
                 />

@@ -12,6 +12,57 @@ const api = axios.create({
 
 let fabricLoaderPromise = null
 
+// Add these components at the top (after imports, before AnnotateAnswer)
+function ExtractedTextBox({ extractedTexts }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!extractedTexts || extractedTexts.length === 0) return null;
+  const text = extractedTexts[0];
+  const isLong = text.length > 250;
+
+  return (
+    <div className="bg-blue-50 p-3 rounded-lg border border-blue-200 mt-4">
+      <div className="flex justify-between items-center mb-1">
+        <span className="text-sm font-semibold text-blue-700">Extracted Text</span>
+        {isLong && (
+          <button
+            className="text-xs text-blue-600 hover:underline focus:outline-none"
+            onClick={() => setExpanded((v) => !v)}
+          >
+            {expanded ? 'Read less' : 'Read more'}
+          </button>
+        )}
+      </div>
+      <div className="text-xs text-blue-900 whitespace-pre-wrap">
+        {isLong && !expanded ? text.slice(0, 250) + '...' : text}
+      </div>
+    </div>
+  );
+}
+
+function ModalAnswerBox({ modalAnswer }) {
+  const [expanded, setExpanded] = useState(false);
+  if (!modalAnswer) return null;
+  const isLong = modalAnswer.length > 250;
+  return (
+    <div className="bg-purple-50 p-3 rounded-lg border border-purple-200 mt-4">
+      <div className="flex justify-between items-center mb-1">
+        <span className="text-sm font-semibold text-purple-700">Modal Answer</span>
+        {isLong && (
+          <button
+            className="text-xs text-purple-600 hover:underline focus:outline-none"
+            onClick={() => setExpanded((v) => !v)}
+          >
+            {expanded ? 'Read less' : 'Read more'}
+          </button>
+        )}
+      </div>
+      <div className="text-xs text-purple-900 whitespace-pre-wrap">
+        {isLong && !expanded ? modalAnswer.slice(0, 250) + '...' : modalAnswer}
+      </div>
+    </div>
+  );
+}
+
 const AnnotateAnswer = ({ submission, onClose, onSave }) => {
   const [activeTool, setActiveTool] = useState("pen")
   const [penColor, setPenColor] = useState("#FF0000")
@@ -42,6 +93,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
   const [openPreviewIndex, setOpenPreviewIndex] = useState(null)
   // [A] Add state for edit loading
   const [editLoading, setEditLoading] = useState(false);
+  const [modalAnswer, setModalAnswer] = useState(null);
 
   // Add local state for editable evaluation fields in the review modal
   const [editEvaluation, setEditEvaluation] = useState({
@@ -95,6 +147,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
 
   // Component mount tracking
   useEffect(() => {
+    console.log("submission",submission)
     setIsComponentMounted(true)
     console.log("[AnswerAnnotation] Component mounted")
     return () => {
@@ -1874,6 +1927,12 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
   // Update handleEditEvaluation to use local state
   const handleEditEvaluation = async () => {
     setEditLoading(true);
+    const maxMarks = submission.question?.metadata?.maximumMarks || submission.questionId?.metadata?.maximumMarks || 100;
+    if (Number(editEvaluation.score) > maxMarks) {
+      toast.error(`Marks cannot be greater than maximum marks (${maxMarks})`);
+      setEditLoading(false);
+      return;
+    }
     try {
       // Use local or production endpoint as needed
       const url = `https://aipbbackend-c5ed.onrender.com/api/clients/CLI677117YN7N/mobile/userAnswers/questions/${submission.questionId?._id || submission.question?._id}/answers/${submission._id}/evaluation-update`;
@@ -1895,15 +1954,39 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         accuracy: Number(editEvaluation.relevancy),
         remark: editEvaluation.remark
       };
-      await axios.put(url, payload);
+      const response  = await axios.put(url, payload);
+      if(response.data.success)
       toast.success('Evaluation updated successfully!');
+      else
+      {
+      toast.error(response.data.message)
+      }
     } catch (error) {
       console.error('Error updating evaluation:', error);
-      toast.error('Failed to update evaluation.');
+      toast.error(error.message);
     } finally {
       setEditLoading(false);
     }
   };
+
+  useEffect(() => {
+    const fetchModalAnswer = async () => {
+      if (!submission?.question?._id) return;
+      try {
+        const res = await axios.get(
+          `https://aipbbackend-c5ed.onrender.com/api/aiswb/questions/${submission.question._id}`
+        );
+        if (res.data && res.data.data && res.data.data.modalAnswer) {
+          setModalAnswer(res.data.data.modalAnswer);
+        } else {
+          setModalAnswer("No model answer available.");
+        }
+      } catch (err) {
+        setModalAnswer("Could not fetch model answer.");
+      }
+    };
+    fetchModalAnswer();
+  }, [submission?.question?._id]);
 
   return (
     <div className="fixed inset-0 bg-white z-50 flex flex-col">
@@ -1939,13 +2022,19 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
 {/* Left Side - Analysis */}
-<div className="w-1/3 border-r border-gray-200 overflow-y-auto p-6">
+          <div className="w-1/3 border-r border-gray-200 overflow-y-auto p-6">
+          <h1 className="text-2xl font-bold text-blue-700 mb-4 tracking-tight flex items-center gap-2">
+            <svg className="w-7 h-7 text-blue-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            AI Analysis
+          </h1>
           <div className="space-y-6">
             {/* Question Section */}
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">Question</h3>
               <p className="text-sm text-gray-800 mb-3">{submission.question?.question || 'N/A'}</p>
-              <div className="grid grid-cols-2 gap-2 text-xs text-gray-600">
+              <div className="text-xs text-gray-600">
                 <div>QID: {submission.question?._id}</div>
                 <div>UID: {submission.userId}</div>
                 <div>Difficulty: {submission.question.metadata?.difficultyLevel || 'N/A'}</div>
@@ -1982,7 +2071,14 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                
               </div>
             </div>
-
+            {/* Extracted Text Box */}
+                {submission.extractedTexts && submission.extractedTexts.length > 0 && (
+                  <ExtractedTextBox extractedTexts={submission.extractedTexts} />
+                )}
+                {/* Modal Answer Box */}
+                {modalAnswer && (
+                  <ModalAnswerBox modalAnswer={modalAnswer} />
+                )}
             {/* Evaluation Remark */}
             {submission.evaluation.remark && submission.evaluation.remark !== 'No remark provided' && (
               <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">

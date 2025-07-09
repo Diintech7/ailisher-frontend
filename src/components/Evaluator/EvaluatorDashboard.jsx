@@ -5,16 +5,16 @@ import Cookies from 'js-cookie';
 export default function EvaluatorDashboard() {
   // Temporary data
   const evaluatorData = {
-    name: 'John Doe',
-    grade: '1st Grade',
-    subjectMatterExpert: 'Mathematics',
-    examFocus: 'JEE Advanced',
-    experience: 5,
-    status: 'Active',
+    name: 'NA',
+    grade: 'NA',
+    subjectMatterExpert: 'NA',
+    examFocus: 'NA',
+    experience: 'NA',
+    status: 'NA',
     stats: {
-      totalEvaluations: 45,
-      averageRating: 4.8,
-      creditsEarned: 1200,
+      totalEvaluations: 'NA',
+      averageRating: 'NA',
+      creditsEarned: 'NA',
     },
     recentActivity: [
       {

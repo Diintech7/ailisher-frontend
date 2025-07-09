@@ -401,33 +401,30 @@ export default function EvaluatorReview() {
                   </div>
                 )}
 
-                {/* Answer Images */}
-                {review.annotations && review.annotations.length > 0 && (
-                  <div className="bg-yellow-50 p-4 rounded-lg">
+                {/* Answer Images (answerImages) */}
+                {review.answerImages && review.answerImages.length > 0 && (
+                  <div className="bg-pink-50 p-4 rounded-lg">
                     <h3 className="font-semibold mb-3 flex items-center gap-2">
                       <ImageIcon size={16} />
-                      Answer Images ({review.annotations.length})
+                      Uploaded Answer Images ({review.answerImages.length})
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {review.annotations.map((image, index) => (
-                        <div key={index} className="border rounded-lg overflow-hidden">
+                      {review.answerImages.map((img, idx) => (
+                        <div key={idx} className="border rounded-lg overflow-hidden">
                           <img
-                            src={image.downloadUrl}
-                            alt={`Answer ${index + 1}`}
+                            src={img.imageUrl}
+                            alt={img.originalName || `Answer Image ${idx + 1}`}
                             className="w-full h-48 object-cover"
-                            onError={(e) => {
-                              e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzY2NzM4NyIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vdCBhdmFpbGFibGU8L3RleHQ+PC9zdmc+';
-                            }}
                           />
                           <div className="p-3">
                             <p className="text-sm text-gray-600 mb-1">
-                              {image.originalName || `Image ${index + 1}`}
+                              {img.originalName || `Image ${idx + 1}`}
                             </p>
                             <p className="text-xs text-gray-500">
-                              {formatDate(image.uploadedAt)}
+                              {formatDate(img.uploadedAt)}
                             </p>
                             <a
-                              href={image.downloadUrl}
+                              href={img.imageUrl}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 mt-2"
@@ -442,176 +439,105 @@ export default function EvaluatorReview() {
                   </div>
                 )}
 
-                {/* Metadata */}
-                {review.metadata && (
-                  <div className="bg-purple-50 p-4 rounded-lg">
+                {/* Evaluation Analysis */}
+                {review.evaluation && review.evaluation.analysis && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
                     <h3 className="font-semibold mb-3 flex items-center gap-2">
-                      <Smartphone size={16} />
-                      Submission Metadata
+                      <Star size={16} />
+                      Evaluation Analysis
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-gray-600 flex items-center gap-1">
-                          <Timer size={12} />
-                          Time Spent
-                        </p>
-                        <p className="font-medium">{formatTime(review.metadata.timeSpent)}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600 flex items-center gap-1">
-                          <Globe size={12} />
-                          Source Type
-                        </p>
-                        <p className="font-medium capitalize">{review.metadata.sourceType || 'N/A'}</p>
-                      </div>
-                      {review.metadata.deviceInfo && (
-                        <div className="md:col-span-2">
-                          <p className="text-sm text-gray-600">Device Info</p>
-                          <p className="font-medium text-sm">{review.metadata.deviceInfo}</p>
-                        </div>
-                      )}
-                      {review.metadata.appVersion && (
-                        <div>
-                          <p className="text-sm text-gray-600">App Version</p>
-                          <p className="font-medium">{review.metadata.appVersion}</p>
-                        </div>
-                      )}
+                    <div>
+                      <p><strong>Introduction:</strong> {Array.isArray(review.evaluation.analysis.introduction) ? review.evaluation.analysis.introduction.join(', ') : (review.evaluation.analysis.introduction || 'N/A')}</p>
+                      <p><strong>Body:</strong> {Array.isArray(review.evaluation.analysis.body) ? review.evaluation.analysis.body.join(', ') : (review.evaluation.analysis.body || 'N/A')}</p>
+                      <p><strong>Conclusion:</strong> {Array.isArray(review.evaluation.analysis.conclusion) ? review.evaluation.analysis.conclusion.join(', ') : (review.evaluation.analysis.conclusion || 'N/A')}</p>
+                      <p><strong>Strengths:</strong></p>
+                      <ul>
+                        {review.evaluation.analysis.strengths?.map((s, i) => <li key={i}>{s}</li>)}
+                      </ul>
+                      <p><strong>Weaknesses:</strong></p>
+                      <ul>
+                        {review.evaluation.analysis.weaknesses?.map((w, i) => <li key={i}>{w}</li>)}
+                      </ul>
+                      <p><strong>Suggestions:</strong></p>
+                      <ul>
+                        {review.evaluation.analysis.suggestions?.map((s, i) => <li key={i}>{s}</li>)}
+                      </ul>
+                      <p><strong>Feedback:</strong> {Array.isArray(review.evaluation.analysis.feedback) ? review.evaluation.analysis.feedback.join(', ') : (review.evaluation.analysis.feedback || 'N/A')}</p>
                     </div>
                   </div>
                 )}
 
-                {/* Request Note */}
-                {review.requestnote && (
-                  <div className="bg-orange-50 p-4 rounded-lg">
+                {/* Evaluation Comments */}
+                {review.evaluation && review.evaluation.comments && review.evaluation.comments.length > 0 && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
                     <h3 className="font-semibold mb-3 flex items-center gap-2">
                       <MessageSquare size={16} />
-                      Request Note
+                      Evaluation Comments
                     </h3>
-                    <p className="text-gray-800">{review.requestnote}</p>
+                    <ul>
+                      {review.evaluation.comments.map((c, i) => <li key={i}>{c}</li>)}
+                    </ul>
                   </div>
                 )}
 
-                {/* Evaluation Data */}
+                {/* Evaluation General Fields */}
                 {review.evaluation && (
-                  <div className="bg-indigo-50 p-4 rounded-lg">
+                  <div className="bg-gray-50 p-4 rounded-lg">
                     <h3 className="font-semibold mb-3 flex items-center gap-2">
                       <Star size={16} />
-                      Evaluation Data
+                      Evaluation Summary
                     </h3>
-                    <div className="space-y-4">
-                      {review.evaluation.accuracy !== undefined && (
-                        <div>
-                          <p className="text-sm text-gray-600">Accuracy</p>
-                          <p className="font-medium">{review.evaluation.accuracy}%</p>
-                        </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {review.evaluation.relevancy !== undefined && (
+                        <div><strong>Relevancy:</strong> {review.evaluation.relevancy}</div>
                       )}
-                      {review.evaluation.marks !== undefined && (
-                        <div>
-                          <p className="text-sm text-gray-600">Marks</p>
-                          <p className="font-medium">{review.evaluation.marks}</p>
-                        </div>
+                      {review.evaluation.score !== undefined && (
+                        <div><strong>Score:</strong> {review.evaluation.score}</div>
                       )}
-                      {review.evaluation.extractedText && (
-                        <div>
-                          <p className="text-sm text-gray-600">Extracted Text</p>
-                          <p className="font-medium text-sm">{review.evaluation.extractedText}</p>
-                        </div>
+                      {review.evaluation.remark && (
+                        <div className="md:col-span-2"><strong>Remark:</strong> {review.evaluation.remark}</div>
                       )}
-                      {review.evaluation.feedback && (
-                        <div>
-                          <p className="text-sm text-gray-600">Feedback</p>
-                          <p className="font-medium text-sm">{review.evaluation.feedback}</p>
+                      {/* {review.evaluation.feedbackStatus !== undefined && (
+                        <div><strong>Feedback Status:</strong> {review.evaluation.feedbackStatus ? 'Yes' : 'No'}</div>
+                      )} */}
+                      {/* {review.evaluation.userFeedback && (
+                        <div className="md:col-span-2">
+                          <strong>User Feedback:</strong> {review.evaluation.userFeedback.message || 'N/A'}
+                          {review.evaluation.userFeedback.submittedAt && (
+                            <span> (Submitted: {formatDate(review.evaluation.userFeedback.submittedAt)})</span>
+                          )}
                         </div>
-                      )}
-                      {review.evaluation.strengths && review.evaluation.strengths.length > 0 && (
-                        <div>
-                          <p className="text-sm text-gray-600">Strengths</p>
-                          <ul className="list-disc list-inside text-sm">
-                            {review.evaluation.strengths.map((strength, index) => (
-                              <li key={index}>{strength}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {review.evaluation.weaknesses && review.evaluation.weaknesses.length > 0 && (
-                        <div>
-                          <p className="text-sm text-gray-600">Weaknesses</p>
-                          <ul className="list-disc list-inside text-sm">
-                            {review.evaluation.weaknesses.map((weakness, index) => (
-                              <li key={index}>{weakness}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {review.evaluation.suggestions && review.evaluation.suggestions.length > 0 && (
-                        <div>
-                          <p className="text-sm text-gray-600">Suggestions</p>
-                          <ul className="list-disc list-inside text-sm">
-                            {review.evaluation.suggestions.map((suggestion, index) => (
-                              <li key={index}>{suggestion}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+                      )} */}
                     </div>
                   </div>
                 )}
 
-                {/* Expert Review */}
-                {review.feedback?.expertReview && (
-                  <div className="bg-green-50 p-4 rounded-lg">
+                {/* Feedback Suggestions */}
+                {review.feedback && review.feedback.suggestions && review.feedback.suggestions.length > 0 && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
                     <h3 className="font-semibold mb-3 flex items-center gap-2">
-                      <Star size={16} />
-                      Expert Review
+                      <MessageSquare size={16} />
+                      Feedback Suggestions
                     </h3>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-4">
-                        <div>
-                          <p className="text-sm text-gray-600">Score</p>
-                          <p className="font-medium text-lg">{review.feedback.expertReview.score}/ {review.questionId?.metadata?.maximumMarks}</p>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Reviewed At</p>
-                          <p className="font-medium">{formatDate(review.feedback.expertReview.reviewedAt)}</p>
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600">Remarks</p>
-                        <p className="font-medium">{review.feedback.expertReview.remarks}</p>
-                      </div>
-                      {review.feedback.expertReview.annotatedImages && review.feedback.expertReview.annotatedImages.length > 0 && (
-                        <div>
-                          <p className="text-sm text-gray-600 mb-2">Annotated Images</p>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {review.feedback.expertReview.annotatedImages.map((image, index) => (
-                              <div key={index} className="border rounded-lg overflow-hidden">
-                                <img
-                                  src={image.downloadUrl}
-                                  alt={`Annotated ${index + 1}`}
-                                  className="w-full h-48 object-cover"
-                                />
-                                <div className="p-3">
-                                  <p className="text-xs text-gray-500">
-                                    {formatDate(image.uploadedAt)}
-                                  </p>
-                                </div>
-                                <a
-                              href={image.downloadUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="pl-3 inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 mt-2"
-                            >
-                              <Download size={12} />
-                              View Full Size
-                            </a>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    <ul>
+                      {review.feedback.suggestions.map((s, i) => <li key={i}>{s}</li>)}
+                    </ul>
                   </div>
                 )}
+
+                {/* Feedback User Feedback Review */}
+                {review.feedback && review.feedback.userFeedbackReview && (
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-semibold mb-3 flex items-center gap-2">
+                      <MessageSquare size={16} />
+                      User Feedback Review
+                    </h3>
+                    <p><strong>Message:</strong> {review.feedback.userFeedbackReview.message || 'N/A'}</p>
+                    <p><strong>Submitted At:</strong> {review.feedback.userFeedbackReview.submittedAt ? formatDate(review.feedback.userFeedbackReview.submittedAt) : 'N/A'}</p>
+                  </div>
+                )}
+
+               
               </div>
             )}
           </div>

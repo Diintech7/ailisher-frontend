@@ -303,10 +303,10 @@ const SidebarLayout = ({ onLogout, userRole }) => {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-xs text-gray-500">Logged in as</span>
-                  <span className="font-medium text-gray-800">
+                  <span className="text-s text-gray-800">
                     {username} ({userRole})
                   </span>
-                  <span className=" text-gray-700">
+                  <span className=" text-gray-700 text-xs">
                     {Email}
                   </span>
                 </div>

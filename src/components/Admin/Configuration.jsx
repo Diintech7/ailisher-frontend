@@ -120,7 +120,7 @@ export default function Configuration() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/config', {
+      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/config/clients/${clientId}`, {
         headers: getAuthHeaders()
       });
       const data = await response.json();
@@ -133,18 +133,19 @@ export default function Configuration() {
       });
       setConfigData(grouped);
 
-      // Check isExpired for each section
+      // Check for expired models in each section using the new endpoint
       const expired = [];
       await Promise.all(
         configs.map(async (cfg) => {
           if (cfg && cfg.sourcetype) {
             try {
-              const res = await fetch(`https://aipbbackend-c5ed.onrender.com/api/config/clients/${clientId}/config/${cfg.sourcetype}/expire`, {
+              const res = await fetch(`https://aipbbackend-c5ed.onrender.com/api/config/clients/${clientId}/config/${cfg.sourcetype}/expired-models`, {
                 headers: getAuthHeaders()
               });
               const result = await res.json();
-              if (result.isExpired) {
+              if (result.expiredModels && result.expiredModels.length > 0) {
                 expired.push(cfg.sourcetype);
+                // Optionally, you could store expired model keys here for more granular UI
               }
             } catch (e) {
               // ignore error for this section
