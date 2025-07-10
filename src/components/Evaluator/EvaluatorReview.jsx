@@ -48,6 +48,8 @@ export default function EvaluatorReview() {
   // Modal state
   const [selectedReview, setSelectedReview] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [activeImage, setActiveImage] = useState(null);
 
   const API_BASE_URL = 'https://aipbbackend-c5ed.onrender.com';
 
@@ -313,6 +315,18 @@ export default function EvaluatorReview() {
   // Detailed Review Modal Component
   const ReviewDetailsModal = ({ review, isOpen, onClose }) => {
     if (!isOpen) return null;
+    console.log(review)
+    
+
+    const handleImageClick = (imgUrl) => {
+      setActiveImage(imgUrl);
+      setImageModalOpen(true);
+    };
+  
+    const closeImageModal = () => {
+      setImageModalOpen(false);
+      setActiveImage(null);
+    };
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -401,7 +415,7 @@ export default function EvaluatorReview() {
                   </div>
                 )}
 
-                {/* Answer Images (answerImages) */}
+                {/* Answer Images (answerImages)
                 {review.answerImages && review.answerImages.length > 0 && (
                   <div className="bg-pink-50 p-4 rounded-lg">
                     <h3 className="font-semibold mb-3 flex items-center gap-2">
@@ -415,6 +429,8 @@ export default function EvaluatorReview() {
                             src={img.imageUrl}
                             alt={img.originalName || `Answer Image ${idx + 1}`}
                             className="w-full h-48 object-cover"
+                            onClick={() => handleImageClick(img.imageUrl)}
+                            style={{ cursor: "zoom-in" }}
                           />
                           <div className="p-3">
                             <p className="text-sm text-gray-600 mb-1">
@@ -423,21 +439,84 @@ export default function EvaluatorReview() {
                             <p className="text-xs text-gray-500">
                               {formatDate(img.uploadedAt)}
                             </p>
-                            <a
-                              href={img.imageUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 mt-2"
-                            >
-                              <Download size={12} />
-                              View Full Size
-                            </a>
+                           
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )} */}
+                {/* Answer Images (answerImages) */}
+                {review.annotations && review.annotations.length > 0 && (
+                  <div className="bg-pink-50 p-4 rounded-lg">
+                    <h3 className="font-semibold mb-3 flex items-center gap-2">
+                      <ImageIcon size={16} />
+                      Annotated Answer Images ({review.annotations.length})
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {review.annotations.map((img, idx) => (
+                        <div key={idx} className="border rounded-lg overflow-hidden">
+                          <img
+                            src={img.downloadUrl}
+                            alt={img.originalName || `Answer Image ${idx + 1}`}
+                            className="w-full h-48 object-cover"
+                            onClick={() => handleImageClick(img.downloadUrl)}
+                            style={{ cursor: "zoom-in" }}
+                          />
+                          <div className="p-3">
+                            <p className="text-sm text-gray-600 mb-1">
+                              {img.originalName || `Image ${idx + 1}`}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {formatDate(img.uploadedAt)}
+                            </p>
+                           
                           </div>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
+
+                {/* Expert Review Section */}
+                {review.feedback && review.feedback.expertReview && (
+  <div className="bg-yellow-50 p-4 rounded-lg">
+    <h3 className="font-semibold mb-3 flex items-center gap-2">
+      <Star size={16} />
+      Expert Review
+    </h3>
+    <div className="space-y-2">
+      {review.feedback.expertReview.result && (
+        <div><strong>Result:</strong> {review.feedback.expertReview.result}</div>
+      )}
+      {review.feedback.expertReview.score !== undefined && (
+        <div><strong>Score:</strong> {review.feedback.expertReview.score}</div>
+      )}
+      {review.feedback.expertReview.remarks && (
+        <div><strong>Remarks:</strong> {review.feedback.expertReview.remarks}</div>
+      )}
+    </div>
+    {/* Expert Annotated Images */}
+    {review.feedback.expertReview.annotatedImages && review.feedback.expertReview.annotatedImages.length > 0 && (
+      <div className="mt-4">
+        <h4 className="font-semibold mb-2">Expert Annotated Images ({review.feedback.expertReview.annotatedImages.length})</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {review.feedback.expertReview.annotatedImages.map((img, idx) => (
+            <div key={idx} className="border rounded-lg overflow-hidden">
+              <img
+                src={img.downloadUrl}
+                alt={`Expert Annotated Image ${idx + 1}`}
+                className="w-full h-48 object-cover"
+                onClick={() => handleImageClick(img.downloadUrl)}
+                style={{ cursor: "zoom-in" }}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+)}
 
                 {/* Evaluation Analysis */}
                 {review.evaluation && review.evaluation.analysis && (
@@ -525,7 +604,7 @@ export default function EvaluatorReview() {
                   </div>
                 )}
 
-                {/* Feedback User Feedback Review */}
+                {/* Feedback User Feedback Review
                 {review.feedback && review.feedback.userFeedbackReview && (
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <h3 className="font-semibold mb-3 flex items-center gap-2">
@@ -535,8 +614,30 @@ export default function EvaluatorReview() {
                     <p><strong>Message:</strong> {review.feedback.userFeedbackReview.message || 'N/A'}</p>
                     <p><strong>Submitted At:</strong> {review.feedback.userFeedbackReview.submittedAt ? formatDate(review.feedback.userFeedbackReview.submittedAt) : 'N/A'}</p>
                   </div>
-                )}
-
+                )} */}
+                
+                
+                 {/* Image Lightbox */}
+      {imageModalOpen && activeImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90"
+          onClick={closeImageModal}
+        >
+          <img
+            src={activeImage}
+            alt="Large Answer"
+            className="max-w-4xl max-h-[90vh] rounded-lg border-4 border-white shadow-2xl"
+            style={{ objectFit: "contain" }}
+          />
+          <button
+            className="absolute top-8 right-8 text-white text-3xl font-bold bg-black bg-opacity-40 rounded-full w-12 h-12 flex items-center justify-center hover:bg-opacity-70 transition-all"
+            onClick={closeImageModal}
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+      )}
                
               </div>
             )}

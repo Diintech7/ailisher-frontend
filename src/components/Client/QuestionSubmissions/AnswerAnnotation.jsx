@@ -135,6 +135,11 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
   const currentImageIndexRef = useRef(0)
   const isChangingImageRef = useRef(false)
 
+  // Add this after the useState declarations, before any useEffect or logic that uses answerImages
+  const imagesToShow = submission.annotations?.length > 0
+    ? submission.annotations.map(a => ({ imageUrl: a.downloadUrl }))
+    : submission.answerImages || [];
+
   // History management functions (must be defined before use in useEffect)
   const saveToHistory = useCallback(() => {
     if (fabricCanvasRef.current && isComponentMounted && canvasReady) {
@@ -381,8 +386,8 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
         currentImageIndexRef.current = currentImageIndex
 
         // Load initial image
-        if (submission.answerImages && submission.answerImages.length > 0) {
-          await loadImageWithAnnotations(submission.answerImages[currentImageIndex].imageUrl, currentImageIndex)
+        if (imagesToShow && imagesToShow.length > 0) {
+          await loadImageWithAnnotations(imagesToShow[currentImageIndex].imageUrl, currentImageIndex)
         }
 
         setCanvasReady(true)
@@ -404,7 +409,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
       const timeoutId = setTimeout(initializeCanvas, 300)
       return () => clearTimeout(timeoutId)
     }
-  }, [isFabricLoaded, isComponentMounted, submission.answerImages, isDragging, lastPos])
+  }, [isFabricLoaded, isComponentMounted, imagesToShow.map(img => img.imageUrl).join(",")]);
 
   // Load image with annotations for specific index
   const loadImageWithAnnotations = useCallback(
@@ -684,8 +689,8 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
           })
 
           // Load new image with annotations - pass the target index directly
-          if (submission.answerImages && submission.answerImages[index]) {
-            await loadImageWithAnnotations(submission.answerImages[index].imageUrl, index)
+          if (imagesToShow && imagesToShow[index]) {
+            await loadImageWithAnnotations(imagesToShow[index].imageUrl, index)
           }
 
           setCanvasReady(true)
@@ -708,7 +713,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
     },
     [
       currentImageIndex,
-      submission.answerImages,
+      imagesToShow,
       isComponentMounted,
       canvasReady,
       saveToHistory,
@@ -1177,7 +1182,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
       return null
     }
 
-    if (!submission.answerImages || submission.answerImages.length === 0) {
+    if (!imagesToShow || imagesToShow.length === 0) {
       console.error("No answer images found")
       toast.error("No answer images found")
       return null
@@ -1193,14 +1198,14 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
         [currentImageIndexRef.current]: currentJson,
       }
 
-      console.log("Processing annotations for", submission.answerImages.length, "images")
+      console.log("Processing annotations for", imagesToShow.length, "images")
       console.log("All annotations:", allAnnotations)
 
       const annotatedResults = []
 
-      for (let i = 0; i < submission.answerImages.length; i++) {
+      for (let i = 0; i < imagesToShow.length; i++) {
         console.log(`Processing image ${i}...`)
-        const imageData = submission.answerImages[i]
+        const imageData = imagesToShow[i]
         const imageAnnotations = allAnnotations[i]
 
         if (!imageData || !imageData.imageUrl) {
@@ -2266,10 +2271,10 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
           </div>
 
           {/* Image Thumbnails */}
-          {submission.answerImages && submission.answerImages.length > 1 && (
+          {imagesToShow.length > 1 && (
             <div className="bg-gray-100 p-4 border-t border-gray-200">
               <div className="flex space-x-2 overflow-x-auto pb-2">
-                {submission.answerImages.map((image, index) => (
+                {imagesToShow.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => handleImageChange(index)}
