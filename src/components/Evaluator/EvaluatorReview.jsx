@@ -247,10 +247,26 @@ export default function EvaluatorReview() {
             </div>
 
             <div className="flex items-center gap-4 text-xs text-gray-500">
-              <div className="flex items-center gap-1">
+               {/* Show review timing info based on type */}
+          {type === 'pending' && review.reviewRequestedAt && (
+            <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+              <Clock size={12} />  {formatDate(review.reviewRequestedAt)}
+            </div>
+          )}
+          {type === 'accepted' && review.reviewAssignedAt && (
+            <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+              <Clock size={12} /> {formatDate(review.reviewAssignedAt)}
+            </div>
+          )}
+          {type === 'completed' && review.reviewCompletedAt && (
+            <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+              <Clock size={12} /> {formatDate(review.reviewCompletedAt)}
+            </div>
+          )}
+              {/* <div className="flex items-center gap-1">
                 <Calendar size={12} />
                 {formatDate(review.submittedAt)}
-              </div>
+              </div> */}
               <div>Attempt: {review.attemptNumber}</div>
               {review.setId && (
                 <div>Set: {review.setId.name}</div>

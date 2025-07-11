@@ -15,6 +15,7 @@ import CreditManagement from './components/Evaluator/CreditManagement';
 const EvaluatorApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [disabledMessage, setDisabledMessage] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,9 +27,31 @@ const EvaluatorApp = () => {
         try {
           const userData = JSON.parse(evaluatorUser);
           if (userData.role === 'evaluator') {
-            setIsAuthenticated(true);
-            setIsLoading(false);
-            return;
+            // Fetch latest evaluator data from backend
+            try {
+              console.log("user",userData)
+              const res = await fetch(`https://aipbbackend-c5ed.onrender.com/api/evaluators/${userData.id}`, {
+                headers: {
+                  'Authorization': `Bearer ${evaluatorToken}`,
+                  'Content-Type': 'application/json'
+                }
+              });
+              if (!res.ok) throw new Error('Failed to fetch evaluator data');
+              const evaluator = await res.json();
+              console.log(evaluator)
+              if (!evaluator.evaluator.enabled || evaluator.evaluator.status === "NOT_VERIFIED") {
+                clearAuth();
+                setDisabledMessage('You are disabled by admin. Please contact support.');
+                return;
+              }
+              setIsAuthenticated(true);
+              setIsLoading(false);
+              return;
+            } catch (err) {
+              clearAuth();
+              // setDisabledMessage('Unable to verify your account status. Please login again.');
+              return;
+            }
           }
         } catch (error) {
           console.error('Error parsing admin user data:', error);
@@ -36,7 +59,6 @@ const EvaluatorApp = () => {
           return;
         }
       }
-      
       setIsLoading(false);
       setIsAuthenticated(false);
     };
@@ -65,6 +87,17 @@ const EvaluatorApp = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (disabledMessage) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="bg-white p-8 rounded shadow text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Access Denied</h2>
+          <p className="text-gray-700">{disabledMessage}</p>
+        </div>
       </div>
     );
   }

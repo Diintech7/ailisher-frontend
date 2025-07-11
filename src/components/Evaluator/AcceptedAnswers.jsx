@@ -50,6 +50,7 @@ export default function AcceptedAnswers() {
         setTotalPages(response.data.data.pagination.totalPages);
         setTotalCount(response.data.data.pagination.totalCount);
         setCurrentPage(response.data.data.pagination.currentPage);
+        console.log(response.data)
       } else {
         setError(response.data.message || "Failed to fetch accepted answers");
       }
@@ -153,8 +154,8 @@ export default function AcceptedAnswers() {
                 Accepted
               </div>
               <div className="text-sm font-semibold text-gray-900">
-                {answer.reviewedAt
-                  ? new Date(answer.reviewedAt).toLocaleString()
+                {answer.acceptedAt
+                  ? new Date(answer.acceptedAt).toLocaleString()
                   : "N/A"}
               </div>
             </div>
@@ -552,8 +553,8 @@ const AnswerDetailsModal = ({ answer, open, onClose }) => {
                 Accepted On
               </div>
               <div className="font-semibold text-gray-900">
-                {answer.reviewedAt
-                  ? new Date(answer.reviewedAt).toLocaleString()
+                {answer.acceptedAt
+                  ? new Date(answer.acceptedAt).toLocaleString()
                   : "N/A"}
               </div>
             </div>
