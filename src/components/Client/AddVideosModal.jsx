@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
-import { createLecture, updateLecture } from '../utils/api';
+import { createLecture, updateLecture, fetchYouTubeTranscript } from '../utils/api';
 import { useParams } from 'react-router-dom';
 import Cookies from 'js-cookie';
+
 
 const AddVideosModal = ({ isOpen, onClose, onAdd, initialData, courseId, editingLectureId, maxLectureNumber }) => {
   const { bookId } = useParams();
@@ -13,7 +14,10 @@ const AddVideosModal = ({ isOpen, onClose, onAdd, initialData, courseId, editing
       {
         topicName: '',
         topicDescription: '',
-        VideoUrl: ''
+        VideoUrl: '',
+        transcript: '',
+        transcriptLoading: false,
+        transcriptError: ''
       }
     ]
   });
@@ -27,7 +31,10 @@ const AddVideosModal = ({ isOpen, onClose, onAdd, initialData, courseId, editing
         topics: (initialData.topics || []).map(t => ({
           topicName: t.topicName || '',
           topicDescription: t.topicDescription || '',
-          VideoUrl: t.VideoUrl || ''
+          VideoUrl: t.VideoUrl || '',
+          transcript: t.transcript || '',
+          transcriptLoading: false,
+          transcriptError: ''
         }))
       });
     } else {
@@ -38,7 +45,10 @@ const AddVideosModal = ({ isOpen, onClose, onAdd, initialData, courseId, editing
           {
             topicName: '',
             topicDescription: '',
-            VideoUrl: ''
+            VideoUrl: '',
+            transcript: '',
+            transcriptLoading: false,
+            transcriptError: ''
           }
         ]
       });
@@ -61,13 +71,33 @@ const AddVideosModal = ({ isOpen, onClose, onAdd, initialData, courseId, editing
     }));
   };
 
+  const handleFetchTranscript = async (index) => {
+    const url = formData.topics[index].VideoUrl;
+    if (!url) {
+      handleTopicChange(index, 'transcriptError', 'Please enter a video URL first.');
+      return;
+    }
+    handleTopicChange(index, 'transcriptLoading', true);
+    handleTopicChange(index, 'transcriptError', '');
+    try {
+      const data = await fetchYouTubeTranscript(url);
+      handleTopicChange(index, 'transcript', data.transcript || '');
+    } catch (err) {
+      handleTopicChange(index, 'transcriptError', 'Failed to fetch transcript.');
+    }
+    handleTopicChange(index, 'transcriptLoading', false);
+  };
+
   const addTopic = () => {
     setFormData(prev => ({
       ...prev,
       topics: [...prev.topics, {
         topicName: '',
         topicDescription: '',
-        VideoUrl: ''
+        VideoUrl: '',
+        transcript: '',
+        transcriptLoading: false,
+        transcriptError: ''
       }]
     }));
   };
@@ -121,7 +151,8 @@ const AddVideosModal = ({ isOpen, onClose, onAdd, initialData, courseId, editing
         topics: formData.topics.map(t => ({
           topicName: t.topicName,
           topicDescription: t.topicDescription,
-          VideoUrl: t.VideoUrl
+          VideoUrl: t.VideoUrl,
+          transcript: t.transcript || ''
         }))
       };
       let response;
@@ -148,7 +179,10 @@ const AddVideosModal = ({ isOpen, onClose, onAdd, initialData, courseId, editing
         {
           topicName: '',
           topicDescription: '',
-          VideoUrl: ''
+          VideoUrl: '',
+          transcript: '',
+          transcriptLoading: false,
+          transcriptError: ''
         }
       ]
     });
@@ -270,6 +304,28 @@ const AddVideosModal = ({ isOpen, onClose, onAdd, initialData, courseId, editing
                       placeholder="Enter video URL (YouTube, Vimeo, etc.)"
                       required
                     />
+                    <button
+                      type="button"
+                      onClick={() => handleFetchTranscript(index)}
+                      className="mt-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-60"
+                      disabled={topic.transcriptLoading}
+                    >
+                      {topic.transcriptLoading ? 'Fetching Transcript...' : 'Fetch Transcript'}
+                    </button>
+                    {topic.transcriptError && (
+                      <div className="text-red-600 text-xs mt-1">{topic.transcriptError}</div>
+                    )}
+                    {topic.transcript && (
+                      <div className="mt-2">
+                        <label className="block text-xs font-medium text-gray-600 mb-1">Transcript</label>
+                        <textarea
+                          value={topic.transcript}
+                          onChange={e => handleTopicChange(index, 'transcript', e.target.value)}
+                          rows={5}
+                          className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

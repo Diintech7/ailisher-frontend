@@ -4,7 +4,7 @@ import { toast } from "react-toastify"
 import axios from "axios"
 
 const api = axios.create({
-  baseURL: "https://aipbbackend-c5ed.onrender.com/api",
+  baseURL: "http://localhost:5000/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -1935,7 +1935,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
     }
     try {
       // Use local or production endpoint as needed
-      const url = `https://aipbbackend-c5ed.onrender.com/api/clients/CLI677117YN7N/mobile/userAnswers/questions/${submission.questionId?._id || submission.question?._id}/answers/${submission._id}/evaluation-update`;
+      const url = `http://localhost:5000/api/clients/CLI677117YN7N/mobile/userAnswers/questions/${submission.questionId?._id || submission.question?._id}/answers/${submission._id}/evaluation-update`;
       // Ensure feedback is a string or omitted if empty/null/undefined
       const feedbackValue = (typeof editEvaluation.feedback === 'string' && editEvaluation.feedback.trim() !== '') 
         ? editEvaluation.feedback 
@@ -1974,7 +1974,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
       if (!submission?.question?._id) return;
       try {
         const res = await axios.get(
-          `https://aipbbackend-c5ed.onrender.com/api/aiswb/questions/${submission.question._id}`
+          `http://localhost:5000/api/aiswb/questions/${submission.question._id}`
         );
         if (res.data && res.data.data && res.data.data.modalAnswer) {
           setModalAnswer(res.data.data.modalAnswer);

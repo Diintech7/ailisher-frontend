@@ -150,3 +150,13 @@ export const deleteLecture = async (bookId, courseId, topicId) => {
   console.log('[deleteLecture] Delete lecture response:', res);
   return res;
 };
+
+export async function fetchYouTubeTranscript(url) {
+  const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'https://aipbbackend-c5ed.onrender.com'}/api/youtube/transcribe-audio`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url }),
+  });
+  if (!response.ok) throw new Error('Failed to fetch transcript');
+  return response.json();
+}

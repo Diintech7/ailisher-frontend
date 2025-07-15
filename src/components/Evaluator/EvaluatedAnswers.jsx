@@ -484,7 +484,7 @@ export default function EvaluatedAnswers() {
     try {
       const token = Cookies.get("evaluatortoken");
       const response = await axios.get(
-        `https://aipbbackend-c5ed.onrender.com/api/clients/CLI677117YN7N/mobile/userAnswers/crud/answers/evaluator/evaluated`,
+        `http://localhost:5000/api/clients/CLI677117YN7N/mobile/userAnswers/crud/answers/evaluator/evaluated`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -501,6 +501,7 @@ export default function EvaluatedAnswers() {
         const sorted = [...response.data.data.answers].sort(
           (a, b) => new Date(b.evaluatedAt) - new Date(a.evaluatedAt)
         );
+        console.log(response)
         setEvaluatedAnswers(sorted);
         setTotalPages(response.data.data.pagination.totalPages);
         setTotalCount(response.data.data.pagination.totalCount);

@@ -4,6 +4,7 @@ import AdminApp from './AdminApp';
 import UserApp from './UserApp';
 import Cookies from 'js-cookie';
 import EvaluatorApp from './EvaluatorApp';
+import YouTube from './components/YouTube';
 const App = () => {
   useEffect(() => {
     const token = Cookies.get('usertoken');
@@ -18,6 +19,7 @@ const App = () => {
         <Route path="/admin/*" element={<AdminApp />} />
         <Route path="/evaluator/*" element={<EvaluatorApp />} />
         <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path='/youtube' element={<YouTube/>}/>
       </Routes>
     </Router>
   );
