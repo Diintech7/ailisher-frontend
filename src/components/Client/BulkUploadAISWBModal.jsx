@@ -34,7 +34,7 @@ const BulkUploadAISWBModal = ({ isOpen, onClose, topicId, existingSets = [], onU
   const createSet = async (setName) => {
     const token = Cookies.get('usertoken');
     const response = await fetch(
-      `http://localhost:5000/api/aiswb/topic/${topicId}/sets`,
+      `https://aipbbackend-c5ed.onrender.com/api/aiswb/topic/${topicId}/sets`,
       {
         method: 'POST',
         headers: {
@@ -53,7 +53,7 @@ const BulkUploadAISWBModal = ({ isOpen, onClose, topicId, existingSets = [], onU
   const createQuestion = async (setId, questionObj) => {
     const token = Cookies.get('usertoken');
     const response = await fetch(
-      `http://localhost:5000/api/aiswb/topic/${topicId}/sets/${setId}/questions`,
+      `https://aipbbackend-c5ed.onrender.com/api/aiswb/topic/${topicId}/sets/${setId}/questions`,
       {
         method: 'POST',
         headers: {

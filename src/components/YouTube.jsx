@@ -11,7 +11,7 @@ const extractVideoId = (url) => {
   return match && match[1].length === 11 ? match[1] : null;
 };
 
-const BACKEND_URL = 'http://localhost:5000';
+const BACKEND_URL = 'https://aipbbackend-c5ed.onrender.com';
 
 // Helper function to format time in MM:SS format
 const formatTime = (seconds) => {

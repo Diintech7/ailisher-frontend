@@ -23,7 +23,7 @@ const QRCodeGenerator = ({ questionId, question }) => {
       }).toString();
       
       // Use the correct API endpoint based on documentation
-      const response = await fetch(`http://localhost:5000/api/aiswb/qr/questions/${questionId}/qrcode?${queryParams}`, {
+      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/qr/questions/${questionId}/qrcode?${queryParams}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -70,7 +70,7 @@ const QRCodeGenerator = ({ questionId, question }) => {
       if (format === 'text') {
         qrContent = `AISWB Question ID: ${questionId}`;
       } else if (format === 'url') {
-        qrContent = `http://localhost:5000/view/questions/${questionId}`;
+        qrContent = `https://aipbbackend-c5ed.onrender.com/view/questions/${questionId}`;
       } else {
         // Default to JSON
         qrContent = JSON.stringify(questionData);

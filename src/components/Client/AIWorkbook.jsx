@@ -58,7 +58,7 @@ const WorkbookItem = ({ workbook, onClick, onEdit }) => {
       e.stopPropagation();
       try {
         const token = Cookies.get('usertoken');
-        const response = await fetch(`http://localhost:5000/api/workbooks/${workbook._id}/highlight`, {
+        const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/workbooks/${workbook._id}/highlight`, {
           method: 'PATCH',
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -77,7 +77,7 @@ const WorkbookItem = ({ workbook, onClick, onEdit }) => {
       e.stopPropagation();
       try {
         const token = Cookies.get('usertoken');
-        const response = await fetch(`http://localhost:5000/api/workbooks/${workbook._id}/trend`, {
+        const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/workbooks/${workbook._id}/trend`, {
           method: 'PATCH',
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -339,7 +339,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser }) => {
       let coverImageKey = null;
       if (coverImage) {
         // Get presigned URL
-        const uploadUrlResponse = await fetch('http://localhost:5000/api/workbooks/cover-upload-url', {
+        const uploadUrlResponse = await fetch('https://aipbbackend-c5ed.onrender.com/api/workbooks/cover-upload-url', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -390,7 +390,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser }) => {
       }
       if (coverImageKey) workbookData.coverImageKey = coverImageKey;
       // Send to backend
-      const response = await fetch('http://localhost:5000/api/workbooks', {
+      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/workbooks', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -674,7 +674,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
       
       if (coverImage) {
         try {
-          const uploadUrlResponse = await fetch('http://localhost:5000/api/workbooks/cover-upload-url', {
+          const uploadUrlResponse = await fetch('https://aipbbackend-c5ed.onrender.com/api/workbooks/cover-upload-url', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -757,7 +757,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
         }
       }
       
-      const response = await fetch(`http://localhost:5000/api/workbooks/${book._id}`, {
+      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/workbooks/${book._id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1302,7 +1302,7 @@ const AIWorkbook = () => {
         navigate('/login');
         return;
       }
-      const response = await fetch('http://localhost:5000/api/workbooks', {
+      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/workbooks', {
         headers: {
           'Authorization': `Bearer ${token}`
         }

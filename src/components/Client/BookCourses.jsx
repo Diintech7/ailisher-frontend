@@ -60,7 +60,7 @@ const BookCourses = () => {
           navigate('/login');
           return;
         }
-        const response = await fetch(`http://localhost:5000/api/books/${bookId}`, {
+        const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/books/${bookId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -128,7 +128,7 @@ const BookCourses = () => {
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl;
     }
-    return `http://localhost:5000/${imageUrl}`;
+    return `https://aipbbackend-c5ed.onrender.com/${imageUrl}`;
   };
 
   const getVideoThumbnail = (videoUrl) => {

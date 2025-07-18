@@ -1,7 +1,7 @@
 // utils/api.js
 import Cookies from 'js-cookie';
 
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'https://aipbbackend-c5ed.onrender.com';
 
 export const apiRequest = async (method, endpoint, data = null) => {
   const token = Cookies.get('usertoken');
@@ -152,7 +152,7 @@ export const deleteLecture = async (bookId, courseId, topicId) => {
 };
 
 export async function fetchYouTubeTranscript(url) {
-  const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000'}/api/youtube/transcribe-audio`, {
+  const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'https://aipbbackend-c5ed.onrender.com'}/api/youtube/transcribe-audio`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ url }),

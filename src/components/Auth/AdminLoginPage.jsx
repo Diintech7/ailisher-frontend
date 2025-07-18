@@ -15,7 +15,7 @@ const AdminLoginPage = ({ onAuthSuccess }) => {
     
     try {
       // Make API call to your backend
-      const response = await fetch('http://localhost:5000/api/admin/login', {
+      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/admin/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
