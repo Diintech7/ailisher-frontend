@@ -31,7 +31,7 @@ const UniversalPrintModal = ({ isOpen, onClose, topicId }) => {
         try {
           const token = Cookies.get('usertoken');
           if (!token) return;
-          const res = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/topic/${topicId}/sets`, {
+          const res = await fetch(`http://localhost:5000/api/aiswb/topic/${topicId}/sets`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           const data = await res.json();
@@ -41,7 +41,7 @@ const UniversalPrintModal = ({ isOpen, onClose, topicId }) => {
               const questionIds = set.questions || [];
               const questions = await Promise.all(questionIds.map(async (qid) => {
                 try {
-                  const qres = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/questions/${qid}`, {
+                  const qres = await fetch(`http://localhost:5000/api/aiswb/questions/${qid}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                   });
                   const qdata = await qres.json();
@@ -299,7 +299,7 @@ const UniversalPrintModal = ({ isOpen, onClose, topicId }) => {
           const token = Cookies.get('usertoken');
           if (!token) return null;
           const queryParams = new URLSearchParams({ format: 'json', size: 300, includeAnswers: true }).toString();
-          const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiswb/qr/questions/${questionId}/qrcode?${queryParams}`, {
+          const response = await fetch(`http://localhost:5000/api/aiswb/qr/questions/${questionId}/qrcode?${queryParams}`, {
             method: 'GET',
             headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json', 'Content-Type': 'application/json' }
           });

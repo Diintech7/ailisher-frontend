@@ -49,7 +49,7 @@ const AddChapterModal = ({ isOpen, onClose, workbookId, onAdd }) => {
         onClose();
         return;
       }
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/workbooks/${workbookId}/chapters`, {
+      const response = await fetch(`http://localhost:5000/api/workbooks/${workbookId}/chapters`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -172,7 +172,7 @@ const EditWorkbookModal = ({ isOpen, onClose, workbook, onUpdate }) => {
         onClose();
         return;
       }
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/workbooks/${workbook._id}`, {
+      const response = await fetch(`http://localhost:5000/api/workbooks/${workbook._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -299,7 +299,7 @@ const WorkbookDetail = () => {
       }
       
       // Fetch workbook details
-      const workbookResponse = await fetch(`https://aipbbackend-c5ed.onrender.com/api/workbooks/${workbookId}`, {
+      const workbookResponse = await fetch(`http://localhost:5000/api/workbooks/${workbookId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -314,7 +314,7 @@ const WorkbookDetail = () => {
       setWorkbook(workbookData.workbook);
       
       // Fetch chapters
-      const chaptersResponse = await fetch(`https://aipbbackend-c5ed.onrender.com/api/workbooks/${workbookId}/chapters`, {
+      const chaptersResponse = await fetch(`http://localhost:5000/api/workbooks/${workbookId}/chapters`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -371,7 +371,7 @@ const WorkbookDetail = () => {
         return;
       }
       
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/workbooks/${workbookId}`, {
+      const response = await fetch(`http://localhost:5000/api/workbooks/${workbookId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -415,7 +415,7 @@ const WorkbookDetail = () => {
   const getCompleteImageUrl = (imageUrl) => {
     if (!imageUrl) return null;
     if (imageUrl.startsWith('data:')) return imageUrl;
-    return `https://aipbbackend-c5ed.onrender.com/${imageUrl}`;
+    return `http://localhost:5000/${imageUrl}`;
   };
 
   return (

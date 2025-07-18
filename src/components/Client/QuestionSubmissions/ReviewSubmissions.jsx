@@ -103,7 +103,7 @@ const ReviewSubmissions = ({ questionId }) => {
     try {
       if (activeTab === 'review_pending') {
         // Make API call with POST method and log response
-        const response = await axios.post(`https://aipbbackend-c5ed.onrender.com/api/review/${answerId}/accept`);
+        const response = await axios.post(`http://localhost:5000/api/review/${answerId}/accept`);
         console.log('Review accept response:', response.data);
         
         if (response.data.success) {

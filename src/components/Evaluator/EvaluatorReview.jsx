@@ -51,7 +51,7 @@ export default function EvaluatorReview() {
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [activeImage, setActiveImage] = useState(null);
 
-  const API_BASE_URL = 'https://aipbbackend-c5ed.onrender.com';
+  const API_BASE_URL = 'http://localhost:5000';
 
   const fetchReviews = async (type, page = 1) => {
     setLoading(prev => ({ ...prev, [type]: true }));

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // NOTE: Ensure your backend CORS settings allow requests from your frontend's origin.
 // For deployment, set REACT_APP_BACKEND_URL in your .env file to your backend URL.
@@ -11,7 +11,7 @@ const extractVideoId = (url) => {
   return match && match[1].length === 11 ? match[1] : null;
 };
 
-const BACKEND_URL = 'https://aipbbackend-c5ed.onrender.com';
+const BACKEND_URL = 'http://localhost:5000';
 
 // Helper function to format time in MM:SS format
 const formatTime = (seconds) => {
@@ -20,8 +20,8 @@ const formatTime = (seconds) => {
   return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
 };
 
-const YouTube = () => {
-  const [input, setInput] = useState('');
+const YouTube = ({ url = '', onTranscript, showInput = true }) => {
+  const [input, setInput] = useState(url || '');
   const [videoId, setVideoId] = useState('');
   const [error, setError] = useState('');
   const [transcribing, setTranscribing] = useState(false);
@@ -29,6 +29,18 @@ const YouTube = () => {
   const [paragraphs, setParagraphs] = useState([]);
   const [totalParagraphs, setTotalParagraphs] = useState(0);
   const [totalSentences, setTotalSentences] = useState(0);
+
+  // Sync input with url prop
+  useEffect(() => {
+    if (url) {
+      setInput(url);
+      const id = extractVideoId(url);
+      setVideoId(id || '');
+      setError(id ? '' : url ? 'Please enter a valid YouTube link.' : '');
+      setTranscript('');
+      setParagraphs([]);
+    }
+  }, [url]);
 
   const handleInputChange = (e) => {
     setInput(e.target.value);
@@ -64,7 +76,7 @@ const YouTube = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url: input.trim() }),
+        body: JSON.stringify({ url: (showInput ? input.trim() : url) }),
       });
 
       if (!response.ok) {
@@ -76,55 +88,63 @@ const YouTube = () => {
       setParagraphs(data.paragraphs || []);
       setTotalParagraphs(data.totalParagraphs || 0);
       setTotalSentences(data.totalSentences || 0);
+      if (onTranscript) {
+        onTranscript(data.transcript || '', data.paragraphs || []);
+      }
     } catch (err) {
       setError('Failed to transcribe audio. Please try again.');
     }
     setTranscribing(false);
   };
 
-  // Add a handler to download the transcript as a .txt file
-  const handleDownloadTranscript = () => {
-    if (!transcript) return;
-    const blob = new Blob([transcript], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'transcript.txt';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(url);
-  };
+  // // Add a handler to download the transcript as a .txt file
+  // const handleDownloadTranscript = () => {
+  //   if (!transcript) return;
+  //   const blob = new Blob([transcript], { type: 'text/plain' });
+  //   const url = window.URL.createObjectURL(blob);
+  //   const a = document.createElement('a');
+  //   a.href = url;
+  //   a.download = 'transcript.txt';
+  //   document.body.appendChild(a);
+  //   a.click();
+  //   a.remove();
+  //   window.URL.revokeObjectURL(url);
+  // };
+
+  // Use videoId from input or url
+  const effectiveVideoId = showInput ? videoId : extractVideoId(url);
 
   return (
     <div className="flex justify-center items-center min-h-[60vh] bg-gray-50">
       <div className="w-full max-w-4xl bg-white rounded-xl shadow-lg p-8">
         <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">YouTube Video Preview</h2>
-        <form onSubmit={handlePreview} className="flex flex-col gap-4">
-          <input
-            type="text"
-            placeholder="Paste YouTube link here..."
-            value={input}
-            onChange={handleInputChange}
-            className="border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 text-base"
-            autoFocus
-          />
-          <button
-            type="submit"
-            className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-md transition-colors duration-200 shadow"
-          >
-            Preview
-          </button>
-        </form>
+        {showInput && (
+          <form onSubmit={handlePreview} className="flex flex-col gap-4">
+            <input
+              type="text"
+              placeholder="Paste YouTube link here..."
+              value={input}
+              onChange={handleInputChange}
+              className="border border-gray-300 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 text-base"
+              autoFocus
+            />
+            <button
+              type="submit"
+              className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-md transition-colors duration-200 shadow"
+            >
+              Preview
+            </button>
+          </form>
+        )}
         {error && (
           <div className="mt-4 text-red-600 text-center text-sm">{error}</div>
         )}
-        {videoId && !error && (
+        {effectiveVideoId && !error && (
           <div className="mt-8 flex flex-col items-center">
             <div className="w-full aspect-video max-w-xl rounded-lg overflow-hidden shadow">
               <iframe
                 className="w-full h-64 sm:h-80"
-                src={`https://www.youtube.com/embed/${videoId}`}
+                src={`https://www.youtube.com/embed/${effectiveVideoId}`}
                 title="YouTube video preview"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -158,13 +178,13 @@ const YouTube = () => {
                       <div>{transcript}</div>
                     )}
                   </div>
-                  <button
+                  {/* <button
                     onClick={handleDownloadTranscript}
                     className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-md transition-colors duration-200 shadow"
                     disabled={!transcript}
                   >
                     Download Transcript
-                  </button>
+                  </button> */}
                 </div>
               </div>
             )}

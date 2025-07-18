@@ -117,7 +117,7 @@ export default function Configuration() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/config', {
+      const response = await fetch('http://localhost:5000/api/config', {
         headers: getAuthHeaders()
       });
       const data = await response.json();
@@ -144,7 +144,7 @@ export default function Configuration() {
   const handleAdd = async (sourcetype, model) => {
     try {
       setLoading(true);
-      await fetch('https://aipbbackend-c5ed.onrender.com/api/config/model', {
+      await fetch('http://localhost:5000/api/config/model', {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ ...model, sourcetype })
@@ -165,7 +165,7 @@ export default function Configuration() {
   const handleUpdate = async (model) => {
     try {
       setLoading(true);
-      await fetch(`https://aipbbackend-c5ed.onrender.com/api/config/model/${editModel.sourcetype}/${editModel.key}`, {
+      await fetch(`http://localhost:5000/api/config/model/${editModel.sourcetype}/${editModel.key}`, {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify(model)
@@ -184,7 +184,7 @@ export default function Configuration() {
     if (!window.confirm(`Delete model ${model.modelname} (${model.key})?`)) return;
     try {
       setLoading(true);
-      await fetch(`https://aipbbackend-c5ed.onrender.com/api/config/model/${sourcetype}/${model.key}`, {
+      await fetch(`http://localhost:5000/api/config/model/${sourcetype}/${model.key}`, {
         method: 'DELETE',
         headers: getAuthHeaders()
       });

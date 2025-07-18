@@ -31,7 +31,7 @@ export default function AcceptedAnswers() {
     try {
       const token = Cookies.get("evaluatortoken");
       const response = await axios.get(
-        "https://aipbbackend-c5ed.onrender.com/api/clients/CLI677117YN7N/mobile/userAnswers/crud/answers/evaluator/accepted",
+        "http://localhost:5000/api/clients/CLI677117YN7N/mobile/userAnswers/crud/answers/evaluator/accepted",
         {
           headers: {
             Authorization: `Bearer ${token}`,

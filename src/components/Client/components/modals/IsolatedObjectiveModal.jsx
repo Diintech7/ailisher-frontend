@@ -100,7 +100,7 @@ const IsolatedObjectiveModal = ({ isOpen, onClose, onSubmit, initialQuestion = n
       if (initialQuestion) {
         // Update existing question
         const response = await axios.put(
-          `https://aipbbackend-c5ed.onrender.com/api/objective-assets/questions/${initialQuestion._id}`,
+          `http://localhost:5000/api/objective-assets/questions/${initialQuestion._id}`,
           {
             question: cleanedQuestions[0].question,
             options: cleanedQuestions[0].options,
@@ -115,7 +115,7 @@ const IsolatedObjectiveModal = ({ isOpen, onClose, onSubmit, initialQuestion = n
       } else {
         // Create new questions
         const response = await axios.post(
-          `https://aipbbackend-c5ed.onrender.com/api/objective-assets/question-sets/${currentSet._id}/questions`,
+          `http://localhost:5000/api/objective-assets/question-sets/${currentSet._id}/questions`,
           {
             questions: cleanedQuestions.map((q) => ({
               question: q.question,
