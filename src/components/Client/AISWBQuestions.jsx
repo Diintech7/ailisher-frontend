@@ -929,6 +929,21 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
                 </div>
               </div>
 
+              {/* Evaluation Guideline Section */}
+              <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                <h4 className="text-lg font-semibold text-purple-800 mb-2">Evaluation Guideline</h4>
+                <div className="bg-white p-4 rounded-lg">
+                  <div 
+                    className="prose max-w-none"
+                    dangerouslySetInnerHTML={{ 
+                      __html: selectedQuestion.evaluationGuideline.includes('<') 
+                        ? selectedQuestion.evaluationGuideline 
+                        : selectedQuestion.evaluationGuideline.replace(/\n/g, '<br/>')
+                    }}
+                  />
+                </div>
+              </div>
+
               {/* Modal Answer Section */}
               {selectedQuestion.modalAnswer && (
                 <div className="bg-green-50 p-4 rounded-lg border border-green-100">
