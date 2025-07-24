@@ -31,10 +31,13 @@ import {
   HardDrive,
   FileIcon,
   Zap,
+  RulerIcon,
 } from "lucide-react"
 import Cookies from "js-cookie"
 import { toast, ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
+import AIGuidelinesModal from './AIGuidelinesModal';
+
 
 const DataStore = ({ type }) => {
   const [items, setItems] = useState([])
@@ -56,8 +59,15 @@ const DataStore = ({ type }) => {
   const [chatInput, setChatInput] = useState("")
   const [chatLoading, setChatLoading] = useState(false)
   const [chatHealth, setChatHealth] = useState({})
-
   const [uploadType, setUploadType] = useState("file")
+  const [activeTab, setActiveTab] = useState('datastore');
+
+  // --- AI Guidelines State ---
+  const [aiGuidelines, setAIGuidelines] = useState(null)
+  const [aiGuidelinesLoading, setAIGuidelinesLoading] = useState(false)
+  const [showAIGuidelinesModal, setShowAIGuidelinesModal] = useState(false)
+  const [aiGuidelinesForm, setAIGuidelinesForm] = useState({ message: '', prompt: '', FAQs: [{ question: '' }] })
+  const [aiGuidelinesSaving, setAIGuidelinesSaving] = useState(false)
 
   const titleRef = useRef(null)
   const descriptionRef = useRef(null)
@@ -79,6 +89,8 @@ const DataStore = ({ type }) => {
     { id: "website", label: "Websites", icon: Globe },
     { id: "youtube", label: "YouTube", icon: Youtube },
     { id: "text", label: "Text", icon: FileText },
+    { id: "aiGuidelines", label: "AI Guidelines", icon: RulerIcon },
+
   ]
 
   const getApiEndpoint = () => {
@@ -293,6 +305,66 @@ const DataStore = ({ type }) => {
       return false
     }
   }
+
+  const fetchAIGuidelines = async () => {
+    if (type !== 'book' || !bookId) return
+    setAIGuidelinesLoading(true)
+    try {
+      const token = Cookies.get('usertoken')
+      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiguidelines/${bookId}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setAIGuidelines(data)
+      } else {
+        setAIGuidelines(null)
+      }
+    } catch (err) {
+      setAIGuidelines(null)
+    } finally {
+      setAIGuidelinesLoading(false)
+    }
+  }
+
+  const saveAIGuidelines = async () => {
+    if (type !== 'book' || !bookId) return
+    setAIGuidelinesSaving(true)
+    try {
+      const token = Cookies.get('usertoken')
+      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiguidelines/${bookId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          message: aiGuidelinesForm.message,
+          prompt: aiGuidelinesForm.prompt,
+          FAQs: aiGuidelinesForm.FAQs.filter(faq => faq.question.trim()),
+        }),
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setAIGuidelines(data) // Update the guidelines directly with response data
+        setShowAIGuidelinesModal(false)
+        toast.success('AI Guidelines saved!')
+        // DO NOT call fetchAIGuidelines() here - this was causing the re-render issue
+      } else {
+        toast.error('Failed to save AI Guidelines')
+      }
+    } catch (err) {
+      toast.error('Error saving AI Guidelines')
+    } finally {
+      setAIGuidelinesSaving(false)
+    }
+  }
+
+useEffect(() => {
+  if (type === 'book' && bookId) {
+    fetchAIGuidelines()
+  }
+}, [bookId, type]) // Only depend on bookId and type
 
   useEffect(() => {
     fetchItems()
@@ -1223,6 +1295,80 @@ const DataStore = ({ type }) => {
       </div>
     )
   }
+// Add a new function to handle opening the AI Guidelines modal
+const handleOpenAIGuidelinesModal = () => {
+  // Set form data when opening the modal
+  if (aiGuidelines) {
+    setAIGuidelinesForm({
+      message: aiGuidelines.message || '',
+      prompt: aiGuidelines.prompt || '',
+      FAQs: aiGuidelines.FAQs && aiGuidelines.FAQs.length > 0 
+        ? aiGuidelines.FAQs.map(faq => ({ question: faq.question || '', _id: faq._id }))
+        : [{ question: '', _id: Math.random().toString(36).substr(2, 9) }]
+    })
+  } else {
+    // Reset to default for new guidelines
+    setAIGuidelinesForm({
+      message: '',
+      prompt: '',
+      FAQs: [{ question: '', _id: Math.random().toString(36).substr(2, 9) }]
+    })
+  }
+  setShowAIGuidelinesModal(true)
+}
+  // --- AI Guidelines Modal ---
+  const AIGuidelinesView = () => (
+    <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6 mb-8">
+      <h1 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+        <RulerIcon size={28} className="text-orange-500 mr-2" />
+        AI Guidelines
+      </h1>
+      {aiGuidelinesLoading ? (
+        <div className="flex justify-center items-center h-32">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-4 border-b-4 border-orange-500"></div>
+        </div>
+      ) : aiGuidelines ? (
+        <div className="space-y-6">
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
+            <div className="flex items-center mb-2">
+              <FileText size={20} className="text-indigo-500 mr-2" />
+              <span className="font-semibold text-gray-700">Message</span>
+            </div>
+            <div className="text-gray-800 whitespace-pre-line">{aiGuidelines.message || <span className="text-gray-400">No message</span>}</div>
+          </div>
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
+            <div className="flex items-center mb-2">
+              <Zap size={20} className="text-purple-500 mr-2" />
+              <span className="font-semibold text-gray-700">Prompt</span>
+            </div>
+            <div className="text-gray-800 whitespace-pre-line">{aiGuidelines.prompt || <span className="text-gray-400">No prompt</span>}</div>
+          </div>
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
+            <div className="flex items-center mb-2">
+              <List size={20} className="text-green-500 mr-2" />
+              <span className="font-semibold text-gray-700">FAQs</span>
+            </div>
+            <ul className="list-disc pl-6">
+              {Array.isArray(aiGuidelines.FAQs) && aiGuidelines.FAQs.length > 0 ? (
+                aiGuidelines.FAQs.map((faq, idx) => (
+                  <li key={faq._id || idx} className="mb-1 text-gray-700">{faq.question}</li>
+                ))
+              ) : (
+                <li className="text-gray-400">No FAQs</li>
+              )}
+            </ul>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center text-gray-500">
+          <RulerIcon size={32} className="mx-auto mb-2 text-orange-300" />
+          No AI Guidelines found for this book.
+        </div>
+      )}
+    </div>
+  )
+
+
 
   if (loading) {
     return (
@@ -1250,265 +1396,285 @@ const DataStore = ({ type }) => {
     )
   }
 
+  // --- Main Render: inject AI Guidelines view for filter ---
   return (
     <div className="container mx-auto px-4 py-8">
       <ToastContainer position="top-right" autoClose={3000} />
 
       {showUploadModal && <UploadModal />}
       {showChatModal && <ChatModal />}
-
-      <div className="flex items-center mb-4">
+      {showAIGuidelinesModal && (
+        <AIGuidelinesModal
+          aiGuidelines={aiGuidelines}
+          aiGuidelinesForm={aiGuidelinesForm}
+          setAIGuidelinesForm={setAIGuidelinesForm}
+          aiGuidelinesSaving={aiGuidelinesSaving}
+          setShowAIGuidelinesModal={setShowAIGuidelinesModal}
+          saveAIGuidelines={saveAIGuidelines}
+        />
+      )}
+      {/* Tab Navigation */}
+      <div className="mb-6 flex border-b border-gray-200">
         <button
-          onClick={handleBackClick}
-          className="flex items-center text-indigo-600 hover:text-indigo-800 transition-colors"
+          className={`px-4 py-2 -mb-px border-b-2 ${activeTab === "datastore" ? "border-indigo-600 text-indigo-700 font-semibold" : "border-transparent text-gray-500"}`}
+          onClick={() => setActiveTab("datastore")}
         >
-          <ArrowLeft size={18} className="mr-1" />
-          <span>
-            Back to{" "}
-            {type === "book" ? "Book" : type === "chapter" ? "Chapter" : type === "topic" ? "Topic" : "Sub-Topic"}
-          </span>
+          Data Store
         </button>
       </div>
+      {/* Tab Content */}
+      {activeTab === "datastore" && (
+        <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6 mb-8">
+          <h1 className="text-2xl font-bold text-gray-800 mb-6">
+            {type === "book" ? "Book" : type === "chapter" ? "Chapter" : type === "topic" ? "Topic" : "Sub-Topic"} Data Store
+          </h1>
 
-      <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6 mb-8">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6">
-          {type === "book" ? "Book" : type === "chapter" ? "Chapter" : type === "topic" ? "Topic" : "Sub-Topic"} Data
-          Store
-        </h1>
+          <div className="flex flex-col sm:flex-row gap-4 items-center justify-between mb-8">
+            <p className="text-gray-600">
+              Upload and manage files related to this{" "}
+              {type === "book" ? "book" : type === "chapter" ? "chapter" : type === "topic" ? "topic" : "sub-topic"}.
+            </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between mb-8">
-          <p className="text-gray-600">
-            Upload and manage files related to this{" "}
-            {type === "book" ? "book" : type === "chapter" ? "chapter" : type === "topic" ? "topic" : "sub-topic"}.
-          </p>
-
-          <div className="flex gap-2">
-            <button
-              onClick={() => setShowUploadModal(true)}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors flex items-center"
-            >
-              <Upload size={18} className="mr-2" />
-              <span>Add New Item</span>
-            </button>
-            <button
-              onClick={() => {
-                setCurrentChatItem({ name: "Knowledge Base", _id: "knowledge-base" })
-                setChatMessages([
-                  {
-                    id: Date.now(),
-                    type: "ai",
-                    content: "Ready to search across all your documents. What would you like to know?",
-                    confidence: 100,
-                    sources: 0,
-                    timestamp: new Date(),
-                  },
-                ])
-                setShowChatModal(true)
-                setChatInput("")
-              }}
-              className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center"
-            >
-              <MessageCircle size={18} className="mr-2" />
-              <span>Chat with Knowledge Base</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <div className="overflow-x-auto flex-1">
-            <div className="flex space-x-2 pb-2">
-              {filters.map((filter) => (
-                <button
-                  key={filter.id}
-                  onClick={() => setActiveFilter(filter.id)}
-                  className={`flex items-center px-3 py-2 rounded-md text-sm whitespace-nowrap ${
-                    activeFilter === filter.id
-                      ? "bg-indigo-100 text-indigo-700 font-medium"
-                      : "bg-gray-50 text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  <filter.icon size={16} className="mr-2" />
-                  <span>{filter.label}</span>
-                </button>
-              ))}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowUploadModal(true)}
+                className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors flex items-center"
+              >
+                <Upload size={18} className="mr-2" />
+                <span>Add New Item</span>
+              </button>
+              <button
+                onClick={() => {
+                  setCurrentChatItem({ name: "Knowledge Base", _id: "knowledge-base" })
+                  setChatMessages([
+                    {
+                      id: Date.now(),
+                      type: "ai",
+                      content: "Ready to search across all your documents. What would you like to know?",
+                      confidence: 100,
+                      sources: 0,
+                      timestamp: new Date(),
+                    },
+                  ])
+                  setShowChatModal(true)
+                  setChatInput("")
+                }}
+                className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors flex items-center"
+              >
+                <MessageCircle size={18} className="mr-2" />
+                <span>Chat with Knowledge Base</span>
+              </button>
+              <button
+               onClick={handleOpenAIGuidelinesModal}
+                className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors flex items-center"
+              >
+                <RulerIcon size={18} className="mr-2" />
+                <span>{aiGuidelines ? 'Edit' : 'Add'} AI Guidelines</span>
+              </button>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600">View:</span>
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`p-2 rounded-md ${viewMode === "grid" ? "bg-indigo-100 text-indigo-700" : "text-gray-500 hover:bg-gray-100"}`}
-              title="Grid view"
-            >
-              <Grid3X3 size={18} />
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={`p-2 rounded-md ${viewMode === "list" ? "bg-indigo-100 text-indigo-700" : "text-gray-500 hover:bg-gray-100"}`}
-              title="List view"
-            >
-              <List size={18} />
-            </button>
-          </div>
-        </div>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <div className="overflow-x-auto flex-1">
+              <div className="flex space-x-2 pb-2">
+                {filters.map((filter) => (
+                  <button
+                    key={filter.id}
+                    onClick={() => setActiveFilter(filter.id)}
+                    className={`flex items-center px-3 py-2 rounded-md text-sm whitespace-nowrap ${
+                      activeFilter === filter.id
+                        ? "bg-indigo-100 text-indigo-700 font-medium"
+                        : "bg-gray-50 text-gray-700 hover:bg-gray-100"
+                    }`}
+                  >
+                    <filter.icon size={16} className="mr-2" />
+                    <span>{filter.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
 
-        {filteredItems.length === 0 ? (
-          <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-            <FileText size={48} className="mx-auto text-gray-400 mb-3" />
-            <h3 className="text-lg font-medium text-gray-700">No items found</h3>
-            <p className="text-gray-500 mt-1">
-              {activeFilter !== "all"
-                ? `No ${activeFilter} items available. Try a different filter or add new items.`
-                : "Upload files to get started"}
-            </p>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-600">View:</span>
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`p-2 rounded-md ${viewMode === "grid" ? "bg-indigo-100 text-indigo-700" : "text-gray-500 hover:bg-gray-100"}`}
+                title="Grid view"
+              >
+                <Grid3X3 size={18} />
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                className={`p-2 rounded-md ${viewMode === "list" ? "bg-indigo-100 text-indigo-700" : "text-gray-500 hover:bg-gray-100"}`}
+                title="List view"
+              >
+                <List size={18} />
+              </button>
+            </div>
           </div>
-        ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredItems.map((item) => {
-              const isPDF = item.fileType === "application/pdf" || item.type === "pdf"
-              const embeddingInfo = embeddingStatus[item._id]
-              const healthInfo = chatHealth[item._id]
-              const isEmbeddingLoading = embeddingLoading[item._id]
-              const isReEmbeddingLoading = reEmbeddingLoading[item._id]
-              const chatAvailable = embeddingInfo?.hasEmbeddings || healthInfo?.chatAvailable
 
-              return (
-                <div key={item._id} className="border border-gray-200 rounded-lg overflow-hidden flex flex-col">
-                  <div className="p-4 border-b border-gray-100">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1 pr-2">
-                        <h3 className="font-medium text-gray-800 mb-1 line-clamp-1">{item.name}</h3>
-                        {item.description && <p className="text-sm text-gray-500 line-clamp-2">{item.description}</p>}
-                        {isPDF && embeddingInfo && (
-                          <div className="flex items-center mt-2 text-xs">
-                            {embeddingInfo.hasEmbeddings ? (
-                              <div className="flex items-center text-green-600">
-                                <CheckCircle size={12} className="mr-1" />
-                                <span>{embeddingInfo.embeddingCount} embeddings</span>
-                                {chatAvailable && <span className="ml-2 text-blue-600">• Chat Ready</span>}
-                              </div>
-                            ) : (
-                              <div className="flex items-center text-gray-500">
-                                <XCircle size={12} className="mr-1" />
-                                <span>No embeddings</span>
+          {/* Content area: show guidelines or file list/grid */}
+          {activeFilter === 'aiGuidelines' ? (
+            <AIGuidelinesView />
+          ) : (
+            filteredItems.length === 0 ? (
+              <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
+                <FileText size={48} className="mx-auto text-gray-400 mb-3" />
+                <h3 className="text-lg font-medium text-gray-700">No items found</h3>
+                <p className="text-gray-500 mt-1">
+                  {activeFilter !== "all"
+                    ? `No ${activeFilter} items available. Try a different filter or add new items.`
+                    : "Upload files to get started"}
+                </p>
+              </div>
+            ) : viewMode === "grid" ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredItems.map((item) => {
+                  const isPDF = item.fileType === "application/pdf" || item.type === "pdf"
+                  const embeddingInfo = embeddingStatus[item._id]
+                  const healthInfo = chatHealth[item._id]
+                  const isEmbeddingLoading = embeddingLoading[item._id]
+                  const isReEmbeddingLoading = reEmbeddingLoading[item._id]
+                  const chatAvailable = embeddingInfo?.hasEmbeddings || healthInfo?.chatAvailable
+
+                  return (
+                    <div key={item._id} className="border border-gray-200 rounded-lg overflow-hidden flex flex-col">
+                      <div className="p-4 border-b border-gray-100">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1 pr-2">
+                            <h3 className="font-medium text-gray-800 mb-1 line-clamp-1">{item.name}</h3>
+                            {item.description && <p className="text-sm text-gray-500 line-clamp-2">{item.description}</p>}
+                            {isPDF && embeddingInfo && (
+                              <div className="flex items-center mt-2 text-xs">
+                                {embeddingInfo.hasEmbeddings ? (
+                                  <div className="flex items-center text-green-600">
+                                    <CheckCircle size={12} className="mr-1" />
+                                    <span>{embeddingInfo.embeddingCount} embeddings</span>
+                                    {chatAvailable && <span className="ml-2 text-blue-600">• Chat Ready</span>}
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center text-gray-500">
+                                    <XCircle size={12} className="mr-1" />
+                                    <span>No embeddings</span>
+                                  </div>
+                                )}
                               </div>
                             )}
                           </div>
+                          <button
+                            onClick={() => handleDeleteItem(item._id)}
+                            className="text-red-500 hover:text-red-700 ml-2 flex-shrink-0"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex-1 p-4 flex items-center justify-center bg-gray-50">
+                        {item.fileType?.startsWith("image/") ? (
+                          <div className="h-36 w-full overflow-hidden">
+                            <img
+                              src={item.url || "/placeholder.svg"}
+                              alt={item.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ) : item.itemType === "youtube" ? (
+                          <div className="relative w-full pt-[56.25%]">
+                            <iframe
+                              className="absolute top-0 left-0 w-full h-full"
+                              src={item.url.replace("watch?v=", "embed/")}
+                              title={item.name}
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
+                            ></iframe>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center py-4">
+                            {getItemIcon(item)}
+                            <span className="text-sm text-gray-500 mt-2">
+                              {item.itemType || item.fileType?.split("/")[1] || "File"}
+                            </span>
+                          </div>
                         )}
                       </div>
-                      <button
-                        onClick={() => handleDeleteItem(item._id)}
-                        className="text-red-500 hover:text-red-700 ml-2 flex-shrink-0"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </div>
 
-                  <div className="flex-1 p-4 flex items-center justify-center bg-gray-50">
-                    {item.fileType?.startsWith("image/") ? (
-                      <div className="h-36 w-full overflow-hidden">
-                        <img
-                          src={item.url || "/placeholder.svg"}
-                          alt={item.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    ) : item.itemType === "youtube" ? (
-                      <div className="relative w-full pt-[56.25%]">
-                        <iframe
-                          className="absolute top-0 left-0 w-full h-full"
-                          src={item.url.replace("watch?v=", "embed/")}
-                          title={item.name}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                        ></iframe>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-4">
-                        {getItemIcon(item)}
-                        <span className="text-sm text-gray-500 mt-2">
-                          {item.itemType || item.fileType?.split("/")[1] || "File"}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                      {isPDF && (
+                        <div className="p-3 bg-gray-50 border-t border-gray-100">
+                          <div className="flex space-x-2 mb-2">
+                            <button
+                              onClick={() => handleCreateEmbeddings(item._id)}
+                              disabled={isEmbeddingLoading}
+                              className={`flex-1 flex items-center justify-center px-3 py-2 text-sm rounded-md transition-colors ${
+                                embeddingInfo?.hasEmbeddings
+                                  ? "bg-green-100 text-green-700 border border-green-200"
+                                  : "bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200"
+                              }`}
+                            >
+                              {isEmbeddingLoading ? (
+                                <Loader2 className="animate-spin mr-1" size={14} />
+                              ) : (
+                                <Database size={14} className="mr-1" />
+                              )}
+                              <span>{embeddingInfo?.hasEmbeddings ? "Embedded" : "Embedding"}</span>
+                            </button>
 
-                  {isPDF && (
-                    <div className="p-3 bg-gray-50 border-t border-gray-100">
-                      <div className="flex space-x-2 mb-2">
-                        <button
-                          onClick={() => handleCreateEmbeddings(item._id)}
-                          disabled={isEmbeddingLoading}
-                          className={`flex-1 flex items-center justify-center px-3 py-2 text-sm rounded-md transition-colors ${
-                            embeddingInfo?.hasEmbeddings
-                              ? "bg-green-100 text-green-700 border border-green-200"
-                              : "bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200"
-                          }`}
-                        >
-                          {isEmbeddingLoading ? (
-                            <Loader2 className="animate-spin mr-1" size={14} />
-                          ) : (
-                            <Database size={14} className="mr-1" />
+                            <button
+                              onClick={() => handleChatWithPDF(item)}
+                              className={`flex-1 flex items-center justify-center px-3 py-2 text-sm rounded-md transition-colors ${
+                                chatAvailable
+                                  ? "bg-indigo-100 text-indigo-700 border border-indigo-200 hover:bg-indigo-200"
+                                  : "bg-gray-100 text-gray-400 border border-gray-200"
+                              }`}
+                            >
+                              <MessageCircle size={14} className="mr-1" />
+                              <span>Chat</span>
+                            </button>
+                          </div>
+
+                          {embeddingInfo?.hasEmbeddings && (
+                            <button
+                              onClick={() => handleCreateEmbeddings(item._id, true)}
+                              disabled={isReEmbeddingLoading}
+                              className="w-full flex items-center justify-center px-3 py-2 text-sm rounded-md transition-colors bg-orange-100 text-orange-700 border border-orange-200 hover:bg-orange-200"
+                            >
+                              {isReEmbeddingLoading ? (
+                                <Loader2 className="animate-spin mr-1" size={14} />
+                              ) : (
+                                <RotateCcw size={14} className="mr-1" />
+                              )}
+                              <span>Re-embed</span>
+                            </button>
                           )}
-                          <span>{embeddingInfo?.hasEmbeddings ? "Embedded" : "Embedding"}</span>
-                        </button>
+                        </div>
+                      )}
 
-                        <button
-                          onClick={() => handleChatWithPDF(item)}
-                          className={`flex-1 flex items-center justify-center px-3 py-2 text-sm rounded-md transition-colors ${
-                            chatAvailable
-                              ? "bg-indigo-100 text-indigo-700 border border-indigo-200 hover:bg-indigo-200"
-                              : "bg-gray-100 text-gray-400 border border-gray-200"
-                          }`}
-                        >
-                          <MessageCircle size={14} className="mr-1" />
-                          <span>Chat</span>
-                        </button>
-                      </div>
-
-                      {embeddingInfo?.hasEmbeddings && (
-                        <button
-                          onClick={() => handleCreateEmbeddings(item._id, true)}
-                          disabled={isReEmbeddingLoading}
-                          className="w-full flex items-center justify-center px-3 py-2 text-sm rounded-md transition-colors bg-orange-100 text-orange-700 border border-orange-200 hover:bg-orange-200"
-                        >
-                          {isReEmbeddingLoading ? (
-                            <Loader2 className="animate-spin mr-1" size={14} />
-                          ) : (
-                            <RotateCcw size={14} className="mr-1" />
-                          )}
-                          <span>Re-embed</span>
-                        </button>
+                      {!isPDF && (
+                        <div className="p-3 bg-gray-50 border-t border-gray-100 mt-auto">
+                          <a
+                            href={item.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center justify-center"
+                          >
+                            <span>Open</span>
+                          </a>
+                        </div>
                       )}
                     </div>
-                  )}
-
-                  {!isPDF && (
-                    <div className="p-3 bg-gray-50 border-t border-gray-100 mt-auto">
-                      <a
-                        href={item.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-indigo-600 hover:text-indigo-800 text-sm font-medium flex items-center justify-center"
-                      >
-                        <span>Open</span>
-                      </a>
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg border border-gray-200">
-            {filteredItems.map((item) => (
-              <ListItem key={item._id} item={item} />
-            ))}
-          </div>
-        )}
-      </div>
+                  )
+                })}
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg border border-gray-200">
+                {filteredItems.map((item) => (
+                  <ListItem key={item._id} item={item} />
+                ))}
+              </div>
+            )
+          )}
+        </div>
+      )}
     </div>
   )
 }
