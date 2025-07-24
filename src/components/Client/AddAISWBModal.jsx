@@ -31,7 +31,8 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
     languageMode: 'english',
     answerVideoUrls: [],
     evaluationMode: 'auto',
-    evaluationType:''
+    evaluationType:'',
+    evaluationGuideline: ''
   };
 
   const [questions, setQuestions] = useState([initialQuestionState]);
@@ -41,34 +42,74 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
   const [showGeminiModal, setShowGeminiModal] = useState(false);
   const [currentGenerationType, setCurrentGenerationType] = useState(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(null);
+  const [defaultFramework, setDefaultFramework] = useState('');
+
+  
+  // Fetch default evaluation framework from backend
+  const fetchDefaultFramework = async () => {
+    try {
+      const token = Cookies.get('token');
+      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/aiswb/default-evaluation-framework', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setDefaultFramework(data.data.defaultFramework);
+          // Only set the default framework if we're not editing
+          if (!editingQuestion) {
+            setQuestions(prevQuestions => 
+              prevQuestions.map(q => ({
+                ...q,
+                evaluationGuideline: data.data.defaultFramework
+              }))
+            );
+          }
+        }
+      } else {
+        console.error('Failed to fetch default framework');
+      }
+    } catch (error) {
+      console.error('Error fetching default framework:', error);
+    }
+  };
 
   useEffect(() => {
-    if (editingQuestion) {
-      // Pre-fill the form with editing question data
-      const formattedQuestion = {
-        ...editingQuestion,
-        metadata: {
-          ...editingQuestion.metadata,
-          keywords: Array.isArray(editingQuestion.metadata.keywords) 
-            ? editingQuestion.metadata.keywords.join(', ')
-            : editingQuestion.metadata.keywords,
-          qualityParameters: {
-            ...editingQuestion.metadata.qualityParameters,
-            customParams: editingQuestion.metadata.qualityParameters.customParams || []
-          }
-        },
-        // Keep answerVideoUrls as array, convert to comma-separated string for display
-        answerVideoUrls: Array.isArray(editingQuestion.answerVideoUrls) 
-          ? editingQuestion.answerVideoUrls.join(', ')
-          : editingQuestion.answerVideoUrls || '',
-          
-        evaluationType: editingQuestion.evaluationType || ''
-      };
-      setQuestions([formattedQuestion]);
-    } else {
-      setQuestions([initialQuestionState]);
+    if (isOpen) {
+      if (editingQuestion) {
+        // Pre-fill the form with editing question data
+        const formattedQuestion = {
+          ...editingQuestion,
+          metadata: {
+            ...editingQuestion.metadata,
+            keywords: Array.isArray(editingQuestion.metadata.keywords) 
+              ? editingQuestion.metadata.keywords.join(', ')
+              : editingQuestion.metadata.keywords,
+            qualityParameters: {
+              ...editingQuestion.metadata.qualityParameters,
+              customParams: editingQuestion.metadata.qualityParameters.customParams || []
+            }
+          },
+          // Keep answerVideoUrls as array, convert to comma-separated string for display
+          answerVideoUrls: Array.isArray(editingQuestion.answerVideoUrls) 
+            ? editingQuestion.answerVideoUrls.join(', ')
+            : editingQuestion.answerVideoUrls || '',
+            
+          evaluationType: editingQuestion.evaluationType || '',
+          evaluationGuideline: editingQuestion.evaluationGuideline || ''
+        };
+        setQuestions([formattedQuestion]);
+      } else {
+        // For new questions, fetch default framework and set it
+        fetchDefaultFramework();
+      }
     }
-  }, [editingQuestion]);
+  }, [isOpen, editingQuestion]);
 
   const handleAddQuestion = () => {
     setQuestions([...questions, { ...initialQuestionState }]);
@@ -249,6 +290,9 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
             }
           },
           languageMode: q.languageMode,
+          evaluationMode: q.evaluationMode,
+          evaluationType: q.evaluationType,
+          evaluationGuideline: q.evaluationGuideline && q.evaluationGuideline.trim() ? q.evaluationGuideline.trim() : undefined,
           answerVideoUrls: videoUrls  // Send whatever user entered
         };
         console.log('Processed question data:', processedData);
@@ -549,6 +593,32 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
                     </select>
                   </div>
                 )}
+
+                {/* Evaluation Guideline */}
+                <div className="mb-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Evaluation Guideline
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => handleQuestionChange(index, 'evaluationGuideline', defaultFramework)}
+                      className="flex items-center px-2 py-1 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-sm"
+                    >
+                      <span>Reset to Default</span>
+                    </button>
+                  </div>
+                  <textarea
+                    value={question.evaluationGuideline}
+                    onChange={(e) => handleQuestionChange(index, 'evaluationGuideline', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    rows={8}
+                    placeholder="Enter custom evaluation criteria or modify the default framework above..."
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    The default evaluation framework is shown above. You can modify it or enter your own custom criteria.
+                  </p>
+                </div>
 
                 {/* Quality Parameters */}
                 <div className="mb-4">
