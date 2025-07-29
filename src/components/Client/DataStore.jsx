@@ -332,6 +332,7 @@ const DataStore = ({ type }) => {
     setAIGuidelinesSaving(true)
     try {
       const token = Cookies.get('usertoken')
+      console.log(aiGuidelinesForm)
       const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/aiguidelines/${bookId}`, {
         method: 'PUT',
         headers: {
@@ -341,7 +342,9 @@ const DataStore = ({ type }) => {
         body: JSON.stringify({
           message: aiGuidelinesForm.message,
           prompt: aiGuidelinesForm.prompt,
-          FAQs: aiGuidelinesForm.FAQs.filter(faq => faq.question.trim()),
+          FAQs: aiGuidelinesForm.FAQs
+            .filter(faq => faq.question.trim())
+            .map(faq => ({ question: faq.question })), // <-- Only send question
         }),
       })
       if (response.ok) {

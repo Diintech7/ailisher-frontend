@@ -1821,13 +1821,13 @@ const AIBooks = () => {
       }
 
       // First fetch the category mappings
-      const categoriesResponse = await fetch('https://aipbbackend-c5ed.onrender.com/api/books/category-mappings', {
+      const categoriesResponse = await fetch('https://aipbbackend-c5ed.onrender.com/api/books/categories', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
       const categoriesData = await categoriesResponse.json();
-      
+      console.log(categoriesData);
       if (categoriesData.success) {
         setCategoryMappings(categoriesData.mappings || {});
       } else {
