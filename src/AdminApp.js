@@ -11,6 +11,7 @@ import User from './components/Admin/User';
 import EvaluatorsManagement from './components/Admin/EvaluatorsManagement';
 import AiServiceManager from './components/Admin/AiServiceManager';
 import Configuration from './components/Admin/Configuration';
+import CreditAccount from './components/Admin/CreditAccount';
 // import UserManagement from './components/Admin/UserManagement';
 // import AiAgentsManagement from './components/Admin/AiAgentsManagement';
 // import ConversationsManagement from './components/Admin/ConversationsManagement';
@@ -102,6 +103,7 @@ const AdminApp = () => {
             <Route path="/users" element={<User/>} />
             <Route path="/evaluators" element={<EvaluatorsManagement />} />
             <Route path="/services" element={<AiServiceManager />} />
+            <Route path="/credit-account" element={<CreditAccount/>} />
             <Route path="/configuration/:clientId" element={<Configuration />} />
 
             {/* <Route path="/users" element={<UserManagement />} />

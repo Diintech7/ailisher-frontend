@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Users, User, MessageCircle, TicketCheck, DollarSign, Lightbulb, Bot, ClipboardCheck, Server } from 'lucide-react';
+import { Home, Users, User, MessageCircle, TicketCheck, DollarSign, Lightbulb, Bot, ClipboardCheck, Server, CreditCard } from 'lucide-react';
 
 const AdminMenu = ({ isExpanded, currentPath, handleNavigate }) => {
   const menuItems = [
@@ -13,6 +13,7 @@ const AdminMenu = ({ isExpanded, currentPath, handleNavigate }) => {
     { path: '/admin/payments', name: 'Payments', icon: <DollarSign size={20} /> },
     { path: '/admin/tips', name: 'Tips', icon: <Lightbulb size={20} /> },
     { path: '/admin/services', name: 'Services', icon: <Server size={20} /> },
+    { path: '/admin/credit-account', name: 'Credit Account', icon: <CreditCard size={20} /> }
   ];
 
   return (

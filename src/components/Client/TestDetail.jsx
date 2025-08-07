@@ -24,7 +24,7 @@ export default function TestDetail() {
     const fetchTestDetails = async () => {
         try {
            setLoading(true);
-            const response = await axios.get(`http://localhost:5000/api/${type}test-questions/${testId}`, {
+            const response = await axios.get(`https://aipbbackend-c5ed.onrender.com/api/${type}test-questions/${testId}`, {
             headers: { Authorization: `Bearer ${token}` }
            }) 
            console.log(response);
@@ -33,7 +33,7 @@ export default function TestDetail() {
            setTestDetails(response.data.questions);
             
             // Get test information
-            const testResponse = await axios.get(`http://localhost:5000/api/${type}tests/${testId}`, {
+            const testResponse = await axios.get(`https://aipbbackend-c5ed.onrender.com/api/${type}tests/${testId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setTestInfo(testResponse.data.test);
