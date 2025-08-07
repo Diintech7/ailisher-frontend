@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Bot, BookOpen, Book, ClipboardList, Video, Settings } from 'lucide-react';
+import { Home, Bot, BookOpen, Book, ClipboardList, Video, Settings, FileText } from 'lucide-react';
 
 const UserMenu = ({ isExpanded, currentPath, handleNavigate }) => {
   const menuItems = [
@@ -7,7 +7,7 @@ const UserMenu = ({ isExpanded, currentPath, handleNavigate }) => {
     { path: '/ai', name: 'AI', icon: <Bot size={20} /> },
     { path: '/my-library', name: 'My Library', icon: <BookOpen size={20} /> },
     { path: '/ai-books', name: 'AI Books', icon: <Book size={20} /> },
-    { path: '/tests', name: 'Tests', icon: <ClipboardList size={20} /> },
+    
     { path: '/lectures', name: 'Lectures', icon: <Video size={20} /> },
     { path: '/settings', name: 'Settings', icon: <Settings size={20} /> },
   ];
