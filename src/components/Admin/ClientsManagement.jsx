@@ -140,7 +140,7 @@ const ClientManagement = () => {
                   document.cookie = "user=${encodeURIComponent(
                     JSON.stringify(clientData)
                   )}; path=/; max-age=3600";
-                  window.location.href = 'http://localhost:3000/dashboard';
+                  window.location.href = 'https://www.ailisher.com/dashboard';
                 </script>
               </body>
             </html>
