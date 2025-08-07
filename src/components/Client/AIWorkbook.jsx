@@ -24,7 +24,7 @@ const CATEGORY_MAPPINGS = {
 };
 
 // Workbook Item Component
-const WorkbookItem = ({ workbook, onClick, onEdit }) => {
+const WorkbookItem = ({ workbook, onClick, onEdit, onUpdateWorkbook }) => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
     const menuRef = useRef(null);
@@ -58,14 +58,30 @@ const WorkbookItem = ({ workbook, onClick, onEdit }) => {
       e.stopPropagation();
       try {
         const token = Cookies.get('usertoken');
-        const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/workbooks/${workbook._id}/highlight`, {
-          method: 'PATCH',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        console.log(token)
+        const method = workbook.isHighlighted ? 'DELETE' : 'POST';
+        const options = {
+          method,
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        };
+        if (method === 'POST') {
+          options.body = JSON.stringify({
+            note: 'Highlighted by user',
+            order: 0
+          });
+        }
+        console.log(options)
+        const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/workbooks/${workbook._id}/highlight`, options);
         const data = await response.json();
+        console.log(data)
         if (data.success) {
           toast.success(data.message || 'Highlight status updated');
-          if (data.workbook) onEdit(data.workbook);
+          if (data.workbook && onUpdateWorkbook) {
+            onUpdateWorkbook(data.workbook);
+          }
         } else {
           toast.error(data.message || 'Failed to update highlight');
         }
@@ -77,14 +93,28 @@ const WorkbookItem = ({ workbook, onClick, onEdit }) => {
       e.stopPropagation();
       try {
         const token = Cookies.get('usertoken');
-        const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/workbooks/${workbook._id}/trend`, {
-          method: 'PATCH',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        console.log(token)
+        const method = workbook.isTrending ? 'DELETE' : 'POST';
+        const options = {
+          method,
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        };
+        if (method === 'POST') {
+          options.body = JSON.stringify({
+            score: 1,
+            endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
+          });
+        }
+        const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/workbooks/${workbook._id}/trending`, options);
         const data = await response.json();
         if (data.success) {
           toast.success(data.message || 'Trending status updated');
-          if (data.workbook) onEdit(data.workbook);
+          if (data.workbook && onUpdateWorkbook) {
+            onUpdateWorkbook(data.workbook);
+          }
         } else {
           toast.error(data.message || 'Failed to update trending');
         }
@@ -1497,6 +1527,7 @@ const AIWorkbook = () => {
                     workbook={workbook}
                     onClick={() => handleWorkbookClick(workbook._id)}
                     onEdit={handleEditWorkbook}
+                    onUpdateWorkbook={handleWorkbookEdited}
                   />
                 ))}
               </div>
