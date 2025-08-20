@@ -343,7 +343,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
   const refreshCategories = async () => {
     try {
       const token = Cookies.get("usertoken");
-      const res = await fetch("http://localhost:5000/api/categories", {
+      const res = await fetch("https://aipbbackend-c5ed.onrender.com/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await res.json();
@@ -368,7 +368,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
     try {
       setCreatingCategory(true);
       const token = Cookies.get("usertoken");
-      const res = await fetch("http://localhost:5000/api/categories", {
+      const res = await fetch("https://aipbbackend-c5ed.onrender.com/api/categories", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -405,7 +405,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
       setCreatingSubcategory(true);
       const token = Cookies.get("usertoken");
       // Need category id; fetch categories and find the current mainCategory
-      const listRes = await fetch("http://localhost:5000/api/categories", {
+      const listRes = await fetch("https://aipbbackend-c5ed.onrender.com/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await listRes.json();
@@ -417,7 +417,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
         return;
       }
       const res = await fetch(
-        `http://localhost:5000/api/categories/${currentCat._id}/subcategories`,
+        `https://aipbbackend-c5ed.onrender.com/api/categories/${currentCat._id}/subcategories`,
         {
           method: "POST",
           headers: {
@@ -1621,7 +1621,7 @@ const AIWorkbook = () => {
       }
            // Fetch categories from backend
            const categoriesResponse = await fetch(
-            "http://localhost:5000/api/categories",
+            "https://aipbbackend-c5ed.onrender.com/api/categories",
             {
               headers: {
                 Authorization: `Bearer ${token}`,
