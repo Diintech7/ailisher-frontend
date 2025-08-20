@@ -15,7 +15,9 @@ const AITests = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingTest, setDeletingTest] = useState(null);
   const token = Cookies.get('usertoken');
-
+  const [categoryMappings, setCategoryMappings] = useState({});
+  const [filters, setFilters] = useState({ category: '', subcategory: '' });
+  const [selectedSubCategories, setSelectedSubCategories] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,11 +27,33 @@ const AITests = () => {
   const fetchTests = async () => {
     setLoading(true);
     try {
+      // Fetch categories from backend
+      const categoriesResponse = await fetch(
+        "http://localhost:5000/api/categories",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const categoriesData = await categoriesResponse.json();
+
+      // Transform to expected format
+      const transformedCategories = {};
+      categoriesData.forEach((category) => {
+        if (category.name && category.subcategories) {
+          transformedCategories[category.name] = category.subcategories.map(
+            (sub) => sub.name
+          );
+        }
+      });
+
+      setCategoryMappings(transformedCategories);
       const [objectiveResponse, subjectiveResponse] = await Promise.all([
-        axios.get('https://aipbbackend-c5ed.onrender.com/api/objectivetests', {
+        axios.get('http://localhost:5000/api/objectivetests', {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        axios.get('https://aipbbackend-c5ed.onrender.com/api/subjectivetests', {
+        axios.get('http://localhost:5000/api/subjectivetests', {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -47,8 +71,8 @@ const AITests = () => {
   const handleCreateTest = async (testData) => {
     try {
       const endpoint = activeTab === 'objective' 
-        ? 'https://aipbbackend-c5ed.onrender.com/api/objectivetests'
-        : 'https://aipbbackend-c5ed.onrender.com/api/subjectivetests';
+        ? 'http://localhost:5000/api/objectivetests'
+        : 'http://localhost:5000/api/subjectivetests';
 
       const response = await axios.post(endpoint, testData, {
         headers: { Authorization: `Bearer ${token}` }
@@ -66,8 +90,8 @@ const AITests = () => {
   const handleUpdateTest = async (testData) => {
     try {
       const endpoint = activeTab === 'objective' 
-        ? `https://aipbbackend-c5ed.onrender.com/api/objectivetests/${editingTest._id}`
-        : `https://aipbbackend-c5ed.onrender.com/api/subjectivetests/${editingTest._id}`;
+        ? `http://localhost:5000/api/objectivetests/${editingTest._id}`
+        : `http://localhost:5000/api/subjectivetests/${editingTest._id}`;
 
       const response = await axios.put(endpoint, testData, {
         headers: { Authorization: `Bearer ${token}` }
@@ -88,8 +112,8 @@ const AITests = () => {
 
     try {
       const endpoint = activeTab === 'objective' 
-        ? `https://aipbbackend-c5ed.onrender.com/api/objectivetests/${deletingTest._id}`
-        : `https://aipbbackend-c5ed.onrender.com/api/subjectivetests/${deletingTest._id}`;
+        ? `http://localhost:5000/api/objectivetests/${deletingTest._id}`
+        : `http://localhost:5000/api/subjectivetests/${deletingTest._id}`;
 
       await axios.delete(endpoint, {
         headers: { Authorization: `Bearer ${token}` }
@@ -232,7 +256,53 @@ const AITests = () => {
     </div>
   );
 
+  const getValidSubCategories = () => {
+    if (!filters.category) return [];
+    return categoryMappings[filters.category] || [];
+  };
 
+  const displayedTests = activeTab === 'objective' ? objectiveTests : subjectiveTests;
+  const filteredTests = displayedTests.filter((t) => {
+    if (filters.category && t.category !== filters.category) return false;
+    if (filters.subcategory && t.subcategory !== filters.subcategory) return false;
+    return true;
+  });
+
+  // Group tests by category and subcategory (similar to AIWorkbook)
+  const groupedTests = filteredTests.reduce((acc, test) => {
+    const mainCategory = test.category || 'Uncategorized';
+    const subCategory = test.subcategory || 'Other';
+    if (!acc[mainCategory]) acc[mainCategory] = {};
+    if (!acc[mainCategory][subCategory]) acc[mainCategory][subCategory] = [];
+    acc[mainCategory][subCategory].push(test);
+    return acc;
+  }, {});
+
+  const getSubCategoriesFor = (mainCategory) => {
+    const standard = categoryMappings[mainCategory] || [];
+    const present = Array.from(new Set(
+      filteredTests
+        .filter((t) => (t.category || 'Uncategorized') === mainCategory)
+        .map((t) => t.subcategory || 'Other')
+    ));
+    const combined = Array.from(new Set([...(standard.length ? standard : []), ...present]));
+    return combined.length ? combined : ['Other'];
+  };
+
+  const toggleSubCategory = (mainCategory, subCategory) => {
+    setSelectedSubCategories((prev) => ({
+      ...prev,
+      [mainCategory]: prev[mainCategory] === subCategory ? null : subCategory,
+    }));
+  };
+
+  const getTestsToDisplay = (mainCategory, subCategories) => {
+    const selected = selectedSubCategories[mainCategory];
+    if (!selected) {
+      return Object.values(subCategories).flat();
+    }
+    return subCategories[selected] || [];
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -278,7 +348,7 @@ const AITests = () => {
               {activeTab === 'objective' ? 'Objective' : 'Subjective'} Tests
             </h2>
             <p className="text-gray-600">
-              {activeTab === 'objective' ? objectiveTests.length : subjectiveTests.length} tests available
+              {(activeTab === 'objective' ? filteredTests.length : filteredTests.length)} tests available
             </p>
           </div>
           <button
@@ -290,6 +360,8 @@ const AITests = () => {
           </button>
         </div>
 
+      
+
         {/* Loading State */}
         {loading && (
           <div className="flex justify-center items-center py-12">
@@ -297,22 +369,68 @@ const AITests = () => {
           </div>
         )}
 
-        {/* Tests Grid */}
+        {/* Grouped Tests (by Category/Subcategory) */}
         {!loading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {activeTab === 'objective' 
-              ? objectiveTests.map(test => renderTestCard(test, 'objective'))
-              : subjectiveTests.map(test => renderTestCard(test, 'subjective'))
-            }
+          <div className="space-y-10">
+            {Object.keys(groupedTests).length === 0 ? (
+              <div />
+            ) : (
+              Object.keys(groupedTests).sort().map((mainCategory) => {
+                const subCategories = groupedTests[mainCategory];
+                const availableSubs = getSubCategoriesFor(mainCategory);
+                const testsToShow = getTestsToDisplay(mainCategory, subCategories);
+                return (
+                  <section key={mainCategory}>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-2xl font-bold text-gray-900">{mainCategory}</h3>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {/* All chip */}
+                      <button
+                        onClick={() => setSelectedSubCategories((prev) => ({ ...prev, [mainCategory]: null }))}
+                        className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+                          !selectedSubCategories[mainCategory]
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        All
+                      </button>
+                      {availableSubs.map((sub) => {
+                        const isActive = selectedSubCategories[mainCategory] === sub;
+                        return (
+                          <button
+                            key={sub}
+                            onClick={() => toggleSubCategory(mainCategory, sub)}
+                            className={`px-3 py-1 rounded-full text-sm border transition-colors ${
+                              isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {sub}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {testsToShow.length === 0 ? (
+                      <div className="text-sm text-gray-500">No tests in this category.</div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {testsToShow.map((test) => renderTestCard(test, activeTab))}
+                      </div>
+                    )}
+                  </section>
+                );
+              })
+            )}
           </div>
         )}
 
         {/* Empty State */}
-        {!loading && (activeTab === 'objective' ? objectiveTests.length === 0 : subjectiveTests.length === 0) && (
+        {!loading && filteredTests.length === 0 && (
           <div className="text-center py-12">
             <FileText size={48} className="mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No {activeTab} tests yet</h3>
-            <p className="text-gray-600 mb-6">Create your first {activeTab} test to get started</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No {activeTab} tests found</h3>
+            <p className="text-gray-600 mb-6">Try adjusting filters or create a new test</p>
             <button
               onClick={openCreateModal}
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
@@ -335,6 +453,8 @@ const AITests = () => {
           onSubmit={editingTest ? handleUpdateTest : handleCreateTest}
           test={editingTest}
           type={activeTab}
+          categoryMappings={categoryMappings}
+          onCategoriesUpdated={setCategoryMappings}
         />
       )}
 
@@ -356,7 +476,7 @@ const AITests = () => {
 };
 
 // Test Modal Component
-const TestModal = ({ isOpen, onClose, onSubmit, test, type }) => {
+const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {}, onCategoriesUpdated }) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -374,6 +494,10 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type }) => {
   const [imageKey, setImageKey] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef(null);
+  const [creatingCategory, setCreatingCategory] = useState(false);
+  const [creatingSubcategory, setCreatingSubcategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newSubcategoryName, setNewSubcategoryName] = useState('');
 
   const token = Cookies.get('usertoken');
 
@@ -411,6 +535,95 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type }) => {
     // Reset drag state
     setIsDragOver(false);
   }, [test]);
+
+  const refreshCategories = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/categories", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const list = await res.json();
+      if (!Array.isArray(list)) return;
+      const mappings = {};
+      list.forEach((cat) => {
+        mappings[cat.name] = (cat.subcategories || []).map((sc) => sc.name);
+        if (mappings[cat.name].length === 0) mappings[cat.name] = ['Other'];
+      });
+      if (onCategoriesUpdated) onCategoriesUpdated(mappings);
+    } catch (e) {
+      console.error('Failed to refresh categories', e);
+    }
+  };
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) {
+      toast.error('Category name is required');
+      return;
+    }
+    try {
+      setCreatingCategory(true);
+      const res = await fetch("http://localhost:5000/api/categories", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name: newCategoryName.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data?.error || 'Failed to add category');
+      } else {
+        toast.success('Category created');
+        await refreshCategories();
+        setFormData((prev) => ({ ...prev, category: data.name, subcategory: 'Other' }));
+        setNewCategoryName('');
+      }
+    } catch (e) {
+      toast.error('Failed to create category');
+    } finally {
+      setCreatingCategory(false);
+    }
+  };
+
+  const handleCreateSubcategory = async () => {
+    if (!newSubcategoryName.trim()) {
+      toast.error('Subcategory name is required');
+      return;
+    }
+    try {
+      setCreatingSubcategory(true);
+      const listRes = await fetch("http://localhost:5000/api/categories", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const list = await listRes.json();
+      const currentCat = Array.isArray(list) ? list.find((c) => c.name === formData.category) : null;
+      if (!currentCat) {
+        toast.error('Select a valid category first');
+        return;
+      }
+      const res = await fetch(`http://localhost:5000/api/categories/${currentCat._id}/subcategories`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name: newSubcategoryName.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data?.error || 'Failed to add subcategory');
+      } else {
+        toast.success('Subcategory created');
+        await refreshCategories();
+        setFormData((prev) => ({ ...prev, subcategory: newSubcategoryName.trim() }));
+        setNewSubcategoryName('');
+      }
+    } catch (e) {
+      toast.error('Failed to create subcategory');
+    } finally {
+      setCreatingSubcategory(false);
+    }
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -474,7 +687,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type }) => {
       
       // Get presigned URL for upload
       const response = await axios.post(
-        `https://aipbbackend-c5ed.onrender.com/api/${type === 'objective' ? 'objectivetests' : 'subjectivetests'}/upload-image`,
+        `http://localhost:5000/api/${type === 'objective' ? 'objectivetests' : 'subjectivetests'}/upload-image`,
         {
           fileName: file.name,
           contentType: file.type
@@ -583,26 +796,81 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type }) => {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                <input
-                  type="text"
-                  value={formData.category}
-                  onChange={(e) => setFormData({...formData, category: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Mathematics"
-                />
+            <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
+                  <select
+                    value={formData.category}
+                    onChange={(e) => {
+                      const newCat = e.target.value;
+                      const firstSub = (categoryMappings[newCat] || [])[0] || '';
+                      setFormData({ ...formData, category: newCat, subcategory: firstSub });
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select category</option>
+                    {Object.keys(categoryMappings).map((cat) => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Subcategory</label>
+                  <select
+                    value={formData.subcategory}
+                    onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
+                    disabled={!formData.category}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                  >
+                    <option value="">Select subcategory</option>
+                    {(categoryMappings[formData.category] || []).map((sub) => (
+                      <option key={sub} value={sub}>{sub}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Subcategory</label>
-                <input
-                  type="text"
-                  value={formData.subcategory}
-                  onChange={(e) => setFormData({...formData, subcategory: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Algebra"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-end gap-2">
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">New Category</label>
+                    <input
+                      type="text"
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      placeholder="Enter new category"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCreateCategory}
+                    disabled={creatingCategory}
+                    className="px-3 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors disabled:opacity-50"
+                  >
+                    {creatingCategory ? 'Adding...' : 'Add'}
+                  </button>
+                </div>
+                <div className="flex items-end gap-2">
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">New Subcategory</label>
+                    <input
+                      type="text"
+                      value={newSubcategoryName}
+                      onChange={(e) => setNewSubcategoryName(e.target.value)}
+                      placeholder="Enter new subcategory"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCreateSubcategory}
+                    disabled={creatingSubcategory || !formData.category}
+                    className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                  >
+                    {creatingSubcategory ? 'Adding...' : 'Add'}
+                  </button>
+                </div>
               </div>
             </div>
 
