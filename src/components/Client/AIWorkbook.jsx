@@ -290,7 +290,7 @@ const ImageUploadPreview = ({ imagePreview, onRemove }) => {
 };
 
 // Replace AddWorkbookModal with a new version that matches the backend model and S3 upload logic
-const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser }) => {
+const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMappings, onCategoriesUpdated }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -310,16 +310,197 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser }) => {
   const [imagePreview, setImagePreview] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
+  const [creatingCategory, setCreatingCategory] = useState(false);
+  const [creatingSubcategory, setCreatingSubcategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newSubcategoryName, setNewSubcategoryName] = useState("");
+
+  const languages = [
+    "Hindi",
+    "English",
+    "Bengali",
+    "Telugu",
+    "Marathi",
+    "Tamil",
+    "Gujarati",
+    "Urdu",
+    "Kannada",
+    "Odia",
+    "Malayalam",
+    "Punjabi",
+    "Assamese",
+    "Other",
+  ];
+
+  const [formErrors, setFormErrors] = useState({
+    rating: "",
+    ratingCount: "",
+    summary: "",
+  });
 
   if (!isOpen) return null;
 
+  const refreshCategories = async () => {
+    try {
+      const token = Cookies.get("usertoken");
+      const res = await fetch("http://localhost:5000/api/categories", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const list = await res.json();
+      if (!Array.isArray(list)) return;
+      // Convert list to mappings
+      const mappings = {};
+      list.forEach((cat) => {
+        mappings[cat.name] = (cat.subcategories || []).map((sc) => sc.name);
+        if (mappings[cat.name].length === 0) mappings[cat.name] = ["Other"];
+      });
+      if (onCategoriesUpdated) onCategoriesUpdated(mappings);
+    } catch (e) {
+      console.error("Failed to refresh categories", e);
+    }
+  };
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) {
+      toast.error("Category name is required");
+      return;
+    }
+    try {
+      setCreatingCategory(true);
+      const token = Cookies.get("usertoken");
+      const res = await fetch("http://localhost:5000/api/categories", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name: newCategoryName.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data?.error || "Failed to add category");
+      } else {
+        toast.success("Category created");
+        await refreshCategories();
+        setFormData((prev) => ({
+          ...prev,
+          mainCategory: data.name,
+          subCategory: "Other",
+        }));
+        setNewCategoryName("");
+      }
+    } catch (e) {
+      toast.error("Failed to create category");
+    } finally {
+      setCreatingCategory(false);
+    }
+  };
+
+  const handleCreateSubcategory = async () => {
+    if (!newSubcategoryName.trim()) {
+      toast.error("Subcategory name is required");
+      return;
+    }
+    try {
+      setCreatingSubcategory(true);
+      const token = Cookies.get("usertoken");
+      // Need category id; fetch categories and find the current mainCategory
+      const listRes = await fetch("http://localhost:5000/api/categories", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const list = await listRes.json();
+      const currentCat = Array.isArray(list)
+        ? list.find((c) => c.name === formData.mainCategory)
+        : null;
+      if (!currentCat) {
+        toast.error("Select a valid main category first");
+        return;
+      }
+      const res = await fetch(
+        `http://localhost:5000/api/categories/${currentCat._id}/subcategories`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ name: newSubcategoryName.trim() }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data?.error || "Failed to add subcategory");
+      } else {
+        toast.success("Subcategory created");
+        await refreshCategories();
+        setFormData((prev) => ({
+          ...prev,
+          subCategory: newSubcategoryName.trim(),
+        }));
+        setNewSubcategoryName("");
+      }
+    } catch (e) {
+      toast.error("Failed to create subcategory");
+    } finally {
+      setCreatingSubcategory(false);
+    }
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    if (
+      formData.rating &&
+      (isNaN(formData.rating) || formData.rating < 0 || formData.rating > 5)
+    ) {
+      errors.rating = "Rating must be between 0 and 5";
+    }
+    if (
+      formData.ratingCount &&
+      (isNaN(formData.ratingCount) || formData.ratingCount < 0)
+    ) {
+      errors.ratingCount = "Rating count must be a non-negative number";
+    }
+    if (formData.summary && formData.summary.length > 1000) {
+      errors.summary = "Summary cannot exceed 1000 characters";
+    }
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-      ...(name === 'mainCategory' && { subCategory: CATEGORY_MAPPINGS[value]?.[0] || 'Other', customSubCategory: '' })
-    }));
+    const { name, value, type, checked } = e.target;
+
+    // Special handling for numeric inputs
+    if (
+      name === "rating" ||
+      name === "ratingCount" ||
+      name === "categoryOrder"
+    ) {
+      const numValue = value === "" ? "" : Number(value);
+      setFormData((prev) => ({
+        ...prev,
+        [name]: numValue,
+      }));
+    } else if (name === "conversations" || name === "users") {
+      // Handle arrays for conversations and users
+      const arrayValue = value
+        .split(",")
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0);
+      setFormData((prev) => ({
+        ...prev,
+        [name]: arrayValue,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+        ...(name === "mainCategory" && {
+          subCategory: categoryMappings[value]?.[0] || "Other",
+          customSubCategory: "",
+        }),
+      }));
+    }
   };
 
   const handleImageChange = (e) => {
@@ -491,22 +672,120 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser }) => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-gray-700 text-sm font-medium mb-2">Main Category *</label>
-                <select name="mainCategory" value={formData.mainCategory} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500" required>
-                  {Object.keys(CATEGORY_MAPPINGS).map(category => (<option key={category} value={category}>{category}</option>))}
-                </select>
+                <label className="block text-gray-700 text-sm font-medium mb-2">
+                  Main Category *
+                </label>
+                <div className="flex items-center gap-2">
+                  <select
+                    name="mainCategory"
+                    value={formData.mainCategory}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    required
+                  >
+                    {Object.keys(categoryMappings).map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="px-2 py-2 bg-indigo-600 text-white rounded-md"
+                    onClick={() => setCreatingCategory((prev) => !prev)}
+                  >
+                    New
+                  </button>
+                </div>
+                {creatingCategory && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
+                      placeholder="Category name"
+                    />
+                    <button
+                      type="button"
+                      className="px-3 py-2 bg-green-600 text-white rounded-md"
+                      onClick={handleCreateCategory}
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      className="px-3 py-2 bg-gray-200 text-gray-700 rounded-md"
+                      onClick={() => {
+                        setCreatingCategory(false);
+                        setNewCategoryName("");
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
               </div>
               <div>
-                <label className="block text-gray-700 text-sm font-medium mb-2">Sub Category *</label>
-                <select name="subCategory" value={formData.subCategory} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500" required>
-                  {getValidSubCategories().map(subCategory => (<option key={subCategory} value={subCategory}>{subCategory}</option>))}
-                </select>
+                <label className="block text-gray-700 text-sm font-medium mb-2">
+                  Sub Category *
+                </label>
+                <div className="flex items-center gap-2">
+                  <select
+                    name="subCategory"
+                    value={formData.subCategory}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    required
+                  >
+                    {(categoryMappings[formData.mainCategory] || ["Other"]).map(
+                      (subCategory) => (
+                        <option key={subCategory} value={subCategory}>
+                          {subCategory}
+                        </option>
+                      )
+                    )}
+                  </select>
+                  <button
+                    type="button"
+                    className="px-2 py-2 bg-indigo-600 text-white rounded-md"
+                    onClick={() => setCreatingSubcategory((prev) => !prev)}
+                    disabled={!formData.mainCategory}
+                  >
+                    New
+                  </button>
+                </div>
+                {creatingSubcategory && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={newSubcategoryName}
+                      onChange={(e) => setNewSubcategoryName(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
+                      placeholder="Subcategory name"
+                    />
+                    <button
+                      type="button"
+                      className="px-3 py-2 bg-green-600 text-white rounded-md"
+                      onClick={handleCreateSubcategory}
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      className="px-3 py-2 bg-gray-200 text-gray-700 rounded-md"
+                      onClick={() => {
+                        setCreatingSubcategory(false);
+                        setNewSubcategoryName("");
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-medium mb-2">Custom Subcategory (if Other)</label>
-              <input type="text" name="customSubCategory" value={formData.customSubCategory} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500" maxLength={50} placeholder="Enter custom subcategory if needed" />
-            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
                 <label className="block text-gray-700 text-sm font-medium mb-2">Exam</label>
@@ -1309,6 +1588,8 @@ const AIWorkbook = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [categoryMappings, setCategoryMappings] = useState({});
+  const [selectedSubCategories, setSelectedSubCategories] = useState({});
   const [currentUser, setCurrentUser] = useState(null);
   const [editingWorkbook, setEditingWorkbook] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -1320,7 +1601,13 @@ const AIWorkbook = () => {
     author: '',
     tag: ''
   });
-  const [selectedSubCategories, setSelectedSubCategories] = useState({});
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 500,
+    total: 0,
+  });
+  const [categoryOrder, setCategoryOrder] = useState("newest");
+
   const navigate = useNavigate();
 
   const fetchWorkbooks = async () => {
@@ -1332,7 +1619,38 @@ const AIWorkbook = () => {
         navigate('/login');
         return;
       }
-      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/workbooks', {
+           // Fetch categories from backend
+           const categoriesResponse = await fetch(
+            "http://localhost:5000/api/categories",
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          const categoriesData = await categoriesResponse.json();
+    
+          // Transform to expected format
+          const transformedCategories = {};
+          categoriesData.forEach((category) => {
+            if (category.name && category.subcategories) {
+              transformedCategories[category.name] = category.subcategories.map(
+                (sub) => sub.name
+              );
+            }
+          });
+    
+          setCategoryMappings(transformedCategories);
+    
+          // Build query parameters
+          const queryParams = new URLSearchParams({
+            page: pagination.page,
+            limit: pagination.limit,
+            ...filters,
+          });
+    
+
+          const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/workbooks', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -1439,6 +1757,79 @@ const AIWorkbook = () => {
   const authors = [...new Set(workbooks.map(wb => wb.author))].sort();
   const publishers = [...new Set(workbooks.map(wb => wb.publisher))].sort();
 
+    // Add pagination controls component
+    const PaginationControls = () => {
+      const totalPages = Math.ceil(pagination.total / pagination.limit);
+  
+      return (
+        <div className="flex justify-between items-center mt-8">
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600">Items per page:</label>
+            <select
+              value={pagination.limit}
+              onChange={(e) =>
+                setPagination((prev) => ({
+                  ...prev,
+                  limit: parseInt(e.target.value),
+                  page: 1,
+                }))
+              }
+              className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+            >
+              <option value="500">500</option>
+              <option value="600">600</option>
+              <option value="700">700</option>
+              <option value="800">800</option>
+            </select>
+          </div>
+  
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() =>
+                setPagination((prev) => ({
+                  ...prev,
+                  page: Math.max(1, prev.page - 1),
+                }))
+              }
+              disabled={pagination.page === 1}
+              className="px-3 py-1 border border-gray-300 rounded-md disabled:opacity-50"
+            >
+              Previous
+            </button>
+  
+            <span className="text-sm text-gray-600">
+              Page {pagination.page} of {totalPages}
+            </span>
+  
+            <button
+              onClick={() =>
+                setPagination((prev) => ({
+                  ...prev,
+                  page: Math.min(totalPages, prev.page + 1),
+                }))
+              }
+              disabled={pagination.page === totalPages}
+              className="px-3 py-1 border border-gray-300 rounded-md disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+  
+          {/* <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600">Sort by:</label>
+            <select
+              value={categoryOrder}
+              onChange={(e) => setCategoryOrder(e.target.value)}
+              className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+            >
+              <option value="newest">Newest First</option>
+              <option value="oldest">Oldest First</option>
+            </select>
+          </div> */}
+        </div>
+      );
+    };
+
   // Add filter panel and grouped view
   return (
     <div className="container mx-auto px-4 py-8">
@@ -1459,7 +1850,7 @@ const AIWorkbook = () => {
         authors={authors}
         publishers={publishers}
         allWorkbooks={workbooks}
-        categoryMappings={CATEGORY_MAPPINGS}
+        categoryMappings={categoryMappings}
       />
       {loading ? (
         <div className="flex justify-center items-center h-64">
@@ -1540,6 +1931,8 @@ const AIWorkbook = () => {
         onClose={() => setShowAddModal(false)}
         onAdd={handleWorkbookAdded}
         currentUser={currentUser}
+        categoryMappings={categoryMappings}
+        onCategoriesUpdated={setCategoryMappings}
       />
       {showEditModal && editingWorkbook && (
         <EditBookModal
@@ -1548,7 +1941,7 @@ const AIWorkbook = () => {
           onEdit={handleWorkbookEdited}
           book={editingWorkbook}
           currentUser={currentUser}
-          categoryMappings={CATEGORY_MAPPINGS}
+          categoryMappings={categoryMappings}
         />
       )}
     </div>
