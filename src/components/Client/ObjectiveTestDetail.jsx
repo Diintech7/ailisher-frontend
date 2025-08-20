@@ -390,33 +390,7 @@ export default function ObjectiveTestDetail() {
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="flex justify-end">
-                  <button
-                    className="bg-blue-600 text-white px-4 py-2 mb-2 rounded-md hover:bg-blue-700 transition-colors flex items-center"
-                    onClick={() => {
-                      setEditingQuestion(null);
-                      setFormData({
-                        question: "",
-                        options: ["", "", "", ""],
-                        correctAnswer: 0,
-                        difficulty: activeLevel,
-                        estimatedTime: 1,
-                        positiveMarks: 1,
-                        negativeMarks: 0,
-                        solution: {
-                          type: "text",
-                          text: "",
-                          video: { url: "", title: "", description: "", duration: 0 },
-                          image: { url: "", caption: "" },
-                        },
-                      });
-                      setShowQuestionModal(true);
-                    }}
-                  >
-                    <Plus size={16} className="mr-2" />
-                    Add Question
-                  </button>
-                </div>
+                
                 {getLevelQuestions(activeLevel).map((question, index) => (
                   <div key={question._id} className="border border-gray-200 rounded-lg p-6">
                     <div className="flex items-start space-x-4">
@@ -492,6 +466,33 @@ export default function ObjectiveTestDetail() {
                     </div>
                   </div>
                 ))}
+                <div className="flex justify-end">
+                  <button
+                    className="bg-blue-600 text-white px-4 py-2 mb-2 rounded-md hover:bg-blue-700 transition-colors flex items-center"
+                    onClick={() => {
+                      setEditingQuestion(null);
+                      setFormData({
+                        question: "",
+                        options: ["", "", "", ""],
+                        correctAnswer: 0,
+                        difficulty: activeLevel,
+                        estimatedTime: 1,
+                        positiveMarks: 1,
+                        negativeMarks: 0,
+                        solution: {
+                          type: "text",
+                          text: "",
+                          video: { url: "", title: "", description: "", duration: 0 },
+                          image: { url: "", caption: "" },
+                        },
+                      });
+                      setShowQuestionModal(true);
+                    }}
+                  >
+                    <Plus size={16} className="mr-2" />
+                    Add Question
+                  </button>
+                </div>
               </div>
             )}
           </div>
