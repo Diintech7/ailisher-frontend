@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Edit, Trash2, Eye, Clock, Star, TrendingUp, BookOpen, FileText, X, ArrowLeft, Play, Users, Calendar } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Clock, Star, TrendingUp, BookOpen, FileText, X, ArrowLeft, Play, Users, Calendar, ToggleRight } from 'lucide-react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { toast } from 'react-toastify';
@@ -18,6 +18,7 @@ const AITests = () => {
   const [categoryMappings, setCategoryMappings] = useState({});
   const [filters, setFilters] = useState({ category: '', subcategory: '' });
   const [selectedSubCategories, setSelectedSubCategories] = useState({});
+  const [openMenuId, setOpenMenuId] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -151,72 +152,93 @@ const AITests = () => {
   };
 
   const renderTestCard = (test, type) => (
-    <div 
-      key={test._id} 
-      className="bg-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 overflow-hidden cursor-pointer group"
-      onClick={() => showTestModal(test,type)}
-    >
-      {/* Card Header with Badges */}
-      <div className="relative">
-        {/* Badges */}
-        <div className="absolute top-2 left-2 flex gap-2 z-10">
-          {test.isTrending && (
-            <span className="bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center">
-              <TrendingUp size={12} className="mr-1" />
-              Trending
-            </span>
-          )}
+    <div key={test._id} className="flex flex-col">
+      <div
+        onClick={() => showTestModal(test, type)}
+          className={`p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full border border-gray-100 relative ${test.isEnabled === true ? 'bg-white' : 'bg-gray-400'}`}
+      >
+        {/* Status indicators and menu (top-right) */}
+        <div
+          className="absolute top-2 right-2 flex items-center gap-1 z-10"
+          data-menu-root
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
           {test.isHighlighted && (
-            <span className="bg-yellow-500 text-white px-2 py-1 rounded-full text-xs font-medium flex items-center">
-              <Star size={12} className="mr-1" />
-              Featured
-            </span>
+            <div className="bg-yellow-100 text-yellow-800 p-1 rounded-full">
+              <Star size={12} />
+            </div>
           )}
-        </div>
-
-        {/* Action Buttons */}
-        <div className="absolute top-2 right-2 flex gap-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <button
-            onClick={(e) => openEditModal(test, e)}
-            className="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition-colors shadow-lg"
-            title="Edit test"
-          >
-            <Edit size={16} />
-          </button>
-          <button
-            onClick={(e) => openDeleteModal(test, e)}
-            className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors shadow-lg"
-            title="Delete test"
-          >
-            <Trash2 size={16} />
-          </button>
+          {test.isTrending && (
+            <div className="bg-red-100 text-red-800 p-1 rounded-full">
+              <TrendingUp size={12} />
+            </div>
+          )}
+          <div className="relative">
+            <button
+              onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === test._id ? null : test._id); }}
+              onMouseDown={(e) => e.stopPropagation()}
+              className="p-1 rounded-full transition-colors text-gray-400 hover:text-blue-600 hover:bg-blue-50 bg-blue-50"
+              title="More options"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="1" />
+                <circle cx="12" cy="5" r="1" />
+                <circle cx="12" cy="19" r="1" />
+              </svg>
+            </button>
+            {openMenuId === test._id && (
+              <div
+                className="absolute right-0 mt-2 w-44 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-100"
+                data-menu-root
+                onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                <button
+                  onClick={(e) => { e.stopPropagation(); openEditModal(test, e); setOpenMenuId(null); }}
+                  className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 flex items-center"
+                >
+                  <Edit size={14} className="mr-2" />
+                  Edit
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); openDeleteModal(test, e); setOpenMenuId(null); }}
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
+                >
+                  <Trash2 size={14} className="mr-2" />
+                  Delete
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); toggleEnabled(test, type); }}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center ${test.isEnabled === true ? 'text-red-800' : 'text-green-800'}`}
+                >
+                  <ToggleRight size={14} className="mr-2" />
+                  {test.isEnabled === true ? 'Disable' : 'Enable'}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Image */}
-        {test.imageUrl ? (
-          <img 
-            src={test.imageUrl} 
-            alt={test.name}
-            className="w-full h-48 object-cover"
-            onError={(e) => {
-              e.target.src = 'https://via.placeholder.com/400x200?text=No+Image';
-            }}
-          />
-        ) : (
-          <div className="w-full h-48 bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
-            <FileText size={48} className="text-white" />
-          </div>
-        )}
-      </div>
-
-      {/* Card Content */}
-      <div className="p-4">
-        <div className="flex items-start justify-between mb-2">
-          <h3 className="text-lg font-semibold text-gray-800 line-clamp-2">{test.name}</h3>
+        <div className="h-48 bg-gradient-to-br from-blue-50 to-indigo-100 mb-4 rounded-lg flex items-center justify-center overflow-hidden">
+          {test.imageUrl ? (
+            <img
+              src={test.imageUrl}
+              alt={test.name}
+              className="h-full w-full object-fill rounded-lg"
+              onError={(e) => {
+                e.target.src = 'https://via.placeholder.com/400x200?text=No+Image';
+              }}
+            />
+          ) : (
+            <FileText size={64} className="text-indigo-400" />
+          )}
         </div>
-        
+
+        <h3 className="text-xl font-semibold mb-2 text-gray-800 line-clamp-2">{test.name}</h3>
         <p className="text-gray-600 text-sm mb-3 line-clamp-3">{test.description}</p>
-        
+
         {/* Test Info */}
         <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
           <div className="flex items-center">
@@ -239,15 +261,15 @@ const AITests = () => {
         )}
 
         {/* Status */}
-        <div className="flex items-center justify-between">
-          <span className={`px-2 py-1 rounded text-xs font-medium ${
-            test.isActive 
-              ? 'bg-green-100 text-green-800' 
-              : 'bg-red-100 text-red-800'
-          }`}>
+        <div className="flex items-center justify-between mt-auto">
+          <span
+            className={`px-2 py-1 rounded text-xs font-medium ${
+              test.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+            }`}
+          >
             {test.isActive ? 'Active' : 'Inactive'}
           </span>
-          
+
           <span className="text-xs text-gray-500">
             {type === 'objective' ? 'Objective' : 'Subjective'}
           </span>
@@ -267,6 +289,42 @@ const AITests = () => {
     if (filters.subcategory && t.subcategory !== filters.subcategory) return false;
     return true;
   });
+
+  useEffect(() => {
+    const handleDocumentClick = (event) => {
+      // If clicking inside any menu root, don't close
+      const target = event.target;
+      if (target && target.closest && target.closest('[data-menu-root]')) {
+        return;
+      }
+      setOpenMenuId(null);
+    };
+    document.addEventListener('click', handleDocumentClick);
+    return () => document.removeEventListener('click', handleDocumentClick);
+  }, []);
+
+  const toggleEnabled = async (test, type) => {
+    try {
+      const endpoint = type === 'objective'
+        ? `https://aipbbackend-c5ed.onrender.com/api/objectivetests/${test._id}/enabled`
+        : `https://aipbbackend-c5ed.onrender.com/api/subjectivetests/${test._id}`;
+      const response = await axios.patch(endpoint, { isEnabled: !test.isEnabled }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const updated = response.data?.test || { ...test, isEnabled: !test.isEnabled };
+      if (type === 'objective') {
+        setObjectiveTests(prev => prev.map(t => t._id === test._id ? updated : t));
+      } else {
+        setSubjectiveTests(prev => prev.map(t => t._id === test._id ? updated : t));
+      }
+      toast.success(`Test ${updated.isEnabled ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      console.error('Error toggling enabled:', error);
+      toast.error(error.response?.data?.message || 'Failed to update test');
+    } finally {
+      setOpenMenuId(null);
+    }
+  };
 
   // Group tests by category and subcategory (similar to AIWorkbook)
   const groupedTests = filteredTests.reduce((acc, test) => {
