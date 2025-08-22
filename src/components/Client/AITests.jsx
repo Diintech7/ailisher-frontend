@@ -148,14 +148,21 @@ const AITests = () => {
   };
 
   const showTestModal = (test,type) => {
-    navigate(`/ai-tests/${type}/${test._id}`);
+    if(test.isEnabled)
+    {
+      navigate(`/ai-tests/${type}/${test._id}`);
+    }
+    else
+    {
+      toast.error("This Test Is Disabled")
+    }
   };
 
   const renderTestCard = (test, type) => (
     <div key={test._id} className="flex flex-col">
       <div
         onClick={() => showTestModal(test, type)}
-          className={`p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full border border-gray-100 relative ${test.isEnabled === true ? 'bg-white' : 'bg-gray-400'}`}
+          className={`p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full border border-gray-100 relative ${test.isEnabled === true ? 'bg-white' : 'bg-gray-400 opacity-50'}`}
       >
         {/* Status indicators and menu (top-right) */}
         <div
@@ -263,9 +270,9 @@ const AITests = () => {
         {/* Status */}
         <div className="flex items-center justify-between mt-auto">
           <span
-            className={`px-2 py-1 rounded text-xs font-medium ${
-              test.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-            }`}
+            className={`px-2 py-1 rounded text-xs font-medium 
+              ${test.isActive ? (test.isEnabled ? 'bg-green-100 text-green-800' : 'bg-gray-600 text-white' ): 'bg-red-100 text-red-800'}
+            `}
           >
             {test.isActive ? 'Active' : 'Inactive'}
           </span>
@@ -306,7 +313,7 @@ const AITests = () => {
   const toggleEnabled = async (test, type) => {
     try {
       const endpoint = type === 'objective'
-        ? `https://aipbbackend-c5ed.onrender.com/api/objectivetests/${test._id}/enabled`
+        ? `https://aipbbackend-c5ed.onrender.com/api/objectivetests/${test._id}`
         : `https://aipbbackend-c5ed.onrender.com/api/subjectivetests/${test._id}`;
       const response = await axios.patch(endpoint, { isEnabled: !test.isEnabled }, {
         headers: { Authorization: `Bearer ${token}` }

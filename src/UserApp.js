@@ -33,6 +33,8 @@ import QRQuestionPage from './components/QRQuestionPage';
 import BookCourses from './components/Client/BookCourses';
 import AITests from './components/Client/AITests';
 import TestDetail from './components/Client/TestDetail';
+import Tools from './components/Client/Tools';
+import Reels from './components/Client/Reels';
 
 const UserApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -197,6 +199,8 @@ const UserApp = () => {
                 <Route path="/ai-workbook/:workbookId/chapters/:chapterId/topics/:topicId/assets" element={<AssetView />} />
                 <Route path="/ai-workbook/:workbookId/chapters/:chapterId/topics/:topicId/subtopics/:subtopicId/assets" element={<AssetView />} />
                 <Route path="/users" element={<User/>} />
+                <Route path="/tools" element={<Tools/>} />
+                <Route path="/reels" element={<Reels/>} />
                 <Route path="/chat/:id" element={<ChatApplication />} />
               </>
             )}

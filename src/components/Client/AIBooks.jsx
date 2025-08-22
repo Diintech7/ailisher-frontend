@@ -16,10 +16,12 @@ import {
   Star,
   TrendingUp,
   Edit,
+  ToggleRight,
 } from "lucide-react";
 import Cookies from "js-cookie";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import axios from "axios";
 
 // 1. Add constants for languages and categories (can be hardcoded or fetched if needed)
 const LANGUAGES = [
@@ -44,6 +46,7 @@ const BookItem = ({
   onClick,
   onToggleHighlight,
   onToggleTrending,
+  onToggleEnabled,
   currentUser,
   onEdit,
   categoryMappings,
@@ -119,6 +122,14 @@ const BookItem = ({
     }
   };
 
+  const toggleEnabled = async (book) => {
+    try {
+      await onToggleEnabled(book._id, !book.isEnabled);
+    } finally {
+      setShowMenu(false);
+    }
+  };
+
   const handleDelete = async (e) => {
     e.stopPropagation();
     setShowDeleteModal(true);
@@ -173,7 +184,7 @@ const BookItem = ({
       {/* Book Card */}
       <div
         onClick={onClick}
-        className="bg-white p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full border border-gray-100 relative"
+        className={`p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full border border-gray-100 relative ${book.isEnabled? 'bg-white' : 'bg-gray-400 opacity-50'}`}
       >
         {/* Status indicators */}
         <div className="absolute top-2 right-2 flex gap-1">
@@ -230,6 +241,13 @@ const BookItem = ({
                 >
                   <X size={14} className="mr-2" />
                   Delete Book
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); toggleEnabled(book); }}
+                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center ${book.isEnabled === true ? 'text-red-800' : 'text-green-800'}`}
+                >
+                  <ToggleRight size={14} className="mr-2" />
+                  {book.isEnabled === true ? 'Disable' : 'Enable'}
                 </button>
               </div>
             )}
@@ -2533,8 +2551,11 @@ const AIBooks = () => {
     setBooks((prev) => [...prev, newBook]);
   };
 
-  const handleBookClick = (bookId) => {
+  const handleBookClick = (bookId,isEnabled) => {
+    if(isEnabled)
     navigate(`/ai-books/${bookId}`);
+    else
+    toast.error('This Book Is Disabled')
   };
 
   const handleToggleHighlight = async (bookId, isHighlighted) => {
@@ -2622,6 +2643,43 @@ const AIBooks = () => {
     } catch (error) {
       console.error("Error updating trending status:", error);
       toast.error("Failed to update trending status");
+    }
+  };
+
+  const handleToggleEnabled = async (bookId, isEnabled) => {
+    try {
+      const token = Cookies.get("usertoken");
+      if (!token) {
+        toast.error("Authentication required");
+        return;
+      }
+
+      const response = await fetch(
+        `https://aipbbackend-c5ed.onrender.com/api/books/${bookId}`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ isEnabled }),
+        }
+      );
+
+      const data = await response.json();
+      if (data.success) {
+        setBooks((prev) =>
+          prev.map((book) =>
+            book._id === bookId ? { ...book, isEnabled } : book
+          )
+        );
+        toast.success(`Book ${isEnabled ? "enabled" : "disabled"}`);
+      } else {
+        toast.error(data.message || "Failed to update book status");
+      }
+    } catch (error) {
+      console.error("Error toggling enabled:", error);
+      toast.error("Failed to update book status");
     }
   };
 
@@ -2937,9 +2995,10 @@ const AIBooks = () => {
                         <BookItem
                           key={book._id}
                           book={book}
-                          onClick={() => handleBookClick(book._id)}
+                          onClick={() => handleBookClick(book._id,book.isEnabled)}
                           onToggleHighlight={handleToggleHighlight}
                           onToggleTrending={handleToggleTrending}
+                          onToggleEnabled={handleToggleEnabled}
                           currentUser={currentUser}
                           onEdit={handleBookEdit}
                           categoryMappings={categoryMappings}

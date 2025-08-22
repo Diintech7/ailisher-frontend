@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Book, FileText, Database, Bot, MessageSquare, MessageCircle, ClipboardList, Users } from 'lucide-react';
+import { Home, Book, FileText, Database, Bot, MessageSquare, MessageCircle, ClipboardList, Users, Wrench } from 'lucide-react';
 
 const ClientMenu = ({ isExpanded, currentPath, handleNavigate }) => {
   const menuItems = [
@@ -8,9 +8,11 @@ const ClientMenu = ({ isExpanded, currentPath, handleNavigate }) => {
     { path: '/ai-workbook', name: 'AI Workbook', icon: <FileText size={20} /> },
     { path: '/ai-tests', name: 'AI Tests', icon: <FileText size={20} /> },
     { path: '/datastore', name: 'Datastore', icon: <Database size={20} /> },
-    { path: '/ai-agent', name: 'AI Agent', icon: <Bot size={20} /> },
-    { path: '/chats', name: 'Chats', icon: <MessageSquare size={20} /> },
-    { path: '/conversations', name: 'Conversations', icon: <MessageCircle size={20} /> },
+    { path: '/tools', name: 'Tools', icon: <Wrench size={20} /> },
+
+    // { path: '/ai-agent', name: 'AI Agent', icon: <Bot size={20} /> },
+    // { path: '/chats', name: 'Chats', icon: <MessageSquare size={20} /> },
+    // { path: '/conversations', name: 'Conversations', icon: <MessageCircle size={20} /> },
     { path: '/plans', name: 'Plans', icon: <ClipboardList size={20} /> },
     { path: '/users', name: 'Users', icon: <Users size={20} /> },
   ];
