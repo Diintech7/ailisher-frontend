@@ -1,80 +1,142 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Megaphone, 
-  Video, 
-  MessageCircle, 
-  Bot, 
-  MessageSquare, 
+import React, { useState, useEffect } from "react";
+import {
+  Megaphone,
+  Video,
+  MessageCircle,
+  Bot,
+  MessageSquare,
   Send,
   Plus,
   Edit,
   Trash2,
   X,
   Play,
-  Pause
-} from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import Cookies from 'js-cookie';
-import { toast } from 'react-toastify';
+  Pause,
+  GripVertical,
+  MoreVertical,
+  ToggleRight,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import Cookies from "js-cookie";
+import { toast } from "react-toastify";
+// import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 
-export default function Reels() {
-    const [reels, setReels] = useState([]);
-    const [showCreateReel, setShowCreateReel] = useState(false);
-    const [editingReel, setEditingReel] = useState(null);
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [deletingreel,setDeletingreel]=useState(null);
-    const [newReel, setNewReel] = useState({
-      title: '',
-      description: '',
-      youtubeLink: ''
+const Reels = React.memo(function Reels() {
+  const [reels, setReels] = useState([]);
+  const [showCreateReel, setShowCreateReel] = useState(false);
+  const [editingReel, setEditingReel] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingreel, setDeletingreel] = useState(null);
+  const [newReel, setNewReel] = useState({
+    title: "",
+    description: "",
+    youtubeLink: "",
+  });
+  const [playingReelId, setPlayingReelId] = useState(null);
+  const [newYoutubeId, setNewYoutubeId] = useState("");
+  const [editYoutubeId, setEditYoutubeId] = useState("");
+  const [isReordering, setIsReordering] = useState(false);
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
+
+  // Group reels by date
+  const groupReelsByDate = (reelsList) => {
+    const grouped = {};
+
+    reelsList.forEach((reel) => {
+      const date = new Date(reel.createdAt || reel.updatedAt || Date.now());
+      const dateKey = date.toISOString().split("T")[0]; // YYYY-MM-DD format
+      const formattedDate = date.toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      });
+
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = {
+          date: formattedDate,
+          reels: [],
+        };
+      }
+      grouped[dateKey].reels.push(reel);
     });
-    const [playingReelId, setPlayingReelId] = useState(null);
-    const [newYoutubeId, setNewYoutubeId] = useState('');
-    const [editYoutubeId, setEditYoutubeId] = useState('');
 
-    const navigate = useNavigate();
+    // Sort by date (newest first)
+    return Object.entries(grouped)
+      .sort(([a], [b]) => new Date(b) - new Date(a))
+      .map(([key, value]) => ({
+        dateKey: key,
+        ...value,
+      }));
+  };
 
-    const token = Cookies.get('usertoken');
+  const navigate = useNavigate();
+
+  const token = Cookies.get("usertoken");
+  const user = JSON.parse(Cookies.get("user") || "{}");
 
   const extractYoutubeId = (url) => {
-    if (!url) return '';
-    const watchMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([^&?#\s]+)/);
+    if (!url) return "";
+    const watchMatch = url.match(
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/)([^&?#\s]+)/
+    );
     if (watchMatch && watchMatch[1]) return watchMatch[1];
     const fallbackMatch = url.match(/[?&]v=([^&?#\s]+)/);
     if (fallbackMatch && fallbackMatch[1]) return fallbackMatch[1];
-    return '';
+    return "";
   };
 
   const getThumbnailFromYouTube = (id) => {
-    console.log("id",id)
-    return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : 'https://via.placeholder.com/300x200?text=No+Thumbnail';
+    return id
+      ? `https://img.youtube.com/vi/${id}/hqdefault.jpg`
+      : "https://via.placeholder.com/300x200?text=No+Thumbnail";
   };
 
   const getEmbedUrl = (id) => {
-    return id ? `https://www.youtube.com/embed/${id}?autoplay=1&modestbranding=1&rel=0` : '';
+    return id
+      ? `https://www.youtube.com/embed/${id}?autoplay=1&modestbranding=1&rel=0`
+      : "";
   };
 
   const axiosConfig = {
-    baseURL: 'https://aipbbackend-c5ed.onrender.com',
+    // baseURL: 'https://aipbbackend-c5ed.onrender.com',
+    baseURL: "http://localhost:5000",
     headers: {
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
-    }
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
   };
 
   // Load reels from API
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await axios.get(`/api/reels`, axiosConfig);
-        const list = Array.isArray(res?.data?.data) ? res.data.data : [];
-        setReels(list);
-      } catch (e) {
-        console.error('Failed to fetch reels', e);
-      }
-    })();
+    handleGetReels();
   }, []);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (openMenuId && !event.target.closest(".menu-container")) {
+        setOpenMenuId(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [openMenuId]);
+
+  const handleGetReels = async () => {
+    try {
+      const res = await axios.get(`/api/reels`, axiosConfig);
+      const list = Array.isArray(res?.data?.data) ? res.data.data : [];
+      setReels(list);
+    } catch (e) {
+      console.error("Failed to fetch reels", e);
+    }
+  };
 
   const handleCreateReel = async () => {
     if (!newReel.title || !newReel.youtubeLink) return;
@@ -86,13 +148,14 @@ export default function Reels() {
       };
       const res = await axios.post(`/api/reels`, body, axiosConfig);
       const created = res?.data?.data;
+      console.log("Created reel:", created);
       if (res?.data?.success && created) {
-        setReels([created, ...reels]);
-        setNewReel({ title: '', description: '', youtubeLink: '' });
+        setNewReel({ title: "", description: "", youtubeLink: "" });
         setShowCreateReel(false);
+        handleGetReels();
       }
     } catch (e) {
-      console.error('Create reel failed', e);
+      console.error("Create reel failed", e);
     }
   };
 
@@ -104,14 +167,19 @@ export default function Reels() {
         description: editingReel.description,
         youtubeLink: editingReel.youtubeLink,
       };
-      const res = await axios.put(`/api/reels/${editingReel._id}`, body, axiosConfig);
+      const res = await axios.put(
+        `/api/reels/${editingReel._id}`,
+        body,
+        axiosConfig
+      );
+      console.log(res);
       const updated = res?.data?.data;
       if (res?.data?.success && updated) {
-        setReels(reels.map(r => (r._id === editingReel._id ? updated : r)));
+        setReels(reels.map((r) => (r._id === editingReel._id ? updated : r)));
         setEditingReel(null);
       }
     } catch (e) {
-      console.error('Update reel failed', e);
+      console.error("Update reel failed", e);
     }
   };
 
@@ -119,22 +187,114 @@ export default function Reels() {
     try {
       if (!deletingreel) return;
 
-      const res = await axios.delete(`/api/reels/${deletingreel._id}`, axiosConfig);
+      const res = await axios.delete(
+        `/api/reels/${deletingreel._id}`,
+        axiosConfig
+      );
       if (res?.data?.success) {
-        toast.success('Test deleted successfully');
+        toast.success("Test deleted successfully");
         setShowDeleteModal(false);
-        setDeletingreel(null);      
-        setReels(reels.filter(r => r._id !== deletingreel._id));
+        setDeletingreel(null);
+        setReels(reels.filter((r) => r._id !== deletingreel._id));
       }
     } catch (e) {
-      console.error('Delete reel failed', e);
+      console.error("Delete reel failed", e);
     }
+  };
+
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/html", e.target.outerHTML);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = async (e, dropIndex, dateKey) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      return;
+    }
+
+    const items = Array.from(reels);
+    const [reorderedItem] = items.splice(draggedIndex, 1);
+    items.splice(dropIndex, 0, reorderedItem);
+
+    // Optimistic update
+    setReels(items);
+    setIsReordering(true);
+    setDraggedIndex(null);
+
+    try {
+      // Send to backend
+      const response = await axios.patch(
+        "/api/reels/reorder",
+        { reels: items },
+        axiosConfig
+      );
+      if (response.data.success) {
+        setReels(response.data.data);
+        toast.success("Reordered successfully");
+      }
+    } catch (error) {
+      console.error("Reorder error:", error);
+      // Revert on error
+      const originalResponse = await axios.get("/api/reels", axiosConfig);
+      setReels(originalResponse.data.data);
+      toast.error("Failed to reorder");
+    } finally {
+      setIsReordering(false);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
   };
 
   const openDeleteModal = (reel, e) => {
     e.stopPropagation();
     setDeletingreel(reel);
     setShowDeleteModal(true);
+    setOpenMenuId(null); // Close menu when opening delete modal
+  };
+
+  const handleMenuToggle = (reelId, e) => {
+    e.stopPropagation();
+    setOpenMenuId(openMenuId === reelId ? null : reelId);
+  };
+
+  const handleEditClick = (reel, e) => {
+    e.stopPropagation();
+    setEditingReel(reel);
+    setEditYoutubeId(reel.youtubeId || extractYoutubeId(reel.youtubeLink));
+    setOpenMenuId(null); // Close menu when opening edit modal
+  };
+
+  const toggleEnabled = async (reel) => {
+    try {
+      const response = await axios.patch(
+        `/api/reels/${reel._id}`,
+        { isEnabled: !reel.isEnabled },
+        axiosConfig
+      );
+      
+      // Backend returns { success: true, message: '...', reel: {...} }
+      const updated = response.data?.reel || { ...reel, isEnabled: !reel.isEnabled };
+      
+      // Update the specific reel in the array
+      setReels(prev => prev.map(r => r._id === reel._id ? updated : r));
+      
+      toast.success(`Reel ${updated.isEnabled ? "enabled" : "disabled"}`);
+    } catch (error) {
+      console.error("Error toggling enabled:", error);
+      toast.error(error.response?.data?.message || "Failed to update reel");
+    } finally {
+      setOpenMenuId(null);
+    }
   };
 
   const renderCreateReelModal = () => (
@@ -154,13 +314,15 @@ export default function Reels() {
             type="text"
             placeholder="Reel Title"
             value={newReel.title}
-            onChange={(e) => setNewReel({...newReel, title: e.target.value})}
+            onChange={(e) => setNewReel({ ...newReel, title: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
           <textarea
             placeholder="Description (optional)"
             value={newReel.description}
-            onChange={(e) => setNewReel({...newReel, description: e.target.value})}
+            onChange={(e) =>
+              setNewReel({ ...newReel, description: e.target.value })
+            }
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 h-20 resize-none"
           />
           <input
@@ -169,7 +331,7 @@ export default function Reels() {
             value={newReel.youtubeLink}
             onChange={(e) => {
               const val = e.target.value;
-              setNewReel({...newReel, youtubeLink: val});
+              setNewReel({ ...newReel, youtubeLink: val });
               setNewYoutubeId(extractYoutubeId(val));
             }}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -180,9 +342,11 @@ export default function Reels() {
                 src={getThumbnailFromYouTube(newYoutubeId)}
                 alt="Preview thumbnail"
                 className="w-full h-40 object-cover rounded"
-                onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/300x200?text=No+Thumbnail'; }}
+                onError={(e) => {
+                  e.currentTarget.src =
+                    "https://via.placeholder.com/300x200?text=No+Thumbnail";
+                }}
               />
-              
             </div>
           )}
         </div>
@@ -220,23 +384,27 @@ export default function Reels() {
           <input
             type="text"
             placeholder="Reel Title"
-            value={editingReel?.title || ''}
-            onChange={(e) => setEditingReel({...editingReel, title: e.target.value})}
+            value={editingReel?.title || ""}
+            onChange={(e) =>
+              setEditingReel({ ...editingReel, title: e.target.value })
+            }
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
           <textarea
             placeholder="Description"
-            value={editingReel?.description || ''}
-            onChange={(e) => setEditingReel({...editingReel, description: e.target.value})}
+            value={editingReel?.description || ""}
+            onChange={(e) =>
+              setEditingReel({ ...editingReel, description: e.target.value })
+            }
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 h-20 resize-none"
           />
           <input
             type="url"
             placeholder="YouTube URL (watch, youtu.be, shorts, reels)"
-            value={editingReel?.youtubeLink || ''}
+            value={editingReel?.youtubeLink || ""}
             onChange={(e) => {
               const val = e.target.value;
-              setEditingReel({...editingReel, youtubeLink: val});
+              setEditingReel({ ...editingReel, youtubeLink: val });
               setEditYoutubeId(extractYoutubeId(val));
             }}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
@@ -244,10 +412,15 @@ export default function Reels() {
           {editingReel?.youtubeLink && (
             <div className="pt-2 space-y-2">
               <img
-                src={getThumbnailFromYouTube(editYoutubeId || editingReel.youtubeId)}
+                src={getThumbnailFromYouTube(
+                  editYoutubeId || editingReel.youtubeId
+                )}
                 alt="Preview thumbnail"
                 className="w-full h-40 object-cover rounded"
-                onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/300x200?text=No+Thumbnail'; }}
+                onError={(e) => {
+                  e.currentTarget.src =
+                    "https://via.placeholder.com/300x200?text=No+Thumbnail";
+                }}
               />
             </div>
           )}
@@ -270,27 +443,40 @@ export default function Reels() {
     </div>
   );
 
-// Delete Confirmation Modal
-const DeleteModal = ({ isOpen, onClose, onConfirm, reel }) => {
+  // Delete Confirmation Modal
+  const DeleteModal = ({ isOpen, onClose, onConfirm, reel }) => {
     if (!isOpen) return null;
-  
+
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
         <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
           <div className="p-6">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
-                <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                <svg
+                  className="h-6 w-6 text-red-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"
+                  />
                 </svg>
               </div>
               <div className="ml-3">
-                <h3 className="text-lg font-medium text-gray-900">Delete Reel</h3>
+                <h3 className="text-lg font-medium text-gray-900">
+                  Delete Reel
+                </h3>
               </div>
             </div>
             <div className="mb-6">
               <p className="text-sm text-gray-500">
-                Are you sure you want to delete "{reel?.title}"? This action cannot be undone.
+                Are you sure you want to delete "{reel?.title}"? This action
+                cannot be undone.
               </p>
             </div>
             <div className="flex justify-end space-x-3">
@@ -313,25 +499,25 @@ const DeleteModal = ({ isOpen, onClose, onConfirm, reel }) => {
     );
   };
 
-
   return (
     <>
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
         <div className="bg-white shadow-sm border-b">
           <div className="flex items-center space-x-4 p-4">
             <button
-              onClick={() => navigate('/tools')}
+              onClick={() => navigate("/tools")}
               className="text-gray-500 hover:text-gray-700 transition-colors"
             >
               ← Back to Tools
             </button>
-            
           </div>
         </div>
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-800">Reels Management</h2>
+            <h2 className="text-2xl font-bold text-gray-800">
+              Reels Management
+            </h2>
             <button
               onClick={() => setShowCreateReel(true)}
               className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
@@ -340,81 +526,168 @@ const DeleteModal = ({ isOpen, onClose, onConfirm, reel }) => {
               <span>Create Reel</span>
             </button>
           </div>
-    
-          {/* Reels Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {reels.map((reel) => (
-              <div key={reel._id} className="bg-white rounded-lg shadow-md overflow-hidden">
-                <div className="relative">
-                  {playingReelId === reel._id ? (
-                    <div className="aspect-video w-full">
-                      <iframe
-                        className="w-full h-full"
-                        src={getEmbedUrl(reel.youtubeId)}
-                        title={reel.title}
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowFullScreen
-                      />
-                      <button
-                        className="absolute top-2 right-2 bg-black/60 text-white px-2 py-1 rounded"
-                        onClick={() => setPlayingReelId(null)}
-                      >
-                        Close
-                      </button>
+
+          {/* Reels Grouped by Date */}
+          {reels && reels.length > 0 && reels.every((reel) => reel._id) ? (
+            <div className="space-y-8">
+              {groupReelsByDate(reels).map((dateGroup) => (
+                <div key={dateGroup.dateKey} className="space-y-4">
+                  {/* Date Header */}
+                  <div className="flex items-center space-x-4">
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-gray-800 border-b-2 border-purple-500 pb-2">
+                        {dateGroup.date}
+                      </h3>
                     </div>
-                  ) : (
-                    <>
-                      <img 
-                        src={getThumbnailFromYouTube(reel.youtubeId)} 
-                        alt={reel.title}
-                        className="w-full h-48 object-cover"
-                        onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/300x200?text=No+Thumbnail'; }}
-                      />
-                      <button
-                        className="absolute inset-0 flex items-center justify-center"
-                        onClick={() => setPlayingReelId(reel._id)}
-                        aria-label="Play video"
-                      >
-                        <div className="bg-black/50 rounded-full p-3">
-                          <Play className="w-6 h-6 text-white" />
+                    <div className="text-sm text-gray-500">
+                      {dateGroup.reels.length} reel
+                      {dateGroup.reels.length !== 1 ? "s" : ""}
+                    </div>
+                  </div>
+
+                  {/* Reels Grid for this date */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {dateGroup.reels.map((reel, index) => {
+                      const globalIndex = reels.findIndex(
+                        (r) => r._id === reel._id
+                      );
+                      return (
+                        <div
+                          key={`draggable-${reel._id}`}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, globalIndex)}
+                          onDragOver={handleDragOver}
+                          onDrop={(e) =>
+                            handleDrop(e, globalIndex, dateGroup.dateKey)
+                          }
+                          onDragEnd={handleDragEnd}
+                          className={`${reel.isEnabled === true ? "bg-white" : "bg-gray-300"} rounded-lg shadow-md overflow-hidden cursor-grab hover:shadow-lg transition-all duration-200 ${
+                            draggedIndex === globalIndex
+                              ? "shadow-xl scale-105 rotate-2"
+                              : ""
+                          } ${isReordering ? "opacity-75" : ""}`}
+                        >
+                          {/* --- Your Reel Card --- */}
+                          <div className="relative">
+                            {/* Drag Indicator */}
+                            <div className="absolute top-2 left-2 z-10 bg-black/60 text-white px-2 py-1 rounded text-xs font-medium">
+                              ⋮⋮ Drag
+                            </div>
+                            <div className="absolute top-2 right-2 z-10 menu-container text-xs">
+                              <button
+                                onClick={(e) => handleMenuToggle(reel._id, e)}
+                                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                              >
+                                <MoreVertical className="w-5 h-5 text-gray-300 hover:text-gray-500" />
+                              </button>
+
+                              {/* Dropdown Menu */}
+                              {openMenuId === reel._id && (
+                                <div className="absolute right-0 top-full mt-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+                                  <button
+                                    onClick={(e) => handleEditClick(reel, e)}
+                                    className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                    <span>Edit</span>
+                                  </button>
+                                  <button
+                                    onClick={(e) => openDeleteModal(reel, e)}
+                                    className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                    <span>Delete</span>
+                                  </button>
+                                  {/* Only show enable/disable option if user created this reel */}
+                                     <button
+                                       onClick={(e) => {
+                                         e.stopPropagation();
+                                         toggleEnabled(reel);
+                                       }}
+                                       className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center space-x-2 ${
+                                         reel.isEnabled === true
+                                           ? "text-red-800 hover:bg-red-50"
+                                           : "text-green-800 hover:bg-green-50"
+                                       }`}
+                                     >
+                                       <ToggleRight className="w-4 h-4" />
+                                       <span>{reel.isEnabled === true ? "Disable" : "Enable"}</span>
+                                     </button>
+                                </div>
+                              )}
+                            </div>
+
+                            {playingReelId === reel._id ? (
+                              <div className="aspect-video w-full">
+                                <iframe
+                                  className="w-full h-full"
+                                  src={getEmbedUrl(reel.youtubeId)}
+                                  title={reel.title}
+                                  frameBorder="0"
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                  allowFullScreen
+                                />
+                                <button
+                                  className="absolute top-2 right-2 bg-black/60 text-white px-2 py-1 rounded"
+                                  onClick={() => setPlayingReelId(null)}
+                                >
+                                  Close
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                <img
+                                  src={getThumbnailFromYouTube(reel.youtubeId)}
+                                  alt={reel.title}
+                                  className="w-full h-48 object-cover"
+                                  onError={(e) => {
+                                    e.currentTarget.src =
+                                      "https://via.placeholder.com/300x200?text=No+Thumbnail";
+                                  }}
+                                />
+                                <button
+                                  className="absolute inset-0 flex items-center justify-center"
+                                  onClick={() => setPlayingReelId(reel._id)}
+                                  aria-label="Play video"
+                                >
+                                  <div className="bg-black/50 rounded-full p-3">
+                                    <Play className="w-6 h-6 text-white" />
+                                  </div>
+                                </button>
+                              </>
+                            )}
+                          </div>
+
+                          <div className="p-4">
+                            
+                            <h3 className="font-semibold text-lg mb-2">
+                              {reel.title}
+                            </h3>
+                            {reel.description && (
+                              <p className="text-gray-600 text-sm mb-3">
+                                {reel.description}
+                              </p>
+                            )}
+                            <div className="flex justify-between text-sm text-gray-500 mb-4">
+                              <span>👁️ {reel.metrics?.views ?? 0} views</span>
+                              <span>❤️ {reel.metrics?.likes ?? 0} likes</span>
+                            </div>
+                          </div>
                         </div>
-                      </button>
-                    </>
-                  )}
-                </div>
-                <div className="p-4">
-                  <h3 className="font-semibold text-lg mb-2">{reel.title}</h3>
-                  {reel.description && (
-                    <p className="text-gray-600 text-sm mb-3">{reel.description}</p>
-                  )}
-                  <div className="flex justify-between text-sm text-gray-500 mb-4">
-                    <span>👁️ {reel.metrics?.views ?? 0} views</span>
-                    <span>❤️ {reel.metrics?.likes ?? 0} likes</span>
-                  </div>
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => { setEditingReel(reel); setEditYoutubeId(reel.youtubeId || extractYoutubeId(reel.youtubeLink)); }}
-                      className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm transition-colors flex items-center justify-center space-x-1"
-                    >
-                      <Edit className="w-4 h-4" />
-                      <span>Edit</span>
-                    </button>
-                    <button
-                      onClick={(e) =>{ e.stopPropagation(); openDeleteModal(reel,e)} }
-                      className="flex-1 bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded text-sm transition-colors flex items-center justify-center space-x-1"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      <span>Delete</span>
-                    </button>
+                      );
+                    })}
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              No reels found. Create your first reel!
+            </div>
+          )}
         </div>
-        </div>
-        {/* Modals */}
+      </div>
+      {/* Modals */}
       {showCreateReel && renderCreateReelModal()}
       {editingReel && renderEditReelModal()}
       {/* Delete Confirmation Modal */}
@@ -429,6 +702,8 @@ const DeleteModal = ({ isOpen, onClose, onConfirm, reel }) => {
           reel={deletingreel}
         />
       )}
-      </>
-      ); 
-}
+    </>
+  );
+});
+
+export default Reels;

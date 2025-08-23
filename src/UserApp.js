@@ -35,6 +35,7 @@ import AITests from './components/Client/AITests';
 import TestDetail from './components/Client/TestDetail';
 import Tools from './components/Client/Tools';
 import Reels from './components/Client/Reels';
+import Marketing from './components/Client/Marketing';
 
 const UserApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -201,6 +202,7 @@ const UserApp = () => {
                 <Route path="/users" element={<User/>} />
                 <Route path="/tools" element={<Tools/>} />
                 <Route path="/reels" element={<Reels/>} />
+                <Route path="/marketing" element={<Marketing/>} />
                 <Route path="/chat/:id" element={<ChatApplication />} />
               </>
             )}

@@ -33,7 +33,7 @@ export default function User() {
         return;
       }
 
-      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/client/userprofile', {
+      const response = await fetch('http://localhost:5000/api/client/userprofile', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

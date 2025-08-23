@@ -14,6 +14,15 @@ export default function Tools() {
 
   const navigate = useNavigate();
 
+  // Handle navigation when activeTab changes
+  useEffect(() => {
+    if (activeTab === "reels") {
+      navigate("/reels");
+    } else if (activeTab === "marketing") {
+      navigate("/marketing");
+    }
+  }, [activeTab, navigate]);
+
   const tools = [
     {
       id: "marketing",
@@ -81,19 +90,6 @@ export default function Tools() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case "reels":
-        navigate("/reels");
-      case "marketing":
-        return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
-              Marketing Tools
-            </h2>
-            <p className="text-gray-600">
-              Marketing tools and campaign management features coming soon...
-            </p>
-          </div>
-        );
       case "chats":
         return (
           <div className="p-6">
