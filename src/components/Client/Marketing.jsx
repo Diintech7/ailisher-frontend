@@ -62,7 +62,7 @@ export default function Marketing() {
   ];
 
   const axiosConfig = {
-    baseURL: 'http://localhost:5000',
+    baseURL: 'https://aipbbackend-c5ed.onrender.com',
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'

@@ -102,7 +102,7 @@ const Reels = React.memo(function Reels() {
 
   const axiosConfig = {
     // baseURL: 'https://aipbbackend-c5ed.onrender.com',
-    baseURL: "http://localhost:5000",
+    baseURL: "https://aipbbackend-c5ed.onrender.com",
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
