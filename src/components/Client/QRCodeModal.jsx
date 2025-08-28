@@ -24,7 +24,7 @@ const QRCodeModal = ({ isOpen, onClose, bookId, bookTitle }) => {
         return;
       }
       
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/qrcode/books/${bookId}`, {
+      const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/qrcode/books/${bookId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

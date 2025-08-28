@@ -24,7 +24,7 @@ export default function EvaluatorProfile() {
       setError(null);
       try {
         const token = Cookies.get('evaluatortoken');
-        const response = await axios.get('https://aipbbackend-c5ed.onrender.com/api/evaluator-reviews/profile', {
+        const response = await axios.get('https://aipbbackend-yxnh.onrender.com/api/evaluator-reviews/profile', {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -74,7 +74,7 @@ export default function EvaluatorProfile() {
     try {
       const token = Cookies.get('evaluatortoken');
       const response = await axios.patch(
-        'https://aipbbackend-c5ed.onrender.com/api/evaluator-reviews/profile',
+        'https://aipbbackend-yxnh.onrender.com/api/evaluator-reviews/profile',
         {
           name: form.name,
           currentcity: form.currentcity,

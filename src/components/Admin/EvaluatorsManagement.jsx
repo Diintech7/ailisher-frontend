@@ -55,7 +55,7 @@ const EvaluatorsManagement = () => {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/evaluators', {
+      const response = await fetch('https://aipbbackend-yxnh.onrender.com/api/evaluators', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -87,7 +87,7 @@ const EvaluatorsManagement = () => {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/admin/clients', {
+      const response = await fetch('https://aipbbackend-yxnh.onrender.com/api/admin/clients', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -117,7 +117,7 @@ const EvaluatorsManagement = () => {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/admin/users', {
+      const response = await fetch('https://aipbbackend-yxnh.onrender.com/api/admin/users', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -261,7 +261,7 @@ const EvaluatorsManagement = () => {
         status: 'PENDING'
       };
 
-      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/evaluators', {
+      const response = await fetch('https://aipbbackend-yxnh.onrender.com/api/evaluators', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -317,7 +317,7 @@ const EvaluatorsManagement = () => {
           throw new Error('Not authenticated');
         }
 
-        const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/evaluators/${evaluatorId}`, {
+        const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/evaluators/${evaluatorId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -366,7 +366,7 @@ const EvaluatorsManagement = () => {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/evaluators/${selectedEvaluator._id}`, {
+      const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/evaluators/${selectedEvaluator._id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -433,7 +433,7 @@ const EvaluatorsManagement = () => {
         mobile: approveFormData.mobile
       });
 
-      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/clients/CLI677117YN7N/mobile/evaluations/addexistinguserasevaluator', {
+      const response = await fetch('https://aipbbackend-yxnh.onrender.com/api/clients/CLI677117YN7N/mobile/evaluations/addexistinguserasevaluator', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -501,7 +501,7 @@ const EvaluatorsManagement = () => {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/evaluators/${evaluatorId}/verify`, {
+      const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/evaluators/${evaluatorId}/verify`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -579,7 +579,7 @@ const EvaluatorsManagement = () => {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/evaluators/${evaluatorId}/togglestatus`, {
+      const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/evaluators/${evaluatorId}/togglestatus`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -57,7 +57,7 @@ export default function ObjectiveTestDetail() {
     try {
       setLoading(true);
       const response = await axios.get(
-        `https://aipbbackend-c5ed.onrender.com/api/objectivetest-questions/${testId}`,
+        `https://aipbbackend-yxnh.onrender.com/api/objectivetest-questions/${testId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -65,7 +65,7 @@ export default function ObjectiveTestDetail() {
       setTestDetails(response.data.questions);
 
       const testResponse = await axios.get(
-        `https://aipbbackend-c5ed.onrender.com/api/objectivetests/${testId}`,
+        `https://aipbbackend-yxnh.onrender.com/api/objectivetests/${testId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -88,7 +88,7 @@ export default function ObjectiveTestDetail() {
       setScoreboardLoading(true);
       setShowScoreboard(true);
       const res = await axios.get(
-        `https://aipbbackend-c5ed.onrender.com/api/objectivetests/${testId}/scoreboard/first-attempt`,
+        `https://aipbbackend-yxnh.onrender.com/api/objectivetests/${testId}/scoreboard/first-attempt`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const { data, summary } = res.data || {};
@@ -170,7 +170,7 @@ export default function ObjectiveTestDetail() {
         solution: formData.solution,
       };
       const res = await fetch(
-        `https://aipbbackend-c5ed.onrender.com/api/objectivetest-questions/${testId}`,
+        `https://aipbbackend-yxnh.onrender.com/api/objectivetest-questions/${testId}`,
         {
           method: "POST",
           headers: {
@@ -218,7 +218,7 @@ export default function ObjectiveTestDetail() {
         solution: formData.solution,
       };
       const res = await fetch(
-        `https://aipbbackend-c5ed.onrender.com/api/objectivetest-questions/${questionId}`,
+        `https://aipbbackend-yxnh.onrender.com/api/objectivetest-questions/${questionId}`,
         {
           method: "PUT",
           headers: {
@@ -253,7 +253,7 @@ export default function ObjectiveTestDetail() {
         return;
       }
       const res = await fetch(
-        `https://aipbbackend-c5ed.onrender.com/api/objectivetest-questions/${questionId}`,
+        `https://aipbbackend-yxnh.onrender.com/api/objectivetest-questions/${questionId}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${authToken}` },

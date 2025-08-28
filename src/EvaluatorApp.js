@@ -30,7 +30,7 @@ const EvaluatorApp = () => {
             // Fetch latest evaluator data from backend
             try {
               console.log("user",userData)
-              const res = await fetch(`https://aipbbackend-c5ed.onrender.com/api/evaluators/${userData.id}`, {
+              const res = await fetch(`https://aipbbackend-yxnh.onrender.com/api/evaluators/${userData.id}`, {
                 headers: {
                   'Authorization': `Bearer ${evaluatorToken}`,
                   'Content-Type': 'application/json'

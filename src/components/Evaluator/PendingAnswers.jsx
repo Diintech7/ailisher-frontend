@@ -22,7 +22,7 @@ export default function PendingAnswers() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get('https://aipbbackend-c5ed.onrender.com/api/clients/CLI677117YN7N/mobile/userAnswers/crud/answers', {
+      const response = await axios.get('https://aipbbackend-yxnh.onrender.com/api/clients/CLI677117YN7N/mobile/userAnswers/crud/answers', {
         params: {
           evaluationMode: 'manual',
           submissionStatus: 'submitted',
@@ -56,7 +56,7 @@ export default function PendingAnswers() {
       const token = Cookies.get('evaluatortoken'); // Assuming you store evaluator token
       console.log(token)
       const response = await axios.put(
-        `https://aipbbackend-c5ed.onrender.com/api/clients/CLI677117YN7N/mobile/userAnswers/crud/answers/${answerId}/accept`,
+        `https://aipbbackend-yxnh.onrender.com/api/clients/CLI677117YN7N/mobile/userAnswers/crud/answers/${answerId}/accept`,
         {},
         {
           headers: {

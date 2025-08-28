@@ -13,7 +13,7 @@ const BookViewer = () => {
     const fetchBookData = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/qrcode/book-data/${bookId}`);
+        const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/qrcode/book-data/${bookId}`);
         const data = await response.json();
         
         if (data.success) {
@@ -44,7 +44,7 @@ const BookViewer = () => {
     }
     
     // Otherwise, assume it's a relative path and prepend the backend URL
-    return `https://aipbbackend-c5ed.onrender.com/${imageUrl}`;
+    return `https://aipbbackend-yxnh.onrender.com/${imageUrl}`;
   };
 
   // Get file icon based on file type

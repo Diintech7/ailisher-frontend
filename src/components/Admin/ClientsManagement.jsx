@@ -45,7 +45,7 @@ const ClientManagement = () => {
       setLoading(true);
       const token = Cookies.get("admintoken");
       const response = await axios.get(
-        "https://aipbbackend-c5ed.onrender.com/api/admin/clients",
+        "https://aipbbackend-yxnh.onrender.com/api/admin/clients",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -73,7 +73,7 @@ const ClientManagement = () => {
     try {
       const token = Cookies.get("admintoken");
       await axios.delete(
-        `https://aipbbackend-c5ed.onrender.com/api/admin/clients/${id}`,
+        `https://aipbbackend-yxnh.onrender.com/api/admin/clients/${id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -91,7 +91,7 @@ const ClientManagement = () => {
     try {
       const token = Cookies.get("admintoken");
       const response = await axios.put(
-        `https://aipbbackend-c5ed.onrender.com/api/admin/clients/${id}/status`,
+        `https://aipbbackend-yxnh.onrender.com/api/admin/clients/${id}/status`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -113,7 +113,7 @@ const ClientManagement = () => {
       const adminToken = Cookies.get("admintoken");
 
       const response = await axios.post(
-        `https://aipbbackend-c5ed.onrender.com/api/admin/clients/${id}/login-token`,
+        `https://aipbbackend-yxnh.onrender.com/api/admin/clients/${id}/login-token`,
         {},
         { headers: { Authorization: `Bearer ${adminToken}` } }
       );

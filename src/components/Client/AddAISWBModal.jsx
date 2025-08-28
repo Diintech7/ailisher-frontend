@@ -49,7 +49,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
   const fetchDefaultFramework = async () => {
     try {
       const token = Cookies.get('token');
-      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/aiswb/default-evaluation-framework', {
+      const response = await fetch('https://aipbbackend-yxnh.onrender.com/api/aiswb/default-evaluation-framework', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

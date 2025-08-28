@@ -54,7 +54,7 @@ const EvaluatorRegistrationPage = ({ onAuthSuccess }) => {
     setError('');
     
     try {
-      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/evaluators/register', {
+      const response = await fetch('https://aipbbackend-yxnh.onrender.com/api/evaluators/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -36,6 +36,7 @@ import TestDetail from './components/Client/TestDetail';
 import Tools from './components/Client/Tools';
 import Reels from './components/Client/Reels';
 import Marketing from './components/Client/Marketing';
+import ImageGenerator from './components/Client/ImageGenerator';
 
 const UserApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -54,7 +55,7 @@ const UserApp = () => {
             setIsAuthenticated(true);
             setUserRole(userData.role);
           }
-          const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/auth/validate', {
+          const response = await fetch('https://aipbbackend-yxnh.onrender.com/api/auth/validate', {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -203,6 +204,7 @@ const UserApp = () => {
                 <Route path="/tools" element={<Tools/>} />
                 <Route path="/reels" element={<Reels/>} />
                 <Route path="/marketing" element={<Marketing/>} />
+                <Route path="/image-generator" element={<ImageGenerator/>} />
                 <Route path="/chat/:id" element={<ChatApplication />} />
               </>
             )}

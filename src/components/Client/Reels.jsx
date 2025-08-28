@@ -32,7 +32,11 @@ const Reels = React.memo(function Reels() {
     title: "",
     description: "",
     youtubeLink: "",
+    mode: "youtube", // 'youtube' | 'upload'
   });
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [selectedFile, setSelectedFile] = useState(null);
   const [playingReelId, setPlayingReelId] = useState(null);
   const [newYoutubeId, setNewYoutubeId] = useState("");
   const [editYoutubeId, setEditYoutubeId] = useState("");
@@ -101,8 +105,8 @@ const Reels = React.memo(function Reels() {
   };
 
   const axiosConfig = {
-    // baseURL: 'https://aipbbackend-c5ed.onrender.com',
-    baseURL: "https://aipbbackend-c5ed.onrender.com",
+    // baseURL: 'https://aipbbackend-yxnh.onrender.com',
+    baseURL: "https://aipbbackend-yxnh.onrender.com",
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
@@ -139,23 +143,70 @@ const Reels = React.memo(function Reels() {
   };
 
   const handleCreateReel = async () => {
-    if (!newReel.title || !newReel.youtubeLink) return;
+    if (!newReel.title) return;
     try {
-      const body = {
+      let body = {
         title: newReel.title,
         description: newReel.description,
-        youtubeLink: newReel.youtubeLink,
       };
+
+      if (newReel.mode === "youtube") {
+        if (!newReel.youtubeLink) return;
+        body.youtubeLink = newReel.youtubeLink;
+      } else if (newReel.mode === "upload") {
+        if (!selectedFile) return;
+        // 1) Get presigned URL
+        setUploading(true);
+        setUploadProgress(0);
+        const presignRes = await axios.post(
+          `${axiosConfig.baseURL}/api/reels/upload-url`,
+          {
+            fileName: selectedFile.name,
+            contentType: selectedFile.type || "video/mp4",
+          },
+          {
+            headers: axiosConfig.headers,
+          }
+        );
+
+        console.log(presignRes);
+        console.log(axiosConfig);
+        const { uploadUrl, key } = presignRes?.data || {};
+        if (!uploadUrl || !key) throw new Error("Failed to get upload URL");
+
+        // 2) Upload to R2/S3
+        await axios.put(uploadUrl, selectedFile, {
+          headers: { "Content-Type": selectedFile.type || "video/mp4" },
+          onUploadProgress: (evt) => {
+            if (evt.total) {
+              setUploadProgress(Math.round((evt.loaded * 100) / evt.total));
+            }
+          },
+        });
+
+        // 3) Create reel with videoKey
+        body.videoKey = key;
+      }
+
       const res = await axios.post(`/api/reels`, body, axiosConfig);
       const created = res?.data?.data;
       console.log("Created reel:", created);
       if (res?.data?.success && created) {
-        setNewReel({ title: "", description: "", youtubeLink: "" });
+        setNewReel({
+          title: "",
+          description: "",
+          youtubeLink: "",
+          mode: "youtube",
+        });
+        setSelectedFile(null);
+        setUploading(false);
+        setUploadProgress(0);
         setShowCreateReel(false);
         handleGetReels();
       }
     } catch (e) {
       console.error("Create reel failed", e);
+      setUploading(false);
     }
   };
 
@@ -281,13 +332,16 @@ const Reels = React.memo(function Reels() {
         { isEnabled: !reel.isEnabled },
         axiosConfig
       );
-      
+
       // Backend returns { success: true, message: '...', reel: {...} }
-      const updated = response.data?.reel || { ...reel, isEnabled: !reel.isEnabled };
-      
+      const updated = response.data?.reel || {
+        ...reel,
+        isEnabled: !reel.isEnabled,
+      };
+
       // Update the specific reel in the array
-      setReels(prev => prev.map(r => r._id === reel._id ? updated : r));
-      
+      setReels((prev) => prev.map((r) => (r._id === reel._id ? updated : r)));
+
       toast.success(`Reel ${updated.isEnabled ? "enabled" : "disabled"}`);
     } catch (error) {
       console.error("Error toggling enabled:", error);
@@ -325,29 +379,86 @@ const Reels = React.memo(function Reels() {
             }
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 h-20 resize-none"
           />
-          <input
-            type="url"
-            placeholder="YouTube URL (watch, youtu.be, shorts, reels)"
-            value={newReel.youtubeLink}
-            onChange={(e) => {
-              const val = e.target.value;
-              setNewReel({ ...newReel, youtubeLink: val });
-              setNewYoutubeId(extractYoutubeId(val));
-            }}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-          />
-          {newReel.youtubeLink && (
-            <div className="pt-2 space-y-2">
-              <img
-                src={getThumbnailFromYouTube(newYoutubeId)}
-                alt="Preview thumbnail"
-                className="w-full h-40 object-cover rounded"
-                onError={(e) => {
-                  e.currentTarget.src =
-                    "https://via.placeholder.com/300x200?text=No+Thumbnail";
+          {/* Mode Selector */}
+          <div className="flex space-x-2">
+            <button
+              type="button"
+              onClick={() => setNewReel({ ...newReel, mode: "youtube" })}
+              className={`flex-1 px-3 py-2 rounded-lg border ${
+                newReel.mode === "youtube"
+                  ? "bg-purple-600 text-white border-purple-600"
+                  : "bg-white text-gray-700 border-gray-300"
+              }`}
+            >
+              YouTube Link
+            </button>
+            <button
+              type="button"
+              onClick={() => setNewReel({ ...newReel, mode: "upload" })}
+              className={`flex-1 px-3 py-2 rounded-lg border ${
+                newReel.mode === "upload"
+                  ? "bg-purple-600 text-white border-purple-600"
+                  : "bg-white text-gray-700 border-gray-300"
+              }`}
+            >
+              Upload Video
+            </button>
+          </div>
+
+          {newReel.mode === "youtube" ? (
+            <>
+              <input
+                type="url"
+                placeholder="YouTube URL (watch, youtu.be, shorts, reels)"
+                value={newReel.youtubeLink}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setNewReel({ ...newReel, youtubeLink: val });
+                  setNewYoutubeId(extractYoutubeId(val));
                 }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
               />
-            </div>
+              {newReel.youtubeLink && (
+                <div className="pt-2 space-y-2">
+                  <img
+                    src={getThumbnailFromYouTube(newYoutubeId)}
+                    alt="Preview thumbnail"
+                    className="w-full h-40 object-cover rounded"
+                    onError={(e) => {
+                      e.currentTarget.src =
+                        "https://via.placeholder.com/300x200?text=No+Thumbnail";
+                    }}
+                  />
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="flex flex-col items-center justify-center m-auto space-y-3 w-full">
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                  className="w-full max-w-md justify-center items-center"
+                />
+
+                {selectedFile && (
+                  <div className="text-sm text-gray-600 text-center">
+                    {selectedFile.name} (
+                    {Math.round(selectedFile.size / 1024 / 1024)} MB)
+                  </div>
+                )}
+
+                {uploading && (
+                  <div className="w-full max-w-md bg-gray-200 rounded h-2">
+                    <div
+                      className="bg-purple-600 h-2 rounded"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </div>
         <div className="flex space-x-3 mt-6">
@@ -359,9 +470,10 @@ const Reels = React.memo(function Reels() {
           </button>
           <button
             onClick={handleCreateReel}
-            className="flex-1 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+            className="flex-1 px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors disabled:opacity-60"
+            disabled={uploading}
           >
-            Create Reel
+            Save Reel
           </button>
         </div>
       </div>
@@ -561,13 +673,16 @@ const Reels = React.memo(function Reels() {
                             handleDrop(e, globalIndex, dateGroup.dateKey)
                           }
                           onDragEnd={handleDragEnd}
-                          className={`${reel.isEnabled === true ? "bg-white" : "bg-gray-300"} rounded-lg shadow-md overflow-hidden cursor-grab hover:shadow-lg transition-all duration-200 ${
+                          className={`${
+                            reel.isEnabled === true ? "bg-white" : "bg-gray-300"
+                          } rounded-lg shadow-md overflow-hidden cursor-grab hover:shadow-lg transition-all duration-200 ${
                             draggedIndex === globalIndex
                               ? "shadow-xl scale-105 rotate-2"
                               : ""
                           } ${isReordering ? "opacity-75" : ""}`}
                         >
                           {/* --- Your Reel Card --- */}
+                          <div clasName = "flex">
                           <div className="relative">
                             {/* Drag Indicator */}
                             <div className="absolute top-2 left-2 z-10 bg-black/60 text-white px-2 py-1 rounded text-xs font-medium">
@@ -599,67 +714,96 @@ const Reels = React.memo(function Reels() {
                                     <span>Delete</span>
                                   </button>
                                   {/* Only show enable/disable option if user created this reel */}
-                                     <button
-                                       onClick={(e) => {
-                                         e.stopPropagation();
-                                         toggleEnabled(reel);
-                                       }}
-                                       className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center space-x-2 ${
-                                         reel.isEnabled === true
-                                           ? "text-red-800 hover:bg-red-50"
-                                           : "text-green-800 hover:bg-green-50"
-                                       }`}
-                                     >
-                                       <ToggleRight className="w-4 h-4" />
-                                       <span>{reel.isEnabled === true ? "Disable" : "Enable"}</span>
-                                     </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleEnabled(reel);
+                                    }}
+                                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center space-x-2 ${
+                                      reel.isEnabled === true
+                                        ? "text-red-800 hover:bg-red-50"
+                                        : "text-green-800 hover:bg-green-50"
+                                    }`}
+                                  >
+                                    <ToggleRight className="w-4 h-4" />
+                                    <span>
+                                      {reel.isEnabled === true
+                                        ? "Disable"
+                                        : "Enable"}
+                                    </span>
+                                  </button>
                                 </div>
                               )}
                             </div>
 
-                            {playingReelId === reel._id ? (
-                              <div className="aspect-video w-full">
-                                <iframe
-                                  className="w-full h-full"
-                                  src={getEmbedUrl(reel.youtubeId)}
-                                  title={reel.title}
-                                  frameBorder="0"
-                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                  allowFullScreen
-                                />
-                                <button
-                                  className="absolute top-2 right-2 bg-black/60 text-white px-2 py-1 rounded"
-                                  onClick={() => setPlayingReelId(null)}
-                                >
-                                  Close
-                                </button>
-                              </div>
-                            ) : (
-                              <>
+                            {/* Determine content type (YouTube or uploaded video) */}
+                            {(() => {
+                              const youtubeId = extractYoutubeId(
+                                reel.youtubeLink
+                              );
+                              if (youtubeId) {
+                                return playingReelId === reel._id ? (
+                                  <div className="aspect-video w-full">
+                                    <iframe
+                                      className="w-full h-full"
+                                      src={getEmbedUrl(youtubeId)}
+                                      title={reel.title}
+                                      frameBorder="0"
+                                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                      allowFullScreen
+                                    />
+                                    <button
+                                      className="absolute top-2 right-2 bg-black/60 text-white px-2 py-1 rounded"
+                                      onClick={() => setPlayingReelId(null)}
+                                    >
+                                      Close
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <>
+                                    <img
+                                      src={getThumbnailFromYouTube(youtubeId)}
+                                      alt={reel.title}
+                                      className="w-full h-48 object-cover"
+                                      onError={(e) => {
+                                        e.currentTarget.src =
+                                          "https://via.placeholder.com/300x200?text=No+Thumbnail";
+                                      }}
+                                    />
+                                    <button
+                                      className="absolute inset-0 flex items-center justify-center"
+                                      onClick={() => setPlayingReelId(reel._id)}
+                                      aria-label="Play video"
+                                    >
+                                      <div className="bg-black/50 rounded-full p-3">
+                                        <Play className="w-6 h-6 text-white" />
+                                      </div>
+                                    </button>
+                                  </>
+                                );
+                              }
+
+                              if (reel.videoUrl) {
+                                return (
+                                  <video
+                                    className="w-full h-48 object-cover"
+                                    src={reel.videoUrl}
+                                    controls
+                                  />
+                                );
+                              }
+
+                              return (
                                 <img
-                                  src={getThumbnailFromYouTube(reel.youtubeId)}
+                                  src="https://via.placeholder.com/300x200?text=No+Preview"
                                   alt={reel.title}
                                   className="w-full h-48 object-cover"
-                                  onError={(e) => {
-                                    e.currentTarget.src =
-                                      "https://via.placeholder.com/300x200?text=No+Thumbnail";
-                                  }}
                                 />
-                                <button
-                                  className="absolute inset-0 flex items-center justify-center"
-                                  onClick={() => setPlayingReelId(reel._id)}
-                                  aria-label="Play video"
-                                >
-                                  <div className="bg-black/50 rounded-full p-3">
-                                    <Play className="w-6 h-6 text-white" />
-                                  </div>
-                                </button>
-                              </>
-                            )}
+                              );
+                            })()}
                           </div>
 
                           <div className="p-4">
-                            
                             <h3 className="font-semibold text-lg mb-2">
                               {reel.title}
                             </h3>
@@ -672,6 +816,7 @@ const Reels = React.memo(function Reels() {
                               <span>👁️ {reel.metrics?.views ?? 0} views</span>
                               <span>❤️ {reel.metrics?.likes ?? 0} likes</span>
                             </div>
+                          </div>
                           </div>
                         </div>
                       );

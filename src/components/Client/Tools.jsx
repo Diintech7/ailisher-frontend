@@ -6,6 +6,7 @@ import {
   Bot,
   MessageSquare,
   Send,
+  Image,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -20,6 +21,8 @@ export default function Tools() {
       navigate("/reels");
     } else if (activeTab === "marketing") {
       navigate("/marketing");
+    } else if (activeTab === "image-generator") {
+      navigate("/image-generator");
     }
   }, [activeTab, navigate]);
 
@@ -65,6 +68,13 @@ export default function Tools() {
       icon: Send,
       color: "bg-blue-600",
       description: "Telegram bot management",
+    },
+    {
+      id: "image-generator",
+      title: "Image Generator",
+      icon: Image,
+      color: "bg-blue-600",
+      description: "Image generator",
     },
   ];
 

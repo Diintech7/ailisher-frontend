@@ -28,7 +28,7 @@ const PDFActions = ({ item, onEmbeddingComplete }) => {
   const checkEmbeddingStatus = async () => {
     try {
       const token = Cookies.get("usertoken")
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/pdf-processing/check-embeddings/${item._id}`, {
+      const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/pdf-processing/check-embeddings/${item._id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -53,7 +53,7 @@ const PDFActions = ({ item, onEmbeddingComplete }) => {
   const loadChatHistory = async () => {
     try {
       const token = Cookies.get("usertoken")
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/pdf-processing/chat-history/${item._id}`, {
+      const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/pdf-processing/chat-history/${item._id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -99,7 +99,7 @@ const PDFActions = ({ item, onEmbeddingComplete }) => {
 
     try {
       const token = Cookies.get("usertoken")
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/pdf-processing/create-embeddings/${item._id}`, {
+      const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/pdf-processing/create-embeddings/${item._id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -157,7 +157,7 @@ const PDFActions = ({ item, onEmbeddingComplete }) => {
 
     try {
       const token = Cookies.get("usertoken")
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/pdf-processing/chat/${item._id}`, {
+      const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/pdf-processing/chat/${item._id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

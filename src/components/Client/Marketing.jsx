@@ -23,6 +23,7 @@ export default function Marketing() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingItem, setDeletingItem] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [newImageFile,setNewImageFile] = useState(null)
   const [filters, setFilters] = useState({
     category: '',
     isActive: '',
@@ -42,14 +43,48 @@ export default function Marketing() {
     name: '',
     category: 'banner',
     subcategory: '',
+    imageKey: '',
     imageUrl: '',
     imageWidth: '',
     imageHeight: '',
-    position: 0,
-    route: '',
+    imageSize: '16:9',
+    location: 'top',
+    route: {
+      type: 'weblink',
+      config: {
+        url: '',
+        phone: '',
+        message: ''
+      }
+    },
     isActive: true,
     metadata: {}
   });
+
+  // AI Image Generation state
+  const [genPrompt, setGenPrompt] = useState('');
+  const [genStyle, setGenStyle] = useState('realistic');
+  const [genAspectRatio, setGenAspectRatio] = useState('9:16');
+  const [genSeed, setGenSeed] = useState('5');
+  const [genLoading, setGenLoading] = useState(false);
+  const [genImage, setGenImage] = useState('');
+  const [createImageMode, setCreateImageMode] = useState('upload'); 
+  const [editImageMode, setEditImageMode] = useState('upload'); 
+
+  // AI Library (saved images from Image Generator)
+  const [aiImages, setAiImages] = useState([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiPage, setAiPage] = useState(1);
+  const [aiHasMore, setAiHasMore] = useState(true);
+  const [importedKey, setImportedKey] = useState('');
+
+  // Edit form AI library state
+  const [aiImagesEdit, setAiImagesEdit] = useState([]);
+  const [aiLoadingEdit, setAiLoadingEdit] = useState(false);
+  const [importedKeyEdit, setImportedKeyEdit] = useState('');
+
+  // Lightbox
+  const [lightboxUrl, setLightboxUrl] = useState('');
 
   const categories = [
     { value: 'banner', label: 'Banner' },
@@ -61,8 +96,21 @@ export default function Marketing() {
     { value: 'promotion', label: 'Promotion' }
   ];
 
+  const imageSizes = [
+    { value: '1:1', label: 'Square (1:1)' },
+    { value: '9:16', label: 'Portrait (9:16)' },
+    { value: '16:9', label: 'Landscape (16:9)' },
+    { value: '4:3', label: 'Standard (4:3)' },
+  ];
+
+  const locations = [
+    { value: 'top', label: 'Top' },
+    { value: 'middle', label: 'Middle' },
+    { value: 'bottom', label: 'Bottom' }
+  ];
+
   const axiosConfig = {
-    baseURL: 'https://aipbbackend-c5ed.onrender.com',
+    baseURL: 'https://aipbbackend-yxnh.onrender.com',
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
@@ -77,13 +125,22 @@ export default function Marketing() {
   const fetchMarketing = async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams({
-        page: pagination.page,
-        limit: pagination.limit,
+      const params = {
+        page: String(pagination.page),
+        limit: String(pagination.limit),
         ...filters
+      };
+
+      // Remove empty filter values so backend doesn't treat isActive="" as false
+      Object.keys(params).forEach((key) => {
+        const value = params[key];
+        if (value === '' || value === null || value === undefined) {
+          delete params[key];
+        }
       });
 
-      const res = await axios.get(`/api/marketing?${params}`, axiosConfig);
+      const res = await axios.get(`/api/marketing`, axiosConfig);
+      console.log(res)
       if (res?.data?.success) {
         setMarketing(res.data.data);
         setPagination(prev => ({
@@ -100,35 +157,262 @@ export default function Marketing() {
     }
   };
 
+  const loadAiImages = async (reset = false) => {
+    try {
+      setAiLoading(true);
+      const pageToLoad = reset ? 1 : aiPage;
+      const { data } = await axios.get('/api/image-generator/my-images', axiosConfig);
+      if (data?.success) {
+        // For now, backend returns all; support simple reset
+        const images = data.data.images || [];
+        setAiImages(reset ? images : [...aiImages, ...images]);
+        setAiHasMore(false); // until backend supports pagination params
+        setAiPage(pageToLoad + 1);
+      }
+    } catch (e) {
+      console.error('Failed to load AI images', e);
+      toast.error('Failed to load AI images');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const loadAiImagesEdit = async (reset = false) => {
+    try {
+      setAiLoadingEdit(true);
+      const { data } = await axios.get('/api/image-generator/my-images', axiosConfig);
+      if (data?.success) {
+        setAiImagesEdit(reset ? (data.data.images || []) : [...aiImagesEdit, ...(data.data.images || [])]);
+      }
+    } catch (e) {
+      console.error('Failed to load AI images (edit)', e);
+      toast.error('Failed to load AI images');
+    } finally {
+      setAiLoadingEdit(false);
+    }
+  };
+
+  // When switching to AI mode, load saved AI images
+  useEffect(() => {
+    if (showCreateModal && createImageMode === 'ai') {
+      loadAiImages(true);
+    }
+  }, [showCreateModal, createImageMode]);
+
+  // When switching to AI mode in edit, load saved AI images
+  useEffect(() => {
+    if (editingItem && editImageMode === 'ai') {
+      loadAiImagesEdit(true);
+    }
+  }, [editingItem, editImageMode]);
+
+  const importAiImage = async (generatedImageKey, previewUrl) => {
+    try {
+      const res = await axios.post('/api/marketing/import-ai-image', { sourceKey: generatedImageKey }, axiosConfig);
+      if (res?.data?.success) {
+        const { key, url } = res.data;
+        setImportedKey(key);
+        setNewItem(prev => ({ ...prev, imageUrl: url }));
+        // infer dimensions from url
+        await setImageDimensionsFromUrl(url);
+        toast.success('AI image selected for marketing');
+      } else {
+        toast.error('Failed to select AI image');
+      }
+    } catch (e) {
+      console.error('Import AI image failed', e);
+      toast.error(e?.response?.data?.message || 'Failed to select AI image');
+    }
+  };
+
+  const importAiImageEdit = async (generatedImageKey, previewUrl) => {
+    try {
+      const res = await axios.post('/api/marketing/import-ai-image', { sourceKey: generatedImageKey }, axiosConfig);
+      if (res?.data?.success) {
+        const { key, url } = res.data;
+        setImportedKeyEdit(key);
+        setEditingItem(prev => ({ ...(prev || {}), imageUrl: url }));
+        await setImageDimensionsFromUrl(url);
+        toast.success('AI image selected for marketing');
+      } else {
+        toast.error('Failed to select AI image');
+      }
+    } catch (e) {
+      console.error('Import AI image (edit) failed', e);
+      toast.error(e?.response?.data?.message || 'Failed to select AI image');
+    }
+  };
+
+  const setImageDimensionsFromUrl = async (url) => {
+    try {
+      const img = new Image();
+      const dims = await new Promise((resolve, reject) => {
+        img.onload = () => resolve({ w: img.width, h: img.height });
+        img.onerror = reject;
+        img.src = url;
+      });
+      setNewItem(prev => ({ ...prev, imageWidth: dims.w, imageHeight: dims.h }));
+    } catch (e) {
+      console.warn('Could not get image dimensions from URL');
+    }
+  };
+
   const handleCreateMarketing = async () => {
-    if (!newItem.name || !newItem.category || !newItem.imageUrl || !newItem.imageWidth || !newItem.imageHeight) {
-      toast.error('Please fill all required fields');
+    // Validate route configuration
+    if ((newItem.route.type === 'weblink' || newItem.route.type === 'other') && !newItem.route.config.url) {
+      toast.error('Please enter a valid URL for web link');
+      return;
+    }
+
+    if (newItem.route.type === 'whatsapp' && !newItem.route.config.phone) {
+      toast.error('Please enter a valid phone number for WhatsApp');
       return;
     }
 
     try {
-      const res = await axios.post('/api/marketing', newItem, axiosConfig);
+      // Branch 1: Using imported AI image key
+      if (createImageMode === 'ai' && importedKey) {
+        if (!newItem.imageWidth || !newItem.imageHeight) {
+          toast.error('Image dimensions missing');
+          return;
+        }
+        const payload = {
+          ...newItem,
+          imageKey: importedKey,
+        };
+        const res = await axios.post('/api/marketing', payload, axiosConfig);
+        if (res?.data?.success) {
+          toast.success('Marketing item created successfully');
+          setShowCreateModal(false);
+          resetCreateForm();
+          fetchMarketing();
+        }
+        return;
+      }
+
+      // Branch 2: Uploading a file (upload or inline-generated)
+      if (!newImageFile) {
+        toast.error(createImageMode === 'ai' ? 'Please select an AI image or generate one' : 'Please select an image file');
+        return;
+      }
+
+      const presign = await axios.post(
+        '/api/marketing/upload-image',
+        {
+          fileName: newImageFile.name,
+          contentType: newImageFile.type || 'image/png',
+        },
+        axiosConfig
+      );
+      const { uploadUrl, key } = presign.data;
+
+      await axios.put(uploadUrl, newImageFile, {
+        headers: { 'Content-Type': newImageFile.type || 'image/png' }
+      });
+
+      const image = new Image();
+      const objectUrl = URL.createObjectURL(newImageFile);
+      const dimensions = await new Promise((resolve, reject) => {
+        image.onload = () => resolve({ width: image.width, height: image.height });
+        image.onerror = reject;
+        image.src = objectUrl;
+      }).finally(() => {
+        URL.revokeObjectURL(objectUrl);
+      });
+
+      const { width: imageWidth, height: imageHeight } = dimensions;
+      if (!imageWidth || !imageHeight) {
+        toast.error('Not able to get image dimensions');
+        return;
+      }
+
+      const payload = {
+        ...newItem,
+        imageWidth,
+        imageHeight,
+        imageKey: key,
+      };
+
+      const res = await axios.post('/api/marketing', payload, axiosConfig);
       console.log(res)
       if (res?.data?.success) {
         toast.success('Marketing item created successfully');
         setShowCreateModal(false);
-        setNewItem({
-          name: '',
-          category: 'banner',
-          subcategory: '',
-          imageUrl: '',
-          imageWidth: '',
-          imageHeight: '',
-          position: 0,
-          route: '',
-          isActive: true,
-          metadata: {}
-        });
+        resetCreateForm();
         fetchMarketing();
       }
     } catch (e) {
       console.error('Create marketing failed', e);
-      toast.error('Failed to create marketing item');
+      toast.error(e.message);
+    }
+  };
+
+  const resetCreateForm = () => {
+    setImportedKey('');
+    setAiImages([]);
+    setAiPage(1);
+    setAiHasMore(true);
+    setNewItem({
+      name: '',
+      category: 'banner',
+      subcategory: '',
+      imageKey: '',
+      imageUrl: '',
+      imageWidth: '',
+      imageHeight: '',
+      imageSize: '16:9',
+      location: 'top',
+      route: {
+        type: 'weblink',
+        config: {
+          url: '',
+          phone: '',
+          message: ''
+        }
+      },
+      isActive: true,
+      metadata: {}
+    });
+    setNewImageFile(null);
+    setGenPrompt('');
+    setGenImage('');
+  };
+
+  // Generate image via backend AI and attach as file
+  const handleGenerateImage = async () => {
+    if (!genPrompt) {
+      toast.error('Enter a prompt to generate image');
+      return;
+    }
+    try {
+      setGenLoading(true);
+      setGenImage('');
+      const { data } = await axios.post(
+        '/api/marketing/generate-image',
+        {
+          prompt: genPrompt,
+          aspect_ratio: genAspectRatio,
+        },
+        axiosConfig
+      );
+      if (data?.success && data?.image) {
+        const dataUrl = `data:image/png;base64,${data.image}`;
+        setGenImage(dataUrl);
+        // Turn base64 into a File so existing upload flow works (PNG uploaded to R2 on save)
+        const res = await fetch(dataUrl);
+        const blob = await res.blob();
+        const file = new File([blob], `ai-generated-${Date.now()}.png`, { type: 'image/png' });
+        setNewImageFile(file);
+        setImportedKey(''); // Clear imported key if a new one is generated
+        toast.success('AI image generated and attached');
+      } else {
+        toast.error('Failed to generate image');
+      }
+    } catch (e) {
+      console.error('Generate image failed', e);
+      toast.error(e?.response?.data?.error || e.message || 'Failed to generate image');
+    } finally {
+      setGenLoading(false);
     }
   };
 
@@ -136,10 +420,71 @@ export default function Marketing() {
     if (!editingItem || !editingItem._id) return;
 
     try {
-      const res = await axios.put(`/api/marketing/${editingItem._id}`, editingItem, axiosConfig);
+      // If imported AI image was selected during edit, update with imported key
+      if (editImageMode === 'ai' && importedKeyEdit) {
+        if (!editingItem.imageWidth || !editingItem.imageHeight) {
+          toast.error('Image dimensions missing');
+          return;
+        }
+        const payload = {
+          ...editingItem,
+          imageKey: importedKeyEdit,
+        };
+        const res = await axios.put(`/api/marketing/${editingItem._id}`, payload, axiosConfig);
+        if (res?.data?.success) {
+          toast.success('Marketing item updated successfully');
+          setEditingItem(null);
+          setImportedKeyEdit('');
+          setNewImageFile(null);
+          fetchMarketing();
+        }
+        return;
+      }
+
+      let payload = {
+        ...editingItem,
+      };
+      // If a new image file is selected during edit, upload and update fields
+      if (newImageFile) {
+
+        const presign = await axios.post(
+          '/api/marketing/upload-image',
+          {
+            fileName: newImageFile.name,
+            contentType: newImageFile.type || 'image/png',
+          },
+          axiosConfig
+        );
+        const { uploadUrl, key } = presign.data;
+
+        await axios.put(uploadUrl, newImageFile, {
+          headers: { 'Content-Type': newImageFile.type || 'image/png' }
+        });
+
+        const image = new Image();
+        const objectUrl = URL.createObjectURL(newImageFile);
+        const dimensions = await new Promise((resolve, reject) => {
+          image.onload = () => resolve({ width: image.width, height: image.height });
+          image.onerror = reject;
+          image.src = objectUrl;
+        }).finally(() => {
+          URL.revokeObjectURL(objectUrl);
+        });
+
+        payload = {
+          ...payload,
+          imageKey: key,
+          imageWidth: dimensions.width,
+          imageHeight: dimensions.height,
+        };
+        }
+
+      const res = await axios.put(`/api/marketing/${editingItem._id}`, payload, axiosConfig);
       if (res?.data?.success) {
         toast.success('Marketing item updated successfully');
         setEditingItem(null);
+        setNewImageFile(null);
+        setImportedKeyEdit('');
         fetchMarketing();
       }
     } catch (e) {
@@ -178,41 +523,10 @@ export default function Marketing() {
     }
   };
 
-  const handleImageUpload = async (file) => {
-    try {
-      // You can reuse your existing S3 upload logic here
-      // For now, we'll use a placeholder
-      const imageUrl = URL.createObjectURL(file);
-      
-      // Get image dimensions
-      const img = new Image();
-      img.onload = () => {
-        if (editingItem) {
-          setEditingItem(prev => ({
-            ...prev,
-            imageUrl,
-            imageWidth: img.width,
-            imageHeight: img.height
-          }));
-        } else {
-          setNewItem(prev => ({
-            ...prev,
-            imageUrl,
-            imageWidth: img.width,
-            imageHeight: img.height
-          }));
-        }
-      };
-      img.src = imageUrl;
-    } catch (e) {
-      console.error('Image upload failed', e);
-      toast.error('Failed to upload image');
-    }
-  };
 
   const renderCreateModal = () => (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg p-6 w-full max-w-5xl mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-bold">Create Marketing Item</h3>
           <button
@@ -260,26 +574,117 @@ export default function Marketing() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Position</label>
-            <input
-              type="number"
-              value={newItem.position}
-              onChange={(e) => setNewItem({...newItem, position: Number(e.target.value)})}
+            <label className="block text-sm font-medium text-gray-700 mb-2">Image Size</label>
+            <select
+              value={newItem.imageSize}
+              onChange={(e) => setNewItem({...newItem, imageSize: e.target.value})}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="Display order"
-            />
+            >
+              {imageSizes.map(size => (
+                <option key={size.value} value={size.value}>{size.label}</option>
+              ))}
+            </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Route</label>
-            <input
-              type="text"
-              value={newItem.route}
-              onChange={(e) => setNewItem({...newItem, route: e.target.value})}
+            <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+            <select
+              value={newItem.location}
+              onChange={(e) => setNewItem({...newItem, location: e.target.value})}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-              placeholder="Navigation route (optional)"
+            >
+              {locations.map(loc => (
+                <option key={loc.value} value={loc.value}>{loc.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Route Type</label>
+            <select
+              value={newItem.route.type}
+              onChange={(e) => setNewItem({
+                ...newItem, 
+                route: {
+                  ...newItem.route,
+                  type: e.target.value,
+                  config: { url: '', phone: '', message: '' }
+                }
+              })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              <option value="weblink">Web Link</option>
+              <option value="whatsapp">WhatsApp</option>
+              <option value="other">Other</option>
+
+            </select>
+          </div>
+
+          {(newItem.route.type === 'weblink' || newItem.route.type === 'other') && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">URL</label>
+              <input
+                type="url"
+                value={newItem.route.config.url}
+                onChange={(e) => setNewItem({
+                  ...newItem, 
+                  route: {
+                    ...newItem.route,
+                    config: { ...newItem.route.config, url: e.target.value }
+                  }
+                })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="https://example.com"
+              />
+            </div>
+          )}
+
+          {newItem.route.type === 'whatsapp' && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
+            <input
+                  type="tel"
+                  value={newItem.route.config.phone}
+                  onChange={(e) => setNewItem({
+                    ...newItem, 
+                    route: {
+                      ...newItem.route,
+                      config: { ...newItem.route.config, phone: e.target.value }
+                    }
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="+1234567890"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Message (Optional)</label>
+                <textarea
+                  value={newItem.route.config.message}
+                  onChange={(e) => setNewItem({
+                    ...newItem, 
+                    route: {
+                      ...newItem.route,
+                      config: { ...newItem.route.config, message: e.target.value }
+                    }
+                  })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="Enter your WhatsApp message..."
+                  rows="3"
             />
           </div>
+              {newItem.route.config.phone && (
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Generated WhatsApp URL</label>
+                  <div className="p-3 bg-gray-50 rounded-lg border">
+                    <p className="text-sm text-gray-600 break-all">
+                      {`https://wa.me/${newItem.route.config.phone.replace(/\D/g, '')}${newItem.route.config.message ? `?text=${encodeURIComponent(newItem.route.config.message)}` : ''}`}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
 
           <div className="flex items-center space-x-2">
             <input
@@ -295,17 +700,136 @@ export default function Marketing() {
 
         <div className="mt-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Image *</label>
-          <div className="flex items-center space-x-4">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => e.target.files[0] && handleImageUpload(e.target.files[0])}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-            <button className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
-              <Upload className="w-4 h-4" />
-            </button>
+          {/* Mode Toggle */}
+          <div className="flex items-center space-x-4 mb-3">
+            <label className="flex items-center space-x-2">
+              <input
+                type="radio"
+                name="create-image-mode"
+                value="upload"
+                checked={createImageMode === 'upload'}
+                onChange={() => {
+                  setCreateImageMode('upload');
+                  setGenImage('');
+                  setGenPrompt('');
+                  setNewItem({ ...newItem, imageUrl: '' });
+                  setNewImageFile(null);
+                }}
+              />
+              <span className="text-sm text-gray-700">Upload</span>
+            </label>
+            <label className="flex items-center space-x-2">
+              <input
+                type="radio"
+                name="create-image-mode"
+                value="ai"
+                checked={createImageMode === 'ai'}
+                onChange={() => {
+                  setCreateImageMode('ai');
+                  setNewImageFile(null);
+                  setNewItem({ ...newItem, imageUrl: '' });
+                }}
+              />
+              <span className="text-sm text-gray-700">AI library</span>
+            </label>
           </div>
+
+          {/* Upload input (only when in upload mode) */}
+          {createImageMode === 'upload' && (
+            <div className="flex items-center space-x-4">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => e.target.files[0] && setNewImageFile(e.target.files[0])}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+              <button className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
+                <Upload className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* AI Generation */}
+          {createImageMode === 'ai' && (
+            <div className="mt-6 p-6 border rounded-2xl bg-white shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-base font-semibold text-gray-800">Use AI Image</p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => navigate('/image-generator')}
+                    className="px-3 py-2 text-sm border rounded-lg hover:bg-gray-50"
+                  >
+                    Open Image Generator
+                  </button>
+                  <button
+                    onClick={() => loadAiImages(true)}
+                    className="px-3 py-2 text-sm border rounded-lg hover:bg-gray-50"
+                  >
+                    Refresh Library
+                  </button>
+                </div>
+              </div>
+
+              {/* AI Library Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {aiLoading ? (
+                  <div className="col-span-full text-sm text-gray-500">Loading AI images...</div>
+                ) : aiImages.length === 0 ? (
+                  <div className="col-span-full text-sm text-gray-500">No AI images yet. Generate one or open the generator.</div>
+                ) : (
+                  aiImages.map(img => (
+                    <div key={img._id} className={`border rounded-lg overflow-hidden ${importedKey && newItem.imageUrl && newItem.imageUrl.includes(img.generatedImageUrl) ? 'ring-2 ring-purple-500' : ''}`}>
+                      <img src={img.generatedImageUrl} alt={img.prompt} onClick={() => setLightboxUrl(img.generatedImageUrl)} className="w-full h-32 object-cover cursor-zoom-in" />
+                      <div className="p-2 flex items-center justify-between">
+                        <span className="text-xs truncate" title={img.prompt}>{img.style} • {img.aspectRatio}</span>
+                        <button
+                          onClick={() => importAiImage(img.generatedImageKey, img.generatedImageUrl)}
+                          className="text-xs px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700"
+                        >
+                          Use
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="my-4 h-px bg-gray-200"></div>
+
+              <p className="text-sm font-medium mb-2">Or generate new here</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 items-center">
+                <div className="w-full md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Prompt</label>
+                  <div className="relative">
+                    <textarea
+                      rows={3}
+                      value={genPrompt}
+                      onChange={(e) => setGenPrompt(e.target.value)}
+                      className="w-full px-4 py-3 pr-36 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-700 placeholder-gray-400 resize-none"
+                      placeholder="Describe the image you want..."
+                    />
+                    <button
+                      onClick={handleGenerateImage}
+                      disabled={genLoading || !genPrompt}
+                      className="absolute top-2 right-2 px-5 py-3 bg-purple-600 text-white font-medium rounded-xl shadow hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {genLoading ? (
+                        <span className="animate-pulse">✨ Generating...</span>
+                      ) : (
+                        'Generate'
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+              {genImage && (
+                <div className="mt-3">
+                  <img src={genImage} alt="Preview" onClick={() => setLightboxUrl(genImage)} className="w-48 h-32 object-cover rounded border cursor-zoom-in" />
+                </div>
+              )}
+            </div>
+          )}
+
           
           {newItem.imageUrl && (
             <div className="mt-2">
@@ -387,24 +911,116 @@ export default function Marketing() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Position</label>
-            <input
-              type="number"
-              value={editingItem?.position || 0}
-              onChange={(e) => setEditingItem({...editingItem, position: Number(e.target.value)})}
+            <label className="block text-sm font-medium text-gray-700 mb-2">Image Size</label>
+            <select
+              value={editingItem?.imageSize || '16:9'}
+              onChange={(e) => setEditingItem({...editingItem, imageSize: e.target.value})}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
+            >
+              {imageSizes.map(size => (
+                <option key={size.value} value={size.value}>{size.label}</option>
+              ))}
+            </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Route</label>
-            <input
-              type="text"
-              value={editingItem?.route || ''}
-              onChange={(e) => setEditingItem({...editingItem, route: e.target.value})}
+            <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
+            <select
+              value={editingItem?.location || 'top'}
+              onChange={(e) => setEditingItem({...editingItem, location: e.target.value})}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              {locations.map(loc => (
+                <option key={loc.value} value={loc.value}>{loc.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Route Type</label>
+            <select
+              value={editingItem?.route?.type || 'weblink'}
+              onChange={(e) => setEditingItem({
+                ...editingItem, 
+                route: {
+                  ...editingItem?.route,
+                  type: e.target.value,
+                  config: editingItem?.route?.config || { url: '', phone: '', message: '' }
+                }
+              })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              <option value="weblink">Web Link</option>
+              <option value="whatsapp">WhatsApp</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          {((editingItem?.route?.type || 'weblink') === 'weblink' || (editingItem?.route?.type || 'weblink') === 'other') && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">URL</label>
+              <input
+                type="url"
+                value={editingItem?.route?.config?.url || ''}
+                onChange={(e) => setEditingItem({
+                  ...editingItem, 
+                  route: {
+                    ...editingItem.route,
+                    config: { ...editingItem.route?.config, url: e.target.value }
+                  }
+                })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="https://example.com"
+              />
+            </div>
+          )}
+
+          {(editingItem?.route?.type || 'weblink') === 'whatsapp' && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
+            <input
+                  type="tel"
+                  value={editingItem?.route?.config?.phone || ''}
+                  onChange={(e) => setEditingItem({
+                    ...editingItem, 
+                    route: {
+                      ...editingItem.route,
+                      config: { ...editingItem.route?.config, phone: e.target.value }
+                    }
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="+1234567890"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Message (Optional)</label>
+                <textarea
+                  value={editingItem?.route?.config?.message || ''}
+                  onChange={(e) => setEditingItem({
+                    ...editingItem, 
+                    route: {
+                      ...editingItem.route,
+                      config: { ...editingItem.route?.config, message: e.target.value }
+                    }
+                  })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  placeholder="Enter your WhatsApp message..."
+                  rows="3"
             />
           </div>
+              {editingItem?.route?.config?.phone && (
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Generated WhatsApp URL</label>
+                  <div className="p-3 bg-gray-50 rounded-lg border">
+                    <p className="text-sm text-gray-600 break-all">
+                      {`https://wa.me/${editingItem.route.config.phone.replace(/\D/g, '')}${editingItem.route.config.message ? `?text=${encodeURIComponent(editingItem.route.config.message)}` : ''}`}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
 
           <div className="flex items-center space-x-2">
             <input
@@ -420,17 +1036,162 @@ export default function Marketing() {
 
         <div className="mt-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Image</label>
-          <div className="flex items-center space-x-4">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => e.target.files[0] && handleImageUpload(e.target.files[0])}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-            />
-            <button className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
-              <Upload className="w-4 h-4" />
-            </button>
+          {/* Mode Toggle */}
+          <div className="flex items-center space-x-4 mb-3">
+            <label className="flex items-center space-x-2">
+              <input
+                type="radio"
+                name="edit-image-mode"
+                value="upload"
+                checked={editImageMode === 'upload'}
+                onChange={() => {
+                  setEditImageMode('upload');
+                  setGenImage('');
+                  setGenPrompt('');
+                }}
+              />
+              <span className="text-sm text-gray-700">Upload</span>
+            </label>
+            <label className="flex items-center space-x-2">
+              <input
+                type="radio"
+                name="edit-image-mode"
+                value="ai"
+                checked={editImageMode === 'ai'}
+                onChange={() => {
+                  setEditImageMode('ai');
+                  setNewImageFile(null);
+                }}
+              />
+              <span className="text-sm text-gray-700">Generate with AI</span>
+            </label>
           </div>
+
+          {/* Upload input (only when in upload mode) */}
+          {editImageMode === 'upload' && (
+            <div className="flex items-center space-x-4">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => e.target.files[0] && setNewImageFile(e.target.files[0])}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+              />
+              <button className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
+                <Upload className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* AI Generation (Edit) */}
+          {editImageMode === 'ai' && (
+            <div className="mt-4 p-3 border rounded-lg bg-gray-50">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium text-gray-700">Use AI Image</p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => navigate('/image-generator')}
+                    className="px-3 py-1 text-xs border rounded-lg hover:bg-gray-100"
+                  >
+                    Open Image Generator
+                  </button>
+                  <button
+                    onClick={() => loadAiImagesEdit(true)}
+                    className="px-3 py-1 text-xs border rounded-lg hover:bg-gray-100"
+                  >
+                    Refresh Library
+                  </button>
+                </div>
+              </div>
+
+              {/* AI Library Grid (Edit) */}
+              <div className="grid grid-cols-2 gap-2 mb-3">
+                {aiLoadingEdit ? (
+                  <div className="col-span-full text-xs text-gray-500">Loading AI images...</div>
+                ) : aiImagesEdit.length === 0 ? (
+                  <div className="col-span-full text-xs text-gray-500">No AI images yet. Generate one or open the generator.</div>
+                ) : (
+                  aiImagesEdit.map(img => (
+                    <div key={img._id} className={`border rounded overflow-hidden ${importedKeyEdit && editingItem?.imageUrl && editingItem.imageUrl.includes(img.generatedImageUrl) ? 'ring-2 ring-purple-500' : ''}`}>
+                      <img src={img.generatedImageUrl} alt={img.prompt} onClick={() => setLightboxUrl(img.generatedImageUrl)} className="w-full h-24 object-cover cursor-zoom-in" />
+                      <div className="p-2 flex items-center justify-between">
+                        <span className="text-[10px] truncate" title={img.prompt}>{img.style} • {img.aspectRatio}</span>
+                        <button
+                          onClick={() => importAiImageEdit(img.generatedImageKey, img.generatedImageUrl)}
+                          className="text-[10px] px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700"
+                        >
+                          Use
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <p className="text-sm font-medium mb-2">Or generate new here</p>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div className="md:col-span-2">
+                  <input
+                    type="text"
+                    value={genPrompt}
+                    onChange={(e) => setGenPrompt(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="Describe the image you want..."
+                  />
+                </div>
+                <div>
+                  <select
+                    value={genStyle}
+                    onChange={(e) => setGenStyle(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="realistic">Realistic</option>
+                    <option value="digital-art">Digital Art</option>
+                    <option value="3d-render">3D Render</option>
+                    <option value="illustration">Illustration</option>
+                  </select>
+                </div>
+                <div>
+                  <select
+                    value={genAspectRatio}
+                    onChange={(e) => setGenAspectRatio(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    {imageSizes.map(size => (
+                      <option key={size.value} value={size.value}>{size.value}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-3">
+                <div>
+                  <input
+                    type="text"
+                    value={genSeed}
+                    onChange={(e) => setGenSeed(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    placeholder="Seed (optional)"
+                  />
+                </div>
+                <div className="md:col-span-3 flex items-center">
+                  <button
+                    onClick={async () => { await handleGenerateImage(); setImportedKeyEdit(''); }}
+                    disabled={genLoading || !genPrompt}
+                    className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 disabled:opacity-50"
+                  >
+                    {genLoading ? 'Generating...' : 'Generate with AI'}
+                  </button>
+                  {genImage && (
+                    <span className="ml-3 text-sm text-gray-600">Preview attached below</span>
+                  )}
+                </div>
+              </div>
+              {genImage && (
+                <div className="mt-2">
+                  <img src={genImage} alt="Preview" onClick={() => setLightboxUrl(genImage)} className="w-32 h-20 object-cover rounded border cursor-zoom-in" />
+                </div>
+              )}
+            </div>
+          )}
           
           {editingItem?.imageUrl && (
             <div className="mt-2">
@@ -598,7 +1359,8 @@ export default function Marketing() {
                   <img 
                     src={item.imageUrl} 
                     alt={item.name}
-                    className="w-full h-48 object-cover"
+                    className="w-full h-48 object-cover cursor-zoom-in"
+                    onClick={() => setLightboxUrl(item.imageUrl)}
                     onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/300x200?text=No+Image'; }}
                   />
                   <div className="absolute top-2 left-2">
@@ -621,10 +1383,45 @@ export default function Marketing() {
                     <p className="text-gray-600 text-sm mb-2">{item.subcategory}</p>
                   )}
                   <p className="text-gray-500 text-xs mb-3">
-                    Size: {item.imageWidth} x {item.imageHeight}px | Position: {item.position}
+                    Size: {item.imageWidth} x {item.imageHeight}px 
+                  </p>
+                  <p className="text-gray-500 text-xs mb-3">
+                    Aspect: {item.imageSize} | Location: {item.location}
                   </p>
                   {item.route && (
-                    <p className="text-blue-600 text-sm mb-3">Route: {item.route}</p>
+                    <div className="mb-3">
+                      <p className="text-blue-600 text-sm font-medium">
+                        Route: {item.route.type === 'whatsapp' ? 'WhatsApp' : item.route.type === 'weblink' ? 'Web Link' : 'Other'}
+                      </p>
+                      {item.route.type === 'whatsapp' && item.route.config?.phone && (
+                        <div>
+                          <p className="text-gray-600 text-xs">Phone: {item.route.config.phone}</p>
+                          {item.route.config?.url && (
+                            <a 
+                              href={item.route.config.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-green-600 text-xs hover:text-green-800 underline"
+                            >
+                              Test WhatsApp Link
+                            </a>
+                          )}
+                        </div>
+                      )}
+                      {(item.route.type === 'weblink' || item.route.type === 'other') && item.route.config?.url && (
+                        <div>
+                          <p className="text-gray-600 text-xs truncate">URL: {item.route.config.url}</p>
+                          <a 
+                            href={item.route.config.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-blue-600 text-xs hover:text-blue-800 underline"
+                          >
+                            Test Link
+                          </a>
+                        </div>
+                      )}
+                    </div>
                   )}
                   
                   <div className="flex space-x-2">
@@ -686,6 +1483,13 @@ export default function Marketing() {
       {showCreateModal && renderCreateModal()}
       {editingItem && renderEditModal()}
       {showDeleteModal && renderDeleteModal()}
+
+      {/* Lightbox Modal */}
+      {lightboxUrl && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50" onClick={() => setLightboxUrl('')}>
+          <img src={lightboxUrl} alt="Full preview" className="max-w-[90vw] max-h-[90vh] object-contain" />
+        </div>
+      )}
     </div>
   );
 }

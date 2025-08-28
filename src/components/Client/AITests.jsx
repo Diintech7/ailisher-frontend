@@ -30,7 +30,7 @@ const AITests = () => {
     try {
       // Fetch categories from backend
       const categoriesResponse = await fetch(
-        "https://aipbbackend-c5ed.onrender.com/api/categories",
+        "https://aipbbackend-yxnh.onrender.com/api/categories",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -51,10 +51,10 @@ const AITests = () => {
 
       setCategoryMappings(transformedCategories);
       const [objectiveResponse, subjectiveResponse] = await Promise.all([
-        axios.get('https://aipbbackend-c5ed.onrender.com/api/objectivetests', {
+        axios.get('https://aipbbackend-yxnh.onrender.com/api/objectivetests', {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        axios.get('https://aipbbackend-c5ed.onrender.com/api/subjectivetests', {
+        axios.get('https://aipbbackend-yxnh.onrender.com/api/subjectivetests', {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -72,8 +72,8 @@ const AITests = () => {
   const handleCreateTest = async (testData) => {
     try {
       const endpoint = activeTab === 'objective' 
-        ? 'https://aipbbackend-c5ed.onrender.com/api/objectivetests'
-        : 'https://aipbbackend-c5ed.onrender.com/api/subjectivetests';
+        ? 'https://aipbbackend-yxnh.onrender.com/api/objectivetests'
+        : 'https://aipbbackend-yxnh.onrender.com/api/subjectivetests';
 
       const response = await axios.post(endpoint, testData, {
         headers: { Authorization: `Bearer ${token}` }
@@ -91,8 +91,8 @@ const AITests = () => {
   const handleUpdateTest = async (testData) => {
     try {
       const endpoint = activeTab === 'objective' 
-        ? `https://aipbbackend-c5ed.onrender.com/api/objectivetests/${editingTest._id}`
-        : `https://aipbbackend-c5ed.onrender.com/api/subjectivetests/${editingTest._id}`;
+        ? `https://aipbbackend-yxnh.onrender.com/api/objectivetests/${editingTest._id}`
+        : `https://aipbbackend-yxnh.onrender.com/api/subjectivetests/${editingTest._id}`;
 
       const response = await axios.put(endpoint, testData, {
         headers: { Authorization: `Bearer ${token}` }
@@ -113,8 +113,8 @@ const AITests = () => {
 
     try {
       const endpoint = activeTab === 'objective' 
-        ? `https://aipbbackend-c5ed.onrender.com/api/objectivetests/${deletingTest._id}`
-        : `https://aipbbackend-c5ed.onrender.com/api/subjectivetests/${deletingTest._id}`;
+        ? `https://aipbbackend-yxnh.onrender.com/api/objectivetests/${deletingTest._id}`
+        : `https://aipbbackend-yxnh.onrender.com/api/subjectivetests/${deletingTest._id}`;
 
       await axios.delete(endpoint, {
         headers: { Authorization: `Bearer ${token}` }
@@ -313,8 +313,8 @@ const AITests = () => {
   const toggleEnabled = async (test, type) => {
     try {
       const endpoint = type === 'objective'
-        ? `https://aipbbackend-c5ed.onrender.com/api/objectivetests/${test._id}`
-        : `https://aipbbackend-c5ed.onrender.com/api/subjectivetests/${test._id}`;
+        ? `https://aipbbackend-yxnh.onrender.com/api/objectivetests/${test._id}`
+        : `https://aipbbackend-yxnh.onrender.com/api/subjectivetests/${test._id}`;
       const response = await axios.patch(endpoint, { isEnabled: !test.isEnabled }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -603,7 +603,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
 
   const refreshCategories = async () => {
     try {
-      const res = await fetch("https://aipbbackend-c5ed.onrender.com/api/categories", {
+      const res = await fetch("https://aipbbackend-yxnh.onrender.com/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await res.json();
@@ -626,7 +626,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
     }
     try {
       setCreatingCategory(true);
-      const res = await fetch("https://aipbbackend-c5ed.onrender.com/api/categories", {
+      const res = await fetch("https://aipbbackend-yxnh.onrender.com/api/categories", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -657,7 +657,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
     }
     try {
       setCreatingSubcategory(true);
-      const listRes = await fetch("https://aipbbackend-c5ed.onrender.com/api/categories", {
+      const listRes = await fetch("https://aipbbackend-yxnh.onrender.com/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await listRes.json();
@@ -666,7 +666,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
         toast.error('Select a valid category first');
         return;
       }
-      const res = await fetch(`https://aipbbackend-c5ed.onrender.com/api/categories/${currentCat._id}/subcategories`, {
+      const res = await fetch(`https://aipbbackend-yxnh.onrender.com/api/categories/${currentCat._id}/subcategories`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -752,7 +752,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
       
       // Get presigned URL for upload
       const response = await axios.post(
-        `https://aipbbackend-c5ed.onrender.com/api/${type === 'objective' ? 'objectivetests' : 'subjectivetests'}/upload-image`,
+        `https://aipbbackend-yxnh.onrender.com/api/${type === 'objective' ? 'objectivetests' : 'subjectivetests'}/upload-image`,
         {
           fileName: file.name,
           contentType: file.type

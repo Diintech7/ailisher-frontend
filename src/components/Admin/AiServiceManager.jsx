@@ -42,7 +42,7 @@ const AiServiceManager = () => {
   const fetchServices = async () => {
     try {
       setLoading(true);
-      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/ai');
+      const response = await fetch('https://aipbbackend-yxnh.onrender.com/api/ai');
       const data = await response.json();
       
       if (data.success) {
@@ -60,7 +60,7 @@ const AiServiceManager = () => {
   const fetchApiKey = async (serviceName) => {
     try {
       setLoadingApiKeys(prev => ({ ...prev, [serviceName]: true }));
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/ai/${serviceName}/apikey`);
+      const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/ai/${serviceName}/apikey`);
       const data = await response.json();
       
       if (data.success) {
@@ -77,7 +77,7 @@ const AiServiceManager = () => {
 
   const handleCreateService = async () => {
     try {
-      const response = await fetch('https://aipbbackend-c5ed.onrender.com/api/ai', {
+      const response = await fetch('https://aipbbackend-yxnh.onrender.com/api/ai', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -120,7 +120,7 @@ const AiServiceManager = () => {
 
   const handleUpdateApiKey = async (serviceName, newApiKey) => {
     try {
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/ai/${serviceName}/apikey`, {
+      const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/ai/${serviceName}/apikey`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -144,7 +144,7 @@ const AiServiceManager = () => {
 
   const handleUpdateTaskPreferences = async (serviceName, taskPreferences) => {
     try {
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/ai/${serviceName}/preferences`, {
+      const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/ai/${serviceName}/preferences`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -167,7 +167,7 @@ const AiServiceManager = () => {
 
   const handleUpdateServiceConfig = async (serviceName, serviceConfig) => {
     try {
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/ai/${serviceName}/config`, {
+      const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/ai/${serviceName}/config`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -190,7 +190,7 @@ const AiServiceManager = () => {
 
   const handleToggleService = async (serviceName) => {
     try {
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/ai/${serviceName}/toggle`, {
+      const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/ai/${serviceName}/toggle`, {
         method: 'PUT',
       });
 
@@ -213,7 +213,7 @@ const AiServiceManager = () => {
     }
 
     try {
-      const response = await fetch(`https://aipbbackend-c5ed.onrender.com/api/ai/${serviceName}`, {
+      const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/ai/${serviceName}`, {
         method: 'DELETE',
       });
 

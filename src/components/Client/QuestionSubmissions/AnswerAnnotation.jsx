@@ -5,7 +5,7 @@ import axios from "axios"
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: "https://aipbbackend-c5ed.onrender.com/api",
+  baseURL: "https://aipbbackend-yxnh.onrender.com/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -1652,7 +1652,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
       if (!submission?.question?._id) return;
       try {
         const res = await axios.get(
-          `https://aipbbackend-c5ed.onrender.com/api/aiswb/questions/${submission.question._id}`
+          `https://aipbbackend-yxnh.onrender.com/api/aiswb/questions/${submission.question._id}`
         );
         if (res.data && res.data.data && res.data.data.modalAnswer) {
           setModalAnswer(res.data.data.modalAnswer);
