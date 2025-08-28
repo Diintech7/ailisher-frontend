@@ -219,7 +219,7 @@ const CreditAccount = () => {
                 </tr>
               ) : (
                 filteredAccounts.map((account) => {
-                  const userName = account.userId.name;
+                  const userName = account.userId?.name || "No Name";
                   const dateObj = new Date(account.createdAt);
                   const date = dateObj.toLocaleDateString();
                   const time = dateObj.toLocaleTimeString();
