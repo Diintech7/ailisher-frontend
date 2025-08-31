@@ -66,7 +66,7 @@ const AddChapterModal = ({ isOpen, onClose, bookId, onAdd }) => {
         onClose();
         return;
       }
-      const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/books/${bookId}/chapters`, {
+      const response = await fetch(`https://test.ailisher.com/api/books/${bookId}/chapters`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -189,7 +189,7 @@ const EditBookModal = ({ isOpen, onClose, book, onUpdate }) => {
         onClose();
         return;
       }
-      const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/books/${book._id}`, {
+      const response = await fetch(`https://test.ailisher.com/api/books/${book._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -326,12 +326,12 @@ const BookDetail = () => {
         navigate('/login');
         return;
       }
-      const bookPromise = fetch(`https://aipbbackend-yxnh.onrender.com/api/books/${bookId}`, {
+      const bookPromise = fetch(`https://test.ailisher.com/api/books/${bookId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      const chaptersPromise = fetch(`https://aipbbackend-yxnh.onrender.com/api/books/${bookId}/chapters`, {
+      const chaptersPromise = fetch(`https://test.ailisher.com/api/books/${bookId}/chapters`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -393,7 +393,7 @@ const BookDetail = () => {
         setShowDeleteModal(false);
         return;
       }
-      const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/books/${bookId}`, {
+      const response = await fetch(`https://test.ailisher.com/api/books/${bookId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -453,7 +453,7 @@ const BookDetail = () => {
     }
     
     // Otherwise, assume it's a relative path and prepend the backend URL
-    return `https://aipbbackend-yxnh.onrender.com/${imageUrl}`;
+    return `https://test.ailisher.com/${imageUrl}`;
   };
 
   if (loading) {

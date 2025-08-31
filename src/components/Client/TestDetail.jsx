@@ -5,7 +5,7 @@ import ObjectiveTestDetail from "./ObjectiveTestDetail";
 
 export default function TestDetail() {
   const { type } = useParams();
-  if (type === "objective") {
+  if (type === "objective" || type === "Objective") {
     return <ObjectiveTestDetail />;
   }
   return <SubjectiveTestDetail />;

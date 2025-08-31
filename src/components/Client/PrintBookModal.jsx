@@ -106,7 +106,7 @@ const PrintBookModal = ({ isOpen, onClose, bookId, chapters = [], bookTitle }) =
       }
 
       const pdfPromises = chapterIds.map(async (chapterId) => {
-        const endpoint = `https://aipbbackend-yxnh.onrender.com/api/datastores/chapter/${chapterId}`
+        const endpoint = `https://test.ailisher.com/api/datastores/chapter/${chapterId}`
         const response = await fetch(endpoint, {
           headers: { Authorization: `Bearer ${token}` },
         })
@@ -142,7 +142,7 @@ const PrintBookModal = ({ isOpen, onClose, bookId, chapters = [], bookTitle }) =
         return
       }
 
-      const endpoint = `https://aipbbackend-yxnh.onrender.com/api/qrcode/books/${bookId}/chapters/${chapterId}`
+      const endpoint = `https://test.ailisher.com/api/qrcode/books/${bookId}/chapters/${chapterId}`
       const response = await fetch(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
       })

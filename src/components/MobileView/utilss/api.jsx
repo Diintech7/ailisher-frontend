@@ -5,7 +5,7 @@ export const apiRequest = async (url, options = {}) => {
     ...options.headers,
   }
 
-  const response = await fetch(`${process.env.REACT_APP_API_URL || "https://aipbbackend-yxnh.onrender.com"}/api${url}`, {
+  const response = await fetch(`${process.env.REACT_APP_API_URL || "https://test.ailisher.com"}/api${url}`, {
     ...options,
     headers,
   })
@@ -22,7 +22,7 @@ export const apiRequest = async (url, options = {}) => {
 export const getCompleteImageUrl = (imageUrl) => {
   if (!imageUrl) return ""
   if (imageUrl.startsWith("http")) return imageUrl
-  return `${process.env.REACT_APP_API_URL || "https://aipbbackend-yxnh.onrender.com"}/${imageUrl}`
+  return `${process.env.REACT_APP_API_URL || "https://test.ailisher.com"}/${imageUrl}`
 }
 
 // Record video view

@@ -1,14 +1,15 @@
 import React from 'react';
-import { Home, Book, FileText, Database, Bot, MessageSquare, MessageCircle, ClipboardList, Users, Wrench } from 'lucide-react';
+import { Home, Book, FileText, Database, ClipboardList, Users, Wrench, MessageCircleQuestionIcon, BookCheck} from 'lucide-react';
 
 const ClientMenu = ({ isExpanded, currentPath, handleNavigate }) => {
   const menuItems = [
     { path: '/dashboard', name: 'Overview', icon: <Home size={20} /> },
     { path: '/ai-books', name: 'AI Books', icon: <Book size={20} /> },
     { path: '/ai-workbook', name: 'AI Workbook', icon: <FileText size={20} /> },
-    { path: '/ai-tests', name: 'AI Tests', icon: <FileText size={20} /> },
+    { path: '/ai-tests', name: 'AI Tests', icon: <BookCheck size={20} /> },
+    { path: '/question-bank', name: 'Question Bank', icon: <MessageCircleQuestionIcon size={20} /> },
     { path: '/datastore', name: 'Datastore', icon: <Database size={20} /> },
-    { path: '/tools', name: 'Tools', icon: <Wrench size={20} /> },
+    { path: '/tools', name: 'Tools', icon: <Wrench size={20} /> },  
 
     // { path: '/ai-agent', name: 'AI Agent', icon: <Bot size={20} /> },
     // { path: '/chats', name: 'Chats', icon: <MessageSquare size={20} /> },

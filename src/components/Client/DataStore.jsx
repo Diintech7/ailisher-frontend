@@ -95,13 +95,13 @@ const DataStore = ({ type }) => {
 
   const getApiEndpoint = () => {
     if (type === "book" && bookId) {
-      return `https://aipbbackend-yxnh.onrender.com/api/datastores/book/${bookId}`
+      return `https://test.ailisher.com/api/datastores/book/${bookId}`
     } else if (type === "chapter" && bookId && chapterId) {
-      return `https://aipbbackend-yxnh.onrender.com/api/datastores/chapter/${chapterId}`
+      return `https://test.ailisher.com/api/datastores/chapter/${chapterId}`
     } else if (type === "topic" && bookId && chapterId && topicId) {
-      return `https://aipbbackend-yxnh.onrender.com/api/datastores/topic/${topicId}`
+      return `https://test.ailisher.com/api/datastores/topic/${topicId}`
     } else if (type === "subtopic" && bookId && chapterId && topicId && subtopicId) {
-      return `https://aipbbackend-yxnh.onrender.com/api/datastores/subtopic/${subtopicId}`
+      return `https://test.ailisher.com/api/datastores/subtopic/${subtopicId}`
     }
     return null
   }
@@ -111,7 +111,7 @@ const DataStore = ({ type }) => {
       const token = Cookies.get("usertoken")
       if (!token) return
 
-      const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/datastores/update-embedding-status/${itemId}`, {
+      const response = await fetch(`https://test.ailisher.com/api/datastores/update-embedding-status/${itemId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -209,7 +209,7 @@ const DataStore = ({ type }) => {
 
     const statusPromises = pdfItems.map(async (item) => {
       try {
-        const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/enhanced-pdf-embedding/check-embeddings/${item._id}`, {
+        const response = await fetch(`https://test.ailisher.com/api/enhanced-pdf-embedding/check-embeddings/${item._id}`, {
           headers: {
             ...(token && { Authorization: `Bearer ${token}` }),
           },
@@ -218,7 +218,7 @@ const DataStore = ({ type }) => {
 
         let healthData = { success: false, status: { chatAvailable: false } }
         try {
-          const healthResponse = await fetch(`https://aipbbackend-yxnh.onrender.com/api/enhanced-pdf-chat/chat-health/${item._id}`, {
+          const healthResponse = await fetch(`https://test.ailisher.com/api/enhanced-pdf-chat/chat-health/${item._id}`, {
             headers: {
               ...(token && { Authorization: `Bearer ${token}` }),
             },
@@ -266,7 +266,7 @@ const DataStore = ({ type }) => {
     const token = Cookies.get("usertoken")
 
     try {
-      const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/enhanced-pdf-embedding/check-embeddings/${itemId}`, {
+      const response = await fetch(`https://test.ailisher.com/api/enhanced-pdf-embedding/check-embeddings/${itemId}`, {
         headers: {
           ...(token && { Authorization: `Bearer ${token}` }),
         },
@@ -275,7 +275,7 @@ const DataStore = ({ type }) => {
 
       let healthData = { success: false, status: { chatAvailable: false } }
       try {
-        const healthResponse = await fetch(`https://aipbbackend-yxnh.onrender.com/api/enhanced-pdf-chat/chat-health/${itemId}`, {
+        const healthResponse = await fetch(`https://test.ailisher.com/api/enhanced-pdf-chat/chat-health/${itemId}`, {
           headers: {
             ...(token && { Authorization: `Bearer ${token}` }),
           },
@@ -311,7 +311,7 @@ const DataStore = ({ type }) => {
     setAIGuidelinesLoading(true)
     try {
       const token = Cookies.get('usertoken')
-      const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/aiguidelines/${bookId}`, {
+      const response = await fetch(`https://test.ailisher.com/api/aiguidelines/${bookId}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
       if (response.ok) {
@@ -333,7 +333,7 @@ const DataStore = ({ type }) => {
     try {
       const token = Cookies.get('usertoken')
       console.log(aiGuidelinesForm)
-      const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/aiguidelines/${bookId}`, {
+      const response = await fetch(`https://test.ailisher.com/api/aiguidelines/${bookId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -619,7 +619,7 @@ useEffect(() => {
     }
 
     try {
-      const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/enhanced-pdf-embedding/create-embeddings/${itemId}`, {
+      const response = await fetch(`https://test.ailisher.com/api/enhanced-pdf-embedding/create-embeddings/${itemId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -747,7 +747,7 @@ useEffect(() => {
     try {
       let response
       if (currentChatItem._id === "knowledge-base") {
-        response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/enhanced-pdf-chat/chat-book-knowledge-base/${bookId}`, {
+        response = await fetch(`https://test.ailisher.com/api/enhanced-pdf-chat/chat-book-knowledge-base/${bookId}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -758,7 +758,7 @@ useEffect(() => {
           }),
         })
       } else {
-        response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/enhanced-pdf-chat/chat/${currentChatItem._id}`, {
+        response = await fetch(`https://test.ailisher.com/api/enhanced-pdf-chat/chat/${currentChatItem._id}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

@@ -15,7 +15,7 @@ const EvaluatorLoginPage = ({ onAuthSuccess }) => {
     
     try {
       // Make API call to your backend
-      const response = await fetch('https://aipbbackend-yxnh.onrender.com/api/evaluators/login', {
+      const response = await fetch('https://test.ailisher.com/api/evaluators/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

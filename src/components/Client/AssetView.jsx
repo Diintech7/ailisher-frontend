@@ -140,29 +140,29 @@ const AssetView = () => {
         }
 
         // Use the new endpoints for videos, PYQs, subjective questions, and objective questions
-        const videosEndpoint = `https://aipbbackend-yxnh.onrender.com/api/video-assets/${itemType}/${itemId}/videos?isWorkbook=${isWorkbook}`
-        const pyqsEndpoint = `https://aipbbackend-yxnh.onrender.com/api/pyq-assets/${itemType}/${itemId}/pyqs?isWorkbook=${isWorkbook}`
-        const subjectiveEndpoint = `https://aipbbackend-yxnh.onrender.com/api/subjective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
-        const objectiveEndpoint = `https://aipbbackend-yxnh.onrender.com/api/objective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
+        const videosEndpoint = `https://test.ailisher.com/api/video-assets/${itemType}/${itemId}/videos?isWorkbook=${isWorkbook}`
+        const pyqsEndpoint = `https://test.ailisher.com/api/pyq-assets/${itemType}/${itemId}/pyqs?isWorkbook=${isWorkbook}`
+        const subjectiveEndpoint = `https://test.ailisher.com/api/subjective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
+        const objectiveEndpoint = `https://test.ailisher.com/api/objective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
 
         // Determine endpoint based on item type for summaries
         let baseEndpoint = ""
         if (itemType === "book") {
           baseEndpoint = isWorkbook
-            ? `https://aipbbackend-yxnh.onrender.com/api/workbooks/${workbookId}`
-            : `https://aipbbackend-yxnh.onrender.com/api/assets/${bookId}`
+            ? `https://test.ailisher.com/api/workbooks/${workbookId}`
+            : `https://test.ailisher.com/api/assets/${bookId}`
         } else if (itemType === "chapter") {
           baseEndpoint = isWorkbook
-            ? `https://aipbbackend-yxnh.onrender.com/api/workbooks/${workbookId}/chapters/${chapterId}`
-            : `https://aipbbackend-yxnh.onrender.com/api/assets/${bookId}/chapters/${chapterId}`
+            ? `https://test.ailisher.com/api/workbooks/${workbookId}/chapters/${chapterId}`
+            : `https://test.ailisher.com/api/assets/${bookId}/chapters/${chapterId}`
         } else if (itemType === "topic") {
           baseEndpoint = isWorkbook
-            ? `https://aipbbackend-yxnh.onrender.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}`
-            : `https://aipbbackend-yxnh.onrender.com/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}`
+            ? `https://test.ailisher.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}`
+            : `https://test.ailisher.com/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}`
         } else if (itemType === "subtopic") {
           baseEndpoint = isWorkbook
-            ? `https://aipbbackend-yxnh.onrender.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
-            : `https://aipbbackend-yxnh.onrender.com/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
+            ? `https://test.ailisher.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
+            : `https://test.ailisher.com/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
         }
 
         // Fetch all assets in parallel
@@ -204,20 +204,20 @@ const AssetView = () => {
 
         if (itemType === "book") {
           endpoint = isWorkbook
-            ? `https://aipbbackend-yxnh.onrender.com/api/assets/${workbookId}`
-            : `https://aipbbackend-yxnh.onrender.com/api/assets/${bookId}`
+            ? `https://test.ailisher.com/api/assets/${workbookId}`
+            : `https://test.ailisher.com/api/assets/${bookId}`
         } else if (itemType === "chapter") {
           endpoint = isWorkbook
-            ? `https://aipbbackend-yxnh.onrender.com/api/assets/${workbookId}/chapters/${chapterId}`
-            : `https://aipbbackend-yxnh.onrender.com/api/assets/${bookId}/chapters/${chapterId}`
+            ? `https://test.ailisher.com/api/assets/${workbookId}/chapters/${chapterId}`
+            : `https://test.ailisher.com/api/assets/${bookId}/chapters/${chapterId}`
         } else if (itemType === "topic") {
           endpoint = isWorkbook
-            ? `https://aipbbackend-yxnh.onrender.com/api/assets/${workbookId}/chapters/${chapterId}/topics/${topicId}`
-            : `https://aipbbackend-yxnh.onrender.com/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}`
+            ? `https://test.ailisher.com/api/assets/${workbookId}/chapters/${chapterId}/topics/${topicId}`
+            : `https://test.ailisher.com/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}`
         } else if (itemType === "subtopic") {
           endpoint = isWorkbook
-            ? `https://aipbbackend-yxnh.onrender.com/api/assets/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
-            : `https://aipbbackend-yxnh.onrender.com/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
+            ? `https://test.ailisher.com/api/assets/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
+            : `https://test.ailisher.com/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
         }
 
         const response = await fetch(endpoint, {
@@ -283,7 +283,7 @@ const AssetView = () => {
       return imageUrl
     }
 
-    return `https://aipbbackend-yxnh.onrender.com/${imageUrl}`
+    return `https://test.ailisher.com/${imageUrl}`
   }
 
   const handleImageError = () => {
@@ -300,7 +300,7 @@ const AssetView = () => {
     try {
       // Refetch the updated question sets after successful submission
       const token = Cookies.get("usertoken")
-      const subjectiveEndpoint = `https://aipbbackend-yxnh.onrender.com/api/subjective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
+      const subjectiveEndpoint = `https://test.ailisher.com/api/subjective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
       
       const response = await axios.get(subjectiveEndpoint, { 
         headers: { Authorization: `Bearer ${token}` } 
@@ -330,7 +330,7 @@ const AssetView = () => {
     try {
       // Refetch the updated question sets after successful submission
       const token = Cookies.get("usertoken")
-      const objectiveEndpoint = `https://aipbbackend-yxnh.onrender.com/api/objective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
+      const objectiveEndpoint = `https://test.ailisher.com/api/objective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
       
       const response = await axios.get(objectiveEndpoint, { 
         headers: { Authorization: `Bearer ${token}` } 
@@ -356,14 +356,14 @@ const AssetView = () => {
 
     try {
       const token = Cookies.get("usertoken")
-      const endpoint = `https://aipbbackend-yxnh.onrender.com/api/subjective-assets/questions/${deletingQuestion._id}`
+      const endpoint = `https://test.ailisher.com/api/subjective-assets/questions/${deletingQuestion._id}`
 
       await axios.delete(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
       })
 
       // Refetch the question sets to update the UI
-      const subjectiveEndpoint = `https://aipbbackend-yxnh.onrender.com/api/subjective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
+      const subjectiveEndpoint = `https://test.ailisher.com/api/subjective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
       const response = await axios.get(subjectiveEndpoint, { 
         headers: { Authorization: `Bearer ${token}` } 
       })
@@ -404,14 +404,14 @@ const AssetView = () => {
 
     try {
       const token = Cookies.get("usertoken")
-      const endpoint = `https://aipbbackend-yxnh.onrender.com/api/objective-assets/questions/${deletingObjectiveQuestion._id}`
+      const endpoint = `https://test.ailisher.com/api/objective-assets/questions/${deletingObjectiveQuestion._id}`
 
       await axios.delete(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
       })
 
       // Refetch the question sets to update the UI
-      const objectiveEndpoint = `https://aipbbackend-yxnh.onrender.com/api/objective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
+      const objectiveEndpoint = `https://test.ailisher.com/api/objective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
       const response = await axios.get(objectiveEndpoint, { 
         headers: { Authorization: `Bearer ${token}` } 
       })
@@ -440,7 +440,7 @@ const AssetView = () => {
   const handleDeleteVideo = async (videoId) => {
     try {
       const token = Cookies.get("usertoken")
-      const endpoint = `https://aipbbackend-yxnh.onrender.com/api/video-assets/videos/${videoId}`
+      const endpoint = `https://test.ailisher.com/api/video-assets/videos/${videoId}`
 
       await axios.delete(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
@@ -459,7 +459,7 @@ const AssetView = () => {
   const handleDeletePYQ = async (pyqId) => {
     try {
       const token = Cookies.get("usertoken")
-      const endpoint = `https://aipbbackend-yxnh.onrender.com/api/pyq-assets/pyqs/${pyqId}`
+      const endpoint = `https://test.ailisher.com/api/pyq-assets/pyqs/${pyqId}`
 
       await axios.delete(endpoint, {
         headers: { Authorization: `Bearer ${token}` },

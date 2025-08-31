@@ -4,7 +4,7 @@ import { toast } from "react-toastify"
 import axios from "axios"
 
 const api = axios.create({
-  baseURL: "https://aipbbackend-yxnh.onrender.com/api",
+  baseURL: "https://test.ailisher.com/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -87,6 +87,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
   const [showCommentDropdown, setShowCommentDropdown] = useState(false)
   const [pageAnnotations, setPageAnnotations] = useState({})
   const [canvasReady, setCanvasReady] = useState(false)
+  const canvasReadyRef = useRef(false)
   // Add state for annotated image previews
   const [annotatedImagePreviews, setAnnotatedImagePreviews] = useState([])
   // Add state for full image view
@@ -135,6 +136,8 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
   const canvasRef = useRef(null)
   const fabricCanvasRef = useRef(null)
   const backgroundImageRef = useRef(null)
+  const allowedRectRef = useRef(null)
+  const borderRectRef = useRef(null)
   const historyRef = useRef([])
   const historyIndexRef = useRef(-1)
   const containerRef = useRef(null)
@@ -319,19 +322,26 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
 
         // Add history tracking
         fabricCanvas.on("object:added", () => {
-          if (isComponentMounted && canvasReady) {
+          if (isComponentMounted && canvasReadyRef.current) {
             saveToHistory()
           }
         })
 
         fabricCanvas.on("object:modified", () => {
-          if (isComponentMounted && canvasReady) {
+          if (isComponentMounted && canvasReadyRef.current) {
             saveToHistory()
           }
         })
 
         fabricCanvas.on("object:removed", () => {
-          if (isComponentMounted && canvasReady) {
+          if (isComponentMounted && canvasReadyRef.current) {
+            saveToHistory()
+          }
+        })
+
+        // Freehand path creation (pen tool)
+        fabricCanvas.on("path:created", () => {
+          if (isComponentMounted && canvasReadyRef.current) {
             saveToHistory()
           }
         })
@@ -355,6 +365,16 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
             setIsDragging(true)
             fabricCanvas.selection = false
             setLastPos({ x: evt.clientX, y: evt.clientY })
+          }
+          // Block creating elements outside allowed rectangle by early returning pointer events
+          if (allowedRectRef.current && activeTool !== 'select' && activeTool !== 'clear') {
+            const p = fabricCanvas.getPointer(opt.e)
+            const b = allowedRectRef.current
+            if (p.x < b.left || p.x > b.left + b.width || p.y < b.top || p.y > b.top + b.height) {
+              opt.e.preventDefault()
+              opt.e.stopPropagation()
+              return
+            }
           }
         })
 
@@ -385,6 +405,10 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         setCanvasReady(true)
         setIsImageLoading(false)
         console.log("Canvas initialization completed successfully")
+        // Seed initial history so first annotation can be undone
+        setTimeout(() => {
+          try { saveToHistory() } catch (e) { console.warn('Initial history seed failed', e) }
+        }, 0)
       } catch (error) {
         console.error("Error initializing canvas:", error)
         if (isComponentMounted) {
@@ -419,6 +443,11 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
   useEffect(() => {
     console.log("pageAnnotations state updated:", pageAnnotations)
   }, [pageAnnotations])
+
+  // Keep a live ref of canvasReady for event handlers
+  useEffect(() => {
+    canvasReadyRef.current = canvasReady
+  }, [canvasReady])
 
   // Load image into canvas
   const loadImage = useCallback(
@@ -501,8 +530,55 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
 
         backgroundImageRef.current = fabricImage
 
+        // Compute allowed rect (image bounds expanded by ~30px, clamped to canvas) and draw border
+        const expand = 30
+        const imgLeft = fabricImage.left
+        const imgTop = fabricImage.top
+        const imgW = img.width * fabricImage.scaleX
+        const imgH = img.height * fabricImage.scaleY
+        const allowedLeft = Math.max(0, imgLeft - expand)
+        const allowedTop = Math.max(0, imgTop - expand)
+        const allowedRight = Math.min(containerWidth, imgLeft + imgW + expand)
+        const allowedBottom = Math.min(containerHeight, imgTop + imgH + expand)
+        allowedRectRef.current = {
+          left: allowedLeft,
+          top: allowedTop,
+          width: allowedRight - allowedLeft,
+          height: allowedBottom - allowedTop,
+        }
+
+        // Remove old border if any
+        if (borderRectRef.current && canvas.getObjects().includes(borderRectRef.current)) {
+          canvas.remove(borderRectRef.current)
+          borderRectRef.current = null
+        }
+
+        // Add visible border rectangle
+        const border = new window.fabric.Rect({
+          left: allowedRectRef.current.left,
+          top: allowedRectRef.current.top,
+          width: allowedRectRef.current.width,
+          height: allowedRectRef.current.height,
+          fill: 'rgba(0,0,0,0)',
+          stroke: '#2563eb',
+          strokeDashArray: [6, 3],
+          strokeWidth: 2,
+          selectable: false,
+          evented: false,
+        })
+        borderRectRef.current = border
+
         canvas.clear()
         canvas.add(fabricImage)
+        canvas.add(border)
+        // Clip canvas to allowed rectangle so drawing outside is masked
+        canvas.clipPath = new window.fabric.Rect({
+          left: allowedRectRef.current.left,
+          top: allowedRectRef.current.top,
+          width: allowedRectRef.current.width,
+          height: allowedRectRef.current.height,
+          absolutePositioned: true,
+        })
         canvas.sendToBack(fabricImage)
 
         // Load saved annotations for this image if they exist
@@ -548,6 +624,44 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
     },
     [isComponentMounted, pageAnnotations, currentImageIndex, canvasReady],
   )
+
+  // Add a per-comment placement control in AI Analysis list
+  const addAnalysisCommentToCanvas = useCallback((comment, position) => {
+    if (!fabricCanvasRef.current || !window.fabric || !canvasReady) return
+    try {
+      const canvas = fabricCanvasRef.current
+      const b = allowedRectRef.current || { left: 0, top: 0, width: canvas.width, height: canvas.height }
+      const x = b.left + b.width / 2
+      let y = b.top + b.height / 2
+      if (position === 'top') y = b.top + Math.max(20, b.height * 0.08)
+      if (position === 'middle') y = b.top + b.height / 2
+      if (position === 'bottom') y = b.top + b.height - Math.max(30, b.height * 0.1)
+
+      const fontSize = Math.max(14, Math.floor(Math.min(b.width, b.height) * 0.028))
+      // Add line breaks to the comment text
+      const formattedComment = addLineBreaks(String(comment), 35)
+      
+      const commentText = new window.fabric.IText(formattedComment, {
+        left: x - Math.min(120, b.width * 0.25),
+        top: y,
+        fontFamily: 'Kalam, cursive',
+        fill: penColor,
+        fontSize,
+        fontWeight: '400',
+        angle: (Math.random() - 0.5) * 3,
+        selectable: true,
+        evented: true,
+      })
+      canvas.add(commentText)
+      canvas.setActiveObject(commentText)
+      canvas.renderAll()
+      saveToHistory()
+      toast.success('Comment added to image')
+    } catch (e) {
+      console.error('Error adding analysis comment:', e)
+      toast.error('Failed to add comment')
+    }
+  }, [canvasReady, penColor])
 
   // Load image with annotations for specific index
   const loadImageWithAnnotations = useCallback(
@@ -630,8 +744,55 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
 
         backgroundImageRef.current = fabricImage
 
+        // Compute allowed rect (image bounds expanded by ~30px, clamped to canvas) and draw border
+        const expand = 30
+        const imgLeft = fabricImage.left
+        const imgTop = fabricImage.top
+        const imgW = img.width * fabricImage.scaleX
+        const imgH = img.height * fabricImage.scaleY
+        const allowedLeft = Math.max(0, imgLeft - expand)
+        const allowedTop = Math.max(0, imgTop - expand)
+        const allowedRight = Math.min(containerWidth, imgLeft + imgW + expand)
+        const allowedBottom = Math.min(containerHeight, imgTop + imgH + expand)
+        allowedRectRef.current = {
+          left: allowedLeft,
+          top: allowedTop,
+          width: allowedRight - allowedLeft,
+          height: allowedBottom - allowedTop,
+        }
+
+        // Remove old border if any
+        if (borderRectRef.current && canvas.getObjects().includes(borderRectRef.current)) {
+          canvas.remove(borderRectRef.current)
+          borderRectRef.current = null
+        }
+
+        // Add visible border rectangle
+        const border = new window.fabric.Rect({
+          left: allowedRectRef.current.left,
+          top: allowedRectRef.current.top,
+          width: allowedRectRef.current.width,
+          height: allowedRectRef.current.height,
+          fill: 'rgba(0,0,0,0)',
+          stroke: '#2563eb',
+          strokeDashArray: [6, 3],
+          strokeWidth: 2,
+          selectable: false,
+          evented: false,
+        })
+        borderRectRef.current = border
+
         canvas.clear()
         canvas.add(fabricImage)
+        canvas.add(border)
+        // Clip canvas to allowed rectangle so drawing outside is masked
+        canvas.clipPath = new window.fabric.Rect({
+          left: allowedRectRef.current.left,
+          top: allowedRectRef.current.top,
+          width: allowedRectRef.current.width,
+          height: allowedRectRef.current.height,
+          absolutePositioned: true,
+        })
         canvas.sendToBack(fabricImage)
 
         // Load saved annotations for the target index if they exist
@@ -808,15 +969,19 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
 
           // Re-add event listeners
           fabricCanvas.on("object:added", () => {
-            if (isComponentMounted && canvasReady) saveToHistory()
+            if (isComponentMounted && canvasReadyRef.current) saveToHistory()
           })
 
           fabricCanvas.on("object:modified", () => {
-            if (isComponentMounted && canvasReady) saveToHistory()
+            if (isComponentMounted && canvasReadyRef.current) saveToHistory()
           })
 
           fabricCanvas.on("object:removed", () => {
-            if (isComponentMounted && canvasReady) saveToHistory()
+            if (isComponentMounted && canvasReadyRef.current) saveToHistory()
+          })
+
+          fabricCanvas.on("path:created", () => {
+            if (isComponentMounted && canvasReadyRef.current) saveToHistory()
           })
 
           // Add zoom and pan - EXACTLY like original
@@ -863,6 +1028,10 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
           }
 
           setCanvasReady(true)
+          // Seed initial history after switching page
+          setTimeout(() => {
+            try { saveToHistory() } catch (e) { console.warn('Initial history seed failed', e) }
+          }, 0)
         }
 
         // Update current image index after everything is set up
@@ -925,114 +1094,126 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
           canvas.selection = false
           break
 
-        case "rectangle":
-          canvas.defaultCursor = "crosshair"
-          canvas.isDrawingMode = false
-          canvas.selection = false
-          let startPoint
-          let currentRect
-          let isDrawing = false
+        // case "rectangle":
+        //   canvas.defaultCursor = "crosshair"
+        //   canvas.isDrawingMode = false
+        //   canvas.selection = false
+        //   let startPoint
+        //   let currentRect
+        //   let isDrawing = false
+        //
+        //   canvas.on("mouse:down", (o) => {
+        //     if (o.e.button === 0) {
+        //       isDrawing = true
+        //       const pointer = canvas.getPointer(o.e)
+        //       startPoint = { x: pointer.x, y: pointer.y }
+        //       currentRect = new window.fabric.Rect({
+        //         left: startPoint.x,
+        //         top: startPoint.y,
+        //         width: 0,
+        //         height: 0,
+        //         fill: "transparent",
+        //         stroke: penColor,
+        //         strokeWidth: penSize,
+        //         selectable: false,
+        //         evented: false,
+        //       })
+        //       canvas.add(currentRect)
+        //       o.e.preventDefault()
+        //       o.e.stopPropagation()
+        //     }
+        //   })
+        //
+        //   canvas.on("mouse:move", (o) => {
+        //     if (!isDrawing || !currentRect) return
+        //     const pointer = canvas.getPointer(o.e)
+        //     if (allowedRectRef.current) {
+        //       const b = allowedRectRef.current
+        //       if (pointer.x < b.left || pointer.x > b.left + b.width || pointer.y < b.top || pointer.y > b.top + b.height) {
+        //         return
+        //       }
+        //     }
+        //     const width = pointer.x - startPoint.x
+        //     const height = pointer.y - startPoint.y
+        //     currentRect.set({
+        //       width: Math.abs(width),
+        //       height: Math.abs(height),
+        //       left: width > 0 ? startPoint.x : pointer.x,
+        //       top: height > 0 ? startPoint.y : pointer.y,
+        //     })
+        //     canvas.renderAll()
+        //     o.e.preventDefault()
+        //     o.e.stopPropagation()
+        //   })
+        //
+        //   canvas.on("mouse:up", (o) => {
+        //     if (isDrawing) {
+        //       isDrawing = false
+        //       currentRect = null
+        //       o.e.preventDefault()
+        //       o.e.stopPropagation()
+        //     }
+        //   })
+        //   break
 
-          canvas.on("mouse:down", (o) => {
-            if (o.e.button === 0) {
-              isDrawing = true
-              const pointer = canvas.getPointer(o.e)
-              startPoint = { x: pointer.x, y: pointer.y }
-              currentRect = new window.fabric.Rect({
-                left: startPoint.x,
-                top: startPoint.y,
-                width: 0,
-                height: 0,
-                fill: "transparent",
-                stroke: penColor,
-                strokeWidth: penSize,
-                selectable: false,
-                evented: false,
-              })
-              canvas.add(currentRect)
-              o.e.preventDefault()
-              o.e.stopPropagation()
-            }
-          })
-
-          canvas.on("mouse:move", (o) => {
-            if (!isDrawing || !currentRect) return
-            const pointer = canvas.getPointer(o.e)
-            const width = pointer.x - startPoint.x
-            const height = pointer.y - startPoint.y
-            currentRect.set({
-              width: Math.abs(width),
-              height: Math.abs(height),
-              left: width > 0 ? startPoint.x : pointer.x,
-              top: height > 0 ? startPoint.y : pointer.y,
-            })
-            canvas.renderAll()
-            o.e.preventDefault()
-            o.e.stopPropagation()
-          })
-
-          canvas.on("mouse:up", (o) => {
-            if (isDrawing) {
-              isDrawing = false
-              currentRect = null
-              o.e.preventDefault()
-              o.e.stopPropagation()
-            }
-          })
-          break
-
-        case "circle":
-          canvas.defaultCursor = "crosshair"
-          canvas.isDrawingMode = false
-          canvas.selection = false
-          let startPointCircle
-          let currentCircle
-          let isDrawingCircle = false
-
-          canvas.on("mouse:down", (o) => {
-            if (o.e.button === 0) {
-              isDrawingCircle = true
-              const pointer = canvas.getPointer(o.e)
-              startPointCircle = { x: pointer.x, y: pointer.y }
-              currentCircle = new window.fabric.Circle({
-                left: startPointCircle.x,
-                top: startPointCircle.y,
-                radius: 0,
-                fill: "transparent",
-                stroke: penColor,
-                strokeWidth: penSize,
-                selectable: false,
-                evented: false,
-              })
-              canvas.add(currentCircle)
-              o.e.preventDefault()
-              o.e.stopPropagation()
-            }
-          })
-
-          canvas.on("mouse:move", (o) => {
-            if (!isDrawingCircle || !currentCircle) return
-            const pointer = canvas.getPointer(o.e)
-            const radius = Math.sqrt(
-              Math.pow(pointer.x - startPointCircle.x, 2) + Math.pow(pointer.y - startPointCircle.y, 2),
-            )
-            currentCircle.set({
-              radius: radius,
-            })
-            canvas.renderAll()
-            o.e.preventDefault()
-            o.e.stopPropagation()
-          })
-
-          canvas.on("mouse:up", (o) => {
-            if (isDrawingCircle) {
-              isDrawingCircle = false
-              currentCircle = null
-              o.e.preventDefault()
-              o.e.stopPropagation()
-            }
-          })
-          break
+        // case "circle":
+        //   canvas.defaultCursor = "crosshair"
+        //   canvas.isDrawingMode = false
+        //   canvas.selection = false
+        //   let startPointCircle
+        //   let currentCircle
+        //   let isDrawingCircle = false
+        //
+        //   canvas.on("mouse:down", (o) => {
+        //     if (o.e.button === 0) {
+        //       isDrawingCircle = true
+        //       const pointer = canvas.getPointer(o.e)
+        //       startPointCircle = { x: pointer.x, y: pointer.y }
+        //       currentCircle = new window.fabric.Circle({
+        //         left: startPointCircle.x,
+        //         top: startPointCircle.y,
+        //         radius: 0,
+        //         fill: "transparent",
+        //         stroke: penColor,
+        //         strokeWidth: penSize,
+        //         selectable: false,
+        //         evented: false,
+        //       })
+        //       canvas.add(currentCircle)
+        //       o.e.preventDefault()
+        //       o.e.stopPropagation()
+        //     }
+        //   })
+        //
+        //   canvas.on("mouse:move", (o) => {
+        //     if (!isDrawingCircle || !currentCircle) return
+        //     const pointer = canvas.getPointer(o.e)
+        //     if (allowedRectRef.current) {
+        //       const b = allowedRectRef.current
+        //       if (pointer.x < b.left || pointer.x > b.left + b.width || pointer.y < b.top || pointer.y > b.top + b.height) {
+        //         return
+        //       }
+        //     }
+        //     const radius = Math.sqrt(
+        //       Math.pow(pointer.x - startPointCircle.x, 2) + Math.pow(pointer.y - startPointCircle.y, 2),
+        //     )
+        //     currentCircle.set({
+        //       radius: radius,
+        //     })
+        //     canvas.renderAll()
+        //     o.e.preventDefault()
+        //     o.e.stopPropagation()
+        //   })
+        //
+        //   canvas.on("mouse:up", (o) => {
+        //     if (isDrawingCircle) {
+        //       isDrawingCircle = false
+        //       currentCircle = null
+        //       o.e.preventDefault()
+        //       o.e.stopPropagation()
+        //     }
+        //   })
+        //   break
 
         case "text":
           canvas.defaultCursor = "text"
@@ -1103,12 +1284,16 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
 
           case "text":
             fabricCanvasRef.current.isDrawingMode = false
+            {
+              const canvas = fabricCanvasRef.current
+              const b = allowedRectRef.current || { left: 0, top: 0, width: canvas.width, height: canvas.height }
+              const fontSize = Math.max(14, Math.floor(Math.min(b.width, b.height) * 0.028))
             const text = new window.fabric.IText("Double click to edit", {
-              left: 100,
-              top: 100,
+                left: b.left + Math.max(20, Math.floor(b.width * 0.1)),
+                top: b.top + Math.max(20, Math.floor(b.height * 0.15)),
               fontFamily: "Kalam, cursive",
               fill: penColor,
-              fontSize: 20,
+                fontSize,
               fontWeight: "400",
               fontStyle: "normal",
               underline: false,
@@ -1126,6 +1311,8 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
             })
             fabricCanvasRef.current.add(text)
             fabricCanvasRef.current.setActiveObject(text)
+              saveToHistory()
+            }
             break
 
           case "comment":
@@ -1145,13 +1332,20 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
             break
 
           case "clear":
-            fabricCanvasRef.current.clear()
-            // Re-add the background image
-            if (backgroundImageRef.current) {
+            fabricCanvasRef.current.getObjects().forEach((obj) => {
+              if (obj !== backgroundImageRef.current && obj !== borderRectRef.current) {
+                fabricCanvasRef.current.remove(obj)
+              }
+            })
+            if (borderRectRef.current && !fabricCanvasRef.current.getObjects().includes(borderRectRef.current)) {
+              fabricCanvasRef.current.add(borderRectRef.current)
+            }
+            if (backgroundImageRef.current && !fabricCanvasRef.current.getObjects().includes(backgroundImageRef.current)) {
               fabricCanvasRef.current.add(backgroundImageRef.current)
               fabricCanvasRef.current.sendToBack(backgroundImageRef.current)
-              fabricCanvasRef.current.renderAll()
             }
+            fabricCanvasRef.current.renderAll()
+            saveToHistory()
             break
         }
       } catch (error) {
@@ -1170,12 +1364,18 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
       }
 
       try {
-        const commentText = new window.fabric.IText(comment, {
-          left: 100,
-          top: 100,
+        const canvas = fabricCanvasRef.current
+        const b = allowedRectRef.current || { left: 0, top: 0, width: canvas.width, height: canvas.height }
+        const fontSize = Math.max(14, Math.floor(Math.min(b.width, b.height) * 0.028))
+        // Add line breaks to the comment text
+        const formattedComment = addLineBreaks(comment, 35)
+        
+        const commentText = new window.fabric.IText(formattedComment, {
+          left: b.left + Math.max(20, Math.floor(b.width * 0.1)),
+          top: b.top + Math.max(20, Math.floor(b.height * 0.2)),
           fontFamily: "Kalam, cursive",
           fill: penColor,
-          fontSize: 18,
+          fontSize,
           fontWeight: "400",
           fontStyle: "normal",
           underline: false,
@@ -1195,6 +1395,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         fabricCanvasRef.current.add(commentText)
         fabricCanvasRef.current.setActiveObject(commentText)
         fabricCanvasRef.current.renderAll()
+        saveToHistory()
 
         setShowCommentDropdown(false)
         toast.success("Comment added! You can move and edit it.")
@@ -1205,6 +1406,138 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
     },
     [penColor, canvasReady],
   )
+
+  // Helper function to add line breaks to text
+  const addLineBreaks = (text, maxChars = 35) => {
+    if (!text || text.length <= maxChars) return text
+    
+    const words = text.split(' ')
+    const lines = []
+    let currentLine = ''
+    
+    words.forEach(word => {
+      if ((currentLine + word).length <= maxChars) {
+        currentLine += (currentLine ? ' ' : '') + word
+      } else {
+        if (currentLine) lines.push(currentLine)
+        currentLine = word
+      }
+    })
+    
+    if (currentLine) lines.push(currentLine)
+    return lines.join('\n')
+  }
+
+  // Auto Annotate: place a few editable marks and comments automatically
+  const handleAutoAnnotate = useCallback(() => {
+    if (!fabricCanvasRef.current || !window.fabric || !canvasReady) return
+
+    try {
+      const canvas = fabricCanvasRef.current
+      // Use allowed rectangle bounds so items appear over the image region
+      const bounds = allowedRectRef.current || { left: 0, top: 0, width: canvas.width, height: canvas.height }
+      const left = bounds.left
+      const top = bounds.top
+      const width = bounds.width
+      const height = bounds.height
+
+      const safeX = (ratio) => Math.max(left + 6, Math.min(left + width - 6, Math.floor(left + width * ratio)))
+      const safeY = (ratio) => Math.max(top + 6, Math.min(top + height - 6, Math.floor(top + height * ratio)))
+
+      // Helper: create a hand-drawn looking green check mark using a path
+      const addHandDrawnTick = (cx, cy, size) => {
+        const jitter = (n) => n + (Math.random() - 0.5) * size * 0.2
+        const s = size
+        // Build a simple check path with slight randomness
+        const p = [
+          ['M', jitter(cx - s * 0.4), jitter(cy)],
+          ['Q', jitter(cx - s * 0.25), jitter(cy + s * 0.15), jitter(cx - s * 0.1), jitter(cy + s * 0.3)],
+          ['Q', jitter(cx), jitter(cy + s * 0.45), jitter(cx + s * 0.45), jitter(cy - s * 0.2)],
+        ]
+        const path = new window.fabric.Path(p, {
+          stroke: '#16a34a',
+          fill: '',
+          strokeWidth: Math.max(2, Math.floor(size * 0.12)),
+          strokeLineCap: 'round',
+          strokeLineJoin: 'round',
+          selectable: true,
+          evented: true,
+          angle: (Math.random() - 0.5) * 6,
+        })
+        canvas.add(path)
+      }
+
+      // Add a few hand-drawn ticks at plausible positions
+      const tickCenters = [
+        { x: safeX(0.18), y: safeY(0.22) },
+        { x: safeX(0.56), y: safeY(0.40) },
+        { x: safeX(0.76), y: safeY(0.70) },
+      ]
+      tickCenters.forEach((pos) => addHandDrawnTick(pos.x, pos.y, Math.max(20, Math.floor(Math.min(width, height) * 0.12))))
+
+      // Place AI Evaluation comments from Analysis (if present)
+      const evaluationComments = Array.isArray(submission?.evaluation?.comments)
+        ? submission.evaluation.comments
+        : []
+
+      if (evaluationComments.length > 0) {
+        const fontSize = Math.max(14, Math.floor(Math.min(width, height) * 0.028))
+        const lineHeight = fontSize * 1.4 // Approximate line height for multi-line text
+        const minGap = Math.max(20, Math.floor(Math.min(width, height) * 0.04)) // Minimum gap between comments
+        
+        // Calculate total height needed for all comments
+        let totalHeight = 0
+        const commentHeights = []
+        
+        evaluationComments.slice(0, 6).forEach((comment) => {
+          const formattedComment = addLineBreaks(String(comment), 35)
+          const lineCount = formattedComment.split('\n').length
+          const commentHeight = lineCount * lineHeight
+          commentHeights.push(commentHeight)
+          totalHeight += commentHeight + minGap
+        })
+        
+        // Remove the last gap
+        totalHeight -= minGap
+        
+        // Calculate starting Y position to center all comments
+        const availableHeight = height * 0.7 // Use 70% of available height
+        const startY = Math.max(safeY(0.08), (height - totalHeight) / 2)
+        let currentY = startY
+        
+        // Position all comments vertically in sequence (first, second, third, etc.)
+        evaluationComments.slice(0, 6).forEach((comment, i) => {
+          const formattedComment = addLineBreaks(String(comment), 35)
+          const commentHeight = commentHeights[i]
+          
+          const commentText = new window.fabric.IText(formattedComment, {
+            left: safeX(0.15), // Center horizontally
+            top: currentY,
+            fontFamily: "Kalam, cursive",
+            fill: penColor,
+            fontSize: fontSize,
+            fontWeight: "400",
+            angle: (Math.random() - 0.5) * 3,
+            selectable: true,
+            evented: true,
+          })
+          commentText.set({ shadow: { color: "rgba(0,0,0,0.06)", blur: 1, offsetX: 1, offsetY: 1 } })
+          canvas.add(commentText)
+          
+          // Move to next position for the next comment
+          currentY += commentHeight + minGap
+        })
+      }
+
+      canvas.renderAll()
+      // Save to history for undo/redo
+      saveToHistory()
+      toast.success("Auto annotations added. You can move/edit them.")
+    } catch (error) {
+      console.error("Error during auto annotate:", error)
+      toast.error("Failed to auto annotate")
+    }
+  }, [canvasReady, penColor, submission])
 
   const handleColorChange = useCallback(
     (color) => {
@@ -1893,6 +2226,14 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         historyIndexRef.current--
         const historyState = historyRef.current[historyIndexRef.current]
         fabricCanvasRef.current.loadFromJSON(historyState, () => {
+          // Ensure border and background are present after load
+          if (borderRectRef.current && !fabricCanvasRef.current.getObjects().includes(borderRectRef.current)) {
+            fabricCanvasRef.current.add(borderRectRef.current)
+          }
+          if (backgroundImageRef.current && !fabricCanvasRef.current.getObjects().includes(backgroundImageRef.current)) {
+            fabricCanvasRef.current.add(backgroundImageRef.current)
+            fabricCanvasRef.current.sendToBack(backgroundImageRef.current)
+          }
           fabricCanvasRef.current.renderAll()
           updateUndoRedoState()
         })
@@ -1910,6 +2251,14 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         historyIndexRef.current++
         const historyState = historyRef.current[historyIndexRef.current]
         fabricCanvasRef.current.loadFromJSON(historyState, () => {
+          // Ensure border and background are present after load
+          if (borderRectRef.current && !fabricCanvasRef.current.getObjects().includes(borderRectRef.current)) {
+            fabricCanvasRef.current.add(borderRectRef.current)
+          }
+          if (backgroundImageRef.current && !fabricCanvasRef.current.getObjects().includes(backgroundImageRef.current)) {
+            fabricCanvasRef.current.add(backgroundImageRef.current)
+            fabricCanvasRef.current.sendToBack(backgroundImageRef.current)
+          }
           fabricCanvasRef.current.renderAll()
           updateUndoRedoState()
         })
@@ -1935,7 +2284,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
     }
     try {
       // Use local or production endpoint as needed
-      const url = `https://aipbbackend-yxnh.onrender.com/api/clients/CLI677117YN7N/mobile/userAnswers/questions/${submission.questionId?._id || submission.question?._id}/answers/${submission._id}/evaluation-update`;
+      const url = `https://test.ailisher.com/api/clients/CLI677117YN7N/mobile/userAnswers/questions/${submission.questionId?._id || submission.question?._id}/answers/${submission._id}/evaluation-update`;
       // Ensure feedback is a string or omitted if empty/null/undefined
       const feedbackValue = (typeof editEvaluation.feedback === 'string' && editEvaluation.feedback.trim() !== '') 
         ? editEvaluation.feedback 
@@ -1974,7 +2323,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
       if (!submission?.question?._id) return;
       try {
         const res = await axios.get(
-          `https://aipbbackend-yxnh.onrender.com/api/aiswb/questions/${submission.question._id}`
+          `https://test.ailisher.com/api/aiswb/questions/${submission.question._id}`
         );
         if (res.data && res.data.data && res.data.data.modalAnswer) {
           setModalAnswer(res.data.data.modalAnswer);
@@ -2093,11 +2442,30 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                 <h4 className="text-sm font-medium text-indigo-700 mb-2">Evaluation Comments</h4>
                 <ul className="space-y-2">
                   {submission.evaluation.comments.map((comment, index) => (
-                    <li key={index} className="flex items-start gap-2">
+                    <li key={index} className="flex items-start gap-2 justify-between">
+                      <div className="flex items-start gap-2">
                       <svg className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                       </svg>
                       <span className="text-sm text-indigo-800">{comment}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => addAnalysisCommentToCanvas(comment, 'top')}
+                          className="px-2 py-1 text-xs bg-white text-indigo-700 border border-indigo-200 rounded hover:bg-indigo-50"
+                          title="Add to top"
+                        >Top</button>
+                        <button
+                          onClick={() => addAnalysisCommentToCanvas(comment, 'middle')}
+                          className="px-2 py-1 text-xs bg-white text-indigo-700 border border-indigo-200 rounded hover:bg-indigo-50"
+                          title="Add to middle"
+                        >Middle</button>
+                        <button
+                          onClick={() => addAnalysisCommentToCanvas(comment, 'bottom')}
+                          className="px-2 py-1 text-xs bg-white text-indigo-700 border border-indigo-200 rounded hover:bg-indigo-50"
+                          title="Add to bottom"
+                        >Bottom</button>
+                      </div>
                     </li>
                   ))}
                 </ul>
@@ -2232,6 +2600,18 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
           {/* Toolbar */}
           <div className="bg-gray-100 p-4 border-b border-gray-200">
             <div className="flex items-center space-x-4">
+              <button
+                onClick={handleAutoAnnotate}
+                disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
+                className={`px-3 py-2 rounded border ${
+                  isFabricLoading || !isFabricLoaded || !canvasReady
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200"
+                    : "bg-emerald-600 text-white hover:bg-emerald-700 border-emerald-600"
+                }`}
+                title="Auto Annotate"
+              >
+                Auto Annotate
+              </button>
               <div className="flex space-x-2">
                 <button
                   onClick={() => handleToolSelect("pen")}
@@ -2331,6 +2711,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   )}
                 </div>
 
+                {/*
                 <button
                   onClick={() => handleToolSelect("circle")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
@@ -2352,7 +2733,9 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                     />
                   </svg>
                 </button>
+                */}
 
+                {/*
                 <button
                   onClick={() => handleToolSelect("rectangle")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
@@ -2374,6 +2757,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                     />
                   </svg>
                 </button>
+                */}
 
                 <button
                   onClick={() => handleToolSelect("select")}

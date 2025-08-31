@@ -24,7 +24,7 @@ const QRCodeModalTopic = ({ isOpen, onClose, bookId, chapterId, topicId, topicTi
         return;
       }
       
-      const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/qrcode/books/${bookId}/chapters/${chapterId}/topics/${topicId}`, {
+      const response = await fetch(`https://test.ailisher.com/api/qrcode/books/${bookId}/chapters/${chapterId}/topics/${topicId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

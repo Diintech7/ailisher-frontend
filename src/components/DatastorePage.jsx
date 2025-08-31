@@ -195,7 +195,7 @@ const DatastoreContent = () => {
         throw new Error('Authentication token not found');
       }
   
-      const response = await axios.get('https://aipbbackend-yxnh.onrender.com/api/datastore', {
+      const response = await axios.get('https://test.ailisher.com/api/datastore', {
         headers: {
           Authorization: `Bearer ${token}`,
         }
@@ -314,7 +314,7 @@ const DatastoreContent = () => {
         }
       }
 
-      const response = await axios.post('https://aipbbackend-yxnh.onrender.com/api/datastore', requestData, {
+      const response = await axios.post('https://test.ailisher.com/api/datastore', requestData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -343,7 +343,7 @@ const DatastoreContent = () => {
     try {
       const token = Cookies.get('usertoken');
       
-      await axios.delete(`https://aipbbackend-yxnh.onrender.com/api/datastore/${id}`, {
+      await axios.delete(`https://test.ailisher.com/api/datastore/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

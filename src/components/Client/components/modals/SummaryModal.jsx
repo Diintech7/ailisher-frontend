@@ -46,20 +46,20 @@ const SummaryModal = ({
       // Determine endpoint based on item type
       if (itemType === "book") {
         endpoint = isWorkbook
-          ? `https://aipbbackend-yxnh.onrender.com/api/assets/${workbookId}/summaries`
-          : `https://aipbbackend-yxnh.onrender.com/api/assets/${bookId}/summaries`
+          ? `https://test.ailisher.com/api/assets/${workbookId}/summaries`
+          : `https://test.ailisher.com/api/assets/${bookId}/summaries`
       } else if (itemType === "chapter") {
         endpoint = isWorkbook
-          ? `https://aipbbackend-yxnh.onrender.com/api/assets/${workbookId}/chapters/${chapterId}/summaries`
-          : `https://aipbbackend-yxnh.onrender.com/api/assets/${bookId}/chapters/${chapterId}/summaries`
+          ? `https://test.ailisher.com/api/assets/${workbookId}/chapters/${chapterId}/summaries`
+          : `https://test.ailisher.com/api/assets/${bookId}/chapters/${chapterId}/summaries`
       } else if (itemType === "topic") {
         endpoint = isWorkbook
-          ? `https://aipbbackend-yxnh.onrender.com/api/assets/${workbookId}/chapters/${chapterId}/topics/${topicId}/summaries`
-          : `https://aipbbackend-yxnh.onrender.com/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}/summaries`
+          ? `https://test.ailisher.com/api/assets/${workbookId}/chapters/${chapterId}/topics/${topicId}/summaries`
+          : `https://test.ailisher.com/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}/summaries`
       } else if (itemType === "subtopic") {
         endpoint = isWorkbook
-          ? `https://aipbbackend-yxnh.onrender.com/api/assets/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}/summaries`
-          : `https://aipbbackend-yxnh.onrender.com/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}/summaries`
+          ? `https://test.ailisher.com/api/assets/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}/summaries`
+          : `https://test.ailisher.com/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}/summaries`
       }
 
       const response = await axios.post(

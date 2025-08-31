@@ -37,6 +37,9 @@ import Tools from './components/Client/Tools';
 import Reels from './components/Client/Reels';
 import Marketing from './components/Client/Marketing';
 import ImageGenerator from './components/Client/ImageGenerator';
+import QuestionBank from './components/Client/QuestionBank';
+import QuestionBankDetail from './components/Client/QuestionBankDetail';
+import GeneratePage from './components/Client/EditPage';
 
 const UserApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -55,7 +58,7 @@ const UserApp = () => {
             setIsAuthenticated(true);
             setUserRole(userData.role);
           }
-          const response = await fetch('https://aipbbackend-yxnh.onrender.com/api/auth/validate', {
+          const response = await fetch('https://test.ailisher.com/api/auth/validate', {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -201,11 +204,14 @@ const UserApp = () => {
                 <Route path="/ai-workbook/:workbookId/chapters/:chapterId/topics/:topicId/assets" element={<AssetView />} />
                 <Route path="/ai-workbook/:workbookId/chapters/:chapterId/topics/:topicId/subtopics/:subtopicId/assets" element={<AssetView />} />
                 <Route path="/users" element={<User/>} />
+                <Route path="/generate" element={<GeneratePage/>} />
                 <Route path="/tools" element={<Tools/>} />
                 <Route path="/reels" element={<Reels/>} />
                 <Route path="/marketing" element={<Marketing/>} />
                 <Route path="/image-generator" element={<ImageGenerator/>} />
                 <Route path="/chat/:id" element={<ChatApplication />} />
+                <Route path="/question-bank" element={<QuestionBank/>}/>
+                <Route path="/question-bank/:type/:id" element={<QuestionBankDetail/>}/>
               </>
             )}
             {userRole === 'user' && (

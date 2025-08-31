@@ -75,7 +75,7 @@ const WorkbookItem = ({ workbook, onClick, onEdit, onUpdateWorkbook, onToggleEna
           });
         }
         console.log(options)
-        const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/workbooks/${workbook._id}/highlight`, options);
+        const response = await fetch(`https://test.ailisher.com/api/workbooks/${workbook._id}/highlight`, options);
         const data = await response.json();
         console.log(data)
         if (data.success) {
@@ -109,7 +109,7 @@ const WorkbookItem = ({ workbook, onClick, onEdit, onUpdateWorkbook, onToggleEna
             endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
           });
         }
-        const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/workbooks/${workbook._id}/trending`, options);
+        const response = await fetch(`https://test.ailisher.com/api/workbooks/${workbook._id}/trending`, options);
         const data = await response.json();
         if (data.success) {
           toast.success(data.message || 'Trending status updated');
@@ -358,7 +358,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
   const refreshCategories = async () => {
     try {
       const token = Cookies.get("usertoken");
-      const res = await fetch("https://aipbbackend-yxnh.onrender.com/api/categories", {
+      const res = await fetch("https://test.ailisher.com/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await res.json();
@@ -383,7 +383,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
     try {
       setCreatingCategory(true);
       const token = Cookies.get("usertoken");
-      const res = await fetch("https://aipbbackend-yxnh.onrender.com/api/categories", {
+      const res = await fetch("https://test.ailisher.com/api/categories", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -420,7 +420,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
       setCreatingSubcategory(true);
       const token = Cookies.get("usertoken");
       // Need category id; fetch categories and find the current mainCategory
-      const listRes = await fetch("https://aipbbackend-yxnh.onrender.com/api/categories", {
+      const listRes = await fetch("https://test.ailisher.com/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await listRes.json();
@@ -432,7 +432,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
         return;
       }
       const res = await fetch(
-        `https://aipbbackend-yxnh.onrender.com/api/categories/${currentCat._id}/subcategories`,
+        `https://test.ailisher.com/api/categories/${currentCat._id}/subcategories`,
         {
           method: "POST",
           headers: {
@@ -565,7 +565,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
       let coverImageKey = null;
       if (coverImage) {
         // Get presigned URL
-        const uploadUrlResponse = await fetch('https://aipbbackend-yxnh.onrender.com/api/workbooks/cover-upload-url', {
+        const uploadUrlResponse = await fetch('https://test.ailisher.com/api/workbooks/cover-upload-url', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -616,7 +616,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
       }
       if (coverImageKey) workbookData.coverImageKey = coverImageKey;
       // Send to backend
-      const response = await fetch('https://aipbbackend-yxnh.onrender.com/api/workbooks', {
+      const response = await fetch('https://test.ailisher.com/api/workbooks', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -998,7 +998,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
       
       if (coverImage) {
         try {
-          const uploadUrlResponse = await fetch('https://aipbbackend-yxnh.onrender.com/api/workbooks/cover-upload-url', {
+          const uploadUrlResponse = await fetch('https://test.ailisher.com/api/workbooks/cover-upload-url', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -1081,7 +1081,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
         }
       }
       
-      const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/workbooks/${book._id}`, {
+      const response = await fetch(`https://test.ailisher.com/api/workbooks/${book._id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1636,7 +1636,7 @@ const AIWorkbook = () => {
       }
            // Fetch categories from backend
            const categoriesResponse = await fetch(
-            "https://aipbbackend-yxnh.onrender.com/api/categories",
+            "https://test.ailisher.com/api/categories",
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -1665,7 +1665,7 @@ const AIWorkbook = () => {
           });
     
 
-          const response = await fetch('https://aipbbackend-yxnh.onrender.com/api/workbooks', {
+          const response = await fetch('https://test.ailisher.com/api/workbooks', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -1766,7 +1766,7 @@ const AIWorkbook = () => {
         toast.error('Authentication required');
         return;
       }
-      const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/workbooks/${workbookId}` , {
+      const response = await fetch(`https://test.ailisher.com/api/workbooks/${workbookId}` , {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${token}`,

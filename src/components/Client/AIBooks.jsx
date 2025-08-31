@@ -81,7 +81,7 @@ const BookItem = ({
     }
 
     // For local files, construct the full URL
-    return `https://aipbbackend-yxnh.onrender.com/${imageUrl}`;
+    return `https://test.ailisher.com/${imageUrl}`;
   };
 
   // Close menu when clicking outside
@@ -152,7 +152,7 @@ const BookItem = ({
       }
 
       const response = await fetch(
-        `https://aipbbackend-yxnh.onrender.com/api/books/${book._id}`,
+        `https://test.ailisher.com/api/books/${book._id}`,
         {
           method: "DELETE",
           headers: {
@@ -713,7 +713,7 @@ const AddBookModal = ({
   const refreshCategories = async () => {
     try {
       const token = Cookies.get("usertoken");
-      const res = await fetch("https://aipbbackend-yxnh.onrender.com/api/categories", {
+      const res = await fetch("https://test.ailisher.com/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await res.json();
@@ -738,7 +738,7 @@ const AddBookModal = ({
     try {
       setCreatingCategory(true);
       const token = Cookies.get("usertoken");
-      const res = await fetch("https://aipbbackend-yxnh.onrender.com/api/categories", {
+      const res = await fetch("https://test.ailisher.com/api/categories", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -775,7 +775,7 @@ const AddBookModal = ({
       setCreatingSubcategory(true);
       const token = Cookies.get("usertoken");
       // Need category id; fetch categories and find the current mainCategory
-      const listRes = await fetch("https://aipbbackend-yxnh.onrender.com/api/categories", {
+      const listRes = await fetch("https://test.ailisher.com/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await listRes.json();
@@ -787,7 +787,7 @@ const AddBookModal = ({
         return;
       }
       const res = await fetch(
-        `https://aipbbackend-yxnh.onrender.com/api/categories/${currentCat._id}/subcategories`,
+        `https://test.ailisher.com/api/categories/${currentCat._id}/subcategories`,
         {
           method: "POST",
           headers: {
@@ -939,7 +939,7 @@ const AddBookModal = ({
         try {
           // Get presigned URL
           const uploadUrlResponse = await fetch(
-            "https://aipbbackend-yxnh.onrender.com/api/books/cover-upload-url",
+            "https://test.ailisher.com/api/books/cover-upload-url",
             {
               method: "POST",
               headers: {
@@ -1034,7 +1034,7 @@ const AddBookModal = ({
 
       console.log("Sending book data:", bookData);
 
-      const response = await fetch("https://aipbbackend-yxnh.onrender.com/api/books", {
+      const response = await fetch("https://test.ailisher.com/api/books", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -1795,7 +1795,7 @@ const EditBookModal = ({
       if (coverImage) {
         try {
           const uploadUrlResponse = await fetch(
-            "https://aipbbackend-yxnh.onrender.com/api/books/cover-upload-url",
+            "https://test.ailisher.com/api/books/cover-upload-url",
             {
               method: "POST",
               headers: {
@@ -1889,7 +1889,7 @@ const EditBookModal = ({
       }
 
       const response = await fetch(
-        `https://aipbbackend-yxnh.onrender.com/api/books/${book._id}`,
+        `https://test.ailisher.com/api/books/${book._id}`,
         {
           method: "PUT",
           headers: {
@@ -2408,7 +2408,7 @@ const AIBooks = () => {
 
       // Fetch categories from backend
       const categoriesResponse = await fetch(
-        "https://aipbbackend-yxnh.onrender.com/api/categories",
+        "https://test.ailisher.com/api/categories",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -2445,7 +2445,7 @@ const AIBooks = () => {
 
       // Then fetch the books with pagination and filters
       const booksResponse = await fetch(
-        `https://aipbbackend-yxnh.onrender.com/api/books?${queryParams}`,
+        `https://test.ailisher.com/api/books?${queryParams}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -2569,7 +2569,7 @@ const AIBooks = () => {
       const endpoint = `/api/books/${bookId}/highlight`;
       const method = isHighlighted ? "POST" : "DELETE";
 
-      const response = await fetch(`https://aipbbackend-yxnh.onrender.com${endpoint}`, {
+      const response = await fetch(`https://test.ailisher.com${endpoint}`, {
         method,
         headers: {
           Authorization: `Bearer ${token}`,
@@ -2615,7 +2615,7 @@ const AIBooks = () => {
       const endpoint = `/api/books/${bookId}/trending`;
       const method = isTrending ? "POST" : "DELETE";
 
-      const response = await fetch(`https://aipbbackend-yxnh.onrender.com${endpoint}`, {
+      const response = await fetch(`https://test.ailisher.com${endpoint}`, {
         method,
         headers: {
           Authorization: `Bearer ${token}`,
@@ -2655,7 +2655,7 @@ const AIBooks = () => {
       }
 
       const response = await fetch(
-        `https://aipbbackend-yxnh.onrender.com/api/books/${bookId}`,
+        `https://test.ailisher.com/api/books/${bookId}`,
         {
           method: "PATCH",
           headers: {
@@ -2789,7 +2789,7 @@ const AIBooks = () => {
 
       // Update category order for all books in the category
       const response = await fetch(
-        `https://aipbbackend-yxnh.onrender.com/api/books/categories/${mainCategory}/order`,
+        `https://test.ailisher.com/api/books/categories/${mainCategory}/order`,
         {
           method: "PUT",
           headers: {

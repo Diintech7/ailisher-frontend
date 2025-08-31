@@ -60,7 +60,7 @@ const BookCourses = () => {
           navigate('/login');
           return;
         }
-        const response = await fetch(`https://aipbbackend-yxnh.onrender.com/api/books/${bookId}`, {
+        const response = await fetch(`https://test.ailisher.com/api/books/${bookId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -128,7 +128,7 @@ const BookCourses = () => {
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl;
     }
-    return `https://aipbbackend-yxnh.onrender.com/${imageUrl}`;
+    return `https://test.ailisher.com/${imageUrl}`;
   };
 
   const getVideoThumbnail = (videoUrl) => {

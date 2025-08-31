@@ -20,7 +20,7 @@ const CreditAccount = () => {
     setLoading(true);
     try {
       const response = await axios.get(
-        "https://aipbbackend-yxnh.onrender.com/api/admin/credit-account",
+        "https://test.ailisher.com/api/admin/credit-account",
         {
           headers: {
             Authorization: `Bearer ${Cookies.get("admintoken")}`,

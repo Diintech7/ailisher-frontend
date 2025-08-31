@@ -110,7 +110,7 @@ export default function Marketing() {
   ];
 
   const axiosConfig = {
-    baseURL: 'https://aipbbackend-yxnh.onrender.com',
+    baseURL: 'https://test.ailisher.com',
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'

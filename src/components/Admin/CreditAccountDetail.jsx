@@ -13,24 +13,27 @@ export default function CreditAccountDetail() {
   const [addCreditAmount, setAddCreditAmount] = useState('');
   const [adminMessage, setAdminMessage] = useState('');
   const [addCreditLoading, setAddCreditLoading] = useState(false);
+  const [clientId, setclientId] = useState(null);
   const [paymentModal, setPaymentModal] = useState({ show: false, success: false, message: '' });
 
   const fetchAccountDetails = async () => {
     setLoadingDetails(true);
     try {
-      const response = await axios.get(`https://aipbbackend-yxnh.onrender.com/api/admin/credit-account/${accountId}`,
+      const response = await axios.get(`https://test.ailisher.com/api/admin/credit-account/${accountId}`,
         { headers: { Authorization: `Bearer ${Cookies.get('admintoken')}` } }
       );
       setAccountDetails(response.data.data);
+      setclientId(response.data.data.clientId)
     } catch (error) {
       console.error('Failed to fetch account details:', error);
     }
     setLoadingDetails(false);
   };
+console.log(clientId);
 
   const fetchRechargePlans = async () => {
     try {
-      const response = await axios.get('https://aipbbackend-yxnh.onrender.com/api/admin/get-recharge-plan',
+      const response = await axios.get(`https://test.ailisher.com/api/admin/${clientId}/get-recharge-plan`,
         { headers: { Authorization: `Bearer ${Cookies.get('admintoken')}` } }
       );
       setRechargePlans(response.data.data || []);
@@ -41,8 +44,11 @@ export default function CreditAccountDetail() {
 
   useEffect(() => {
     fetchAccountDetails();
-    fetchRechargePlans();
   }, [accountId]);
+
+  useEffect(()=>{
+    fetchRechargePlans()
+  },[clientId])
 
   const initiatePayment = async () => {
     if (!selectedPlan) { alert('Select a plan'); return; }
@@ -62,7 +68,7 @@ export default function CreditAccountDetail() {
     console.log(adminId);
     console.log(adminUser);
     
-      const response = await fetch('https://aipbbackend-yxnh.onrender.com/api/admin/paytm/initiate', {
+      const response = await fetch('https://test.ailisher.com/api/admin/paytm/initiate', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

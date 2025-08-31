@@ -33,7 +33,7 @@ export default function User() {
         return;
       }
 
-      const response = await fetch('https://aipbbackend-yxnh.onrender.com/api/admin/userprofile', {
+      const response = await fetch('https://test.ailisher.com/api/admin/userprofile', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

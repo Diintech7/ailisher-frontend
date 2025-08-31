@@ -51,7 +51,7 @@ export default function EvaluatorReview() {
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [activeImage, setActiveImage] = useState(null);
 
-  const API_BASE_URL = 'https://aipbbackend-yxnh.onrender.com';
+  const API_BASE_URL = 'https://test.ailisher.com';
 
   const fetchReviews = async (type, page = 1) => {
     setLoading(prev => ({ ...prev, [type]: true }));

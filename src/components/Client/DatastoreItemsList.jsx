@@ -66,13 +66,13 @@ const DatastoreItemsList = () => {
 
       let endpoint = '';
       if (type === 'book') {
-        endpoint = `https://aipbbackend-yxnh.onrender.com/api/datastores/book/${id}/items`;
+        endpoint = `https://test.ailisher.com/api/datastores/book/${id}/items`;
       } else if (type === 'chapter') {
-        endpoint = `https://aipbbackend-yxnh.onrender.com/api/datastores/chapter/${id}/items`;
+        endpoint = `https://test.ailisher.com/api/datastores/chapter/${id}/items`;
       } else if (type === 'topic') {
-        endpoint = `https://aipbbackend-yxnh.onrender.com/api/datastores/topic/${id}/items`;
+        endpoint = `https://test.ailisher.com/api/datastores/topic/${id}/items`;
       } else {
-        endpoint = `https://aipbbackend-yxnh.onrender.com/api/datastores/book/${id}/items`;
+        endpoint = `https://test.ailisher.com/api/datastores/book/${id}/items`;
        
       }
 
