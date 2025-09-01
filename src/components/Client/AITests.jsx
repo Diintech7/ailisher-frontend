@@ -1207,7 +1207,7 @@ const CopyModal = ({ isOpen, onClose, onConfirm, test, type, formData, setFormDa
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg">
         <div className="p-6">
           <div className="flex items-center mb-4">
             <div className="flex-shrink-0">
@@ -1249,13 +1249,12 @@ const CopyModal = ({ isOpen, onClose, onConfirm, test, type, formData, setFormDa
               <p className="font-medium mb-2">This will copy:</p>
               <ul className="list-disc list-inside space-y-1">
                 <li>All test settings</li>
-                <li>All questions ({test.questions?.length || 0} questions)</li>
                 <li>Instructions and configuration</li>
                 <li>Category and subcategory</li>
                 <li>Estimated time</li>
               </ul>
               <p className="mt-2 text-xs text-gray-500">
-                Note: The new test will start as disabled, won't be marked as trending/highlighted, and won't include the cover image (you can add a new one).
+                Note: The new test won't include the cover image (you can add a new one).
               </p>
             </div>
           </div>
