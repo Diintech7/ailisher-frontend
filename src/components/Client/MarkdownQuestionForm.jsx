@@ -18,6 +18,8 @@ const MarkdownQuestionForm = ({
     estimatedTime: editingQuestion?.estimatedTime || 1,
     positiveMarks: editingQuestion?.positiveMarks || 1,
     negativeMarks: editingQuestion?.negativeMarks || 0.33,
+    subject: editingQuestion?.subject || "",
+    topic: editingQuestion?.topic || "",
     solution: editingQuestion?.solution || {
       type: "text",
       text: "",
@@ -39,6 +41,8 @@ const MarkdownQuestionForm = ({
         estimatedTime: editingQuestion.estimatedTime || 1,
         positiveMarks: editingQuestion.positiveMarks || 1,
         negativeMarks: editingQuestion.negativeMarks || 0.33,
+        subject: editingQuestion.subject || "",
+        topic: editingQuestion.topic || "",
         solution: editingQuestion.solution || {
           type: "text",
           text: "",
@@ -76,6 +80,8 @@ const MarkdownQuestionForm = ({
         estimatedTime: formData.estimatedTime,
         positiveMarks: formData.positiveMarks,
         negativeMarks: formData.negativeMarks,
+        subject: formData.subject,
+        topic: formData.topic,
         solution: formData.solution,
         questionBankId: questionBankId,
       };
@@ -119,7 +125,7 @@ const MarkdownQuestionForm = ({
   };
 
   return (
-    <div className="min-h-screen w-full bg-gray-50">
+    <div className="h-full w-full bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 shadow-sm mb-6 top-0 z-10">
         <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -231,6 +237,30 @@ const MarkdownQuestionForm = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Subject
+                </label>
+                <input
+                  type="text"
+                  value={formData.subject}
+                  onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value }))}
+                  placeholder="Enter subject"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Topic
+                </label>
+                <input
+                  type="text"
+                  value={formData.topic}
+                  onChange={(e) => setFormData(prev => ({ ...prev, topic: e.target.value }))}
+                  placeholder="Enter topic"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Difficulty
                 </label>
                 <select
@@ -278,7 +308,7 @@ const MarkdownQuestionForm = ({
                   step="0.1"
                   value={formData.negativeMarks}
                   onChange={(e) => setFormData(prev => ({ ...prev, negativeMarks: Number(e.target.value) }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -348,6 +378,18 @@ const MarkdownQuestionForm = ({
                 <div className="border-t border-gray-200 pt-4">
                   <h3 className="text-lg font-medium text-gray-800 mb-3">Question Details</h3>
                   <div className="grid grid-cols-2 gap-4 text-sm">
+                    {formData.subject && (
+                      <div>
+                        <span className="font-medium text-gray-600">Subject:</span>
+                        <span className="ml-2">{formData.subject}</span>
+                      </div>
+                    )}
+                    {formData.topic && (
+                      <div>
+                        <span className="font-medium text-gray-600">Topic:</span>
+                        <span className="ml-2">{formData.topic}</span>
+                      </div>
+                    )}
                     <div>
                       <span className="font-medium text-gray-600">Difficulty:</span>
                       <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${

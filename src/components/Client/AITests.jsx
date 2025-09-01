@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Edit, Trash2, Eye, Clock, Star, TrendingUp, BookOpen, FileText, X, ArrowLeft, Play, Users, Calendar, ToggleRight } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Clock, Star, TrendingUp, BookOpen, FileText, X, ArrowLeft, Play, Users, Calendar, ToggleRight, Copy } from 'lucide-react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL } from '../../config';
 
 const AITests = () => {
   const [activeTab, setActiveTab] = useState('objective');
@@ -14,6 +15,12 @@ const AITests = () => {
   const [editingTest, setEditingTest] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingTest, setDeletingTest] = useState(null);
+  const [showCopyModal, setShowCopyModal] = useState(false);
+  const [testToCopy, setTestToCopy] = useState(null);
+  const [copyFormData, setCopyFormData] = useState({
+    name: '',
+    description: ''
+  });
   const token = Cookies.get('usertoken');
   const [categoryMappings, setCategoryMappings] = useState({});
   const [filters, setFilters] = useState({ category: '', subcategory: '' });
@@ -147,6 +154,41 @@ const AITests = () => {
     setShowDeleteModal(true);
   };
 
+  const openCopyModal = (test, e) => {
+    e.stopPropagation();
+    setTestToCopy(test);
+    setCopyFormData({
+      name: `${test.name}_Copy`,
+      description: test.description || ''
+    });
+    setShowCopyModal(true);
+  };
+
+  const handleCopyTest = async () => {
+    try {
+      const endpoint = activeTab === 'objective' 
+        ? `${API_BASE_URL}/api/objectivetests/${testToCopy._id}/copy`
+        : `${API_BASE_URL}/api/subjectivetests/${testToCopy._id}/copy`;
+
+      const response = await axios.post(endpoint, copyFormData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.data.success) {
+        toast.success('Test copied successfully!');
+        setShowCopyModal(false);
+        setTestToCopy(null);
+        setCopyFormData({ name: '', description: '' });
+        fetchTests(); // Refresh the tests list
+      } else {
+        toast.error(response.data.message || 'Failed to copy test');
+      }
+    } catch (error) {
+      console.error('Error copying test:', error);
+      toast.error(error.response?.data?.message || 'Failed to copy test');
+    }
+  };
+
   const showTestModal = (test,type) => {
     if(test.isEnabled)
     {
@@ -207,6 +249,13 @@ const AITests = () => {
                 >
                   <Edit size={14} className="mr-2" />
                   Edit
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); openCopyModal(test, e); setOpenMenuId(null); }}
+                  className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 flex items-center"
+                >
+                  <Copy size={14} className="mr-2" />
+                  Copy Test
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); openDeleteModal(test, e); setOpenMenuId(null); }}
@@ -534,6 +583,23 @@ const AITests = () => {
           onConfirm={handleDeleteTest}
           test={deletingTest}
           type={activeTab}
+        />
+      )}
+
+      {/* Copy Test Modal */}
+      {showCopyModal && testToCopy && (
+        <CopyModal
+          isOpen={showCopyModal}
+          onClose={() => {
+            setShowCopyModal(false);
+            setTestToCopy(null);
+            setCopyFormData({ name: '', description: '' });
+          }}
+          onConfirm={handleCopyTest}
+          test={testToCopy}
+          type={activeTab}
+          formData={copyFormData}
+          setFormData={setCopyFormData}
         />
       )}
     </div>
@@ -1127,6 +1193,85 @@ const DeleteModal = ({ isOpen, onClose, onConfirm, test, type }) => {
               className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
             >
               Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Copy Test Modal
+const CopyModal = ({ isOpen, onClose, onConfirm, test, type, formData, setFormData }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+        <div className="p-6">
+          <div className="flex items-center mb-4">
+            <div className="flex-shrink-0">
+              <Copy className="h-6 w-6 text-green-600" />
+            </div>
+            <div className="ml-3">
+              <h3 className="text-lg font-medium text-gray-900">Copy {type === 'objective' ? 'Objective' : 'Subjective'} Test</h3>
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Test Name
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter test name"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Description
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                rows={3}
+                placeholder="Enter description"
+              />
+            </div>
+            
+            <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+              <p className="font-medium mb-2">This will copy:</p>
+              <ul className="list-disc list-inside space-y-1">
+                <li>All test settings</li>
+                <li>All questions ({test.questions?.length || 0} questions)</li>
+                <li>Instructions and configuration</li>
+                <li>Category and subcategory</li>
+                <li>Estimated time</li>
+              </ul>
+              <p className="mt-2 text-xs text-gray-500">
+                Note: The new test will start as disabled, won't be marked as trending/highlighted, and won't include the cover image (you can add a new one).
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-3 mt-6">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-gray-600 hover:text-gray-800"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onConfirm}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+            >
+              Copy Test
             </button>
           </div>
         </div>
