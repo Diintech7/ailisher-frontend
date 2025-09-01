@@ -34,6 +34,8 @@ import {
 } from "lucide-react";
 import ObjectiveQuestionForm from "./components/forms/ObjectiveQuestionForm.jsx";
 import TextFromImage from "./QuestionBankTextExtract.jsx";
+import MarkdownQuestionForm from "./MarkdownQuestionForm.jsx";
+import { API_BASE_URL } from "../../config.js";
 
 export default function QuestionBankObjective() {
   const questionBankId = useParams().id;
@@ -45,6 +47,7 @@ export default function QuestionBankObjective() {
   const [questions, setQuestions] = useState([]);
   const [activeLevel, setActiveLevel] = useState("L1");
   const [showUploadView, setShowUploadView] = useState(false);
+  const [showMarkdownForm, setShowMarkdownForm] = useState(false);
   const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [showPdfUpload, setShowPdfUpload] = useState(false);
@@ -77,7 +80,7 @@ export default function QuestionBankObjective() {
     try {
       setLoading(true);
       const response = await axios.get(
-        `https://test.ailisher.com/api/questionbank/${questionBankId}`,
+        `${API_BASE_URL}/api/questionbank/${questionBankId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -98,7 +101,7 @@ export default function QuestionBankObjective() {
       // This would need to be updated based on your actual API structure
       console.log(questionBankId);
       const response = await axios.get(
-        `https://test.ailisher.com/api/questionbank/${questionBankId}/questions`,
+        `${API_BASE_URL}/api/questionbank/${questionBankId}/questions`,
         {
           headers: { Authorization: `Bearer ${token}` },
           // params: {
@@ -193,7 +196,7 @@ export default function QuestionBankObjective() {
       };
 
       const res = await axios.post(
-        `https://test.ailisher.com/api/questionbank/${questionBankId}/question`,
+        `${API_BASE_URL}/api/questionbank/${questionBankId}/question`,
         payload,
         {
           headers: {
@@ -243,7 +246,7 @@ export default function QuestionBankObjective() {
       };
 
       const res = await axios.put(
-        `https://test.ailisher.com/api/questionbank/${questionId}/question`,
+        `${API_BASE_URL}/api/questionbank/${questionId}/question`,
         payload,
         {
           headers: {
@@ -278,7 +281,7 @@ export default function QuestionBankObjective() {
       }
 
       const res = await axios.delete(
-        `https://test.ailisher.com/api/questionbank/${questionId}/question`,
+        `${API_BASE_URL}/api/questionbank/${questionId}/question`,
         {
           headers: { Authorization: `Bearer ${authToken}` },
         }
@@ -306,16 +309,26 @@ export default function QuestionBankObjective() {
         return;
       }
 
-      const res = await axios.delete(
-        `https://test.ailisher.com/api/questionbank/${questionBankId}/questions/bulk`,
-        {
-          headers: { Authorization: `Bearer ${authToken}` },
-          data: { questionIds: selectedQuestions },
-        }
-      );
+      console.log("Bulk delete request:", {
+        url: `${API_BASE_URL}/api/questionbank/${questionBankId}/questions/bulk`,
+        questionIds: selectedQuestions,
+        questionBankId
+      });
+
+      const res = await axios({
+        method: 'DELETE',
+        url: `${API_BASE_URL}/api/questionbank/${questionBankId}/questions/bulk`,
+        headers: { 
+          Authorization: `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
+        },
+        data: { questionIds: selectedQuestions }
+      });
+
+      console.log("Bulk delete response:", res.data);
 
       if (res.data.success) {
-        toast.success(`${selectedQuestions.length} questions deleted successfully`);
+        toast.success(`${res.data.deletedCount || selectedQuestions.length} questions deleted successfully`);
         setSelectedQuestions([]);
         setBulkActions(false);
         fetchQuestions();
@@ -324,52 +337,8 @@ export default function QuestionBankObjective() {
       }
     } catch (error) {
       console.error("Error bulk deleting questions:", error);
-      toast.error("Failed to delete questions");
-    }
-  };
-
-  const handlePdfUpload = async () => {
-    if (!pdfFile) {
-      toast.error("Please select a PDF file");
-      return;
-    }
-
-    try {
-      setUploadingPdf(true);
-      const authToken = Cookies.get("usertoken");
-      if (!authToken) {
-        toast.error("Authentication required");
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append("pdf", pdfFile);
-      formData.append("questionBankId", questionBankId);
-
-      const res = await axios.post(
-        `https://test.ailisher.com/api/questionbank/${questionBankId}/upload-pdf`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
-
-      if (res.data.success) {
-        toast.success("PDF uploaded and questions extracted successfully");
-        setShowUploadView(false);
-        setPdfFile(null);
-        fetchQuestions();
-      } else {
-        toast.error(res.data.message || "Failed to upload PDF");
-      }
-    } catch (error) {
-      console.error("Error uploading PDF:", error);
-      toast.error("Failed to upload PDF");
-    } finally {
-      setUploadingPdf(false);
+      console.error("Error response:", error.response?.data);
+      toast.error(error.response?.data?.message || "Failed to delete questions");
     }
   };
 
@@ -426,7 +395,7 @@ export default function QuestionBankObjective() {
         <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6 mb-8">
           <div className="flex flex-col md:flex-row gap-6">
             <div className="md:w-1/4 lg:w-1/5">
-              <div className="bg-gradient-to-br from-indigo-50 to-blue-100 rounded-lg h-48 flex items-center justify-center overflow-hidden">
+              <div className="bg-gradient-to-br from-indigo-50 to-blue-100 rounded-lg h-40 flex items-center justify-center overflow-hidden">
                 {questionBank?.coverImageUrl ? (
                   <img
                     src={questionBank.coverImageUrl}
@@ -443,13 +412,15 @@ export default function QuestionBankObjective() {
             
             <div className="md:w-3/4 lg:w-4/5">
               <div className="flex flex-col sm:flex-row justify-start items-start sm:items-center mb-4">
-                <div>
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    {questionBank?.title || "Question Bank"}
-                  </h1>
-                  <p className="text-gray-600 mt-1">
-                    {questions.length} questions • Objective Type
-                  </p>
+                <div className="flex items-center gap-4">
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                      {questionBank?.title || "Question Bank"}
+                    </h1>
+                    <p className="text-gray-600 mt-1">
+                      {questions.length} questions • Objective Type
+                    </p>
+                  </div>
                 </div>
               </div>
               
@@ -510,8 +481,8 @@ export default function QuestionBankObjective() {
           </div>
         </div>
 
-        {/* Main Content - Show either Questions View or Upload View */}
-        {!showUploadView ? (
+        {/* Main Content - Show Questions View, Upload View, or Markdown Form View */}
+        {!showUploadView && !showMarkdownForm ? (
           // Questions View
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Filters and Search */}
@@ -555,31 +526,18 @@ export default function QuestionBankObjective() {
                     Upload PDF
                   </button>
 
-                  <button
-                    onClick={() => {
-                      setEditingQuestion(null);
-                      setFormData({
-                        question: "",
-                        options: ["", "", "", ""],
-                        correctAnswer: 0,
-                        difficulty: activeLevel,
-                        estimatedTime: 1,
-                        positiveMarks: 1,
-                        negativeMarks: 0,
-                        solution: {
-                          type: "text",
-                          text: "",
-                          video: { url: "", title: "", description: "", duration: 0 },
-                          image: { url: "", caption: "" },
-                        },
-                      });
-                      setShowQuestionModal(true);
-                    }}
-                    className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors shadow-sm"
-                  >
-                    <Plus size={16} className="mr-2" />
-                    <span>Add Question</span>
-                  </button>
+                  {/* New Markdown Form Button */}
+                                     <button
+                     onClick={() => {
+                       setEditingQuestion(null);
+                       setShowMarkdownForm(true);
+                     }}
+                     className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors shadow-sm"
+                   >
+                     <Plus size={16} className="mr-2" />
+                     Add Question
+                   </button>
+
                 </div>
               </div>
             </div>
@@ -632,25 +590,10 @@ export default function QuestionBankObjective() {
                     </p>
                     <button
                       className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center"
-                      onClick={() => {
-                        setEditingQuestion(null);
-                        setFormData({
-                          question: "",
-                          options: ["", "", "", ""],
-                          correctAnswer: 0,
-                          difficulty: activeLevel,
-                          estimatedTime: 1,
-                          positiveMarks: 1,
-                          negativeMarks: 0,
-                          solution: {
-                            type: "text",
-                            text: "",
-                            video: { url: "", title: "", description: "", duration: 0 },
-                            image: { url: "", caption: "" },
-                          },
-                        });
-                        setShowQuestionModal(true);
-                      }}
+                                             onClick={() => {
+                         setEditingQuestion(null);
+                         setShowMarkdownForm(true);
+                       }}
                     >
                       <Plus size={16} className="mr-2" />
                       Add Question
@@ -739,25 +682,25 @@ export default function QuestionBankObjective() {
                                 <button
                                   className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
                                   title="Edit Question"
-                                  onClick={() => {
-                                    setEditingQuestion(question);
-                                    setFormData({
-                                      question: question.question,
-                                      options: question.options || ["", "", "", ""],
-                                      correctAnswer: question.correctAnswer ?? 0,
-                                      difficulty: question.difficulty || "L1",
-                                      estimatedTime: question.estimatedTime ?? 1,
-                                      positiveMarks: question.positiveMarks ?? 1,
-                                      negativeMarks: question.negativeMarks ?? 0,
-                                      solution: question.solution || {
-                                        type: "text",
-                                        text: "",
-                                        video: { url: "", title: "", description: "", duration: 0 },
-                                        image: { url: "", caption: "" },
-                                      },
-                                    });
-                                    setShowQuestionModal(true);
-                                  }}
+                                                                     onClick={() => {
+                                     setEditingQuestion(question);
+                                     setFormData({
+                                       question: question.question,
+                                       options: question.options || ["", "", "", ""],
+                                       correctAnswer: question.correctAnswer ?? 0,
+                                       difficulty: question.difficulty || "L1",
+                                       estimatedTime: question.estimatedTime ?? 1,
+                                       positiveMarks: question.positiveMarks ?? 1,
+                                       negativeMarks: question.negativeMarks ?? 0,
+                                       solution: question.solution || {
+                                         type: "text",
+                                         text: "",
+                                         video: { url: "", title: "", description: "", duration: 0 },
+                                         image: { url: "", caption: "" },
+                                       },
+                                     });
+                                     setShowMarkdownForm(true);
+                                   }}
                                 >
                                   <Edit2 size={18} />
                                 </button>
@@ -846,299 +789,33 @@ export default function QuestionBankObjective() {
             </div>
           </div>
 
+        ) : showUploadView ? (
+          <div className="flex justify-center h-full">
+            <TextFromImage
+              onBack={() => setShowUploadView(false)}
+              questionBankId={questionBankId}
+              onQuestionsSaved={() => {
+                setShowUploadView(false);
+                fetchQuestions();
+              }}
+            />
+          </div>
         ) : (
-          <TextFromImage/>
-        )}
-
-        {/* Add/Edit Question Modal */}
-        {showQuestionModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {editingQuestion ? "Edit Question" : "Add Question"}
-                </h3>
-                <button
-                  className="text-gray-500 hover:text-gray-700"
-                  onClick={() => {
-                    setShowQuestionModal(false);
-                    setEditingQuestion(null);
-                  }}
-                >
-                  ✕
-                </button>
-              </div>
-              
-              <ObjectiveQuestionForm
-                initialData={formData}
-                index={0}
-                canRemove={false}
-                onQuestionChange={(_, updated) =>
-                  setFormData((prev) => ({ ...prev, ...updated }))
-                }
-                fixedDifficulty={formData.difficulty}
-              />
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-700 mb-1">
-                    Estimated Time (mins)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={formData.estimatedTime}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        estimatedTime: parseInt(e.target.value) || 0,
-                      }))
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-700 mb-1">
-                    Positive Marks
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    step="0.1"
-                    value={formData.positiveMarks}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        positiveMarks: Number(e.target.value),
-                      }))
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-700 mb-1">
-                    Negative Marks
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    step="0.1"
-                    value={formData.negativeMarks}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        negativeMarks: Number(e.target.value),
-                      }))
-                    }
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-4">
-                <label className="block text-sm text-gray-700 mb-1">
-                  Solution Type
-                </label>
-                <select
-                  value={formData.solution?.type || "text"}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      solution: { ...prev.solution, type: e.target.value },
-                    }))
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                >
-                  <option value="text">Text</option>
-                  <option value="video">Video</option>
-                  <option value="image">Image</option>
-                </select>
-
-                {formData.solution?.type === "text" && (
-                  <div className="mt-2">
-                    <label className="block text-sm text-gray-700 mb-1">
-                      Solution Text
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={formData.solution?.text || ""}
-                      onChange={(e) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          solution: { ...prev.solution, text: e.target.value },
-                        }))
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    />
-                  </div>
-                )}
-
-                {formData.solution?.type === "video" && (
-                  <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm text-gray-700 mb-1">
-                        Video URL
-                      </label>
-                      <input
-                        type="url"
-                        value={formData.solution?.video?.url || ""}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            solution: {
-                              ...prev.solution,
-                              video: {
-                                ...prev.solution.video,
-                                url: e.target.value,
-                              },
-                            },
-                          }))
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm text-gray-700 mb-1">
-                        Title
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.solution?.video?.title || ""}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            solution: {
-                              ...prev.solution,
-                              video: {
-                                ...prev.solution.video,
-                                title: e.target.value,
-                              },
-                            },
-                          }))
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      />
-                    </div>
-                    <div className="md:col-span-2">
-                      <label className="block text-sm text-gray-700 mb-1">
-                        Description
-                      </label>
-                      <textarea
-                        rows={2}
-                        value={formData.solution?.video?.description || ""}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            solution: {
-                              ...prev.solution,
-                              video: {
-                                ...prev.solution.video,
-                                description: e.target.value,
-                              },
-                            },
-                          }))
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm text-gray-700 mb-1">
-                        Duration (sec)
-                      </label>
-                      <input
-                        type="number"
-                        min={0}
-                        value={formData.solution?.video?.duration || 0}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            solution: {
-                              ...prev.solution,
-                              video: {
-                                ...prev.solution.video,
-                                duration: parseInt(e.target.value) || 0,
-                              },
-                            },
-                          }))
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {formData.solution?.type === "image" && (
-                  <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-sm text-gray-700 mb-1">
-                        Image URL
-                      </label>
-                      <input
-                        type="url"
-                        value={formData.solution?.image?.url || ""}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            solution: {
-                              ...prev.solution,
-                              image: {
-                                ...prev.solution.image,
-                                url: e.target.value,
-                              },
-                            },
-                          }))
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm text-gray-700 mb-1">
-                        Caption
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.solution?.image?.caption || ""}
-                        onChange={(e) =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            solution: {
-                              ...prev.solution,
-                              image: {
-                                ...prev.solution.image,
-                                caption: e.target.value,
-                              },
-                            },
-                          }))
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex justify-end gap-2 mt-4">
-                <button
-                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
-                  onClick={() => {
-                    setShowQuestionModal(false);
-                    setEditingQuestion(null);
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  onClick={() =>
-                    editingQuestion ? handleUpdateQuestion() : handleAddQuestion()
-                  }
-                >
-                  {editingQuestion ? "Update" : "Add"}
-                </button>
-              </div>
-            </div>
+          <div className="flex justify-center h-full">
+            <MarkdownQuestionForm
+              onBack={() => setShowMarkdownForm(false)}
+              questionBankId={questionBankId}
+              editingQuestion={editingQuestion}
+              onQuestionsSaved={() => {
+                setShowMarkdownForm(false);
+                setEditingQuestion(null);
+                fetchQuestions();
+              }}
+            />
           </div>
         )}
+
+
       </div>
     </>
   );

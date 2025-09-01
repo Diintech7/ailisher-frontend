@@ -26,3 +26,7 @@ code {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+::webkit-scrollbar {
+  display: none;
+}

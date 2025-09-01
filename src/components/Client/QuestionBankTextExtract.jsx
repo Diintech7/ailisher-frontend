@@ -35,6 +35,20 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
     };
   }, []);
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && onBack) {
+        onBack();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onBack]);
+
   // Handle file selection
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
@@ -466,23 +480,39 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Back Button */}
-        {onBack && (
-          <div className="mb-6">
-            <button
-              onClick={onBack}
-              className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-white rounded-lg transition-colors shadow-sm"
-            >
-              <ArrowLeft size={20} />
-              Back to Questions
-            </button>
+    <div className="min-h-screen w-full">
+      {/* Sticky Navigation Header */}
+      {onBack && (
+        <div className="top-0 z-10 bg-white border-b border-gray-200 shadow-sm mb-6">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={onBack}
+                  className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  <ArrowLeft size={20} />
+                  Back to Questions
+                </button>
+                <div className="text-gray-400">|</div>
+                <span className="text-sm text-gray-500">Text Extraction & Question Generation</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {parsedQuestions.length > 0 && (
+                  <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                    {parsedQuestions.length} Questions Ready
+                  </span>
+                )}
+                <span className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded border">
+                  Press ESC to go back
+                </span>
+              </div>
+            </div>
           </div>
-        )}
-        
-        
+        </div>
+      )}
 
+      <div className="w-full mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="space-y-6">
             <div className="bg-white rounded-xl shadow-lg p-6">
@@ -515,7 +545,7 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
                 <button onClick={() => fileInputRef.current?.click()} className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Choose File</button>
               </div>
 
-              {selectedFile && (
+              {/* {selectedFile && (
                 <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                   <h3 className="text-lg font-medium text-gray-800 mb-3">Extraction Options</h3>
                   <div className="space-y-3">
@@ -530,7 +560,7 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
                     <p className="text-xs text-gray-500">Uncheck both for clean text extraction only</p>
                   </div>
                 </div>
-              )}
+              )} */}
 
               <div className="flex gap-3 mt-6">
                 <button onClick={extractText} disabled={!selectedFile || isLoading} className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${!selectedFile || isLoading ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700'}`}>
@@ -638,27 +668,47 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
                           </div>
                         </div>
                         {!isCleaning && parsedQuestions.length > 0 && (
-                          <button
-                            onClick={saveQuestionsToDatabase}
-                            disabled={isSaving}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                              isSaving 
-                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                                : 'bg-green-600 text-white hover:bg-green-700 shadow-sm'
-                            }`}
-                          >
-                            {isSaving ? (
-                              <>
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                Saving...
-                              </>
-                            ) : (
-                              <>
-                                <Save size={16} />
-                                Save All Questions
-                              </>
-                            )}
-                          </button>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={saveQuestionsToDatabase}
+                              disabled={isSaving}
+                              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                                isSaving 
+                                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                                  : 'bg-green-600 text-white hover:bg-green-700 shadow-sm'
+                              }`}
+                            >
+                              {isSaving ? (
+                                <>
+                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                                  Saving...
+                                </>
+                              ) : (
+                                <>
+                                  <Save size={16} />
+                                  Save All Questions
+                                </>
+                              )}
+                            </button>
+                            {/* {onBack && (
+                              <button
+                                onClick={() => {
+                                  if (parsedQuestions.length > 0) {
+                                    // If there are questions, save them first, then go back
+                                    saveQuestionsToDatabase();
+                                  } else {
+                                    // If no questions, just go back
+                                    onBack();
+                                  }
+                                }}
+                                disabled={isSaving}
+                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                              >
+                                <ArrowLeft size={16} />
+                                {parsedQuestions.length > 0 ? 'Save & Go Back' : 'Go Back'}
+                              </button>
+                            )} */}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -788,6 +838,39 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
 
         <div className="text-center mt-12 text-gray-500"><p>Powered by Landing AI • Built with React & Tailwind CSS</p></div>
       </div>
+
+      {/* Floating Action Button for Quick Navigation */}
+      {onBack && (
+        <div className="fixed bottom-6 right-6 z-20">
+          <div className="flex flex-col gap-3">
+            {parsedQuestions.length > 0 && (
+              <button
+                onClick={saveQuestionsToDatabase}
+                disabled={isSaving}
+                className={`flex items-center gap-2 px-4 py-3 rounded-full shadow-lg transition-all duration-200 ${
+                  isSaving 
+                    ? 'bg-gray-400 text-gray-600 cursor-not-allowed' 
+                    : 'bg-green-600 text-white hover:bg-green-700 hover:scale-105'
+                }`}
+                title="Save Questions"
+              >
+                {isSaving ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                ) : (
+                  <Save size={20} />
+                )}
+              </button>
+            )}
+            <button
+              onClick={onBack}
+              className="flex items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-full shadow-lg hover:bg-blue-700 hover:scale-105 transition-all duration-200"
+              title="Back to Questions"
+            >
+              <ArrowLeft size={20} />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
