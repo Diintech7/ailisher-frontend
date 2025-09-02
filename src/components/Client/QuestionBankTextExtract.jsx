@@ -162,7 +162,7 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
                 case 'chunk_complete':
                   setCurrentChunk(data.chunkNumber);
                   setStreamingStatus(data.message);
-                  
+                  console.log(data.questions);
                   // Add new questions to the existing array
                   if (data.questions && data.questions.length > 0) {
                     setNewQuestionsCount(data.questions.length);
@@ -402,7 +402,8 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
       return;
     }
 
-    // setIsSaving(true);
+    console.log(parsedQuestions);
+    setIsSaving(true);
     try {
       const authToken = Cookies.get("usertoken");
       if (!authToken) {
@@ -410,12 +411,22 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
         return;
       }
 
+      // Helper to normalize difficulty to L1/L2/L3
+      const normalizeDifficulty = (value) => {
+        if (!value) return "L1";
+        const v = String(value).toLowerCase();
+        if (v === "l1" || v === "level1" || v === "easy") return "L1";
+        if (v === "l2" || v === "level2" || v === "medium") return "L2";
+        if (v === "l3" || v === "level3" || v === "hard") return "L3";
+        return "L1";
+      };
+
       // Transform parsed questions to match the expected format
       const questionsToSave = parsedQuestions.map((question, index) => ({
         question: question.questionText,
         options: question.options || [],
         correctOption: question.correctAnswer ?? 0,
-        difficulty: question.difficulty || "L1",
+        difficulty: normalizeDifficulty(question.difficulty),
         estimatedTime: question.estimatedTime ?? 1,
         positiveMarks: question.positiveMarks ?? 1,
         negativeMarks: question.negativeMarks ?? 0.33,
@@ -426,6 +437,9 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
           image: { url: "", caption: "" },
         },
         questionBankId: questionBankId,
+        subject: question.subject || "Other",
+        topic: question.topicName || "",
+        tags: question.topicTags || [],
       }));
 
       // Save questions one by one
@@ -513,6 +527,11 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
       )}
 
       <div className="w-full mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-800 mb-2">Text Extraction from Files</h1>
+          <p className="text-lg text-gray-600">Upload an image or PDF and extract text using Landing AI</p>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="space-y-6">
             <div className="bg-white rounded-xl shadow-lg p-6">
@@ -545,23 +564,6 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
                 <button onClick={() => fileInputRef.current?.click()} className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Choose File</button>
               </div>
 
-              {/* {selectedFile && (
-                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                  <h3 className="text-lg font-medium text-gray-800 mb-3">Extraction Options</h3>
-                  <div className="space-y-3">
-                    <label className="flex items-center">
-                      <input type="checkbox" checked={includeMarginalia} onChange={(e) => setIncludeMarginalia(e.target.checked)} className="mr-2 rounded" />
-                      <span className="text-sm text-gray-700">Include marginalia and layout info</span>
-                    </label>
-                    <label className="flex items-center">
-                      <input type="checkbox" checked={includeMetadata} onChange={(e) => setIncludeMetadata(e.target.checked)} className="mr-2 rounded" />
-                      <span className="text-sm text-gray-700">Include metadata in markdown</span>
-                    </label>
-                    <p className="text-xs text-gray-500">Uncheck both for clean text extraction only</p>
-                  </div>
-                </div>
-              )} */}
-
               <div className="flex gap-3 mt-6">
                 <button onClick={extractText} disabled={!selectedFile || isLoading} className={`flex-1 px-4 py-3 rounded-lg font-medium transition-colors ${!selectedFile || isLoading ? 'bg-gray-300 text-gray-500 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700'}`}>
                   {isLoading ? (<div className="flex items-center justify-center"><div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>Extracting...</div>) : ('Extract Text')}
@@ -592,6 +594,15 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
                   {extractedText && !isCleaning && (
                     <button onClick={() => fetchCleanedTextStream(extractedText)} className="px-4 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors font-medium">
                       Clean Text
+                    </button>
+                  )}
+                  {parsedQuestions.length > 0 && (
+                    <button
+                      onClick={saveQuestionsToDatabase}
+                      disabled={isSaving}
+                      className={`px-4 py-2 text-sm rounded-lg transition-colors font-medium ${isSaving ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-green-600 text-white hover:bg-green-700'}`}
+                    >
+                      {isSaving ? 'Saving...' : 'Save to DB'}
                     </button>
                   )}
                   {isCleaning && (
@@ -658,58 +669,13 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-green-600">
-                            {parsedQuestions.length}
-                          </div>
-                          <div className="text-xs text-gray-500">
-                            {isCleaning ? 'Live Updates' : 'Questions'}
-                          </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold text-green-600">
+                          {parsedQuestions.length}
                         </div>
-                        {!isCleaning && parsedQuestions.length > 0 && (
-                          <div className="flex gap-2">
-                            <button
-                              onClick={saveQuestionsToDatabase}
-                              disabled={isSaving}
-                              className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                                isSaving 
-                                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                                  : 'bg-green-600 text-white hover:bg-green-700 shadow-sm'
-                              }`}
-                            >
-                              {isSaving ? (
-                                <>
-                                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                  Saving...
-                                </>
-                              ) : (
-                                <>
-                                  <Save size={16} />
-                                  Save All Questions
-                                </>
-                              )}
-                            </button>
-                            {/* {onBack && (
-                              <button
-                                onClick={() => {
-                                  if (parsedQuestions.length > 0) {
-                                    // If there are questions, save them first, then go back
-                                    saveQuestionsToDatabase();
-                                  } else {
-                                    // If no questions, just go back
-                                    onBack();
-                                  }
-                                }}
-                                disabled={isSaving}
-                                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                              >
-                                <ArrowLeft size={16} />
-                                {parsedQuestions.length > 0 ? 'Save & Go Back' : 'Go Back'}
-                              </button>
-                            )} */}
-                          </div>
-                        )}
+                        <div className="text-xs text-gray-500">
+                          {isCleaning ? 'Live Updates' : 'Questions'}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -734,7 +700,21 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
                                {question.questionText}
                              </h3>
                            </div>
-                           <div className="flex items-center gap-2">
+                           <div className="flex items-center gap-2 flex-wrap justify-end">
+                             {question.subject && (
+                               <span className="text-xs font-semibold text-purple-700 bg-purple-100 px-2 py-1 rounded-full border border-purple-200">
+                                 {question.subject}
+                               </span>
+                             )}
+                             {question.difficulty && (
+                               <span className={`text-xs font-semibold px-2 py-1 rounded-full border ${
+                                 question.difficulty === 'easy' ? 'text-green-700 bg-green-100 border-green-200' :
+                                 question.difficulty === 'medium' ? 'text-yellow-700 bg-yellow-100 border-yellow-200' :
+                                 'text-red-700 bg-red-100 border-red-200'
+                               }`}>
+                                 {`Difficulty: ${question.difficulty.charAt(0).toUpperCase()}${question.difficulty.slice(1)}`}
+                               </span>
+                             )}
                              {typeof question.correctAnswer === 'number' && (
                                <span className="text-xs text-green-600 font-semibold bg-green-100 px-2 py-1 rounded-full border border-green-200">
                                  Answer: {String.fromCharCode(65 + question.correctAnswer)}
@@ -810,6 +790,22 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
                             <span>Options: {question.options?.length || 0}</span>
                             <span>ID: Q{String(idx + 1).padStart(3, '0')}</span>
                           </div>
+                          {(question.topicName || (Array.isArray(question.topicTags) && question.topicTags.length > 0)) && (
+                            <div className="mt-2 flex items-start justify-between gap-3">
+                              <div className="text-xs text-gray-700">
+                                {question.topicName && (
+                                  <span className="mr-2"><span className="text-gray-500">Topic:</span> <span className="font-medium">{question.topicName}</span></span>
+                                )}
+                              </div>
+                              {Array.isArray(question.topicTags) && question.topicTags.length > 0 && (
+                                <div className="flex flex-wrap gap-1">
+                                  {question.topicTags.slice(0, 5).map((tag, tIdx) => (
+                                    <span key={tIdx} className="text-[10px] text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full border border-blue-200">{tag}</span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
