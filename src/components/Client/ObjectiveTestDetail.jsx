@@ -423,7 +423,7 @@ export default function ObjectiveTestDetail() {
         return;
       }
       const res = await fetch(
-        `https://test.ailisher.com/api/objectivetest-questions/${questionId}`,
+        `${API_BASE_URL}/api/objectivetest-questions/test/${testId}/${questionId}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${authToken}` },
