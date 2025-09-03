@@ -28,6 +28,17 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
   const fileInputRef = useRef(null);
   const eventSourceRef = useRef(null);
 
+  // Inline edit state
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [editForm, setEditForm] = useState({
+    questionText: '',
+    optionsText: '', // one option per line
+    correctAnswer: 0,
+    difficulty: 'L1',
+    subject: '',
+    topicName: '',
+  });
+
   // Cleanup EventSource on component unmount
   useEffect(() => {
     return () => {
@@ -38,7 +49,7 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event) => {
-      if (event.key === 'Escape' && onBack) {
+      if (event.key === 'Escape' && onBack && editingIndex === null) {
         onBack();
       }
     };
@@ -47,7 +58,7 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onBack]);
+  }, [onBack, editingIndex]);
 
   // Handle file selection
   const handleFileSelect = (event) => {
@@ -122,7 +133,6 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
     closeEventSource();
 
     try {
-      // Create EventSource for streaming
       const response = await fetch(`${API_BASE_URL}/api/questionbank/clean-text-stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -162,28 +172,22 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
                 case 'chunk_complete':
                   setCurrentChunk(data.chunkNumber);
                   setStreamingStatus(data.message);
-                  console.log(data.questions);
-                  // Add new questions to the existing array
                   if (data.questions && data.questions.length > 0) {
                     setNewQuestionsCount(data.questions.length);
                     setParsedQuestions(prev => {
                       const newQuestions = data.questions.map((q, idx) => ({
                         ...q,
                         questionNumber: prev.length + idx + 1,
-                        isNew: true // Mark as new for animation
+                        isNew: true
                       }));
                       return [...prev, ...newQuestions];
                     });
-                    
-                    // Remove "new" flag after animation
                     setTimeout(() => {
                       setParsedQuestions(prev => 
                         prev.map(q => ({ ...q, isNew: false }))
                       );
                     }, 2000);
                   }
-                  
-                  // Update cleaned text
                   if (data.cleanedText) {
                     setCleanedText(prev => prev + (prev ? '\n\n--- Next Section ---\n\n' : '') + data.cleanedText);
                   }
@@ -245,15 +249,12 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
       }
       if (data.success) {
         setCleanedText(data.data.cleanedText || '');
-        // Also set the parsed questions if available
         if (data.data.questions && Array.isArray(data.data.questions)) {
           setParsedQuestions(data.data.questions);
         }
-        // Show chunk processing info
         if (data.data.chunksProcessed && data.data.chunksProcessed > 1) {
           setSuccess(`Successfully processed ${data.data.chunksProcessed} chunks and generated ${data.data.questionCount} questions!`);
         }
-        // Show warning if response was truncated
         if (data.data.isTruncated) {
           setCleanError('Warning: Response was truncated. Some questions may be missing. Try with a smaller text or contact support.');
         }
@@ -310,7 +311,6 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
           extractionError: data.data.extractionError
         });
         setSuccess('Text extracted successfully!');
-        // Auto-clean immediately after successful extraction with streaming
         if (raw && raw.trim()) {
           fetchCleanedTextStream(raw);
         }
@@ -326,7 +326,7 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
   };
 
   const clearAll = () => {
-    closeEventSource(); // Close any streaming connection
+    closeEventSource();
     setSelectedFile(null);
     setPreviewUrl(null);
     setExtractedText('');
@@ -341,6 +341,7 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
     setCurrentChunk(0);
     setTotalChunks(0);
     setNewQuestionsCount(0);
+    setEditingIndex(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -392,6 +393,8 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
 
   // Save all parsed questions to database
   const saveQuestionsToDatabase = async () => {
+    console.log("save called")
+    console.log(parsedQuestions)
     if (!parsedQuestions || parsedQuestions.length === 0) {
       toast.error('No questions to save');
       return;
@@ -402,7 +405,6 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
       return;
     }
 
-    console.log(parsedQuestions);
     setIsSaving(true);
     try {
       const authToken = Cookies.get("usertoken");
@@ -411,7 +413,6 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
         return;
       }
 
-      // Helper to normalize difficulty to L1/L2/L3
       const normalizeDifficulty = (value) => {
         if (!value) return "L1";
         const v = String(value).toLowerCase();
@@ -421,8 +422,7 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
         return "L1";
       };
 
-      // Transform parsed questions to match the expected format
-      const questionsToSave = parsedQuestions.map((question, index) => ({
+      const questionsToSave = parsedQuestions.map((question) => ({
         question: question.questionText,
         options: question.options || [],
         correctOption: question.correctAnswer ?? 0,
@@ -442,12 +442,12 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
         tags: question.topicTags || [],
       }));
 
-      // Save questions one by one
       let savedCount = 0;
       let failedCount = 0;
 
       for (const questionData of questionsToSave) {
         try {
+          console.log(questionData)
           const response = await fetch(`${API_BASE_URL}/api/questionbank/${questionBankId}/question`, {
             method: 'POST',
             headers: {
@@ -472,13 +472,10 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
 
       if (savedCount > 0) {
         toast.success(`Successfully saved ${savedCount} questions${failedCount > 0 ? ` (${failedCount} failed)` : ''}`);
-        // Clear parsed questions after successful save
         setParsedQuestions([]);
-        // Call callback to refresh questions list
         if (onQuestionsSaved) {
           onQuestionsSaved();
         }
-        // Call onBack to return to questions view
         if (onBack) {
           onBack();
         }
@@ -493,9 +490,59 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
     }
   };
 
+  // Inline edit handlers
+  const startEditQuestion = (idx) => {
+    const q = parsedQuestions[idx];
+    if (!q) return;
+    setEditingIndex(idx);
+    setEditForm({
+      questionText: q.questionText || '',
+      optionsText: Array.isArray(q.options) ? q.options.join('\n') : '',
+      correctAnswer: typeof q.correctAnswer === 'number' ? q.correctAnswer : 0,
+      difficulty: q.difficulty || 'L1',
+      subject: q.subject || '',
+      topicName: q.topicName || '',
+    });
+  };
+
+  const saveInlineEdit = () => {
+    if (editingIndex === null || editingIndex === undefined) return;
+    const updated = [...parsedQuestions];
+    const opts = editForm.optionsText
+      .split('\n')
+      .map(s => s.trim())
+      .filter(Boolean);
+
+    updated[editingIndex] = {
+      ...updated[editingIndex],
+      questionText: editForm.questionText.trim(),
+      options: opts,
+      correctAnswer: Math.max(0, Math.min(Math.max(opts.length - 1, 0), Number(editForm.correctAnswer) || 0)),
+      difficulty: editForm.difficulty,
+      subject: editForm.subject,
+      topicName: editForm.topicName,
+    };
+    setParsedQuestions(updated);
+    setEditingIndex(null);
+    toast.success('Question updated');
+  };
+
+  const cancelInlineEdit = () => {
+    setEditingIndex(null);
+  };
+
+  const deleteQuestionAt = (idx) => {
+    const q = parsedQuestions[idx];
+    if (!q) return;
+    if (!window.confirm('Do you want to delete this question?')) return;
+    const updated = parsedQuestions.filter((_, i) => i !== idx);
+    setParsedQuestions(updated);
+    if (editingIndex === idx) setEditingIndex(null);
+    toast.success('Question deleted');
+  };
+
   return (
     <div className="min-h-screen w-full">
-      {/* Sticky Navigation Header */}
       {onBack && (
         <div className="top-0 z-10 bg-white border-b border-gray-200 shadow-sm mb-6">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -586,6 +633,17 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
           </div>
 
           <div className="space-y-6">
+          <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-semibold text-gray-800">Extracted Text</h2>
+                {extractedText && (<div className="flex gap-2"><button onClick={copyToClipboard} className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition-colors">Copy</button><button onClick={downloadText} className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors">Download</button></div>)}
+              </div>
+              {extractedText ? (
+                <div className="bg-gray-50 rounded-lg p-4 max-h-96 overflow-y-auto"><pre className="whitespace-pre-wrap text-sm text-gray-800 font-mono">{extractedText}</pre></div>
+              ) : (
+                <div className="bg-gray-50 rounded-lg p-8 text-center"><div className="text-4xl text-gray-400 mb-2">📄</div><p className="text-gray-500">Extracted text will appear here</p></div>
+              )}
+            </div>
             {/* Parsed Questions as Cards */}
             <div className="bg-white rounded-xl shadow-lg p-6">
               <div className="flex items-center justify-between mb-4">
@@ -614,7 +672,6 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
                 </div>
               </div>
               
-              {/* Streaming Progress */}
               {isCleaning && totalChunks > 0 && (
                 <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="flex items-center justify-between mb-2">
@@ -631,7 +688,6 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
                 </div>
               )}
               
-              {/* New Questions Notification */}
               {newQuestionsCount > 0 && isCleaning && (
                 <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg animate-pulse">
                   <div className="flex items-center">
@@ -652,10 +708,8 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
                 </div>
               )}
               
-             
               {parsedQuestions && parsedQuestions.length > 0 ? (
                 <div className="space-y-6">
-                  {/* Summary Card */}
                   <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
@@ -680,135 +734,223 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
                     </div>
                   </div>
                   
-                                    {/* Questions Grid */}
                   <div className="grid grid-cols-1 gap-6">
-                    {parsedQuestions.map((question, idx) => (
-                      <div 
-                        key={idx} 
-                        className={`bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-500 ${
-                          question.isNew ? 'border-green-300 shadow-lg scale-105' : ''
-                        }`}
-                      >
-                        {/* Question Header */}
-                        <div className="bg-gradient-to-r from-purple-50 to-blue-50 px-6 py-4 border-b border-gray-200 rounded-t-xl">
-                                                   <div className="flex items-center justify-between">
-                           <div className="flex items-center">
-                             <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-600 text-white text-sm font-semibold mr-3">
-                               {idx + 1}
-                             </span>
-                             <h3 className="text-lg font-semibold text-gray-800 leading-relaxed">
-                               {question.questionText}
-                             </h3>
-                           </div>
-                           <div className="flex items-center gap-2 flex-wrap justify-end">
-                             {question.subject && (
-                               <span className="text-xs font-semibold text-purple-700 bg-purple-100 px-2 py-1 rounded-full border border-purple-200">
-                                 {question.subject}
-                               </span>
-                             )}
-                             {question.difficulty && (
-                               <span className={`text-xs font-semibold px-2 py-1 rounded-full border ${
-                                 question.difficulty === 'easy' ? 'text-green-700 bg-green-100 border-green-200' :
-                                 question.difficulty === 'medium' ? 'text-yellow-700 bg-yellow-100 border-yellow-200' :
-                                 'text-red-700 bg-red-100 border-red-200'
-                               }`}>
-                                 {`Difficulty: ${question.difficulty.charAt(0).toUpperCase()}${question.difficulty.slice(1)}`}
-                               </span>
-                             )}
-                             {typeof question.correctAnswer === 'number' && (
-                               <span className="text-xs text-green-600 font-semibold bg-green-100 px-2 py-1 rounded-full border border-green-200">
-                                 Answer: {String.fromCharCode(65 + question.correctAnswer)}
-                               </span>
-                             )}
-                             <span className="text-xs text-gray-500 bg-white px-2 py-1 rounded-full border">
-                               Question {idx + 1}
-                             </span>
-                           </div>
-                         </div>
-                        </div>
-                        
-                        {/* Options */}
-                        <div className="p-6">
-                          {Array.isArray(question.options) && question.options.length > 0 && (
-                            <div className="space-y-3">
-                              <h4 className="text-sm font-medium text-gray-700 mb-3">Select the correct answer:</h4>
-                              {question.options.map((option, optionIndex) => {
-                                const optionLetter = String.fromCharCode(65 + optionIndex); // A, B, C, D
-                                const isCorrect = typeof question.correctAnswer === 'number' && question.correctAnswer === optionIndex;
-                                
-                                                               return (
-                                 <div 
-                                   key={optionIndex} 
-                                   className={`flex items-center p-3 rounded-lg border-2 transition-all duration-200 cursor-pointer hover:bg-gray-50 ${
-                                     isCorrect 
-                                       ? 'border-green-300 bg-green-50' 
-                                       : 'border-gray-200 hover:border-gray-300'
-                                   }`}
-                                 >
-                                   <div className={`flex items-center justify-center w-6 h-6 rounded-full text-sm font-semibold mr-3 ${
-                                     isCorrect 
-                                       ? 'bg-green-600 text-white' 
-                                       : 'bg-gray-200 text-gray-700'
-                                   }`}>
-                                     {optionLetter}
-                                   </div>
-                                   <span className={`text-gray-800 ${
-                                     isCorrect ? 'font-semibold text-green-800' : ''
-                                   }`}>
-                                     {option}
-                                   </span>
-                                   {isCorrect && (
-                                     <span className="ml-auto text-xs text-green-600 font-medium bg-green-100 px-2 py-1 rounded-full">
-                                       ✓ Correct
-                                     </span>
-                                   )}
-                                 </div>
-                               );
-                              })}
-                            </div>
-                          )}
-                          
-                                                   {/* Solution/Explanation (if available) */}
-                         {(question.solution || question.explanation) && (
-                           <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                             <div className="flex items-center mb-2">
-                               <span className="text-blue-600 mr-2">💡</span>
-                               <span className="text-sm font-semibold text-blue-800">
-                                 {question.explanation ? 'Explanation' : 'Solution'}
-                               </span>
-                             </div>
-                             <p className="text-sm text-blue-700 leading-relaxed">
-                               {question.explanation || question.solution}
-                             </p>
-                           </div>
-                         )}
-                        </div>
-                        
-                        {/* Card Footer */}
-                        <div className="px-6 py-3 bg-gray-50 border-t border-gray-200 rounded-b-xl">
-                          <div className="flex items-center justify-between text-xs text-gray-500">
-                            <span>Options: {question.options?.length || 0}</span>
-                            <span>ID: Q{String(idx + 1).padStart(3, '0')}</span>
-                          </div>
-                          {(question.topicName || (Array.isArray(question.topicTags) && question.topicTags.length > 0)) && (
-                            <div className="mt-2 flex items-start justify-between gap-3">
-                              <div className="text-xs text-gray-700">
-                                {question.topicName && (
-                                  <span className="mr-2"><span className="text-gray-500">Topic:</span> <span className="font-medium">{question.topicName}</span></span>
+                    {parsedQuestions.map((question, idx) => {
+                      const isEditing = editingIndex === idx;
+                      return (
+                        <div 
+                          key={idx} 
+                          className={`bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-500 ${
+                            question.isNew ? 'border-green-300 shadow-lg scale-105' : ''
+                          }`}
+                        >
+                          <div className="bg-gradient-to-r from-purple-50 to-blue-50 px-6 py-4 border-b border-gray-200 rounded-t-xl">
+                          <div className="flex justify-between mb-2">
+                               <div className='flex justify-start items-center gap-2 flex-wrap'>
+                                {!isEditing && (
+                                  <>
+                                    {question.subject && (
+                                      <span className="text-xs font-semibold text-purple-700 bg-purple-100 px-2 py-1 rounded-full border border-purple-200">
+                                        {question.subject}
+                                      </span>
+                                    )}
+                                    {question.difficulty && (
+                                      <span className={`text-xs font-semibold px-2 py-1 rounded-full border ${
+                                        question.difficulty === 'easy' ? 'text-green-700 bg-green-100 border-green-200' :
+                                        question.difficulty === 'medium' ? 'text-yellow-700 bg-yellow-100 border-yellow-200' :
+                                        'text-red-700 bg-red-100 border-red-200'
+                                      }`}>
+                                        {`Difficulty: ${question.difficulty.charAt(0).toUpperCase()}${question.difficulty.slice(1)}`}
+                                      </span>
+                                    )}
+                                    {typeof question.correctAnswer === 'number' && (
+                                      <span className="text-xs text-green-600 font-semibold bg-green-100 px-2 py-1 rounded-full border border-green-200">
+                                        Answer: {String.fromCharCode(65 + question.correctAnswer)}
+                                      </span>
+                                    )}
+                                  </>
+                                )}
+                                </div>
+                                <div className='flex justify-end items-center gap-2 flex-wrap'>
+                                {!isEditing ? (
+                                  <>
+                                    <button onClick={() => startEditQuestion(idx)} className="text-xs px-3 py-1 rounded border border-blue-300 text-blue-700 bg-blue-50 hover:bg-blue-100">
+                                      Edit
+                                    </button>
+                                    <button onClick={() => deleteQuestionAt(idx)} className="text-xs px-3 py-1 rounded border border-red-300 text-red-700 bg-red-50 hover:bg-red-100">
+                                      Delete
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <button onClick={saveInlineEdit} className="text-s px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700">
+                                      Save
+                                    </button>
+                                    <button onClick={cancelInlineEdit} className="text-s px-3 py-1 rounded border bg-white hover:bg-gray-100">
+                                      Cancel
+                                    </button>
+                                  </>
+                                )}
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-start overflow-y-auto">
+                                {isEditing ? (
+                                  <textarea
+                                    className="w-full border rounded-lg p-2 text-sm"
+                                    rows={3}
+                                    value={editForm.questionText}
+                                    onChange={(e) => setEditForm(f => ({ ...f, questionText: e.target.value }))}
+                                  />
+                                ) : (
+                                  <div className="flex items-center">
+                                    <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-600 text-white text-sm font-semibold mr-3">
+                                      {idx + 1}
+                                    </span>
+                                    <h3 className="text-lg font-semibold text-gray-800 leading-relaxed truncate">
+                                      {question.questionText}
+                                    </h3>
+                                  </div>
                                 )}
                               </div>
-                              {Array.isArray(question.topicTags) && question.topicTags.length > 0 && (
-                                <div className="flex flex-wrap gap-1">
-                                  {question.topicTags.slice(0, 5).map((tag, tIdx) => (
-                                    <span key={tIdx} className="text-[10px] text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full border border-blue-200">{tag}</span>
-                                  ))}
+                          </div>
+                          
+                          <div className="p-6">
+                            {isEditing ? (
+                              <div className="space-y-4">
+                                <div>
+                                  <label className="block text-sm text-gray-700 mb-1">Options (one per line)</label>
+                                  <textarea
+                                    className="w-full border rounded-lg p-2 text-sm"
+                                    rows={4}
+                                    value={editForm.optionsText}
+                                    onChange={(e) => setEditForm(f => ({ ...f, optionsText: e.target.value }))}
+                                  />
                                 </div>
-                              )}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="block text-sm text-gray-700 mb-1">Correct Answer Index (0-based)</label>
+                                    <input
+                                      type="number"
+                                      className="w-full border rounded-lg p-2 text-sm"
+                                      value={editForm.correctAnswer}
+                                      onChange={(e) => setEditForm(f => ({ ...f, correctAnswer: e.target.value }))}
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm text-gray-700 mb-1">Difficulty</label>
+                                    <select
+                                      className="w-full border rounded-lg p-2 text-sm"
+                                      value={editForm.difficulty}
+                                      onChange={(e) => setEditForm(f => ({ ...f, difficulty: e.target.value }))}
+                                    >
+                                      <option value="L1">L1 (Easy)</option>
+                                      <option value="L2">L2 (Medium)</option>
+                                      <option value="L3">L3 (Hard)</option>
+                                    </select>
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                  <div>
+                                    <label className="block text-sm text-gray-700 mb-1">Subject</label>
+                                    <input
+                                      type="text"
+                                      className="w-full border rounded-lg p-2 text-sm"
+                                      value={editForm.subject}
+                                      onChange={(e) => setEditForm(f => ({ ...f, subject: e.target.value }))}
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-sm text-gray-700 mb-1">Topic</label>
+                                    <input
+                                      type="text"
+                                      className="w-full border rounded-lg p-2 text-sm"
+                                      value={editForm.topicName}
+                                      onChange={(e) => setEditForm(f => ({ ...f, topicName: e.target.value }))}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                {Array.isArray(question.options) && question.options.length > 0 && (
+                                  <div className="space-y-3">
+                                    <h4 className="text-sm font-medium text-gray-700 mb-3">Select the correct answer:</h4>
+                                    {question.options.map((option, optionIndex) => {
+                                      const optionLetter = String.fromCharCode(65 + optionIndex);
+                                      const isCorrect = typeof question.correctAnswer === 'number' && question.correctAnswer === optionIndex;
+                                      return (
+                                        <div 
+                                          key={optionIndex} 
+                                          className={`flex items-center p-3 rounded-lg border-2 transition-all duration-200 cursor-pointer hover:bg-gray-50 ${
+                                            isCorrect 
+                                              ? 'border-green-300 bg-green-50' 
+                                              : 'border-gray-200 hover:border-gray-300'
+                                          }`}
+                                        >
+                                          <div className={`flex items-center justify-center w-6 h-6 rounded-full text-sm font-semibold mr-3 ${
+                                            isCorrect 
+                                              ? 'bg-green-600 text-white' 
+                                              : 'bg-gray-200 text-gray-700'
+                                          }`}>
+                                            {optionLetter}
+                                          </div>
+                                          <span className={`text-gray-800 ${
+                                            isCorrect ? 'font-semibold text-green-800' : ''
+                                          }`}>
+                                            {option}
+                                          </span>
+                                          {isCorrect && (
+                                            <span className="ml-auto text-xs text-green-600 font-medium bg-green-100 px-2 py-1 rounded-full">
+                                              ✓ Correct
+                                            </span>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                                {(question.solution || question.explanation) && (
+                                  <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                    <div className="flex items-center mb-2">
+                                      <span className="text-blue-600 mr-2">💡</span>
+                                      <span className="text-sm font-semibold text-blue-800">
+                                        {question.explanation ? 'Explanation' : 'Solution'}
+                                      </span>
+                                    </div>
+                                    <p className="text-sm text-blue-700 leading-relaxed">
+                                      {question.explanation || question.solution}
+                                    </p>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                          
+                          <div className="px-6 py-3 bg-gray-50 border-t border-gray-200 rounded-b-xl">
+                            <div className="flex items-center justify-between text-xs text-gray-500">
+                              <span>Options: {question.options?.length || 0}</span>
+                              <span>ID: Q{String(idx + 1).padStart(3, '0')}</span>
                             </div>
-                          )}
+                            {!isEditing && (question.topicName || (Array.isArray(question.topicTags) && question.topicTags.length > 0)) && (
+                              <div className="mt-2 flex items-start justify-between gap-3">
+                                <div className="text-xs text-gray-700">
+                                  {question.topicName && (
+                                    <span className="mr-2"><span className="text-gray-500">Topic:</span> <span className="font-medium">{question.topicName}</span></span>
+                                  )}
+                                </div>
+                                {Array.isArray(question.topicTags) && question.topicTags.length > 0 && (
+                                  <div className="flex flex-wrap gap-1">
+                                    {question.topicTags.slice(0, 5).map((tag, tIdx) => (
+                                      <span key={tIdx} className="text-[10px] text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full border border-blue-200">{tag}</span>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               ) : (
@@ -835,7 +977,6 @@ const TextFromImage = ({ onBack, questionBankId, onQuestionsSaved }) => {
         <div className="text-center mt-12 text-gray-500"><p>Powered by Landing AI • Built with React & Tailwind CSS</p></div>
       </div>
 
-      {/* Floating Action Button for Quick Navigation */}
       {onBack && (
         <div className="fixed bottom-6 right-6 z-20">
           <div className="flex flex-col gap-3">

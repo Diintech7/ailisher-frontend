@@ -3,7 +3,7 @@ import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'  
 import Cookies from 'js-cookie';
-import { Download, GalleryThumbnailsIcon, Trash2 } from 'lucide-react';
+import { Download, GalleryThumbnailsIcon, Plus, Trash2 } from 'lucide-react';
 
 export default function ImageGenerator() {
   const navigate = useNavigate()
@@ -394,30 +394,29 @@ export default function ImageGenerator() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-        {/* Header */}
+      {/* Header */}
       <div className="bg-white shadow-sm border-b">
-        <div className="flex items-center justify-between p-4">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => navigate('/tools')}
-              className="text-gray-500 hover:text-gray-700 transition-colors"
-            >
-              ← Back to Tools
-            </button>
-          </div>
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              Create Image
-            </button>
-          </div>
+        <div className="flex items-center space-x-4 p-4">
+          <button
+            onClick={() => navigate('/tools')}
+            className="text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            ← Back to Tools
+          </button>
         </div>
       </div>
 
       <div className="p-6">
-      <h3 className="text-2xl font-bold mb-4">Image Generator</h3>
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-800">Image Generator</h2>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            <span>Create Image</span>
+          </button>
+        </div>
 
         {/* Saved Images Section */}
           <div className="mb-8">

@@ -130,20 +130,22 @@ const ClientManagement = () => {
         if (newTab) {
           newTab.document.write(`
             <html>
-              <head>
-                <title>Redirecting to client dashboard...</title>
-              </head>
-              <body>
-                <p>Redirecting to client dashboard...</p>
-                <script>
-                  document.cookie = "usertoken=${clientToken}; path=/; max-age=3600";
-                  document.cookie = "user=${encodeURIComponent(
-                    JSON.stringify(clientData)
-                  )}; path=/; max-age=3600";
-                  window.location.href = 'https://www.ailisher.com/dashboard';
-                </script>
-              </body>
-            </html>
+  <head>
+    <title>Redirecting to client dashboard...</title>
+  </head>
+  <body>
+    <p>Redirecting to client dashboard...</p>
+    <script>
+      document.cookie = "usertoken=${clientToken}; path=/; max-age=18000";
+      document.cookie = "user=${encodeURIComponent(
+        JSON.stringify(clientData)
+      )}; path=/; max-age=18000";
+      
+      window.location.href = 'https://www.ailisher.com/dashboard';
+    </script>
+  </body>
+</html>
+
           `);
           newTab.document.close();
         }

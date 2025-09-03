@@ -7,6 +7,7 @@ import {
   MessageSquare,
   Send,
   Image,
+  List,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -23,7 +24,10 @@ export default function Tools() {
       navigate("/marketing");
     } else if (activeTab === "image-generator") {
       navigate("/image-generator");
+    } else if (activeTab === 'category-management') {
+      navigate("/category-management")
     }
+     
   }, [activeTab, navigate]);
 
   const tools = [
@@ -75,6 +79,13 @@ export default function Tools() {
       icon: Image,
       color: "bg-blue-600",
       description: "Image generator",
+    },
+    {
+      id: "category-management",
+      title: "Category Management",
+      icon: List,
+      color: "bg-red-500",
+      description: "Category management",
     },
   ];
 

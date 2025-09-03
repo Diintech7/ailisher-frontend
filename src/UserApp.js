@@ -40,6 +40,7 @@ import ImageGenerator from './components/Client/ImageGenerator';
 import QuestionBank from './components/Client/QuestionBank';
 import QuestionBankDetail from './components/Client/QuestionBankDetail';
 import GeneratePage from './components/Client/EditPage';
+import CategoryManagement from './components/Client/CategoryManagement';
 
 const UserApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -209,6 +210,7 @@ const UserApp = () => {
                 <Route path="/reels" element={<Reels/>} />
                 <Route path="/marketing" element={<Marketing/>} />
                 <Route path="/image-generator" element={<ImageGenerator/>} />
+                <Route path='/category-management' element={<CategoryManagement/>}/>
                 <Route path="/chat/:id" element={<ChatApplication />} />
                 <Route path="/question-bank" element={<QuestionBank/>}/>
                 <Route path="/question-bank/:type/:id" element={<QuestionBankDetail/>}/>
