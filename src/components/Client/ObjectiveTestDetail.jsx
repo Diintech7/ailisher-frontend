@@ -101,9 +101,7 @@ export default function ObjectiveTestDetail() {
       const banks = res?.data?.data || [];
       const objectiveBanks = banks.filter((b) => b.type === "Objective");
       setQuestionBank(objectiveBanks);
-      if (!selectedBankId && banks.length > 0) {
-        setSelectedBankId(banks[0]._id);
-      }
+      // Removed auto-selecting the first bank; user must choose explicitly
       const initCounts = {};
       for (const b of banks) {
         initCounts[b._id] = {};
@@ -199,7 +197,6 @@ export default function ObjectiveTestDetail() {
       }
 
       setLoading(true);
-      // Fetch question IDs per task in parallel
       const results = await Promise.all(
         tasks.map(async (t) => {
           const params = {
@@ -221,7 +218,6 @@ export default function ObjectiveTestDetail() {
         return;
       }
 
-      // Add to test in one call
       const addRes = await axios.post(
         `${API_BASE_URL}/api/objectivetests/${testId}/questions`,
         { questionIds },
@@ -565,67 +561,6 @@ export default function ObjectiveTestDetail() {
                   </div>
                 )}
               </div>
-              {/* <div className="flex flex-wrap gap-8 mt-5">
-                <div className="inline-flex rounded-md border border-gray-300 overflow-hidden">
-                  <button
-                    onClick={() => setActiveView("questions")}
-                    className={`px-4 py-2 text-sm ${
-                      activeView === "questions"
-                        ? "bg-gray-800 text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    Questions
-                  </button>
-                  <button
-                    onClick={async () => {
-                      if (activeView !== "scoreboard") {
-                        setActiveView("scoreboard");
-                        await openScoreboard();
-                      }
-                    }}
-                    className={`px-4 py-2 text-sm flex items-center ${
-                      activeView === "scoreboard"
-                        ? "bg-gray-800 text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    <Database size={16} className="mr-2" />
-                    Scoreboard
-                  </button>
-                </div>
-
-                <button
-                  onClick={() => {
-                    setEditingQuestion(null);
-                    setFormData({
-                      question: "",
-                      options: ["", "", "", ""],
-                      correctAnswer: 0,
-                      difficulty: activeLevel,
-                      estimatedTime: 1,
-                      positiveMarks: 1,
-                      negativeMarks: 0,
-                      solution: {
-                        type: "text",
-                        text: "",
-                        video: {
-                          url: "",
-                          title: "",
-                          description: "",
-                          duration: 0,
-                        },
-                        image: { url: "", caption: "" },
-                      },
-                    });
-                    setShowQuestionModal(true);
-                  }}
-                  className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors shadow-sm"
-                >
-                  <Plus size={16} className="mr-2" />
-                  <span>Add Question</span>
-                </button>
-              </div> */}
             </div>
           </div>
         </div>
