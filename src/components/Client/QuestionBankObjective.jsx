@@ -36,6 +36,7 @@ import ObjectiveQuestionForm from "./components/forms/ObjectiveQuestionForm.jsx"
 import TextFromImage from "./QuestionBankTextExtract.jsx";
 import MarkdownQuestionForm from "./MarkdownQuestionForm.jsx";
 import { API_BASE_URL } from "../../config.js";
+import QuestionBankText from "./QuestionBankTextExtract.jsx";
 
 export default function QuestionBankObjective() {
   const questionBankId = useParams().id;
@@ -696,7 +697,7 @@ export default function QuestionBankObjective() {
 
         ) : showUploadView ? (
           <div className="flex justify-center h-full">
-            <TextFromImage
+            <QuestionBankText
               onBack={() => setShowUploadView(false)}
               questionBankId={questionBankId}
               onQuestionsSaved={() => {
