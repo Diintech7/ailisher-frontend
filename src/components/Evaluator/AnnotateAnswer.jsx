@@ -64,6 +64,7 @@ function ModalAnswerBox({ modalAnswer }) {
 }
 
 const AnnotateAnswer = ({ submission, onClose, onSave }) => {
+  
   const [activeTool, setActiveTool] = useState("pen")
   const [penColor, setPenColor] = useState("#FF0000")
   const [penSize, setPenSize] = useState(2)
@@ -95,6 +96,8 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
   // [A] Add state for edit loading
   const [editLoading, setEditLoading] = useState(false);
   const [modalAnswer, setModalAnswer] = useState(null);
+  // Add language toggle state
+  const [showHindiEvaluation, setShowHindiEvaluation] = useState(false);
 
   // Add local state for editable evaluation fields in the review modal
   const [editEvaluation, setEditEvaluation] = useState({
@@ -109,6 +112,36 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
     score: submission.evaluation?.score || '',
     relevancy: submission.evaluation?.relevancy || ''
   });
+
+  // Add state for Hindi evaluation editing
+  const [editHindiEvaluation, setEditHindiEvaluation] = useState({
+    introduction: submission.hindiEvaluation?.analysis?.introduction?.join('\n') || '',
+    body: submission.hindiEvaluation?.analysis?.body?.join('\n') || '',
+    conclusion: submission.hindiEvaluation?.analysis?.conclusion?.join('\n') || '',
+    strengths: submission.hindiEvaluation?.analysis?.strengths?.join('\n') || '',
+    weaknesses: submission.hindiEvaluation?.analysis?.weaknesses?.join('\n') || '',
+    suggestions: submission.hindiEvaluation?.analysis?.suggestions?.join('\n') || '',
+    feedback: submission.hindiEvaluation?.analysis?.feedback || '',
+    remark: submission.hindiEvaluation?.remark || '',
+    score: submission.hindiEvaluation?.score || '',
+    relevancy: submission.hindiEvaluation?.relevancy || ''
+  });
+
+  // Helper function to get current evaluation data based on language toggle
+  const getCurrentEvaluation = () => {
+    if (showHindiEvaluation && submission.hindiEvaluation) {
+      return submission.hindiEvaluation;
+    }
+    return submission.evaluation;
+  };
+
+  // Helper function to handle Hindi evaluation field changes
+  const handleHindiEvalFieldChange = (field, value) => {
+    setEditHindiEvaluation(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
   const predefinedComments = [
     "Excellent work! ✓",
@@ -1476,8 +1509,8 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
       tickCenters.forEach((pos) => addHandDrawnTick(pos.x, pos.y, Math.max(20, Math.floor(Math.min(width, height) * 0.12))))
 
       // Place AI Evaluation comments from Analysis (if present)
-      const evaluationComments = Array.isArray(submission?.evaluation?.comments)
-        ? submission.evaluation.comments
+      const evaluationComments = Array.isArray(getCurrentEvaluation()?.comments)
+        ? getCurrentEvaluation().comments
         : []
 
       if (evaluationComments.length > 0) {
@@ -2391,27 +2424,59 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
               </div>
             </div>
 
+            {/* Language Toggle Button */}
+            {submission.hindiEvaluation && Object.keys(submission.hindiEvaluation).length > 0 && (
+              <div className="bg-blue-50 p-3 rounded-lg border border-blue-200 mb-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-blue-700">Evaluation Language:</span>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setShowHindiEvaluation(false)}
+                      className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                        !showHindiEvaluation 
+                          ? 'bg-blue-600 text-white' 
+                          : 'bg-white text-blue-600 border border-blue-300 hover:bg-blue-50'
+                      }`}
+                    >
+                      English
+                    </button>
+                    <button
+                      onClick={() => setShowHindiEvaluation(true)}
+                      className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                        showHindiEvaluation 
+                          ? 'bg-blue-600 text-white' 
+                          : 'bg-white text-blue-600 border border-blue-300 hover:bg-blue-50'
+                      }`}
+                    >
+                      हिंदी
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+
             {/* Performance Metrics */}
             <div className="bg-green-50 p-4 rounded-lg border border-green-200">
               <div className="space-y-4">
               <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-green-700">Score:</span>
                   <span className="text-lg font-bold text-green-900">
-                    {typeof submission.evaluation.score === 'number' ? `${submission.evaluation.score}/${submission.question.metadata?.maximumMarks || 'N/A'}` : submission.evaluation.score || 'Not evaluated'}
+                    {typeof getCurrentEvaluation().score === 'number' ? `${getCurrentEvaluation().score}/${submission.question.metadata?.maximumMarks || 'N/A'}` : getCurrentEvaluation().score || 'Not evaluated'}
                   </span>
                 </div>
                 <div>
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-sm font-medium text-green-700">Relevancy:</span>
                     <span className="text-lg font-bold text-green-900">
-                      {typeof submission.evaluation.relevancy === 'number' ? `${submission.evaluation.relevancy}%` : submission.evaluation.relevancy || 'Not evaluated'}
+                      {typeof getCurrentEvaluation().relevancy === 'number' ? `${getCurrentEvaluation().relevancy}%` : getCurrentEvaluation().relevancy || 'Not evaluated'}
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3">
                     <div 
                       className="bg-gradient-to-r from-green-400 to-green-600 h-3 rounded-full transition-all duration-500 ease-out"
                       style={{ 
-                        width: typeof submission.evaluation.relevancy === 'number' ? `${submission.evaluation.relevancy}%` : '0%',
+                        width: typeof getCurrentEvaluation().relevancy === 'number' ? `${getCurrentEvaluation().relevancy}%` : '0%',
                         minWidth: '4px'
                       }}
                     ></div>
@@ -2429,19 +2494,19 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   <ModalAnswerBox modalAnswer={modalAnswer} />
                 )}
             {/* Evaluation Remark */}
-            {submission.evaluation.remark && submission.evaluation.remark !== 'No remark provided' && (
+            {getCurrentEvaluation().remark && getCurrentEvaluation().remark !== 'No remark provided' && (
               <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
                 <h4 className="text-sm font-medium text-orange-700 mb-2">Evaluation Remark</h4>
-                <p className="text-sm text-orange-800">{submission.evaluation.remark}</p>
+                <p className="text-sm text-orange-800">{getCurrentEvaluation().remark}</p>
               </div>
             )}
 
             {/* Evaluation Comments */}
-            {submission.evaluation.comments && submission.evaluation.comments.length > 0 && (
+            {getCurrentEvaluation().comments && getCurrentEvaluation().comments.length > 0 && (
               <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-200">
                 <h4 className="text-sm font-medium text-indigo-700 mb-2">Evaluation Comments</h4>
                 <ul className="space-y-2">
-                  {submission.evaluation.comments.map((comment, index) => (
+                  {getCurrentEvaluation().comments.map((comment, index) => (
                     <li key={index} className="flex items-start gap-2 justify-between">
                       <div className="flex items-start gap-2">
                       <svg className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2473,38 +2538,38 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
             )}
 
             {/* Analysis Details */}
-            {submission.evaluation.analysis && (
-              (submission.evaluation.analysis.introduction|| 
-                submission.evaluation.analysis.body|| 
-                submission.evaluation.analysis.conclusio) && (
+            {getCurrentEvaluation().analysis && (
+              (getCurrentEvaluation().analysis.introduction|| 
+                getCurrentEvaluation().analysis.body|| 
+                getCurrentEvaluation().analysis.conclusion) && (
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                   <h4 className="text-sm font-medium text-gray-700 mb-3">Analysis Details</h4>
                   <div className="space-y-3">
-                    {submission.evaluation.analysis.introduction && (
+                    {getCurrentEvaluation().analysis.introduction && (
                       <div className="bg-pink-50 rounded-lg p-3 border border-pink-200">
                         <h5 className="text-xs font-semibold text-pink-800 mb-1">Introduction</h5>
                         <ul className="space-y-1">
-                          {submission.evaluation.analysis.introduction.map((item, index) => (
+                          {getCurrentEvaluation().analysis.introduction.map((item, index) => (
                             <li key={index} className="text-xs text-pink-700">• {item}</li>
                           ))}
                         </ul>
                       </div>
                     )}
-                    {submission.evaluation.analysis.body && (
+                    {getCurrentEvaluation().analysis.body && (
                       <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
                         <h5 className="text-xs font-semibold text-orange-800 mb-1">Body</h5>
                         <ul className="space-y-1">
-                          {submission.evaluation.analysis.body.map((item, index) => (
+                          {getCurrentEvaluation().analysis.body.map((item, index) => (
                             <li key={index} className="text-xs text-orange-700">• {item}</li>
                           ))}
                         </ul>
                       </div>
                     )}
-                    {submission.evaluation.analysis.conclusion && (
+                    {getCurrentEvaluation().analysis.conclusion && (
                       <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
                         <h5 className="text-xs font-semibold text-purple-800 mb-1">Conclusion</h5>
                         <ul className="space-y-1">
-                          {submission.evaluation.analysis.conclusion.map((item, index) => (
+                          {getCurrentEvaluation().analysis.conclusion.map((item, index) => (
                             <li key={index} className="text-xs text-purple-700">• {item}</li>
                           ))}
                         </ul>
@@ -2516,11 +2581,11 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
             )}
 
             {/* Strengths */}
-            {submission.evaluation.analysis.strengths && submission.evaluation.analysis.strengths.length > 0 && (
+            {getCurrentEvaluation().analysis?.strengths && getCurrentEvaluation().analysis.strengths.length > 0 && (
               <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                 <h4 className="text-sm font-medium text-green-700 mb-2">Strengths</h4>
                 <ul className="space-y-2">
-                  {submission.evaluation.analysis.strengths.map((strength, index) => (
+                  {getCurrentEvaluation().analysis.strengths.map((strength, index) => (
                     <li key={index} className="flex items-start gap-2">
                       <svg className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -2533,11 +2598,11 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
             )}
 
             {/* Weaknesses */}
-            {submission.evaluation.analysis.weaknesses && submission.evaluation.analysis.weaknesses.length > 0 && (
+            {getCurrentEvaluation().analysis?.weaknesses && getCurrentEvaluation().analysis.weaknesses.length > 0 && (
               <div className="bg-red-50 p-4 rounded-lg border border-red-200">
                 <h4 className="text-sm font-medium text-red-700 mb-2">Areas for Improvement</h4>
                 <ul className="space-y-2">
-                  {submission.evaluation.analysis.weaknesses.map((weakness, index) => (
+                  {getCurrentEvaluation().analysis.weaknesses.map((weakness, index) => (
                     <li key={index} className="flex items-start gap-2">
                       <svg className="w-4 h-4 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -2550,11 +2615,11 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
             )}
 
             {/* Suggestions */}
-            {submission.evaluation.analysis.suggestions && submission.evaluation.analysis.suggestions.length > 0 && (
+            {getCurrentEvaluation().analysis?.suggestions && getCurrentEvaluation().analysis.suggestions.length > 0 && (
               <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                 <h4 className="text-sm font-medium text-blue-700 mb-2">Suggestions</h4>
                 <ul className="space-y-2">
-                  {submission.evaluation.analysis.suggestions.map((suggestion, index) => (
+                  {getCurrentEvaluation().analysis.suggestions.map((suggestion, index) => (
                     <li key={index} className="flex items-start gap-2">
                       <svg className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -2567,10 +2632,10 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
             )}
 
             {/* Evaluation Feedback */}
-            {submission.evaluation.analysis.feedback && submission.evaluation.analysis.feedback.length > 0 && (
+            {getCurrentEvaluation().analysis?.feedback && getCurrentEvaluation().analysis.feedback.length > 0 && (
               <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
                 <h4 className="text-sm font-medium text-purple-700 mb-2">Detailed Feedback</h4>
-                <p className="text-sm text-purple-800 whitespace-pre-wrap">{submission.evaluation.analysis.feedback}</p>
+                <p className="text-sm text-purple-800 whitespace-pre-wrap">{getCurrentEvaluation().analysis.feedback}</p>
               </div>
             )}
 
@@ -3022,51 +3087,134 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
             </div>
 
             <div className="space-y-6">
+              {/* Language Toggle for Review Modal */}
+              {submission.hindiEvaluation && Object.keys(submission.hindiEvaluation).length > 0 && (
+                <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-blue-700">Edit Language:</span>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => setShowHindiEvaluation(false)}
+                        className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                          !showHindiEvaluation 
+                            ? 'bg-blue-600 text-white' 
+                            : 'bg-white text-blue-600 border border-blue-300 hover:bg-blue-50'
+                        }`}
+                      >
+                        English
+                      </button>
+                      <button
+                        onClick={() => setShowHindiEvaluation(true)}
+                        className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                          showHindiEvaluation 
+                            ? 'bg-blue-600 text-white' 
+                            : 'bg-white text-blue-600 border border-blue-300 hover:bg-blue-50'
+                        }`}
+                      >
+                        हिंदी
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* AI Evaluation (Editable) */}
               <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <h4 className="text-lg font-medium text-gray-800 mb-4">AI Evaluation (Editable)</h4>
+                <h4 className="text-lg font-medium text-gray-800 mb-4">
+                  AI Evaluation (Editable) - {showHindiEvaluation ? 'हिंदी' : 'English'}
+                </h4>
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-medium text-gray-600 mb-1">Accuracy (%)</label>
-                      <input type="number" value={editEvaluation.relevancy} onChange={e => handleEvalFieldChange('relevancy', e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
+                      <input 
+                        type="number" 
+                        value={showHindiEvaluation ? editHindiEvaluation.relevancy : editEvaluation.relevancy} 
+                        onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('relevancy', e.target.value) : handleEvalFieldChange('relevancy', e.target.value)} 
+                        className="w-full border rounded px-2 py-1 text-sm" 
+                      />
                     </div>
                     <div>
                       <label className="block text-xs font-medium text-gray-600 mb-1">Marks</label>
-                      <input type="number" value={editEvaluation.score} onChange={e => handleEvalFieldChange('score', e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
+                      <input 
+                        type="number" 
+                        value={showHindiEvaluation ? editHindiEvaluation.score : editEvaluation.score} 
+                        onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('score', e.target.value) : handleEvalFieldChange('score', e.target.value)} 
+                        className="w-full border rounded px-2 py-1 text-sm" 
+                      />
                     </div>
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">Remark</label>
-                    <input type="text" value={editEvaluation.remark} onChange={e => handleEvalFieldChange('remark', e.target.value)} className="w-full border rounded px-2 py-1 text-sm" />
+                    <input 
+                      type="text" 
+                      value={showHindiEvaluation ? editHindiEvaluation.remark : editEvaluation.remark} 
+                      onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('remark', e.target.value) : handleEvalFieldChange('remark', e.target.value)} 
+                      className="w-full border rounded px-2 py-1 text-sm" 
+                    />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">Introduction</label>
-                    <textarea value={editEvaluation.introduction} onChange={e => handleEvalFieldChange('introduction', e.target.value)} className="w-full border rounded px-2 py-1 text-sm" rows={2} />
+                    <textarea 
+                      value={showHindiEvaluation ? editHindiEvaluation.introduction : editEvaluation.introduction} 
+                      onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('introduction', e.target.value) : handleEvalFieldChange('introduction', e.target.value)} 
+                      className="w-full border rounded px-2 py-1 text-sm" 
+                      rows={2} 
+                    />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">Body</label>
-                    <textarea value={editEvaluation.body} onChange={e => handleEvalFieldChange('body', e.target.value)} className="w-full border rounded px-2 py-1 text-sm" rows={2} />
+                    <textarea 
+                      value={showHindiEvaluation ? editHindiEvaluation.body : editEvaluation.body} 
+                      onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('body', e.target.value) : handleEvalFieldChange('body', e.target.value)} 
+                      className="w-full border rounded px-2 py-1 text-sm" 
+                      rows={2} 
+                    />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">Conclusion</label>
-                    <textarea value={editEvaluation.conclusion} onChange={e => handleEvalFieldChange('conclusion', e.target.value)} className="w-full border rounded px-2 py-1 text-sm" rows={2} />
+                    <textarea 
+                      value={showHindiEvaluation ? editHindiEvaluation.conclusion : editEvaluation.conclusion} 
+                      onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('conclusion', e.target.value) : handleEvalFieldChange('conclusion', e.target.value)} 
+                      className="w-full border rounded px-2 py-1 text-sm" 
+                      rows={2} 
+                    />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">Strengths (one per line)</label>
-                    <textarea value={editEvaluation.strengths} onChange={e => handleEvalFieldChange('strengths', e.target.value)} className="w-full border rounded px-2 py-1 text-sm" rows={2} />
+                    <textarea 
+                      value={showHindiEvaluation ? editHindiEvaluation.strengths : editEvaluation.strengths} 
+                      onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('strengths', e.target.value) : handleEvalFieldChange('strengths', e.target.value)} 
+                      className="w-full border rounded px-2 py-1 text-sm" 
+                      rows={2} 
+                    />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">Weaknesses (one per line)</label>
-                    <textarea value={editEvaluation.weaknesses} onChange={e => handleEvalFieldChange('weaknesses', e.target.value)} className="w-full border rounded px-2 py-1 text-sm" rows={2} />
+                    <textarea 
+                      value={showHindiEvaluation ? editHindiEvaluation.weaknesses : editEvaluation.weaknesses} 
+                      onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('weaknesses', e.target.value) : handleEvalFieldChange('weaknesses', e.target.value)} 
+                      className="w-full border rounded px-2 py-1 text-sm" 
+                      rows={2} 
+                    />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">Suggestions (one per line)</label>
-                    <textarea value={editEvaluation.suggestions} onChange={e => handleEvalFieldChange('suggestions', e.target.value)} className="w-full border rounded px-2 py-1 text-sm" rows={2} />
+                    <textarea 
+                      value={showHindiEvaluation ? editHindiEvaluation.suggestions : editEvaluation.suggestions} 
+                      onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('suggestions', e.target.value) : handleEvalFieldChange('suggestions', e.target.value)} 
+                      className="w-full border rounded px-2 py-1 text-sm" 
+                      rows={2} 
+                    />
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">Feedback</label>
-                    <textarea value={editEvaluation.feedback} onChange={e => handleEvalFieldChange('feedback', e.target.value)} className="w-full border rounded px-2 py-1 text-sm" rows={2} />
+                    <textarea 
+                      value={showHindiEvaluation ? editHindiEvaluation.feedback : editEvaluation.feedback} 
+                      onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('feedback', e.target.value) : handleEvalFieldChange('feedback', e.target.value)} 
+                      className="w-full border rounded px-2 py-1 text-sm" 
+                      rows={2} 
+                    />
                   </div>
                 </div>
               </div>

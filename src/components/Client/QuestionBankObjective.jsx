@@ -700,10 +700,10 @@ export default function QuestionBankObjective() {
             <QuestionBankText
               onBack={() => setShowUploadView(false)}
               questionBankId={questionBankId}
-              onQuestionsSaved={() => {
-                setShowUploadView(false);
-                fetchQuestions();
-              }}
+              // onQuestionsSaved={() => {
+              //   setShowUploadView(false);
+              //   fetchQuestions();
+              // }}
             />
           </div>
         ) : (

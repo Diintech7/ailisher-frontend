@@ -15,6 +15,7 @@ import {
   GripVertical,
   MoreVertical,
   ToggleRight,
+  Heart,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -105,8 +106,8 @@ const Reels = React.memo(function Reels() {
   };
 
   const axiosConfig = {
-    // baseURL: 'https://test.ailisher.com',
-    baseURL: "https://test.ailisher.com",
+    baseURL: 'https://test.ailisher.com',
+    // baseURL: "https://test.ailisher.com",
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
@@ -343,6 +344,32 @@ const Reels = React.memo(function Reels() {
       setReels((prev) => prev.map((r) => (r._id === reel._id ? updated : r)));
 
       toast.success(`Reel ${updated.isEnabled ? "enabled" : "disabled"}`);
+    } catch (error) {
+      console.error("Error toggling enabled:", error);
+      toast.error(error.response?.data?.message || "Failed to update reel");
+    } finally {
+      setOpenMenuId(null);
+    }
+  };
+
+  const togglePopular = async (reel) => {
+    try {
+      const response = await axios.patch(
+        `/api/reels/popular/${reel._id}`,
+        { isPopular: !reel.isPopular },
+        axiosConfig
+      );
+
+      // Backend returns { success: true, message: '...', reel: {...} }
+      const updated = response.data?.reel || {
+        ...reel,
+        isPopular: !reel.isPopular,
+      };
+
+      // Update the specific reel in the array
+      setReels((prev) => prev.map((r) => (r._id === reel._id ? updated : r)));
+
+      toast.success(`Reel ${updated.isPopular ? "reel marked popular" : "reel unmarked popular"}`);
     } catch (error) {
       console.error("Error toggling enabled:", error);
       toast.error(error.response?.data?.message || "Failed to update reel");
@@ -730,6 +757,24 @@ const Reels = React.memo(function Reels() {
                                       {reel.isEnabled === true
                                         ? "Disable"
                                         : "Enable"}
+                                    </span>
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      togglePopular(reel);
+                                    }}
+                                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center space-x-2 ${
+                                      reel.isPopular === true
+                                        ? "text-pink-800 hover:bg-pink-50"
+                                        : "text-purple-800 hover:bg-purple-50"
+                                    }`}
+                                  >
+                                    <Heart className="w-4 h-4" />
+                                    <span>
+                                      {reel.isPopular === true
+                                        ? "Unpopular"
+                                        : "Popular"}
                                     </span>
                                   </button>
                                 </div>

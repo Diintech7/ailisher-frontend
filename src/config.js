@@ -1,6 +1,5 @@
 export const API_BASE_URL = 'https://test.ailisher.com';
 
-
 export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 export const ALLOWED_FILE_TYPES = [
   'image/jpeg', 'image/png', 'image/gif', 'image/bmp', 'application/pdf'

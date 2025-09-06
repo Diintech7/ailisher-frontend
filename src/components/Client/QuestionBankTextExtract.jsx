@@ -8,7 +8,7 @@ import Cookies from 'js-cookie'
 // Configure PDF.js worker (no default export available from the worker module)
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString()
 
-const QuestionBankText = ({ onBack, questionBankId, onQuestionsSaved }) => {
+const QuestionBankText = ({ onBack, questionBankId }) => {
   const [activeTab, setActiveTab] = useState('') // splitter | extract | generated
   const [selectedFile, setSelectedFile] = useState(null)
   const [showPdfSplitter, setShowPdfSplitter] = useState(false)
@@ -299,7 +299,7 @@ const QuestionBankText = ({ onBack, questionBankId, onQuestionsSaved }) => {
       }
       if (saved > 0) {
         toast.success(`Saved ${saved} question${saved === 1 ? '' : 's'}`)
-        if (typeof onQuestionsSaved === 'function') onQuestionsSaved()
+        // if (typeof onQuestionsSaved === 'function') onQuestionsSaved()
       } else {
         toast.error('Failed to save questions')
       }
