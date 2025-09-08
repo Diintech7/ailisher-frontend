@@ -42,6 +42,155 @@ const QuestionBankText = ({ onBack, questionBankId }) => {
   const eventSourceRef = useRef(null)
   
   const fileInputRef = useRef(null)
+  const [cleaningPage, setCleaningPage] = useState(null)
+
+  // Memoized split of extracted text into pages using delimiters like "--- Page 1 ---"
+  const extractedPages = useMemo(() => {
+    if (!extractedText || typeof extractedText !== 'string') return []
+    const pages = []
+    const regex = /---\s*Page\s*(\d+)\s*---\s*/g
+    let match
+    let lastIndex = 0
+    while ((match = regex.exec(extractedText)) !== null) {
+      if (pages.length > 0) {
+        pages[pages.length - 1].text = extractedText.slice(lastIndex, match.index).trim()
+      }
+      pages.push({ pageNumber: Number(match[1]), text: '' })
+      lastIndex = regex.lastIndex
+    }
+    if (pages.length > 0) {
+      pages[pages.length - 1].text = extractedText.slice(lastIndex).trim()
+    }
+    return pages.filter(p => p.text && p.text.length > 0)
+  }, [extractedText])
+
+  // Stream clean a single page and append results to existing parsedQuestions
+  const fetchCleanedTextStreamAppend = async (rawText, sourceLabel = '', pageNumber = null) => {
+    if (!rawText || !rawText.trim()) return;
+    if (isCleaning) return; // prevent parallel calls
+
+    setIsCleaning(true);
+    setCleaningPage(pageNumber);
+    setCleanError('');
+    setStreamingStatus('');
+    setCurrentChunk(0);
+    setTotalChunks(0);
+
+    // Close any existing connection
+    closeEventSource();
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/questionbank/clean-text-stream`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ extractedText: rawText })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              switch (data.type) {
+                case 'status':
+                  setStreamingStatus(data.message);
+                  setTotalChunks(data.totalChunks || 0);
+                  break;
+                case 'chunk_start':
+                  setCurrentChunk(data.chunkNumber || 0);
+                  setStreamingStatus(data.message || 'Processing chunk...');
+                  break;
+                case 'chunk_complete':
+                  if (data.questions && Array.isArray(data.questions)) {
+                    setParsedQuestions(prev => {
+                      const newQuestions = data.questions.map((q, idx) => ({
+                        ...q,
+                        questionNumber: prev.length + idx + 1,
+                        isNew: true
+                      }));
+                      return [...prev, ...newQuestions];
+                    });
+                    setNewQuestionsCount(prev => prev + data.questions.length);
+                    setTimeout(() => {
+                      setParsedQuestions(prev => prev.map(q => ({ ...q, isNew: false })));
+                    }, 2000);
+                  }
+                  setCurrentChunk(data.chunkNumber || 0);
+                  setStreamingStatus(data.message || 'Chunk completed');
+                  if ((data.chunkNumber || 0) >= (totalChunks || 0)) {
+                    setTimeout(() => {
+                      setIsCleaning(false);
+                      setCleaningPage(null);
+                      setStreamingStatus('');
+                      setCurrentChunk(0);
+                      setTotalChunks(0);
+                    }, 500);
+                  }
+                  break;
+                case 'complete':
+                  setStreamingStatus('');
+                  setSuccess(`Processed ${data.totalQuestions || ''} questions${sourceLabel ? ` from ${sourceLabel}` : ''}.`);
+                  setIsCleaning(false);
+                  setCleaningPage(null);
+                  setCurrentChunk(0);
+                  setTotalChunks(0);
+                  setActiveTab('generated');
+                  return;
+                case 'chunk_error':
+                  setStreamingStatus(`Error: ${data.message}`);
+                  if (data.isRateLimit) {
+                    setCleanError('Rate limit reached! Please wait and try again.');
+                    setIsCleaning(false);
+                    setCleaningPage(null);
+                    return;
+                  } else {
+                    setCleanError(`Error: ${data.error}`);
+                  }
+                  break;
+                case 'error':
+                  setCleanError(data.message);
+                  setIsCleaning(false);
+                  setCleaningPage(null);
+                  setStreamingStatus('');
+                  setCurrentChunk(0);
+                  setTotalChunks(0);
+                  return;
+              }
+            } catch (parseError) {
+              console.error('Error parsing SSE data (append):', parseError);
+            }
+          }
+        }
+      }
+      setIsCleaning(false);
+      setCleaningPage(null);
+      setStreamingStatus('');
+      setCurrentChunk(0);
+      setTotalChunks(0);
+    } catch (e) {
+      console.error('Failed to clean text with streaming (append):', e);
+      setCleanError('Failed to clean text. Check server/OpenRouter API key.');
+      setIsCleaning(false);
+      setCleaningPage(null);
+      setStreamingStatus('');
+      setCurrentChunk(0);
+      setTotalChunks(0);
+    }
+  };
 
   // Cleanup EventSource on component unmount
   useEffect(() => {
@@ -261,6 +410,7 @@ const QuestionBankText = ({ onBack, questionBankId }) => {
       return
     }
     setIsSaving(true)
+    toast.info('Saving questions...')
     try {
       
       const questionsToSave = parsedQuestions.map((q) => ({
@@ -292,6 +442,7 @@ const QuestionBankText = ({ onBack, questionBankId }) => {
             body: JSON.stringify(payload)
           })
           const data = await resp.json()
+          console.log('data', data)
           if (data?.success) saved += 1
         } catch (e) {
           // continue
@@ -299,7 +450,6 @@ const QuestionBankText = ({ onBack, questionBankId }) => {
       }
       if (saved > 0) {
         toast.success(`Saved ${saved} question${saved === 1 ? '' : 's'}`)
-        // if (typeof onQuestionsSaved === 'function') onQuestionsSaved()
       } else {
         toast.error('Failed to save questions')
       }
@@ -385,6 +535,15 @@ const QuestionBankText = ({ onBack, questionBankId }) => {
                   }
                   setCurrentChunk(data.chunkNumber || 0);
                   setStreamingStatus(data.message || 'Chunk completed');
+                  // If this is the last chunk, clear the progress shortly after
+                  if ((data.chunkNumber || 0) >= (totalChunks || 0)) {
+                    setTimeout(() => {
+                      setIsCleaning(false);
+                      setStreamingStatus('');
+                      setCurrentChunk(0);
+                      setTotalChunks(0);
+                    }, 500);
+                  }
                   break;
                   
                 case 'chunk_error':
@@ -399,9 +558,11 @@ const QuestionBankText = ({ onBack, questionBankId }) => {
                   break;
                   
                 case 'complete':
-                  setStreamingStatus(data.message);
+                  setStreamingStatus('');
                   setSuccess(`Successfully processed ${data.totalQuestions || parsedQuestions.length} questions from ${data.totalChunks || totalChunks} pages!`);
                   setIsCleaning(false);
+                  setCurrentChunk(0);
+                  setTotalChunks(0);
                   // Close the extract text section and show generated questions
                   setActiveTab('generated');
                   return;
@@ -409,6 +570,9 @@ const QuestionBankText = ({ onBack, questionBankId }) => {
                 case 'error':
                   setCleanError(data.message);
                   setIsCleaning(false);
+                  setStreamingStatus('');
+                  setCurrentChunk(0);
+                  setTotalChunks(0);
                   return;
               }
             } catch (parseError) {
@@ -417,10 +581,18 @@ const QuestionBankText = ({ onBack, questionBankId }) => {
           }
         }
       }
+      // If the stream ends without an explicit 'complete' event, ensure cleanup
+      setIsCleaning(false);
+      setStreamingStatus('');
+      setCurrentChunk(0);
+      setTotalChunks(0);
     } catch (e) {
       console.error('Failed to clean text with streaming:', e);
       setCleanError('Failed to clean text. Check server/OpenRouter API key.');
       setIsCleaning(false);
+      setStreamingStatus('');
+      setCurrentChunk(0);
+      setTotalChunks(0);
     }
   };
 
@@ -442,6 +614,9 @@ const QuestionBankText = ({ onBack, questionBankId }) => {
       return
     }
     setSelectedFile(file)
+    setActiveTab('splitter')
+    setShowPdfSplitter(true)
+    toast.info('PDF loaded. Opening splitter...')
   }
 
   const handleDrop = (event) => {
@@ -453,6 +628,9 @@ const QuestionBankText = ({ onBack, questionBankId }) => {
       return
     }
     setSelectedFile(file)
+    setActiveTab('splitter')
+    setShowPdfSplitter(true)
+    toast.info('PDF loaded. Opening splitter...')
   }
 
   const handleDragOver = (event) => { event.preventDefault() }
@@ -566,7 +744,7 @@ const QuestionBankText = ({ onBack, questionBankId }) => {
             onClick={() => setActiveTab('extract')}
             className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${activeTab === 'extract' ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-gray-800 border-gray-300 hover:bg-gray-50'}`}
           >
-            Extract Text
+            Extracted Text
           </button>
           <button
             onClick={() => setActiveTab('generated')}
@@ -600,8 +778,8 @@ const QuestionBankText = ({ onBack, questionBankId }) => {
               <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded text-sm text-green-700">{success}</div>
             )}
             
-            {/* Streaming Progress */}
-            {isCleaning && totalChunks > 0 && (
+            {/* Global Streaming Progress - hidden for per-page cleaning */}
+            {false && isCleaning && totalChunks > 0 && (
               <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-sm font-medium text-blue-800">Processing Progress</span>
@@ -618,9 +796,41 @@ const QuestionBankText = ({ onBack, questionBankId }) => {
             )}
             
             {extractedText ? (
-              <div className="bg-gray-50 rounded-lg p-4 max-h-[65vh] overflow-y-auto">
-                <pre className="whitespace-pre-wrap text-sm text-gray-800 font-mono">{extractedText}</pre>
-              </div>
+              extractedPages.length > 0 ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {extractedPages.map((p) => (
+                      <div key={p.pageNumber} className="bg-white border border-gray-200 rounded-lg shadow-sm">
+                        <div className="px-4 py-2 bg-gradient-to-r from-purple-50 to-blue-50 border-b border-gray-200 rounded-t-lg flex items-center justify-between">
+                          <div className="text-sm font-semibold text-gray-800">Page {p.pageNumber}</div>
+                          <div className="flex items-center gap-2">
+                            {cleaningPage === p.pageNumber && (
+                              <span className="text-xs text-gray-600 flex items-center">
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-purple-600 mr-2"></div>
+                                {streamingStatus || 'Cleaning...'}
+                              </span>
+                            )}
+                            <button
+                              onClick={() => fetchCleanedTextStreamAppend(p.text, `Page ${p.pageNumber}`, p.pageNumber)}
+                              disabled={isCleaning}
+                              className={`px-3 py-1.5 text-xs rounded font-medium ${isCleaning ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-purple-600 text-white hover:bg-purple-700'}`}
+                            >
+                              {cleaningPage === p.pageNumber ? 'Cleaning...' : 'Clean Text'}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="p-4 max-h-[40vh] overflow-auto">
+                          <pre className="whitespace-pre-wrap text-sm text-gray-800 font-mono">{p.text}</pre>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-lg p-4 max-h-[65vh] overflow-y-auto">
+                  <pre className="whitespace-pre-wrap text-sm text-gray-800 font-mono">{extractedText}</pre>
+                </div>
+              )
             ) : (
               <div className="bg-gray-50 rounded-lg p-8 text-center">
                 <div className="text-4xl text-gray-400 mb-2">📄</div>

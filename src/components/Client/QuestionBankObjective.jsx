@@ -698,12 +698,11 @@ export default function QuestionBankObjective() {
         ) : showUploadView ? (
           <div className="flex justify-center h-full">
             <QuestionBankText
-              onBack={() => setShowUploadView(false)}
+              onBack={() => {
+                setShowUploadView(false);
+                fetchQuestions();
+                }}
               questionBankId={questionBankId}
-              // onQuestionsSaved={() => {
-              //   setShowUploadView(false);
-              //   fetchQuestions();
-              // }}
             />
           </div>
         ) : (
