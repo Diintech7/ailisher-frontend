@@ -25,7 +25,7 @@ const CATEGORY_MAPPINGS = {
 };
 
 // Workbook Item Component
-const WorkbookItem = ({ workbook, onClick, onEdit, onUpdateWorkbook, onToggleEnabled }) => {
+const WorkbookItem = ({ workbook, onClick, onEdit, onUpdateWorkbook, onToggleEnabled, onDeleted }) => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
     const menuRef = useRef(null);
@@ -52,6 +52,29 @@ const WorkbookItem = ({ workbook, onClick, onEdit, onUpdateWorkbook, onToggleEna
       e.stopPropagation();
       setShowMenu(false);
       onEdit(workbook);
+    };
+
+    const handleDeleteWorkbook = async (id) => {
+      const token = Cookies.get('usertoken');
+
+      const res = await fetch(`https://test.ailisher.com/api/workbooks/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setShowDeleteModal(false);
+        
+        toast.success(data.message || 'Workbook deleted successfully');
+        if (typeof onDeleted === 'function') {
+          onDeleted(id);
+        }
+      } else {
+        toast.error(data.message || 'Failed to delete workbook');
+        setShowDeleteModal(false);
+      }
     };
 
     // Highlight/Trending handlers
@@ -266,8 +289,8 @@ const WorkbookItem = ({ workbook, onClick, onEdit, onUpdateWorkbook, onToggleEna
                 Cancel
               </button>
               <button
-                onClick={() => handleDelete(workbook._id)}
-                className="px-4 py-2 text-white bg-red-200 rounded-md hover:bg-red-300 transition-colors"
+                onClick={() => handleDeleteWorkbook(workbook._id)}
+                className="px-4 py-2 text-white bg-red-500 rounded-md hover:bg-red-700 transition-colors"
               >
                 Confirm
               </button>
@@ -652,7 +675,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-800">Add New Workbook</h2>
@@ -690,12 +713,12 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
                 <label className="block text-gray-700 text-sm font-medium mb-2">
                   Main Category *
                 </label>
-                <div className="flex items-center gap-2">
+                <div className="grid grid-cols-[1fr_auto] items-center gap-2 w-full">
                   <select
                     name="mainCategory"
                     value={formData.mainCategory}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 truncate"
                     required
                   >
                     {Object.keys(categoryMappings).map((category) => (
@@ -745,12 +768,12 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
                 <label className="block text-gray-700 text-sm font-medium mb-2">
                   Sub Category *
                 </label>
-                <div className="flex items-center gap-2">
+                <div className="grid grid-cols-[1fr_auto] items-center gap-2 w-full">
                   <select
                     name="subCategory"
                     value={formData.subCategory}
                     onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 truncate"
                     required
                   >
                     {(categoryMappings[formData.mainCategory] || ["Other"]).map(
@@ -1117,7 +1140,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
         <div className="p-6">
           <div className="flex justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-gray-800">Edit Book</h2>
@@ -1217,7 +1240,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
                   name="mainCategory"
                   value={formData.mainCategory}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full h-10 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 truncate"
                   required
                 >
                   {Object.keys(categoryMappings).map(category => (
@@ -1231,7 +1254,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
                   name="subCategory"
                   value={formData.subCategory}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full h-10 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 truncate"
                   required
                 >
                   {getValidSubCategories().map(subCategory => (
@@ -1799,6 +1822,10 @@ const AIWorkbook = () => {
     );
   };
 
+  const handleWorkbookDeleted = (deletedId) => {
+    setWorkbooks((prev) => prev.filter((wb) => wb._id !== deletedId));
+  };
+
   // Get unique authors and publishers for filters
   const authors = [...new Set(workbooks.map(wb => wb.author))].sort();
   const publishers = [...new Set(workbooks.map(wb => wb.publisher))].sort();
@@ -1966,6 +1993,7 @@ const AIWorkbook = () => {
                     onEdit={handleEditWorkbook}
                     onUpdateWorkbook={handleWorkbookEdited}
                     onToggleEnabled={handleToggleEnabled}
+                    onDeleted={handleWorkbookDeleted}
                   />
                 ))}
               </div>
