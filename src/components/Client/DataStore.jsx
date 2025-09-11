@@ -133,6 +133,48 @@ const DataStore = ({ type }) => {
     }
   }
 
+  const refreshS3Urls = async (items) => {
+    try {
+      const token = Cookies.get("usertoken")
+      if (!token) return items
+
+      // Find items that have S3 keys and might need URL refresh
+      const s3Items = items.filter(item => item.s3Key)
+      
+      if (s3Items.length === 0) return items
+
+      const itemIds = s3Items.map(item => item._id)
+      
+      const response = await fetch(`https://test.ailisher.com/api/datastores/refresh-s3-urls`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ itemIds }),
+      })
+
+      const data = await response.json()
+      
+      if (data.success && data.updatedItems) {
+        // Update items with new URLs
+        const updatedItems = items.map(item => {
+          const updatedItem = data.updatedItems.find(updated => updated.id === item._id)
+          if (updatedItem) {
+            return { ...item, url: updatedItem.newUrl }
+          }
+          return item
+        })
+        return updatedItems
+      }
+      
+      return items
+    } catch (error) {
+      console.error("Error refreshing S3 URLs:", error)
+      return items
+    }
+  }
+
   const fetchItems = async () => {
     setLoading(true)
     const endpoint = getApiEndpoint()
@@ -160,11 +202,14 @@ const DataStore = ({ type }) => {
       const data = await response.json()
 
       if (data.success) {
-        const sortedItems = (data.items || []).sort((a, b) => {
+        let sortedItems = (data.items || []).sort((a, b) => {
           const dateA = new Date(a.createdAt || a.uploadedAt || 0)
           const dateB = new Date(b.createdAt || b.uploadedAt || 0)
           return dateA - dateB
         })
+
+        // Refresh S3 URLs if needed
+        sortedItems = await refreshS3Urls(sortedItems)
 
         setItems(sortedItems)
         setFilteredItems(sortedItems)
@@ -487,20 +532,44 @@ useEffect(() => {
 
       if (uploadType === "file") {
         const uploadPromises = selectedFiles.map(async (file) => {
-          const formData = new FormData()
-          formData.append("file", file)
-          formData.append("upload_preset", "post_blog")
-
-          const cloudinaryResponse = await fetch(`https://api.cloudinary.com/v1_1/dsbuzlxpw/upload`, {
+          // Get S3 upload URL
+          const uploadUrlResponse = await fetch(`https://test.ailisher.com/api/datastores/upload-s3`, {
             method: "POST",
-            body: formData,
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              fileName: file.name,
+              contentType: file.type,
+              fileSize: file.size,
+            }),
           })
 
-          const cloudinaryData = await cloudinaryResponse.json()
+          const uploadUrlData = await uploadUrlResponse.json()
+
+          if (!uploadUrlData.success) {
+            throw new Error(uploadUrlData.message || "Failed to get upload URL")
+          }
+
+          // Upload file to S3
+          const s3Response = await fetch(uploadUrlData.uploadUrl, {
+            method: "PUT",
+            body: file,
+            headers: {
+              "Content-Type": file.type,
+            },
+          })
+
+          if (!s3Response.ok) {
+            throw new Error("Failed to upload file to S3")
+          }
+
           return {
             name: title || file.name,
             description: description,
-            url: cloudinaryData.secure_url,
+            url: uploadUrlData.downloadUrl,
+            s3Key: uploadUrlData.key,
             fileType: file.type,
             itemType: getItemTypeFromFile(file),
           }
