@@ -844,10 +844,12 @@ useEffect(() => {
       const totalChatTime = chatEndTime - chatStartTime
 
       if (data.success) {
+        const external = data.data || {}
+        const content = external.llm_response || external.rag_response || data.answer || data.message || ""
         const aiMessage = {
           id: Date.now() + 1,
           type: "ai",
-          content: data.answer,
+          content,
           confidence: data.confidence,
           sources: data.sources,
           method: data.method,
