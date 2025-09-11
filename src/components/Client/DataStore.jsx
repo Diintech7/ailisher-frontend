@@ -826,7 +826,7 @@ useEffect(() => {
             question: messageToSend,
           }),
         })
-      } else {
+      } else{
         response = await fetch(`https://test.ailisher.com/api/enhanced-pdf-chat/chat/${currentChatItem._id}`, {
           method: "POST",
           headers: {
