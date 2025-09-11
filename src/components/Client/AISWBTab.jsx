@@ -43,7 +43,7 @@ const AISWBTab = ({ topicId }) => {
         }
 
         // Verify topic access (This is a generic check, might need adjustment if endpoints differ)
-        const response = await fetch(`http://localhost:5000/api/aiswb/topic/${topicId}/sets`, {
+        const response = await fetch(`https://test.ailisher.com/api/aiswb/topic/${topicId}/sets`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }

@@ -37,7 +37,7 @@ const AITests = () => {
     try {
       // Fetch categories from backend
       const categoriesResponse = await fetch(
-        "http://localhost:5000/api/categories",
+        "https://test.ailisher.com/api/categories",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -58,10 +58,10 @@ const AITests = () => {
 
       setCategoryMappings(transformedCategories);
       const [objectiveResponse, subjectiveResponse] = await Promise.all([
-        axios.get('http://localhost:5000/api/objectivetests', {
+        axios.get('https://test.ailisher.com/api/objectivetests', {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        axios.get('http://localhost:5000/api/subjectivetests', {
+        axios.get('https://test.ailisher.com/api/subjectivetests', {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -79,8 +79,8 @@ const AITests = () => {
   const handleCreateTest = async (testData) => {
     try {
       const endpoint = activeTab === 'objective' 
-        ? 'http://localhost:5000/api/objectivetests'
-        : 'http://localhost:5000/api/subjectivetests';
+        ? 'https://test.ailisher.com/api/objectivetests'
+        : 'https://test.ailisher.com/api/subjectivetests';
 
       const response = await axios.post(endpoint, testData, {
         headers: { Authorization: `Bearer ${token}` }
@@ -98,8 +98,8 @@ const AITests = () => {
   const handleUpdateTest = async (testData) => {
     try {
       const endpoint = activeTab === 'objective' 
-        ? `http://localhost:5000/api/objectivetests/${editingTest._id}`
-        : `http://localhost:5000/api/subjectivetests/${editingTest._id}`;
+        ? `https://test.ailisher.com/api/objectivetests/${editingTest._id}`
+        : `https://test.ailisher.com/api/subjectivetests/${editingTest._id}`;
 
       const response = await axios.put(endpoint, testData, {
         headers: { Authorization: `Bearer ${token}` }
@@ -120,8 +120,8 @@ const AITests = () => {
 
     try {
       const endpoint = activeTab === 'objective' 
-        ? `http://localhost:5000/api/objectivetests/${deletingTest._id}`
-        : `http://localhost:5000/api/subjectivetests/${deletingTest._id}`;
+        ? `https://test.ailisher.com/api/objectivetests/${deletingTest._id}`
+        : `https://test.ailisher.com/api/subjectivetests/${deletingTest._id}`;
 
       await axios.delete(endpoint, {
         headers: { Authorization: `Bearer ${token}` }
@@ -362,8 +362,8 @@ const AITests = () => {
   const toggleEnabled = async (test, type) => {
     try {
       const endpoint = type === 'objective'
-        ? `http://localhost:5000/api/objectivetests/${test._id}`
-        : `http://localhost:5000/api/subjectivetests/${test._id}`;
+        ? `https://test.ailisher.com/api/objectivetests/${test._id}`
+        : `https://test.ailisher.com/api/subjectivetests/${test._id}`;
       const response = await axios.patch(endpoint, { isEnabled: !test.isEnabled }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -669,7 +669,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
 
   const refreshCategories = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/categories", {
+      const res = await fetch("https://test.ailisher.com/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await res.json();
@@ -692,7 +692,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
     }
     try {
       setCreatingCategory(true);
-      const res = await fetch("http://localhost:5000/api/categories", {
+      const res = await fetch("https://test.ailisher.com/api/categories", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -723,7 +723,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
     }
     try {
       setCreatingSubcategory(true);
-      const listRes = await fetch("http://localhost:5000/api/categories", {
+      const listRes = await fetch("https://test.ailisher.com/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await listRes.json();
@@ -732,7 +732,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
         toast.error('Select a valid category first');
         return;
       }
-      const res = await fetch(`http://localhost:5000/api/categories/${currentCat._id}/subcategories`, {
+      const res = await fetch(`https://test.ailisher.com/api/categories/${currentCat._id}/subcategories`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -818,7 +818,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
       
       // Get presigned URL for upload
       const response = await axios.post(
-        `http://localhost:5000/api/${type === 'objective' ? 'objectivetests' : 'subjectivetests'}/upload-image`,
+        `https://test.ailisher.com/api/${type === 'objective' ? 'objectivetests' : 'subjectivetests'}/upload-image`,
         {
           fileName: file.name,
           contentType: file.type

@@ -58,7 +58,7 @@ export default function QuestionBankSubjective() {
     try {
       setLoading(true);
       const response = await axios.get(
-        `http://localhost:5000/api/questionbank/${questionBankId}`,
+        `https://test.ailisher.com/api/questionbank/${questionBankId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -76,7 +76,7 @@ export default function QuestionBankSubjective() {
     try {
       setLoading(true);
       const response = await axios.get(
-        `http://localhost:5000/api/questionbank/${questionBankId}/questions`,
+        `https://test.ailisher.com/api/questionbank/${questionBankId}/questions`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -119,7 +119,7 @@ export default function QuestionBankSubjective() {
       };
 
       const res = await axios.post(
-        `http://localhost:5000/api/questionbank/${questionBankId}/questions`,
+        `https://test.ailisher.com/api/questionbank/${questionBankId}/questions`,
         payload,
         {
           headers: {

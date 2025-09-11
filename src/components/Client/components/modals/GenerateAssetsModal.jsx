@@ -60,7 +60,7 @@ const GenerateAssetsModal = ({ isOpen, onClose, itemType, itemId, isWorkbook, bo
         return
       }
 
-      const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api'
+      const baseUrl = process.env.REACT_APP_API_URL || 'https://test.ailisher.com/api'
       let endpoint = ''
       
       if (itemType === 'book') {
@@ -191,7 +191,7 @@ const GenerateAssetsModal = ({ isOpen, onClose, itemType, itemId, isWorkbook, bo
       }
 
       const content = generatedContent.raw
-      const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:5000/api'
+      const baseUrl = process.env.REACT_APP_API_URL || 'https://test.ailisher.com/api'
 
       // Calculate total items to save
       let totalItems = 0

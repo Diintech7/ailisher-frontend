@@ -13,7 +13,7 @@ const ChapterViewer = () => {
     const fetchChapterData = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`http://localhost:5000/api/qrcode/book-data/${bookId}/chapters/${chapterId}`);
+        const response = await fetch(`https://test.ailisher.com/api/qrcode/book-data/${bookId}/chapters/${chapterId}`);
         const data = await response.json();
         
         if (data.success) {
@@ -44,7 +44,7 @@ const ChapterViewer = () => {
     }
     
     // Otherwise, assume it's a relative path and prepend the backend URL
-    return `http://localhost:5000/${imageUrl}`;
+    return `https://test.ailisher.com/${imageUrl}`;
   };
 
   // Get file icon based on file type

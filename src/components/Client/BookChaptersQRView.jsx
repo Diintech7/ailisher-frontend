@@ -14,11 +14,11 @@ const BookChaptersQRView = () => {
       setLoading(true);
       try {
         // Fetch book details
-        const bookResponse = await fetch(`http://localhost:5000/api/books/${bookId}`);
+        const bookResponse = await fetch(`https://test.ailisher.com/api/books/${bookId}`);
         const bookData = await bookResponse.json();
         
         // Fetch chapters
-        const chaptersResponse = await fetch(`http://localhost:5000/api/books/${bookId}/chapters`);
+        const chaptersResponse = await fetch(`https://test.ailisher.com/api/books/${bookId}/chapters`);
         const chaptersData = await chaptersResponse.json();
         
         if (bookData.success) {
@@ -53,7 +53,7 @@ const BookChaptersQRView = () => {
     }
     
     // Otherwise, assume it's a relative path and prepend the backend URL
-    return `http://localhost:5000/${imageUrl}`;
+    return `https://test.ailisher.com/${imageUrl}`;
   };
 
   if (loading) {

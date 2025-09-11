@@ -340,7 +340,7 @@ export default function ObjectiveTestDetail() {
         solution: formData.solution,
       };
       const res = await fetch(
-        `http://localhost:5000/api/objectivetest-questions/${testId}`,
+        `https://test.ailisher.com/api/objectivetest-questions/${testId}`,
         {
           method: "POST",
           headers: {
@@ -388,7 +388,7 @@ export default function ObjectiveTestDetail() {
         solution: formData.solution,
       };
       const res = await fetch(
-        `http://localhost:5000/api/objectivetest-questions/${questionId}`,
+        `https://test.ailisher.com/api/objectivetest-questions/${questionId}`,
         {
           method: "PUT",
           headers: {

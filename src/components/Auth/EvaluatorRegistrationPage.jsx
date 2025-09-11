@@ -54,7 +54,7 @@ const EvaluatorRegistrationPage = ({ onAuthSuccess }) => {
     setError('');
     
     try {
-      const response = await fetch('http://localhost:5000/api/evaluators/register', {
+      const response = await fetch('https://test.ailisher.com/api/evaluators/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

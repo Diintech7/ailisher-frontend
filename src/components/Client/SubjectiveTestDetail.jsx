@@ -41,7 +41,7 @@ export default function SubjectiveTestDetail() {
     try {
       setLoading(true);
       const response = await axios.get(
-        `http://localhost:5000/api/subjectivetest-questions/${testId}`,
+        `https://test.ailisher.com/api/subjectivetest-questions/${testId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -50,7 +50,7 @@ export default function SubjectiveTestDetail() {
       setTestDetails(response.data.questions);
 
       const testResponse = await axios.get(
-        `http://localhost:5000/api/subjectivetests/${testId}`,
+        `https://test.ailisher.com/api/subjectivetests/${testId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -76,7 +76,7 @@ export default function SubjectiveTestDetail() {
         return false;
       }
       const res = await fetch(
-        `http://localhost:5000/api/subjectivetest-questions/${testId}`,
+        `https://test.ailisher.com/api/subjectivetest-questions/${testId}`,
         {
           method: "POST",
           headers: {
@@ -110,7 +110,7 @@ export default function SubjectiveTestDetail() {
       const questionId = editedQuestion.id || editedQuestion._id;
       const { id, _id, ...questionBody } = editedQuestion;
       const res = await fetch(
-        `http://localhost:5000/api/subjectivetest-questions/${questionId}`,
+        `https://test.ailisher.com/api/subjectivetest-questions/${questionId}`,
         {
           method: "PUT",
           headers: {
@@ -143,7 +143,7 @@ export default function SubjectiveTestDetail() {
         return;
       }
       const res = await fetch(
-        `http://localhost:5000/api/subjectivetest-questions/${questionId}`,
+        `https://test.ailisher.com/api/subjectivetest-questions/${questionId}`,
         {
           method: "DELETE",
           headers: {

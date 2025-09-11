@@ -49,7 +49,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
   const fetchDefaultFramework = async () => {
     try {
       const token = Cookies.get('token');
-      const response = await fetch('http://localhost:5000/api/aiswb/default-evaluation-framework', {
+      const response = await fetch('https://test.ailisher.com/api/aiswb/default-evaluation-framework', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

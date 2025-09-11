@@ -26,7 +26,7 @@ const QRQuestionPage = () => {
   const [submissionResult, setSubmissionResult] = useState(null);
   const fileInputRef = useRef(null);
 
-  const API_BASE = 'http://localhost:5000/api';
+  const API_BASE = 'https://test.ailisher.com/api';
 
   // Simple cookie utility
   const setCookie = (name, value, days) => {
