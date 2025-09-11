@@ -20,7 +20,7 @@ const CreditAccount = () => {
     setLoading(true);
     try {
       const response = await axios.get(
-        "https://test.ailisher.com/api/admin/credit-account",
+        "http://localhost:5000/api/admin/credit-account",
         {
           headers: {
             Authorization: `Bearer ${Cookies.get("admintoken")}`,

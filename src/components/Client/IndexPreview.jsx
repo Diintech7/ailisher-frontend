@@ -12,34 +12,44 @@ if (typeof window !== 'undefined' && 'pdfjsWorker' in window) {
   GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 }
 
-const uploadToCloudinary = async (file, title) => {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('upload_preset', 'post_blog');
-  formData.append('public_id', `pdf_sections/${title.replace(/[^\w-]/g, '_')}`);
-  formData.append('tags', 'pdf,split');
-
+const uploadToS3 = async (file, title) => {
   try {
-    const response = await fetch(
-      `https://api.cloudinary.com/v1_1/dsbuzlxpw/upload`,
-      {
-        method: 'POST',
-        body: formData
-      }
-    );
+    const token = Cookies.get('usertoken');
+    if (!token) throw new Error('Authentication required');
 
-    if (!response.ok) {
-      throw new Error('Failed to upload to Cloudinary');
+    // Request presigned URL
+    const presignRes = await fetch(`http://localhost:5000/api/datastores/upload-s3`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        fileName: file.name || `${title.replace(/[^\w\s-]/gi, '').replace(/\s+/g, '-')}.pdf`,
+        contentType: file.type || 'application/pdf',
+      }),
+    });
+
+    const presignData = await presignRes.json();
+    if (!presignData.success) {
+      throw new Error(presignData.message || 'Failed to get S3 upload URL');
     }
 
-    const data = await response.json();
-    return data.secure_url;
+    // Upload to S3
+    const putRes = await fetch(presignData.uploadUrl, {
+      method: 'PUT',
+      body: file,
+      headers: { 'Content-Type': file.type || 'application/pdf' },
+    });
+    if (!putRes.ok) throw new Error('Failed to upload file to S3');
+
+    return { url: presignData.downloadUrl, s3Key: presignData.key };
   } catch (error) {
-    console.error('Cloudinary upload error:', {
+    console.error('S3 upload error:', {
       error: error.message,
       fileName: file.name,
       fileSize: file.size,
-      fileType: file.type
+      fileType: file.type,
     });
     throw error;
   }
@@ -1591,7 +1601,7 @@ const IndexPreview = ({
         return;
       }
 
-      // First upload all PDFs to Cloudinary and get URLs
+      // First upload all PDFs to S3 and get URLs
       const uploadPromises = splitPDFs.map(async (pdf) => {
         try {
           // Fetch the PDF blob
@@ -1603,9 +1613,9 @@ const IndexPreview = ({
             type: 'application/pdf'
           });
           
-          // Upload to Cloudinary
-          const cloudinaryUrl = await uploadToCloudinary(file, pdf.title);
-          return { ...pdf, cloudinaryUrl };
+          // Upload to S3 (presigned URL flow)
+          const uploaded = await uploadToS3(file, pdf.title);
+          return { ...pdf, s3Url: uploaded.url, s3Key: uploaded.s3Key };
         } catch (error) {
           console.error(`Error uploading ${pdf.title}:`, error);
           throw error;
@@ -1616,7 +1626,7 @@ const IndexPreview = ({
       const uploadedPDFs = await Promise.all(uploadPromises);
 
       // Now save to backend
-      const saveResponse = await fetch(`https://test.ailisher.com/api/books/${bookId}/save-split-pdfs`, {
+      const saveResponse = await fetch(`http://localhost:5000/api/books/${bookId}/save-split-pdfs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1627,7 +1637,8 @@ const IndexPreview = ({
             title: pdf.title,
             startPage: pdf.startPage,
             endPage: pdf.endPage,
-            url: pdf.cloudinaryUrl,
+            url: pdf.s3Url,
+            s3Key: pdf.s3Key,
             isChapter: pdf.isChapter,
             parentChapter: pdf.parentChapter
           }))

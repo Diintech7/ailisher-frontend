@@ -59,7 +59,7 @@ const UserApp = () => {
             setIsAuthenticated(true);
             setUserRole(userData.role);
           }
-          const response = await fetch('https://test.ailisher.com/api/auth/validate', {
+          const response = await fetch('http://localhost:5000/api/auth/validate', {
             headers: {
               'Authorization': `Bearer ${token}`
             }

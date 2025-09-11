@@ -45,7 +45,7 @@ const ClientManagement = () => {
       setLoading(true);
       const token = Cookies.get("admintoken");
       const response = await axios.get(
-        "https://test.ailisher.com/api/admin/clients",
+        "http://localhost:5000/api/admin/clients",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -73,7 +73,7 @@ const ClientManagement = () => {
     try {
       const token = Cookies.get("admintoken");
       await axios.delete(
-        `https://test.ailisher.com/api/admin/clients/${id}`,
+        `http://localhost:5000/api/admin/clients/${id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -91,7 +91,7 @@ const ClientManagement = () => {
     try {
       const token = Cookies.get("admintoken");
       const response = await axios.put(
-        `https://test.ailisher.com/api/admin/clients/${id}/status`,
+        `http://localhost:5000/api/admin/clients/${id}/status`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -113,7 +113,7 @@ const ClientManagement = () => {
       const adminToken = Cookies.get("admintoken");
 
       const response = await axios.post(
-        `https://test.ailisher.com/api/admin/clients/${id}/login-token`,
+        `http://localhost:5000/api/admin/clients/${id}/login-token`,
         {},
         { headers: { Authorization: `Bearer ${adminToken}` } }
       );

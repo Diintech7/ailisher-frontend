@@ -110,7 +110,7 @@ export default function Marketing() {
   ];
 
   const axiosConfig = {
-    baseURL: 'https://test.ailisher.com',
+    baseURL: 'http://localhost:5000',
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'

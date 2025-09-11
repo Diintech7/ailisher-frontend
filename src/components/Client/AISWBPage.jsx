@@ -34,8 +34,8 @@ const AISWBPage = () => {
 
         // Verify topic exists and user has access
         const baseUrl = isWorkbook 
-          ? `https://test.ailisher.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}`
-          : `https://test.ailisher.com/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}`;
+          ? `http://localhost:5000/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}`
+          : `http://localhost:5000/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}`;
 
         const response = await fetch(baseUrl, {
           headers: {

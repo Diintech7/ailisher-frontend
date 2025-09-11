@@ -95,8 +95,8 @@ const EditSubTopicModal = ({ isOpen, onClose, bookId, workbookId, chapterId, top
 
       // Determine endpoint based on context
       const updateUrl = isWorkbook
-        ? `https://test.ailisher.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopic._id}`
-        : `https://test.ailisher.com/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopic._id}`;
+        ? `http://localhost:5000/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopic._id}`
+        : `http://localhost:5000/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopic._id}`;
       
       const response = await fetch(updateUrl, {
         method: 'PUT',
@@ -260,8 +260,8 @@ const SubTopicDetail = () => {
 
       // Determine endpoint based on context
       const subtopicUrl = isWorkbook
-        ? `https://test.ailisher.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
-        : `https://test.ailisher.com/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`;
+        ? `http://localhost:5000/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
+        : `http://localhost:5000/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`;
 
       const response = await fetch(subtopicUrl, {
         headers: {
@@ -316,8 +316,8 @@ const SubTopicDetail = () => {
 
       // Determine endpoint based on context
       const deleteUrl = isWorkbook
-        ? `https://test.ailisher.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
-        : `https://test.ailisher.com/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`;
+        ? `http://localhost:5000/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
+        : `http://localhost:5000/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`;
 
       const response = await fetch(deleteUrl, {
         method: 'DELETE',
@@ -358,8 +358,8 @@ const SubTopicDetail = () => {
 
       // Determine endpoint based on context
       const updateUrl = isWorkbook
-        ? `https://test.ailisher.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
-        : `https://test.ailisher.com/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`;
+        ? `http://localhost:5000/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
+        : `http://localhost:5000/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`;
 
       const response = await fetch(updateUrl, {
         method: 'PUT',

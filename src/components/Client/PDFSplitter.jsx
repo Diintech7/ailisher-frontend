@@ -317,7 +317,7 @@ const PDFSplitter = ({ isOpen, onClose, bookId }) => {
       console.log("Sending text to Gemini for index extraction...");
       
       // Use the Gemini API key
-      const geminiApiKey = 'AIzaSyCCWtRX--NYoiootIlwWgg28s7n2VCfzDo';
+      const geminiApiKey = 'AIzaSyCVNlpQKVwg7yw0BFFRcBZBU772RxGU7iI';
       const modelName = 'gemini-2.0-flash';
       
       console.log("Using Gemini API with model:", modelName);

@@ -46,20 +46,20 @@ const SummaryModal = ({
       // Determine endpoint based on item type
       if (itemType === "book") {
         endpoint = isWorkbook
-          ? `https://test.ailisher.com/api/assets/${workbookId}/summaries`
-          : `https://test.ailisher.com/api/assets/${bookId}/summaries`
+          ? `http://localhost:5000/api/assets/${workbookId}/summaries`
+          : `http://localhost:5000/api/assets/${bookId}/summaries`
       } else if (itemType === "chapter") {
         endpoint = isWorkbook
-          ? `https://test.ailisher.com/api/assets/${workbookId}/chapters/${chapterId}/summaries`
-          : `https://test.ailisher.com/api/assets/${bookId}/chapters/${chapterId}/summaries`
+          ? `http://localhost:5000/api/assets/${workbookId}/chapters/${chapterId}/summaries`
+          : `http://localhost:5000/api/assets/${bookId}/chapters/${chapterId}/summaries`
       } else if (itemType === "topic") {
         endpoint = isWorkbook
-          ? `https://test.ailisher.com/api/assets/${workbookId}/chapters/${chapterId}/topics/${topicId}/summaries`
-          : `https://test.ailisher.com/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}/summaries`
+          ? `http://localhost:5000/api/assets/${workbookId}/chapters/${chapterId}/topics/${topicId}/summaries`
+          : `http://localhost:5000/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}/summaries`
       } else if (itemType === "subtopic") {
         endpoint = isWorkbook
-          ? `https://test.ailisher.com/api/assets/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}/summaries`
-          : `https://test.ailisher.com/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}/summaries`
+          ? `http://localhost:5000/api/assets/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}/summaries`
+          : `http://localhost:5000/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}/summaries`
       }
 
       const response = await axios.post(

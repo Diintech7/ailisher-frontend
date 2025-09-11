@@ -178,7 +178,7 @@ function CreateQuestionBankModal({ isOpen, onClose, onCreate, categoryMappings, 
       };
       if (coverImageKey) Data.coverImageKey = coverImageKey;
       // Send to backend
-      const response = await fetch("https://test.ailisher.com/api/questionbank", {
+      const response = await fetch("http://localhost:5000/api/questionbank", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

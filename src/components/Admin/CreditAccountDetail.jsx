@@ -19,7 +19,7 @@ export default function CreditAccountDetail() {
   const fetchAccountDetails = async () => {
     setLoadingDetails(true);
     try {
-      const response = await axios.get(`https://test.ailisher.com/api/admin/credit-account/${accountId}`,
+      const response = await axios.get(`http://localhost:5000/api/admin/credit-account/${accountId}`,
         { headers: { Authorization: `Bearer ${Cookies.get('admintoken')}` } }
       );
       setAccountDetails(response.data.data);
@@ -33,7 +33,7 @@ console.log(clientId);
 
   const fetchRechargePlans = async () => {
     try {
-      const response = await axios.get(`https://test.ailisher.com/api/admin/${clientId}/get-recharge-plan`,
+      const response = await axios.get(`http://localhost:5000/api/admin/${clientId}/get-recharge-plan`,
         { headers: { Authorization: `Bearer ${Cookies.get('admintoken')}` } }
       );
       setRechargePlans(response.data.data || []);
@@ -68,7 +68,7 @@ console.log(clientId);
     console.log(adminId);
     console.log(adminUser);
     
-      const response = await fetch('https://test.ailisher.com/api/admin/paytm/initiate', {
+      const response = await fetch('http://localhost:5000/api/admin/paytm/initiate', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

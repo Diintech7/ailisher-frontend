@@ -224,7 +224,7 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded }) => {
       const token = Cookies.get('admintoken');
       console.log('Admin token:', token); // Debug log
       
-      const response = await fetch('https://test.ailisher.com/api/admin/clients', {
+      const response = await fetch('http://localhost:5000/api/admin/clients', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

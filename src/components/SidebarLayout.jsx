@@ -77,7 +77,7 @@ const SidebarLayout = ({ onLogout, userRole }) => {
   const fetchClientInfo = async () => {
     try {
       const token = Cookies.get('usertoken');
-      const response = await fetch('https://test.ailisher.com/api/auth/profile', {
+      const response = await fetch('http://localhost:5000/api/auth/profile', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
