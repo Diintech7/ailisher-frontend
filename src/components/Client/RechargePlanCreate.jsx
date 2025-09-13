@@ -170,7 +170,7 @@ export default function RechargePlanCreate() {
         });
         const body = await res.json();
         if (!res.ok || !body.success) throw new Error(body.message || 'Failed to update plan');
-        navigate('/recharge-plan');
+        navigate('/plans');
       } else {
         const items = [];
         const keys = ['book', 'workbook', 'testObjective', 'testSubjective'];
@@ -191,7 +191,7 @@ export default function RechargePlanCreate() {
         });
         const body = await res.json();
         if (!res.ok || !body.success) throw new Error(body.message || 'Failed to create plan');
-        navigate('/recharge-plan');
+        navigate('/plans');
       }
     } catch (e) {
       setError(e.message);
@@ -255,16 +255,16 @@ export default function RechargePlanCreate() {
     <div className="bg-white shadow-sm border-b">
     <div className="flex items-center space-x-4 p-4">
       <button
-        onClick={() => navigate("/recharge-plan")}
+        onClick={() => navigate("/plans")}
         className="text-gray-500 hover:text-gray-700 transition-colors"
       >
-        ← Back to Recharge Plan
+        ← Back to Plan
       </button>
     </div>
   </div>
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-semibold">{isEdit ? 'Edit Recharge Plan' : 'Create Recharge Plan'}</h2>
+        <h2 className="text-2xl font-semibold">{isEdit ? 'Edit Plan' : 'Create Plan'}</h2>
       </div>
 
       {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">{error}</div>}
@@ -312,7 +312,7 @@ export default function RechargePlanCreate() {
         </div>
         <div className="md:col-span-3 flex gap-2">
           <button disabled={submitting} className="bg-blue-600 text-white px-4 py-2 rounded">{submitting ? (isEdit ? 'Saving...' : 'Creating...') : (isEdit ? 'Save Changes' : 'Create Plan')}</button>
-          <button type="button" className="border px-4 py-2 rounded" onClick={() => navigate('/recharge-plan')}>Cancel</button>
+          <button type="button" className="border px-4 py-2 rounded" onClick={() => navigate('/plans')}>Cancel</button>
         </div>
       </form>
 

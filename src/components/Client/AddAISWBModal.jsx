@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import GeminiModal from '../GeminiModal';
 import Cookies from 'js-cookie';
 
-const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editingQuestion }) => {
+const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editingQuestion, onQuestions }) => {
   const initialQuestionState = {
     question: '',
     detailedAnswer: '',
@@ -265,9 +265,10 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
           videoUrls = q.answerVideoUrls.map(url => url && url.trim()).filter(url => url);
         }
 
-        // Create a new object without answerVideoUrls
-        const { answerVideoUrls, ...rest } = q;
+        // Create a new object without answerVideoUrls and evaluationType
+        const { answerVideoUrls, evaluationType, ...rest } = q;
 
+        // Create base data object
         const processedData = {
           ...rest,
           metadata: {
@@ -291,10 +292,15 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
           },
           languageMode: q.languageMode,
           evaluationMode: q.evaluationMode,
-          evaluationType: q.evaluationType,
           evaluationGuideline: q.evaluationGuideline && q.evaluationGuideline.trim() ? q.evaluationGuideline.trim() : undefined,
-          answerVideoUrls: videoUrls  // Send whatever user entered
+          answerVideoUrls: videoUrls
         };
+
+        // Only add evaluationType if evaluationMode is 'manual' and evaluationType has a valid value
+        if (q.evaluationMode === 'manual' && evaluationType && evaluationType.trim()) {
+          processedData.evaluationType = evaluationType;
+        }
+        
         console.log('Processed question data:', processedData);
         return processedData;
       });
@@ -315,6 +321,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
           console.log('Modal: Question update successful!');
           toast.success('Question updated successfully!');
           onClose();
+          onQuestions();
         } else {
           console.error('Modal: Question update failed!');
         }
@@ -334,6 +341,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
         if (allSuccess) {
           toast.success('Questions added successfully!');
           onClose();
+          onQuestions();
         }
       }
     } catch (error) {

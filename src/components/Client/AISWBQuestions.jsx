@@ -764,6 +764,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
             setShowAddQuestionModal(false);
             setEditingQuestion(null);
           }}
+          onQuestions={refreshQuestions}
           onAddQuestion={handleAddQuestion}
           onEditQuestion={handleEditQuestion}
           editingQuestion={editingQuestion}

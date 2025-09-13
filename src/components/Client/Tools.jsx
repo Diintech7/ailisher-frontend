@@ -27,9 +27,10 @@ export default function Tools() {
       navigate("/image-generator");
     } else if (activeTab === 'category-management') {
       navigate("/category-management")
-    }else if (activeTab === 'recharge-plan') {
-      navigate("/recharge-plan")
     }
+    // else if (activeTab === 'plan') {
+    //   navigate("/plans")
+    // }
      
   }, [activeTab, navigate]);
 
@@ -90,13 +91,13 @@ export default function Tools() {
       color: "bg-red-500",
       description: "Category management",
     },
-    {
-      id: "recharge-plan",
-      title: "Recharge Plan",
-      icon: CreditCard,
-      color: "bg-pink-500",
-      description: "Recharge plan",
-    },
+    // {
+    //   id: "plan",
+    //   title: "Plan",
+    //   icon: CreditCard,
+    //   color: "bg-pink-500",
+    //   description: "Plan",
+    // },
   ];
 
   const renderToolsGrid = () => (
