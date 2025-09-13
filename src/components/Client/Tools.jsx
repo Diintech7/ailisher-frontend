@@ -8,6 +8,7 @@ import {
   Send,
   Image,
   List,
+  CreditCard,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -26,6 +27,8 @@ export default function Tools() {
       navigate("/image-generator");
     } else if (activeTab === 'category-management') {
       navigate("/category-management")
+    }else if (activeTab === 'recharge-plan') {
+      navigate("/recharge-plan")
     }
      
   }, [activeTab, navigate]);
@@ -86,6 +89,13 @@ export default function Tools() {
       icon: List,
       color: "bg-red-500",
       description: "Category management",
+    },
+    {
+      id: "recharge-plan",
+      title: "Recharge Plan",
+      icon: CreditCard,
+      color: "bg-pink-500",
+      description: "Recharge plan",
     },
   ];
 

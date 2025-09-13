@@ -427,7 +427,10 @@ const QuestionBankText = ({ onBack, questionBankId }) => {
           video: { url: '', title: '', description: '', duration: 0 },
           image: { url: '', caption: '' }
         },
-        questionBankId
+        questionBankId,
+        subject: q.subject || '',
+        topic: q.topicName || '',
+        tags: q.topicTags || []
       }))
 
       let saved = 0
