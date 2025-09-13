@@ -412,7 +412,7 @@ const QuestionBankText = ({ onBack, questionBankId }) => {
     setIsSaving(true)
     toast.info('Saving questions...')
     try {
-      
+      console.log(parsedQuestions)
       const questionsToSave = parsedQuestions.map((q) => ({
         question: q.questionText || q.question,
         options: Array.isArray(q.options) ? q.options : [],
