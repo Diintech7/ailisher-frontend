@@ -172,6 +172,9 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
   const allowedRectRef = useRef(null)
   const borderRectRef = useRef(null)
   const historyRef = useRef([])
+  // Reference image support
+  const referenceImageFabricRef = useRef(null)
+  const referenceImageInputRef = useRef(null)
   const historyIndexRef = useRef(-1)
   const containerRef = useRef(null)
   const tempElementsRef = useRef([])
@@ -399,7 +402,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
             fabricCanvas.selection = false
             setLastPos({ x: evt.clientX, y: evt.clientY })
           }
-          // Block creating elements outside allowed rectangle by early returning pointer events
+          // Block creating elements outside the right panel area
           if (allowedRectRef.current && activeTool !== 'select' && activeTool !== 'clear') {
             const p = fabricCanvas.getPointer(opt.e)
             const b = allowedRectRef.current
@@ -543,10 +546,12 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         })
 
         // Create fabric image
+        const centeredLeft = (containerWidth - img.width * scale) / 2
+        const shiftedLeft = Math.max(0, centeredLeft - 250)
         const fabricImage = new window.fabric.Image(img, {
           scaleX: scale,
           scaleY: scale,
-          left: (containerWidth - img.width * scale) / 2,
+          left: shiftedLeft,
           top: (containerHeight - img.height * scale) / 2,
           selectable: false,
           evented: false,
@@ -563,21 +568,20 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
 
         backgroundImageRef.current = fabricImage
 
-        // Compute allowed rect (image bounds expanded by ~30px, clamped to canvas) and draw border
-        const expand = 30
+        // Compute RIGHT-SIDE annotation panel aligned to image
         const imgLeft = fabricImage.left
         const imgTop = fabricImage.top
         const imgW = img.width * fabricImage.scaleX
         const imgH = img.height * fabricImage.scaleY
-        const allowedLeft = Math.max(0, imgLeft - expand)
-        const allowedTop = Math.max(0, imgTop - expand)
-        const allowedRight = Math.min(containerWidth, imgLeft + imgW + expand)
-        const allowedBottom = Math.min(containerHeight, imgTop + imgH + expand)
+        const panelExportWidth = 700 // final published panel width in pixels
+        const panelCanvasGap = Math.max(4, Math.floor(8 * fabricImage.scaleX))
+        const panelCanvasWidth = panelExportWidth * fabricImage.scaleX
+
         allowedRectRef.current = {
-          left: allowedLeft,
-          top: allowedTop,
-          width: allowedRight - allowedLeft,
-          height: allowedBottom - allowedTop,
+          left: imgLeft + imgW + panelCanvasGap,
+          top: imgTop,
+          width: panelCanvasWidth,
+          height: imgH,
         }
 
         // Remove old border if any
@@ -586,13 +590,13 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
           borderRectRef.current = null
         }
 
-        // Add visible border rectangle
+        // Add visible border rectangle that encloses IMAGE + PANEL (attached look)
         const border = new window.fabric.Rect({
-          left: allowedRectRef.current.left,
-          top: allowedRectRef.current.top,
-          width: allowedRectRef.current.width,
-          height: allowedRectRef.current.height,
-          fill: 'rgba(0,0,0,0)',
+          left: imgLeft,
+          top: imgTop,
+          width: imgW + allowedRectRef.current.width,
+          height: imgH,
+          fill: 'rgba(255,255,255,0.0)',
           stroke: '#2563eb',
           strokeDashArray: [6, 3],
           strokeWidth: 2,
@@ -603,15 +607,16 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
 
         canvas.clear()
         canvas.add(fabricImage)
+        // Add combined border (fixed, non-selectable, non-movable)
+        border.hasControls = false
+        border.hasBorders = false
+        border.lockMovementX = true
+        border.lockMovementY = true
+        border.selectable = false
+        border.evented = false
         canvas.add(border)
-        // Clip canvas to allowed rectangle so drawing outside is masked
-        canvas.clipPath = new window.fabric.Rect({
-          left: allowedRectRef.current.left,
-          top: allowedRectRef.current.top,
-          width: allowedRectRef.current.width,
-          height: allowedRectRef.current.height,
-          absolutePositioned: true,
-        })
+        // Do NOT clip canvas; restrict drawing via pointer checks only
+        canvas.clipPath = null
         canvas.sendToBack(fabricImage)
 
         // Load saved annotations for this image if they exist
@@ -664,27 +669,27 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
     try {
       const canvas = fabricCanvasRef.current
       const b = allowedRectRef.current || { left: 0, top: 0, width: canvas.width, height: canvas.height }
-      const x = b.left + b.width / 2
-      let y = b.top + b.height / 2
+      const x = b.left + Math.max(2, Math.floor(b.width * 0.04))
+      let y = b.top + Math.max(10, Math.floor(b.height * 0.06))
       if (position === 'top') y = b.top + Math.max(20, b.height * 0.08)
-      if (position === 'middle') y = b.top + b.height / 2
+      if (position === 'middle') y = b.top + Math.floor(b.height * 0.45)
       if (position === 'bottom') y = b.top + b.height - Math.max(30, b.height * 0.1)
 
       const fontSize = Math.max(14, Math.floor(Math.min(b.width, b.height) * 0.028))
-      // Add line breaks to the comment text
-      const formattedComment = addLineBreaks(String(comment), 35)
-      
-      const commentText = new window.fabric.IText(formattedComment, {
-        left: x - Math.min(120, b.width * 0.25),
+      const commentText = new window.fabric.Textbox(String(comment), {
+        left: x,
         top: y,
+        width: Math.max(20, b.width - Math.max(2, Math.floor(b.width * 0.04)) - 6),
         fontFamily: 'Kalam, cursive',
         fill: penColor,
         fontSize,
         fontWeight: '400',
-        angle: (Math.random() - 0.5) * 3,
+        angle: 0,
         selectable: true,
         evented: true,
+        textAlign: 'left',
       })
+      // No inline delete control; use keyboard Delete/Backspace
       canvas.add(commentText)
       canvas.setActiveObject(commentText)
       canvas.renderAll()
@@ -757,10 +762,12 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         })
 
         // Create fabric image
+        const centeredLeft2 = (containerWidth - img.width * scale) / 2
+        const shiftedLeft2 = Math.max(0, centeredLeft2 - 250)
         const fabricImage = new window.fabric.Image(img, {
           scaleX: scale,
           scaleY: scale,
-          left: (containerWidth - img.width * scale) / 2,
+          left: shiftedLeft2,
           top: (containerHeight - img.height * scale) / 2,
           selectable: false,
           evented: false,
@@ -777,21 +784,20 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
 
         backgroundImageRef.current = fabricImage
 
-        // Compute allowed rect (image bounds expanded by ~30px, clamped to canvas) and draw border
-        const expand = 30
+        // Compute RIGHT-SIDE annotation panel aligned to image
         const imgLeft = fabricImage.left
         const imgTop = fabricImage.top
         const imgW = img.width * fabricImage.scaleX
         const imgH = img.height * fabricImage.scaleY
-        const allowedLeft = Math.max(0, imgLeft - expand)
-        const allowedTop = Math.max(0, imgTop - expand)
-        const allowedRight = Math.min(containerWidth, imgLeft + imgW + expand)
-        const allowedBottom = Math.min(containerHeight, imgTop + imgH + expand)
+        const panelExportWidth = 700
+        const panelCanvasGap = Math.max(4, Math.floor(8 * fabricImage.scaleX))
+        const panelCanvasWidth = panelExportWidth * fabricImage.scaleX
+
         allowedRectRef.current = {
-          left: allowedLeft,
-          top: allowedTop,
-          width: allowedRight - allowedLeft,
-          height: allowedBottom - allowedTop,
+          left: imgLeft + imgW + panelCanvasGap,
+          top: imgTop,
+          width: panelCanvasWidth,
+          height: imgH,
         }
 
         // Remove old border if any
@@ -800,13 +806,13 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
           borderRectRef.current = null
         }
 
-        // Add visible border rectangle
+        // Add visible border rectangle that encloses IMAGE + PANEL (attached look)
         const border = new window.fabric.Rect({
-          left: allowedRectRef.current.left,
-          top: allowedRectRef.current.top,
-          width: allowedRectRef.current.width,
-          height: allowedRectRef.current.height,
-          fill: 'rgba(0,0,0,0)',
+          left: imgLeft,
+          top: imgTop,
+          width: imgW + allowedRectRef.current.width,
+          height: imgH,
+          fill: 'rgba(255,255,255,0.0)',
           stroke: '#2563eb',
           strokeDashArray: [6, 3],
           strokeWidth: 2,
@@ -817,15 +823,15 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
 
         canvas.clear()
         canvas.add(fabricImage)
+        border.hasControls = false
+        border.hasBorders = false
+        border.lockMovementX = true
+        border.lockMovementY = true
+        border.selectable = false
+        border.evented = false
         canvas.add(border)
-        // Clip canvas to allowed rectangle so drawing outside is masked
-        canvas.clipPath = new window.fabric.Rect({
-          left: allowedRectRef.current.left,
-          top: allowedRectRef.current.top,
-          width: allowedRectRef.current.width,
-          height: allowedRectRef.current.height,
-          absolutePositioned: true,
-        })
+        // No clipPath; rely on pointer bounds checks
+        canvas.clipPath = null
         canvas.sendToBack(fabricImage)
 
         // Load saved annotations for the target index if they exist
@@ -1286,6 +1292,29 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
     }
   }, [activeTool, penColor, penSize, canvasReady])
 
+  // Keyboard delete for removing selected objects (avoid deleting while editing text)
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (!fabricCanvasRef.current || !canvasReady) return
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        const active = fabricCanvasRef.current.getActiveObject()
+        // If editing a text-like object, let Fabric handle character deletion
+        if (active && (active.isEditing || active.type === 'i-text' && active.isEditing)) {
+          return
+        }
+        if (active && active !== backgroundImageRef.current && active !== borderRectRef.current) {
+          fabricCanvasRef.current.remove(active)
+          fabricCanvasRef.current.discardActiveObject()
+          fabricCanvasRef.current.requestRenderAll()
+          saveToHistory()
+          e.preventDefault()
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [canvasReady, saveToHistory])
+
   const handleToolSelect = useCallback(
     (tool) => {
       if (!canvasReady) {
@@ -1400,35 +1429,25 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         const canvas = fabricCanvasRef.current
         const b = allowedRectRef.current || { left: 0, top: 0, width: canvas.width, height: canvas.height }
         const fontSize = Math.max(14, Math.floor(Math.min(b.width, b.height) * 0.028))
-        // Add line breaks to the comment text
-        const formattedComment = addLineBreaks(comment, 35)
-        
-        const commentText = new window.fabric.IText(formattedComment, {
-          left: b.left + Math.max(20, Math.floor(b.width * 0.1)),
+        const commentText = new window.fabric.Textbox(String(comment), {
+          left: b.left + 4,
           top: b.top + Math.max(20, Math.floor(b.height * 0.2)),
+          width: Math.max(20, b.width - 8),
           fontFamily: "Kalam, cursive",
           fill: penColor,
           fontSize,
           fontWeight: "400",
-          fontStyle: "normal",
-          underline: false,
-          linethrough: false,
-          textAlign: "left",
-          charSpacing: 1,
-          lineHeight: 1.2,
-          angle: Math.random() * 4 - 2,
-          shadow: {
-            color: "rgba(0,0,0,0.1)",
-            blur: 1,
-            offsetX: 1,
-            offsetY: 1,
-          },
+          textAlign: 'justify',
+          lineHeight: 1.25,
+          selectable: true,
+          evented: true,
         })
 
         fabricCanvasRef.current.add(commentText)
         fabricCanvasRef.current.setActiveObject(commentText)
         fabricCanvasRef.current.renderAll()
         saveToHistory()
+        // No inline delete control; use keyboard Delete/Backspace
 
         setShowCommentDropdown(false)
         toast.success("Comment added! You can move and edit it.")
@@ -1461,104 +1480,133 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
     return lines.join('\n')
   }
 
+  // Removed inline cross delete control (use Delete/Backspace instead)
+
   // Auto Annotate: place a few editable marks and comments automatically
   const handleAutoAnnotate = useCallback(() => {
     if (!fabricCanvasRef.current || !window.fabric || !canvasReady) return
 
     try {
       const canvas = fabricCanvasRef.current
-      // Use allowed rectangle bounds so items appear over the image region
-      const bounds = allowedRectRef.current || { left: 0, top: 0, width: canvas.width, height: canvas.height }
-      const left = bounds.left
-      const top = bounds.top
-      const width = bounds.width
-      const height = bounds.height
+      // allowedRectRef now represents the right-side panel; compute image bounds from background image
+      const panel = allowedRectRef.current
+      const bg = backgroundImageRef.current
+      if (!panel || !bg) return
+      const imgBounds = {
+        left: bg.left,
+        top: bg.top,
+        width: bg.width * bg.scaleX,
+        height: bg.height * bg.scaleY,
+      }
+      const left = imgBounds.left
+      const top = imgBounds.top
+      const width = imgBounds.width
+      const height = imgBounds.height
 
       const safeX = (ratio) => Math.max(left + 6, Math.min(left + width - 6, Math.floor(left + width * ratio)))
       const safeY = (ratio) => Math.max(top + 6, Math.min(top + height - 6, Math.floor(top + height * ratio)))
 
       // Helper: create a hand-drawn looking green check mark using a path
       const addHandDrawnTick = (cx, cy, size) => {
-        const jitter = (n) => n + (Math.random() - 0.5) * size * 0.2
+        const jitter = (n, amt) => n + (Math.random() - 0.5) * amt
         const s = size
-        // Build a simple check path with slight randomness
+        // A more organic tick using slight cubic curves and wobble
         const p = [
-          ['M', jitter(cx - s * 0.4), jitter(cy)],
-          ['Q', jitter(cx - s * 0.25), jitter(cy + s * 0.15), jitter(cx - s * 0.1), jitter(cy + s * 0.3)],
-          ['Q', jitter(cx), jitter(cy + s * 0.45), jitter(cx + s * 0.45), jitter(cy - s * 0.2)],
+          ['M', jitter(cx - s * 0.45, s * 0.08), jitter(cy + s * 0.05, s * 0.08)],
+          ['Q', jitter(cx - s * 0.2, s * 0.06), jitter(cy + s * 0.25, s * 0.06), jitter(cx - s * 0.05, s * 0.06), jitter(cy + s * 0.35, s * 0.06)],
+          ['Q', jitter(cx + s * 0.05, s * 0.06), jitter(cy + s * 0.45, s * 0.06), jitter(cx + s * 0.55, s * 0.08), jitter(cy - s * 0.15, s * 0.08)],
         ]
         const path = new window.fabric.Path(p, {
-          stroke: '#16a34a',
+          stroke: '#dc2626',
           fill: '',
-          strokeWidth: Math.max(2, Math.floor(size * 0.12)),
+          // refined thin pen-like stroke for red ticks
+          strokeWidth: Math.max(1.1, Math.floor(size * 0.065)),
           strokeLineCap: 'round',
           strokeLineJoin: 'round',
           selectable: true,
           evented: true,
-          angle: (Math.random() - 0.5) * 6,
+          angle: (Math.random() - 0.5) * 3,
+          shadow: { color: 'rgba(0,0,0,0.06)', blur: 0.8, offsetX: 0.4, offsetY: 0.4 },
         })
         canvas.add(path)
       }
 
       // Add a few hand-drawn ticks at plausible positions
       const tickCenters = [
-        { x: safeX(0.18), y: safeY(0.22) },
-        { x: safeX(0.56), y: safeY(0.40) },
-        { x: safeX(0.76), y: safeY(0.70) },
+        { x: safeX(0.20), y: safeY(0.20) },
+        { x: safeX(0.52), y: safeY(0.42) },
+        { x: safeX(0.78), y: safeY(0.72) },
       ]
-      tickCenters.forEach((pos) => addHandDrawnTick(pos.x, pos.y, Math.max(20, Math.floor(Math.min(width, height) * 0.12))))
+      tickCenters.forEach((pos, idx) => {
+        const base = Math.max(26, Math.floor(Math.min(width, height) * 0.15))
+        const size = base + (idx % 2 === 0 ? 2 : -1)
+        addHandDrawnTick(pos.x, pos.y, size)
+      })
 
-      // Place AI Evaluation comments from Analysis (if present)
-      const evaluationComments = Array.isArray(getCurrentEvaluation()?.comments)
-        ? getCurrentEvaluation().comments
+      // Prefer Hindi evaluation (if available) for auto-annotation, regardless of UI toggle
+      let autoEval = getCurrentEvaluation()
+      if (
+        submission.hindiEvaluation && (
+          (Array.isArray(submission.hindiEvaluation.comments) && submission.hindiEvaluation.comments.length > 0) ||
+          submission.hindiEvaluation.analysis
+        )
+      ) {
+        autoEval = submission.hindiEvaluation
+      }
+
+      // Place AI Evaluation comments from Analysis into the RIGHT PANEL (stacked top-to-bottom)
+      const evaluationComments = Array.isArray(autoEval?.comments)
+        ? autoEval.comments
         : []
 
       if (evaluationComments.length > 0) {
-        const fontSize = Math.max(14, Math.floor(Math.min(width, height) * 0.028))
-        const lineHeight = fontSize * 1.4 // Approximate line height for multi-line text
-        const minGap = Math.max(20, Math.floor(Math.min(width, height) * 0.04)) // Minimum gap between comments
-        
-        // Calculate total height needed for all comments
-        let totalHeight = 0
-        const commentHeights = []
-        
-        evaluationComments.slice(0, 6).forEach((comment) => {
-          const formattedComment = addLineBreaks(String(comment), 35)
-          const lineCount = formattedComment.split('\n').length
-          const commentHeight = lineCount * lineHeight
-          commentHeights.push(commentHeight)
-          totalHeight += commentHeight + minGap
+        // Panel metrics
+        const panelLeft = panel.left
+        const panelTop = panel.top
+        const panelWidth = panel.width
+        const panelHeight = panel.height
+
+        // Add a score heading at the top of the panel
+        const scoreText = typeof autoEval?.score === 'number'
+          ? `Score: ${autoEval.score}/${submission.question?.metadata?.maximumMarks ?? 'N/A'}`
+          : `Score: ${autoEval?.score || 'Not evaluated'}`
+        const headerFont = Math.max(20, Math.floor(Math.min(panelWidth, panelHeight) * 0.06))
+        const header = new window.fabric.IText(scoreText, {
+          left: panelLeft + 12,
+          top: panelTop + 10,
+          fontFamily: 'Kalam, cursive',
+          fill: '#16a34a',
+          fontSize: headerFont,
+          fontWeight: '700',
+          selectable: true,
+          evented: true,
         })
-        
-        // Remove the last gap
-        totalHeight -= minGap
-        
-        // Calculate starting Y position to center all comments
-        const availableHeight = height * 0.7 // Use 70% of available height
-        const startY = Math.max(safeY(0.08), (height - totalHeight) / 2)
-        let currentY = startY
-        
-        // Position all comments vertically in sequence (first, second, third, etc.)
-        evaluationComments.slice(0, 6).forEach((comment, i) => {
-          const formattedComment = addLineBreaks(String(comment), 35)
-          const commentHeight = commentHeights[i]
-          
-          const commentText = new window.fabric.IText(formattedComment, {
-            left: safeX(0.15), // Center horizontally
+        canvas.add(header)
+
+        // Comments stacked below the heading
+        const fontSize = Math.max(14, Math.floor(Math.min(panelWidth, panelHeight) * 0.032))
+        const lineHeight = fontSize * 1.35
+        const minGap = Math.max(10, Math.floor(Math.min(panelWidth, panelHeight) * 0.02))
+        let currentY = panelTop + 10 + headerFont + minGap
+        evaluationComments.slice(0, 12).forEach((comment) => {
+          const commentText = new window.fabric.Textbox(String(comment), {
+            left: panelLeft + 4,
             top: currentY,
-            fontFamily: "Kalam, cursive",
+            width: Math.max(20, panelWidth - 8),
+            fontFamily: 'Kalam, cursive',
             fill: penColor,
-            fontSize: fontSize,
-            fontWeight: "400",
-            angle: (Math.random() - 0.5) * 3,
+            fontSize,
+            fontWeight: '400',
+            textAlign: 'left',
+            lineHeight: 1.25,
             selectable: true,
             evented: true,
           })
-          commentText.set({ shadow: { color: "rgba(0,0,0,0.06)", blur: 1, offsetX: 1, offsetY: 1 } })
+          commentText.set({ shadow: { color: 'rgba(0,0,0,0.06)', blur: 1, offsetX: 1, offsetY: 1 } })
           canvas.add(commentText)
-          
-          // Move to next position for the next comment
-          currentY += commentHeight + minGap
+          // measure height after rendering
+          const measured = commentText.getScaledHeight ? commentText.getScaledHeight() : (commentText.height || (fontSize * 1.25))
+          currentY += measured + minGap
         })
       }
 
@@ -1625,6 +1673,90 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
     },
     [activeTool, canvasReady],
   )
+
+  // Upload and place a reference image inside the annotation panel
+  const handleReferenceImageUpload = useCallback(async (file) => {
+    if (!fabricCanvasRef.current || !allowedRectRef.current || !file) return
+    try {
+      const reader = new FileReader()
+      const dataUrl = await new Promise((resolve, reject) => {
+        reader.onload = () => resolve(reader.result)
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+
+      await new Promise((resolve, reject) => {
+        const img = new Image()
+        img.onload = () => resolve(img)
+        img.onerror = reject
+        img.src = dataUrl
+      }).then((img) => {
+        const canvas = fabricCanvasRef.current
+        const panel = allowedRectRef.current
+
+        // Remove previous reference image if any
+        if (referenceImageFabricRef.current && canvas.contains(referenceImageFabricRef.current)) {
+          canvas.remove(referenceImageFabricRef.current)
+          referenceImageFabricRef.current = null
+        }
+
+        const panelMaxWidth = Math.max(50, panel.width - 20)
+        const panelMaxHeight = Math.max(50, panel.height / 3)
+        const scale = Math.min(panelMaxWidth / img.width, panelMaxHeight / img.height, 1)
+
+        const fabricImg = new window.fabric.Image(img, {
+          left: panel.left + 10,
+          top: panel.top + 10,
+          scaleX: scale,
+          scaleY: scale,
+          hasControls: true,
+          hasBorders: true,
+          selectable: true,
+          evented: true,
+          cornerStyle: 'circle',
+          transparentCorners: false,
+          isReferenceImage: true,
+        })
+
+        // Constrain movement to the panel area
+        fabricImg.on('moving', () => {
+          const b = allowedRectRef.current
+          const w = fabricImg.width * fabricImg.scaleX
+          const h = fabricImg.height * fabricImg.scaleY
+          fabricImg.left = Math.min(Math.max(fabricImg.left, b.left + 2), b.left + b.width - w - 2)
+          fabricImg.top = Math.min(Math.max(fabricImg.top, b.top + 2), b.top + b.height - h - 2)
+        })
+
+        referenceImageFabricRef.current = fabricImg
+        canvas.add(fabricImg)
+        canvas.setActiveObject(fabricImg)
+        canvas.renderAll()
+        saveToHistory()
+        toast.success('Reference image added')
+      })
+    } catch (e) {
+      console.error('Failed to add reference image', e)
+      toast.error('Failed to add reference image')
+    } finally {
+      if (referenceImageInputRef.current) {
+        referenceImageInputRef.current.value = ''
+      }
+    }
+  }, [canvasReady])
+
+  const handleRemoveReferenceImage = useCallback(() => {
+    const canvas = fabricCanvasRef.current
+    if (!canvas) return
+    if (referenceImageFabricRef.current && canvas.contains(referenceImageFabricRef.current)) {
+      canvas.remove(referenceImageFabricRef.current)
+      referenceImageFabricRef.current = null
+      canvas.renderAll()
+      saveToHistory()
+      toast.success('Reference image removed')
+    } else {
+      toast.info('No reference image to remove')
+    }
+  }, [])
 
   // Add zoom controls handler
   const handleZoom = useCallback(
@@ -1732,13 +1864,14 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         image.src = imageData.imageUrl
       })
 
+      const panelExportWidth = 700
       const tempCanvas = document.createElement("canvas")
-      tempCanvas.width = img.width
+      tempCanvas.width = img.width + panelExportWidth
       tempCanvas.height = img.height
 
       const tempFabricCanvas = new window.fabric.Canvas(tempCanvas, {
-        width: img.width,
-        height: img.height,
+        width: tempCanvas.width,
+        height: tempCanvas.height,
         backgroundColor: "#ffffff",
       })
 
@@ -1755,6 +1888,19 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
       tempFabricCanvas.sendToBack(fabricImage)
       tempFabricCanvas.renderAll()
 
+      // Draw right-side panel background and combined border for preview
+      const panelRectPrev = new window.fabric.Rect({
+        left: img.width,
+        top: 0,
+        width: panelExportWidth,
+        height: img.height,
+        fill: '#ffffff',
+        selectable: false,
+        evented: false,
+      })
+      tempFabricCanvas.add(panelRectPrev)
+      // Note: Do not draw the combined border in exports
+
       if (annotations && annotations.objects) {
         const container = fabricCanvasRef.current.getElement().parentElement
         const containerWidth = container.clientWidth
@@ -1764,18 +1910,47 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         const scaleY = containerHeight / img.height
         const scale = Math.min(scaleX, scaleY)
 
-        const offsetX = (containerWidth - img.width * scale) / 2
-        const offsetY = (containerHeight - img.height * scale) / 2
+        // Recompute the exact on-screen positions used during drawing
+        const centeredLeft = (containerWidth - img.width * scale) / 2
+        const imageLeftOnCanvas = Math.max(0, centeredLeft - 250)
+        const imageTopOnCanvas = (containerHeight - img.height * scale) / 2
+        const panelCanvasGap = Math.max(4, Math.floor(8 * scale))
+        const panelLeftOnCanvas = imageLeftOnCanvas + img.width * scale + panelCanvasGap
+        const panelTopOnCanvas = imageTopOnCanvas
 
-        const annotationObjects = annotations.objects.filter((obj) => obj.type !== "image")
-        const scaledObjects = scaleAnnotationObjects(annotationObjects, scale, offsetX, offsetY)
+        // Include all objects; we'll split by region. Only include non-image objects on the left image region,
+        // and include both non-image and image objects (reference images) on the right panel region.
+        const allObjects = annotations.objects
+        const imageRegionObjs = allObjects.filter((obj) => (obj.left ?? 0) < panelLeftOnCanvas - 1 && obj.type !== 'image')
+        const panelRegionObjs = allObjects.filter((obj) => (obj.left ?? 0) >= panelLeftOnCanvas - 1)
 
-        if (scaledObjects.length > 0) {
+        // Place image-region objects without horizontal shift (they belong on the left image)
+        const imageScaled = scaleAnnotationObjects(imageRegionObjs, scale, imageLeftOnCanvas, imageTopOnCanvas)
+        if (imageScaled.length > 0) {
           await new Promise((resolve) => {
             window.fabric.util.enlivenObjects(
-              scaledObjects,
-              (enlivenedObjects) => {
-                enlivenedObjects.forEach((obj) => tempFabricCanvas.add(obj))
+              imageScaled,
+              (enlivened) => {
+                enlivened.forEach((obj) => tempFabricCanvas.add(obj))
+                tempFabricCanvas.renderAll()
+                resolve()
+              },
+              null,
+            )
+          })
+        }
+
+        // Place panel-region objects and shift into the export panel area (to the right of original image)
+        const panelScaled = scaleAnnotationObjects(panelRegionObjs, scale, panelLeftOnCanvas, panelTopOnCanvas)
+        if (panelScaled.length > 0) {
+          await new Promise((resolve) => {
+            window.fabric.util.enlivenObjects(
+              panelScaled,
+              (enlivened) => {
+                enlivened.forEach((obj) => {
+                  obj.left = (obj.left || 0) + img.width
+                  tempFabricCanvas.add(obj)
+                })
                 tempFabricCanvas.renderAll()
                 resolve()
               },
@@ -1860,14 +2035,15 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
             image.src = imageData.imageUrl
           })
 
-          // 2. Create temp canvas at original image size
+          // 2. Create temp canvas at image width + panel width
+          const panelExportWidth = 700
           const tempCanvas = document.createElement("canvas")
-          tempCanvas.width = img.width
+          tempCanvas.width = img.width + panelExportWidth
           tempCanvas.height = img.height
 
           const tempFabricCanvas = new window.fabric.Canvas(tempCanvas, {
-            width: img.width,
-            height: img.height,
+            width: tempCanvas.width,
+            height: tempCanvas.height,
             backgroundColor: "#ffffff",
           })
 
@@ -1885,9 +2061,21 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
           tempFabricCanvas.sendToBack(fabricImage)
           tempFabricCanvas.renderAll()
 
-          // 4. Add annotation objects, scaled to original image size
+          // 4. Draw right-side panel background and combined border
+          const panelRect = new window.fabric.Rect({
+            left: img.width,
+            top: 0,
+            width: panelExportWidth,
+            height: img.height,
+            fill: '#ffffff',
+            selectable: false,
+            evented: false,
+          })
+          tempFabricCanvas.add(panelRect)
+          // Note: Do not draw the combined border in exports
+
+          // 5. Add annotation objects, scaled into the right panel area
           if (annotations && annotations.objects) {
-            // Calculate scale and offset used in the annotation canvas
             const container = fabricCanvasRef.current.getElement().parentElement
             const containerWidth = container.clientWidth
             const containerHeight = container.clientHeight
@@ -1896,18 +2084,45 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
             const scaleY = containerHeight / img.height
             const scale = Math.min(scaleX, scaleY)
 
-            const offsetX = (containerWidth - img.width * scale) / 2
-            const offsetY = (containerHeight - img.height * scale) / 2
+            // Match the on-screen positions during drawing
+            const centeredLeft = (containerWidth - img.width * scale) / 2
+            const imageLeftOnCanvas = Math.max(0, centeredLeft - 250)
+            const imageTopOnCanvas = (containerHeight - img.height * scale) / 2
+            const panelCanvasGap = Math.max(4, Math.floor(8 * scale))
+            const panelLeftOnCanvas = imageLeftOnCanvas + img.width * scale + panelCanvasGap
+            const panelTopOnCanvas = imageTopOnCanvas
 
-            const annotationObjects = annotations.objects.filter((obj) => obj.type !== "image")
-            const scaledObjects = scaleAnnotationObjects(annotationObjects, scale, offsetX, offsetY)
+            // Include all objects; split by region. Only include non-image objects on the left image region,
+            // and include both non-image and image objects (reference images) on the right panel region.
+            const allObjectsPub = annotations.objects
+            const imageRegionObjs = allObjectsPub.filter((obj) => (obj.left ?? 0) < panelLeftOnCanvas - 1 && obj.type !== 'image')
+            const panelRegionObjs = allObjectsPub.filter((obj) => (obj.left ?? 0) >= panelLeftOnCanvas - 1)
 
-            if (scaledObjects.length > 0) {
+            const imageScaled = scaleAnnotationObjects(imageRegionObjs, scale, imageLeftOnCanvas, imageTopOnCanvas)
+            if (imageScaled.length > 0) {
               await new Promise((resolve) => {
                 window.fabric.util.enlivenObjects(
-                  scaledObjects,
-                  (enlivenedObjects) => {
-                    enlivenedObjects.forEach((obj) => tempFabricCanvas.add(obj))
+                  imageScaled,
+                  (enlivened) => {
+                    enlivened.forEach((obj) => tempFabricCanvas.add(obj))
+                    tempFabricCanvas.renderAll()
+                    resolve()
+                  },
+                  null,
+                )
+              })
+            }
+
+            const panelScaled = scaleAnnotationObjects(panelRegionObjs, scale, panelLeftOnCanvas, panelTopOnCanvas)
+            if (panelScaled.length > 0) {
+              await new Promise((resolve) => {
+                window.fabric.util.enlivenObjects(
+                  panelScaled,
+                  (enlivened) => {
+                    enlivened.forEach((obj) => {
+                      obj.left = (obj.left || 0) + img.width
+                      tempFabricCanvas.add(obj)
+                    })
                     tempFabricCanvas.renderAll()
                     resolve()
                   },
@@ -1917,7 +2132,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
             }
           }
 
-          // 5. Export and upload
+          // 6. Export and upload
           await new Promise((resolve) => {
             tempCanvas.toBlob(
               async (blob) => {
@@ -2677,6 +2892,43 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
               >
                 Auto Annotate
               </button>
+              {/* Reference Image Controls */}
+              <div className="flex items-center space-x-2">
+                <input
+                  type="file"
+                  accept="image/*"
+                  ref={referenceImageInputRef}
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files && e.target.files[0]
+                    if (file) handleReferenceImageUpload(file)
+                  }}
+                />
+                <button
+                  onClick={() => referenceImageInputRef.current && referenceImageInputRef.current.click()}
+                  disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
+                  className={`px-3 py-2 rounded border ${
+                    isFabricLoading || !isFabricLoaded || !canvasReady
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200"
+                      : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
+                  }`}
+                  title="Upload Reference Image"
+                >
+                  Reference Image
+                </button>
+                <button
+                  onClick={handleRemoveReferenceImage}
+                  disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
+                  className={`px-3 py-2 rounded border ${
+                    isFabricLoading || !isFabricLoaded || !canvasReady
+                      ? "bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200"
+                      : "bg-white text-red-600 hover:bg-red-50 border-red-300"
+                  }`}
+                  title="Remove Reference Image"
+                >
+                  Remove
+                </button>
+              </div>
               <div className="flex space-x-2">
                 <button
                   onClick={() => handleToolSelect("pen")}

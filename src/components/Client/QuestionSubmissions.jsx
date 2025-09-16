@@ -20,6 +20,7 @@ const QuestionSubmissions = () => {
   const [error, setError] = useState(null);
   const [isMetadataExpanded, setIsMetadataExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState('submitted');
+  const [pdfModal, setPdfModal] = useState({ open: false, url: null, name: '' });
 
   useEffect(() => {
     console.log('QuestionSubmissions mounted with params:', { topicId, setId, questionId });
@@ -227,6 +228,44 @@ const QuestionSubmissions = () => {
                   </div>
                 )}
               </div>
+
+              {/* Model Answer PDFs */}
+              {Array.isArray(question.modalAnswerPdfs) && question.modalAnswerPdfs.length > 0 && (
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                  <h2 className="text-lg font-semibold text-gray-900 mb-2">Model Answer PDFs</h2>
+                  <div className="space-y-2">
+                    {question.modalAnswerPdfs.map((pdf, idx) => (
+                      <div key={idx} className="bg-gray-50 p-3 rounded border border-gray-200 flex items-center justify-between">
+                        <div className="flex flex-col">
+                          <span className="text-sm text-gray-700 font-medium">{pdf.fileName || `Document ${idx + 1}`}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {pdf.url ? (
+                            <>
+                              <a
+                                href={pdf.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                              >
+                                View
+                              </a>
+                              <button
+                                onClick={() => setPdfModal({ open: true, url: pdf.url, name: pdf.fileName || `Document ${idx + 1}` })}
+                                className="px-3 py-1 text-sm bg-gray-700 text-white rounded hover:bg-gray-800"
+                              >
+                                Preview
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-xs text-red-600">Unavailable</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -257,6 +296,35 @@ const QuestionSubmissions = () => {
           {renderTabContent()}
         </div>
       </div>
+    
+    {pdfModal.open && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl h-[80vh] flex flex-col">
+          <div className="flex items-center justify-between p-4 border-b">
+            <h3 className="text-lg font-semibold text-gray-800 truncate pr-4">{pdfModal.name}</h3>
+            <button
+              onClick={() => setPdfModal({ open: false, url: null, name: '' })}
+              className="px-3 py-1.5 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+            >
+              Close
+            </button>
+          </div>
+          <div className="flex-1">
+            {pdfModal.url ? (
+              <iframe
+                title="Model Answer PDF Preview"
+                src={pdfModal.url}
+                className="w-full h-full"
+              />
+            ) : (
+              <div className="h-full w-full flex items-center justify-center text-gray-500">
+                PDF not available
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
     </div>
   );
 };

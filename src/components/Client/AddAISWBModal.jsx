@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Trash2, ChevronDown, ChevronRight, Wand2 } from 'lucide-react';
+import { Plus, X, Trash2, ChevronDown, ChevronRight, Wand2, Upload } from 'lucide-react';
 import { toast } from 'react-toastify';
 import GeminiModal from '../GeminiModal';
 import Cookies from 'js-cookie';
 
-const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editingQuestion, onQuestions }) => {
+const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editingQuestion, onQuestions, scrollToSection }) => {
   const initialQuestionState = {
     question: '',
     detailedAnswer: '',
@@ -32,7 +32,9 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
     answerVideoUrls: [],
     evaluationMode: 'auto',
     evaluationType:'',
-    evaluationGuideline: ''
+    evaluationGuideline: '',
+    // local-only: selected modal answer PDFs
+    modalAnswerPdfFiles: []
   };
 
   const [questions, setQuestions] = useState([initialQuestionState]);
@@ -43,13 +45,14 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
   const [currentGenerationType, setCurrentGenerationType] = useState(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(null);
   const [defaultFramework, setDefaultFramework] = useState('');
+  const pdfSectionRef = React.useRef(null);
 
   
   // Fetch default evaluation framework from backend
   const fetchDefaultFramework = async () => {
     try {
       const token = Cookies.get('token');
-      const response = await fetch('https://test.ailisher.com/api/aiswb/default-evaluation-framework', {
+      const response = await fetch('http://localhost:5000/api/aiswb/default-evaluation-framework', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -108,6 +111,12 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
         // For new questions, fetch default framework and set it
         fetchDefaultFramework();
       }
+      // If asked to scroll to PDF section after opening
+      if (scrollToSection === 'pdf') {
+        setTimeout(() => {
+          pdfSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 200);
+      }
     }
   }, [isOpen, editingQuestion]);
 
@@ -145,6 +154,30 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
     } else {
       newQuestions[index][field] = value;
     }
+    setQuestions(newQuestions);
+  };
+
+  const handlePdfFilesChange = (index, files) => {
+    const newQuestions = [...questions];
+    const incoming = Array.from(files || []).filter(f => f && f.type === 'application/pdf');
+    const existing = Array.isArray(newQuestions[index].modalAnswerPdfFiles) ? newQuestions[index].modalAnswerPdfFiles : [];
+    newQuestions[index].modalAnswerPdfFiles = [...existing, ...incoming];
+    setQuestions(newQuestions);
+  };
+
+  const handleDrop = (e, index) => {
+    e.preventDefault();
+    if (!e.dataTransfer?.files) return;
+    handlePdfFilesChange(index, e.dataTransfer.files);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleRemovePdfAt = (qIndex, fileIndex) => {
+    const newQuestions = [...questions];
+    newQuestions[qIndex].modalAnswerPdfFiles.splice(fileIndex, 1);
     setQuestions(newQuestions);
   };
 
@@ -328,13 +361,73 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
       } else {
         // Add new questions
         let allSuccess = true;
-        for (const question of questionsData) {
+        for (let qIndex = 0; qIndex < questionsData.length; qIndex++) {
+          const question = questionsData[qIndex];
           console.log('Sending question to API:', question);
-          const result = await onAddQuestion(question);
-          console.log('API response for question:', result);
-          if (!result) {
+          const createdId = await onAddQuestion(question);
+          console.log('Created question id:', createdId);
+          if (!createdId) {
             allSuccess = false;
             break;
+          }
+
+          // Upload and attach PDFs if any
+          const pdfFiles = questions[qIndex]?.modalAnswerPdfFiles || [];
+          if (Array.isArray(pdfFiles) && pdfFiles.length > 0) {
+            const token = Cookies.get('usertoken');
+            for (const file of pdfFiles) {
+              try {
+                // 1) Get presigned URL
+                const presignRes = await fetch(`http://localhost:5000/api/aiswb/questions/${createdId}/pdf/presign`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  },
+                  body: JSON.stringify({ fileName: file.name, contentType: 'application/pdf' })
+                });
+                const presignData = await presignRes.json();
+                if (!presignRes.ok || !presignData.success) {
+                  throw new Error(presignData.message || 'Failed to get presigned URL');
+                }
+
+                const { uploadUrl, key } = presignData.data || {};
+                if (!uploadUrl || !key) {
+                  throw new Error('Invalid presign response');
+                }
+
+                // 2) Upload to S3
+                const putRes = await fetch(uploadUrl, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/pdf' },
+                  body: file
+                });
+                if (!putRes.ok) {
+                  const errText = await putRes.text().catch(() => '');
+                  throw new Error(`S3 upload failed: ${putRes.status} ${errText}`);
+                }
+
+                // 3) Attach key to question
+                const attachRes = await fetch(`http://localhost:5000/api/aiswb/questions/${createdId}/pdf/attach`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  },
+                  body: JSON.stringify({ key })
+                });
+                const attachData = await attachRes.json();
+                if (!attachRes.ok || !attachData.success) {
+                  throw new Error(attachData.message || 'Failed to attach PDF');
+                }
+              } catch (err) {
+                console.error('PDF upload/attach error:', err);
+                toast.error(`Failed to upload PDF ${file.name}: ${err.message}`);
+                allSuccess = false;
+                break;
+              }
+            }
+            if (!allSuccess) break;
           }
         }
         
@@ -764,6 +857,58 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   rows={3}
                 />
+              </div>
+
+              {/* Modal Answer PDFs */}
+              <div ref={index === 0 ? pdfSectionRef : null} className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Modal Answer PDFs
+                </label>
+                <div
+                  onDrop={(e) => handleDrop(e, index)}
+                  onDragOver={handleDragOver}
+                  className="border-2 border-dashed rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm text-gray-600">
+                      Drag and drop PDFs here, or click to select
+                    </div>
+                    <label className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded cursor-pointer hover:bg-blue-700">
+                      Browse
+                      <input
+                        type="file"
+                        accept="application/pdf"
+                        multiple
+                        onChange={(e) => handlePdfFilesChange(index, e.target.files)}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+                {Array.isArray(question.modalAnswerPdfFiles) && question.modalAnswerPdfFiles.length > 0 && (
+                  <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {question.modalAnswerPdfFiles.map((file, fIdx) => (
+                      <div key={fIdx} className="flex items-center justify-between bg-white border border-gray-200 rounded p-2">
+                        <div className="flex items-center space-x-2">
+                          <Upload size={14} className="text-gray-500" />
+                          <span className="text-sm text-gray-700 truncate max-w-[220px]">{file.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePdfAt(index, fIdx)}
+                            className="p-1 text-red-600 hover:bg-red-50 rounded"
+                            title="Remove"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <p className="mt-1 text-xs text-gray-500">You can attach multiple PDF files as model answers.</p>
               </div>
             </div>
           ))}

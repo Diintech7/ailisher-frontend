@@ -59,7 +59,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
       // Fetch each question's details
       const questionsPromises = questionIds.map(async (questionId) => {
         try {
-          const response = await fetch(`https://test.ailisher.com/api/aiswb/questions/${questionId}`, {
+          const response = await fetch(`http://localhost:5000/api/aiswb/questions/${questionId}`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -162,9 +162,9 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
       }
 
       console.log('Adding question with data:', newQuestion);
-      console.log('API endpoint:', `https://test.ailisher.com/api/aiswb/topic/${topicId}/sets/${selectedSet.id}/questions`);
+      console.log('API endpoint:', `http://localhost:5000/api/aiswb/topic/${topicId}/sets/${selectedSet.id}/questions`);
 
-      const response = await fetch(`https://test.ailisher.com/api/aiswb/topic/${topicId}/sets/${selectedSet.id}/questions`, {
+      const response = await fetch(`http://localhost:5000/api/aiswb/topic/${topicId}/sets/${selectedSet.id}/questions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -180,7 +180,8 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
       if (data.success) {
         // Refresh questions after successful addition
         await refreshQuestions();
-        return true;
+        // Return created question id for follow-up actions (e.g., attaching PDFs)
+        return data.question?.id || data.data?.id || true;
       } else {
         console.error('API Error:', data.message || 'Failed to add question');
         
@@ -234,7 +235,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
       console.log('Sending update request for question:', editedQuestion.id);
       console.log('Update request data:', editedQuestion);
 
-      const response = await fetch(`https://test.ailisher.com/api/aiswb/questions/${editedQuestion.id}`, {
+      const response = await fetch(`http://localhost:5000/api/aiswb/questions/${editedQuestion.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -283,7 +284,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
           return;
         }
 
-        const response = await fetch(`https://test.ailisher.com/api/aiswb/topic/${topicId}/sets/${selectedSet.id}/questions/${questionId}`, {
+        const response = await fetch(`http://localhost:5000/api/aiswb/topic/${topicId}/sets/${selectedSet.id}/questions/${questionId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -311,8 +312,11 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
     setShowQuestionDetails(true);
   };
 
-  const handleEditClick = (question) => {
+  const [scrollToSection, setScrollToSection] = useState(null);
+
+  const handleEditClick = (question, section = null) => {
     setEditingQuestion(question);
+    setScrollToSection(section);
     setShowAddQuestionModal(true);
   };
 
@@ -347,7 +351,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
         qrText = `AISWB Question: ${question.question.substring(0, 50)}... (ID: ${question.id})`;
         qrContent = qrText;
       } else if (format === 'url') {
-        qrText = `https://test.ailisher.com/view/questions/${question.id}`;
+        qrText = `http://localhost:5000/view/questions/${question.id}`;
         qrContent = qrText;
       } else {
         // Default to JSON
@@ -404,7 +408,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
       }).toString();
       
       // Correct API endpoint based on documentation
-      const response = await fetch(`https://test.ailisher.com/api/aiswb/qr/questions/${question.id}/qrcode?${queryParams}`, {
+      const response = await fetch(`http://localhost:5000/api/aiswb/qr/questions/${question.id}/qrcode?${queryParams}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -577,7 +581,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
         requestBody
       });
 
-      const response = await fetch(`https://test.ailisher.com/api/aiswb/questions/${questionId}`, {
+      const response = await fetch(`http://localhost:5000/api/aiswb/questions/${questionId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -731,6 +735,13 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
                   <Edit2 size={18} />
                 </button>
                 <button
+                  onClick={() => handleEditClick(question, 'pdf')}
+                  className="p-2 text-green-700 hover:bg-green-50 rounded-full transition-colors"
+                  title="Upload PDFs"
+                >
+                  <Upload size={18} />
+                </button>
+                <button
                   onClick={() => handleQRCodeClick(question)}
                   className="p-2 text-purple-600 hover:bg-purple-50 rounded-full transition-colors"
                   title="Generate QR Code"
@@ -763,11 +774,13 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
           onClose={() => {
             setShowAddQuestionModal(false);
             setEditingQuestion(null);
+            setScrollToSection(null);
           }}
           onQuestions={refreshQuestions}
           onAddQuestion={handleAddQuestion}
           onEditQuestion={handleEditQuestion}
           editingQuestion={editingQuestion}
+          scrollToSection={scrollToSection}
           onGenerateAnswer={handleGenerateAnswer}
         />
       )}
@@ -910,6 +923,34 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
                             {url}
                           </a>
                         </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Modal Answer PDFs */}
+              {Array.isArray(selectedQuestion.modalAnswerPdfs) && selectedQuestion.modalAnswerPdfs.length > 0 && (
+                <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-100">
+                  <h4 className="text-lg font-semibold text-yellow-800 mb-2">Modal Answer PDFs</h4>
+                  <div className="space-y-2">
+                    {selectedQuestion.modalAnswerPdfs.map((pdf, idx) => (
+                      <div key={idx} className="bg-white p-3 rounded border border-gray-200 flex items-center justify-between">
+                        <div className="flex flex-col">
+                          <span className="text-sm text-gray-700 font-medium">{pdf.fileName || `Document ${idx + 1}`}</span>
+                        </div>
+                        {pdf.url ? (
+                          <a
+                            href={pdf.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-3 py-1 text-sm bg-yellow-600 text-white rounded hover:bg-yellow-700"
+                          >
+                            View
+                          </a>
+                        ) : (
+                          <span className="text-xs text-red-600">Unavailable</span>
+                        )}
                       </div>
                     ))}
                   </div>
