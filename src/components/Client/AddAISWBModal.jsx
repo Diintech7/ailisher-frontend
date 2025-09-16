@@ -52,7 +52,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
   const fetchDefaultFramework = async () => {
     try {
       const token = Cookies.get('token');
-      const response = await fetch('http://localhost:5000/api/aiswb/default-evaluation-framework', {
+      const response = await fetch('https://test.ailisher.com/api/aiswb/default-evaluation-framework', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -378,7 +378,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
             for (const file of pdfFiles) {
               try {
                 // 1) Get presigned URL
-                const presignRes = await fetch(`http://localhost:5000/api/aiswb/questions/${createdId}/pdf/presign`, {
+                const presignRes = await fetch(`https://test.ailisher.com/api/aiswb/questions/${createdId}/pdf/presign`, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
@@ -408,7 +408,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
                 }
 
                 // 3) Attach key to question
-                const attachRes = await fetch(`http://localhost:5000/api/aiswb/questions/${createdId}/pdf/attach`, {
+                const attachRes = await fetch(`https://test.ailisher.com/api/aiswb/questions/${createdId}/pdf/attach`, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
