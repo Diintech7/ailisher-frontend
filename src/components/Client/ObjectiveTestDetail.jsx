@@ -123,11 +123,62 @@ export default function ObjectiveTestDetail() {
           }
         })
       ).then((summaries) => {
-        const map = {};
+        const normalized = {};
         summaries.forEach(({ id, summary }) => {
-          map[id] = summary;
+          if (!summary) {
+            normalized[id] = summary;
+            return;
+          }
+          // Normalize subjects: empty/null -> "Other"
+          const subjectsRaw = Array.isArray(summary.subjects)
+            ? summary.subjects
+            : [];
+          const subjectsMap = new Map();
+          subjectsRaw.forEach((s) => {
+            const key = s?.subject ? String(s.subject) : "Other";
+            const prev = subjectsMap.get(key) || 0;
+            subjectsMap.set(key, prev + (parseInt(s?.total || 0) || 0));
+          });
+          const subjects = Array.from(subjectsMap.entries()).map(
+            ([subject, total]) => ({ subject, total })
+          );
+
+          // Normalize bySubjectDifficulty similarly and merge duplicates
+          const bySDRaw = Array.isArray(summary.bySubjectDifficulty)
+            ? summary.bySubjectDifficulty
+            : [];
+          const bySDMap = new Map();
+          bySDRaw.forEach((row) => {
+            const subject = row?.subject ? String(row.subject) : "Other";
+            const difficulty = row?.difficulty || "L1";
+            const key = `${subject}__${difficulty}`;
+            const prev = bySDMap.get(key) || 0;
+            bySDMap.set(key, prev + (parseInt(row?.total || 0) || 0));
+          });
+          const bySubjectDifficulty = Array.from(bySDMap.entries()).map(
+            ([key, total]) => {
+              const [subject, difficulty] = key.split("__");
+              return { subject, difficulty, total };
+            }
+          );
+
+          const normalizedSummary = {
+            ...summary,
+            subjects,
+            bySubjectDifficulty,
+          };
+
+          // Log subject-wise totals for visibility
+          const subjectLog = subjects
+            .map((s) => `${s.subject}: ${s.total}`)
+            .join(", ");
+          console.log(
+            `QB ${id} subject-wise totals => ${subjectLog || "None"}`
+          );
+
+          normalized[id] = normalizedSummary;
         });
-        setQbSummaries(map);
+        setQbSummaries(normalized);
       });
     } catch (error) {
       console.log(error);
@@ -150,6 +201,101 @@ export default function ObjectiveTestDetail() {
         [subject]: {
           ...((prev[bankId] || {})[subject] || {}),
           [difficulty]: clamped,
+        },
+      },
+    }));
+  };
+
+  const getAvailableLevelsMap = (bankId, subject) => {
+    const summary = qbSummaries?.[bankId];
+    const bySD = summary?.bySubjectDifficulty || [];
+    const levels = ["L1", "L2", "L3"];
+    const map = {};
+    for (const lvl of levels) {
+      const levelInfo = bySD.find((x) => x.subject === subject && x.difficulty === lvl);
+      map[lvl] = levelInfo?.total || 0;
+    }
+    return map;
+  };
+
+  const getAvailableForLevel = (bankId, subject, level) => {
+    const summary = qbSummaries?.[bankId];
+    const bySD = summary?.bySubjectDifficulty || [];
+    const levelInfo = bySD.find((x) => x.subject === subject && x.difficulty === level);
+    return levelInfo?.total || 0;
+  };
+
+  const getSelectedForLevel = (bankId, subject, level) => {
+    return (
+      qbRequestCounts?.[bankId]?.[subject]?.[level] || 0
+    );
+  };
+
+  const setLevelCount = (bankId, subject, level, value) => {
+    const available = getAvailableForLevel(bankId, subject, level);
+    const clamped = Math.max(0, Math.min(available, parseInt(value || 0)));
+    setQbRequestCounts((prev) => ({
+      ...prev,
+      [bankId]: {
+        ...(prev[bankId] || {}),
+        [subject]: {
+          ...((prev[bankId] || {})[subject] || {}),
+          [level]: clamped,
+        },
+      },
+    }));
+  };
+
+  const incrementLevel = (bankId, subject, level) => {
+    const current = getSelectedForLevel(bankId, subject, level);
+    setLevelCount(bankId, subject, level, current + 1);
+  };
+
+  const decrementLevel = (bankId, subject, level) => {
+    const current = getSelectedForLevel(bankId, subject, level);
+    setLevelCount(bankId, subject, level, current - 1);
+  };
+
+  const maxLevel = (bankId, subject, level) => {
+    const available = getAvailableForLevel(bankId, subject, level);
+    setLevelCount(bankId, subject, level, available);
+  };
+
+  const getSubjectSelectedTotal = (bankId, subject) => {
+    const m = qbRequestCounts?.[bankId]?.[subject] || {};
+    return ["L1", "L2", "L3"].reduce((acc, lvl) => acc + (parseInt(m[lvl] || 0) || 0), 0);
+  };
+
+  const getSubjectAvailableTotal = (bankId, subject) => {
+    const availMap = getAvailableLevelsMap(bankId, subject);
+    return ["L1", "L2", "L3"].reduce((acc, lvl) => acc + (parseInt(availMap[lvl] || 0) || 0), 0);
+  };
+
+  const handleToggleSubjectAll = (bankId, subject, checked) => {
+    const availableMap = getAvailableLevelsMap(bankId, subject);
+    setQbRequestCounts((prev) => {
+      const next = { ...(prev || {}) };
+      const bankMap = { ...(next[bankId] || {}) };
+      const subjectMap = { ...(bankMap[subject] || {}) };
+      ["L1", "L2", "L3"].forEach((lvl) => {
+        subjectMap[lvl] = checked ? (availableMap[lvl] || 0) : 0;
+      });
+      bankMap[subject] = subjectMap;
+      next[bankId] = bankMap;
+      return next;
+    });
+  };
+
+  const handleToggleLevelAll = (bankId, subject, level, checked) => {
+    const availableMap = getAvailableLevelsMap(bankId, subject);
+    const available = availableMap[level] || 0;
+    setQbRequestCounts((prev) => ({
+      ...prev,
+      [bankId]: {
+        ...(prev[bankId] || {}),
+        [subject]: {
+          ...((prev[bankId] || {})[subject] || {}),
+          [level]: checked ? available : 0,
         },
       },
     }));
@@ -1085,11 +1231,57 @@ export default function ObjectiveTestDetail() {
                                       className="border rounded-lg"
                                     >
                                       <div className="px-4 py-2 bg-gray-50 border-b flex items-center justify-between">
-                                        <div className="text-sm font-medium text-gray-800">
-                                          {s.subject}
+                                        <div className="flex items-center gap-3">
+                                          <div className="text-sm font-medium text-gray-800">
+                                            {s.subject}
+                                          </div>
+                                          <label className="flex items-center gap-1 text-[11px] text-gray-700">
+                                            <input
+                                              type="checkbox"
+                                              className="accent-indigo-600"
+                                              checked={(() => {
+                                                const m = qbRequestCounts?.[selectedBankId]?.[s.subject] || {};
+                                                const avail = getAvailableLevelsMap(selectedBankId, s.subject);
+                                                const allOn = ["L1","L2","L3"].every(l => (m[l] || 0) >= (avail[l] || 0) && (avail[l] || 0) > 0);
+                                                const anyOn = ["L1","L2","L3"].some(l => (m[l] || 0) > 0);
+                                                // Visual checked state is allOn; we set indeterminate below via ref
+                                                return allOn && anyOn;
+                                              })()}
+                                              ref={(el) => {
+                                                if (!el) return;
+                                                const m = qbRequestCounts?.[selectedBankId]?.[s.subject] || {};
+                                                const avail = getAvailableLevelsMap(selectedBankId, s.subject);
+                                                const allOn = ["L1","L2","L3"].every(l => (m[l] || 0) >= (avail[l] || 0) && (avail[l] || 0) > 0);
+                                                const anyOn = ["L1","L2","L3"].some(l => (m[l] || 0) > 0);
+                                                el.indeterminate = anyOn && !allOn;
+                                              }}
+                                              onChange={(e) => handleToggleSubjectAll(selectedBankId, s.subject, e.target.checked)}
+                                            />
+                                            Select all
+                                          </label>
+                                          <button
+                                            type="button"
+                                            className="text-[11px] px-2 py-1 rounded border border-gray-300 text-gray-700 hover:bg-gray-100"
+                                            onClick={() => handleToggleSubjectAll(selectedBankId, s.subject, false)}
+                                          >
+                                            Clear
+                                          </button>
                                         </div>
-                                        <div className="text-xs text-gray-500">
-                                          Total: {s.total || 0}
+                                        <div className="flex items-center gap-3">
+                                          <div className="text-xs text-gray-500">
+                                            Total: {s.total || 0}
+                                          </div>
+                                          <div className="hidden sm:flex items-center gap-2">
+                                            <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                              <div
+                                                className="h-2 bg-indigo-500"
+                                                style={{ width: `${Math.min(100, Math.round((getSubjectSelectedTotal(selectedBankId, s.subject) / Math.max(1, getSubjectAvailableTotal(selectedBankId, s.subject))) * 100))}%` }}
+                                              ></div>
+                                            </div>
+                                            <div className="text-[11px] text-gray-600">
+                                              {getSubjectSelectedTotal(selectedBankId, s.subject)} / {getSubjectAvailableTotal(selectedBankId, s.subject)}
+                                            </div>
+                                          </div>
                                         </div>
                                       </div>
                                       <div className="p-4">
@@ -1107,11 +1299,49 @@ export default function ObjectiveTestDetail() {
                                                 key={`${selectedBankId}-${s.subject}-${lvl}`}
                                                 className="border rounded-md p-3"
                                               >
-                                                <div className="text-xs text-gray-600 mb-2">
-                                                  Difficulty:{" "}
-                                                  <span className="font-medium">
-                                                    {lvl}
-                                                  </span>
+                                                <div className="flex items-center justify-between mb-2">
+                                                  <div className="text-xs text-gray-600">
+                                                    Difficulty:{" "}
+                                                    <span className="font-medium">
+                                                      {lvl}
+                                                    </span>
+                                                  </div>
+                                                  <div className="flex items-center gap-2">
+                                                    <label className="flex items-center gap-1 text-[10px] text-gray-700">
+                                                      <input
+                                                        type="checkbox"
+                                                        className="accent-indigo-600"
+                                                        checked={(qbRequestCounts?.[selectedBankId]?.[s.subject]?.[lvl] || 0) >= (available || 0) && (available || 0) > 0}
+                                                        onChange={(e) => handleToggleLevelAll(selectedBankId, s.subject, lvl, e.target.checked)}
+                                                        disabled={available === 0}
+                                                      />
+                                                      All
+                                                    </label>
+                                                    <button
+                                                      type="button"
+                                                      className="text-[10px] px-2 py-0.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+                                                      onClick={() => decrementLevel(selectedBankId, s.subject, lvl)}
+                                                      disabled={getSelectedForLevel(selectedBankId, s.subject, lvl) <= 0}
+                                                    >
+                                                      -
+                                                    </button>
+                                                    <button
+                                                      type="button"
+                                                      className="text-[10px] px-2 py-0.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+                                                      onClick={() => incrementLevel(selectedBankId, s.subject, lvl)}
+                                                      disabled={getSelectedForLevel(selectedBankId, s.subject, lvl) >= available}
+                                                    >
+                                                      +
+                                                    </button>
+                                                    <button
+                                                      type="button"
+                                                      className="text-[10px] px-2 py-0.5 rounded border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+                                                      onClick={() => maxLevel(selectedBankId, s.subject, lvl)}
+                                                      disabled={available === 0}
+                                                    >
+                                                      Max
+                                                    </button>
+                                                  </div>
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                   <input
@@ -1123,14 +1353,7 @@ export default function ObjectiveTestDetail() {
                                                         selectedBankId
                                                       ]?.[s.subject]?.[lvl] || 0
                                                     }
-                                                    onChange={(e) =>
-                                                      handleCountChange(
-                                                        selectedBankId,
-                                                        s.subject,
-                                                        lvl,
-                                                        e.target.value
-                                                      )
-                                                    }
+                                                    onChange={(e) => setLevelCount(selectedBankId, s.subject, lvl, e.target.value)}
                                                     className="w-full px-3 py-2 border rounded-md"
                                                     disabled={available === 0}
                                                   />

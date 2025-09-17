@@ -113,8 +113,23 @@ export default function QuestionBankObjective() {
           // },
         }
       );
-      console.log(response.data.questions);
-      setQuestions(response.data.questions || []);
+      const raw = response.data.questions || [];
+      // Normalize empty subject to "Other"
+      const normalized = raw.map((q) => ({
+        ...q,
+        subject: q?.subject ? q.subject : "Other",
+      }));
+      // Log subject-wise counts
+      const counts = normalized.reduce((acc, q) => {
+        const s = q.subject || "Other";
+        acc[s] = (acc[s] || 0) + 1;
+        return acc;
+      }, {});
+      console.log(
+        `QuestionBank ${questionBankId} subject-wise counts:`,
+        counts
+      );
+      setQuestions(normalized);
     } catch (error) {
       console.error("Error fetching questions:", error);
       toast.error("Failed to load questions");

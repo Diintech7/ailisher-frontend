@@ -93,6 +93,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
   const [annotatedImagePreviews, setAnnotatedImagePreviews] = useState([])
   // Add state for full image view
   const [openPreviewIndex, setOpenPreviewIndex] = useState(null)
+  const [isZoomed, setIsZoomed] = useState(false)
   // [A] Add state for edit loading
   const [editLoading, setEditLoading] = useState(false);
   const [modalAnswer, setModalAnswer] = useState(null);
@@ -2216,6 +2217,52 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
   const handlePublish = async () => {
     setLoading(true)
     try {
+      // 0) Save latest evaluation edits (English/Hindi as per toggle) before publishing
+      const maxMarks = submission.question?.metadata?.maximumMarks || submission.questionId?.metadata?.maximumMarks || 100
+      const stateEval = showHindiEvaluation ? editHindiEvaluation : editEvaluation
+      if (Number(stateEval.score) > maxMarks) {
+        toast.error(`Marks cannot be greater than maximum marks (${maxMarks})`)
+        setLoading(false)
+        return
+      }
+      try {
+        const url = `https://test.ailisher.com/api/clients/CLI677117YN7N/mobile/userAnswers/questions/${submission.questionId?._id || submission.question?._id}/answers/${submission._id}/evaluation-update`
+        const feedbackValue = (typeof stateEval.feedback === 'string' && stateEval.feedback.trim() !== '')
+          ? stateEval.feedback
+          : undefined
+        const payload = {
+          analysis: {
+            introduction: String(stateEval.introduction || '').split('\n').filter(Boolean),
+            body: String(stateEval.body || '').split('\n').filter(Boolean),
+            conclusion: String(stateEval.conclusion || '').split('\n').filter(Boolean),
+            strengths: String(stateEval.strengths || '').split('\n').filter(Boolean),
+            weaknesses: String(stateEval.weaknesses || '').split('\n').filter(Boolean),
+            suggestions: String(stateEval.suggestions || '').split('\n').filter(Boolean),
+            ...(feedbackValue !== undefined ? { feedback: feedbackValue } : {})
+          },
+          marks: Number(stateEval.score || 0),
+          accuracy: Number(stateEval.relevancy || 0),
+          remark: stateEval.remark || ''
+        }
+        const authHeaders = {}
+        try {
+          const Cookies = (await import('js-cookie')).default
+          const token = Cookies.get('usertoken')
+          if (token) authHeaders.Authorization = `Bearer ${token}`
+        } catch (_) {}
+        const saveRes = await axios.put(url, payload, { headers: authHeaders })
+        if (!saveRes?.data?.success) {
+          toast.error(saveRes?.data?.message || 'Failed to update evaluation before publish')
+          setLoading(false)
+          return
+        }
+      } catch (err) {
+        console.error('[PublishWithAnnotation] Evaluation save failed before publish:', { status: err?.response?.status, data: err?.response?.data })
+        toast.error(err?.response?.data?.message || err?.message || 'Failed to update evaluation before publish')
+        setLoading(false)
+        return
+      }
+
       console.log("[PublishWithAnnotation] Exporting annotated images and uploading to S3...")
       // Export annotated images again (to ensure up-to-date)
       const annotatedResults = await getAnnotatedImages()
@@ -2250,22 +2297,40 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
       console.log("[PublishWithAnnotation] About to call publish API:", publishEndpoint)
       console.log("[PublishWithAnnotation] Payloads:", publishPayloads)
 
-      const publishPromises = publishPayloads.map((payload) =>
-        api.post(publishEndpoint, payload).then((res) => {
-          console.log("[PublishWithAnnotation] Publish API response for payload:", payload, res.data)
-          return res
-        }),
-      )
+      // Include auth header
+      let authConfig = {}
+      try {
+        const Cookies = (await import('js-cookie')).default
+        const token = Cookies.get('usertoken')
+        if (token) authConfig = { headers: { Authorization: `Bearer ${token}` } }
+      } catch (_) {}
 
-      await Promise.all(publishPromises)
+      // Publish sequentially to avoid optimistic concurrency conflicts on the same answer document
+      for (const payload of publishPayloads) {
+        try {
+          const res = await api.post(publishEndpoint, payload, authConfig)
+          console.log("[PublishWithAnnotation] Publish API response for payload:", payload, res.data)
+        } catch (err) {
+          const msg = err?.response?.data?.error || err?.response?.data?.message || ''
+          const isVersionConflict = typeof msg === 'string' && msg.includes('No matching document found')
+          if (isVersionConflict) {
+            // Retry once after small delay
+            await new Promise(r => setTimeout(r, 400))
+            const retryRes = await api.post(publishEndpoint, payload, authConfig)
+            console.log("[PublishWithAnnotation] Retry publish response:", payload, retryRes.data)
+          } else {
+            throw err
+          }
+        }
+      }
 
       toast.success("Annotations published successfully!")
       setIsReviewModalOpen(false)
       if (onSave) onSave()
       onClose()
     } catch (error) {
-      console.error("[PublishWithAnnotation] Error during publish:", error)
-      toast.error(error.message || "Failed to publish annotations.")
+      console.error("[PublishWithAnnotation] Error during publish:", { status: error?.response?.status, data: error?.response?.data, error })
+      toast.error(error?.response?.data?.message || error.message || "Failed to publish annotations.")
     } finally {
       setLoading(false)
     }
@@ -2904,7 +2969,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                     if (file) handleReferenceImageUpload(file)
                   }}
                 />
-                <button
+                {/* <button
                   onClick={() => referenceImageInputRef.current && referenceImageInputRef.current.click()}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
                   className={`px-3 py-2 rounded border ${
@@ -2915,7 +2980,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   title="Upload Reference Image"
                 >
                   Reference Image
-                </button>
+                </button> */}
                 <button
                   onClick={handleRemoveReferenceImage}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
@@ -3378,94 +3443,94 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Accuracy (%)</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Accuracy (%)</label>
                       <input 
                         type="number" 
                         value={showHindiEvaluation ? editHindiEvaluation.relevancy : editEvaluation.relevancy} 
                         onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('relevancy', e.target.value) : handleEvalFieldChange('relevancy', e.target.value)} 
-                        className="w-full border rounded px-2 py-1 text-sm" 
+                        className="w-full border rounded px-3 py-2 text-base" 
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Marks</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Marks</label>
                       <input 
                         type="number" 
                         value={showHindiEvaluation ? editHindiEvaluation.score : editEvaluation.score} 
                         onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('score', e.target.value) : handleEvalFieldChange('score', e.target.value)} 
-                        className="w-full border rounded px-2 py-1 text-sm" 
+                        className="w-full border rounded px-3 py-2 text-base" 
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Remark</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Remark</label>
                     <input 
                       type="text" 
                       value={showHindiEvaluation ? editHindiEvaluation.remark : editEvaluation.remark} 
                       onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('remark', e.target.value) : handleEvalFieldChange('remark', e.target.value)} 
-                      className="w-full border rounded px-2 py-1 text-sm" 
+                      className="w-full border rounded px-3 py-2 text-base" 
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Introduction</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Introduction</label>
                     <textarea 
                       value={showHindiEvaluation ? editHindiEvaluation.introduction : editEvaluation.introduction} 
                       onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('introduction', e.target.value) : handleEvalFieldChange('introduction', e.target.value)} 
-                      className="w-full border rounded px-2 py-1 text-sm" 
-                      rows={2} 
+                      className="w-full border rounded px-3 py-2 text-base" 
+                      rows={4} 
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Body</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Body</label>
                     <textarea 
                       value={showHindiEvaluation ? editHindiEvaluation.body : editEvaluation.body} 
                       onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('body', e.target.value) : handleEvalFieldChange('body', e.target.value)} 
-                      className="w-full border rounded px-2 py-1 text-sm" 
-                      rows={2} 
+                      className="w-full border rounded px-3 py-2 text-base" 
+                      rows={4} 
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Conclusion</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Conclusion</label>
                     <textarea 
                       value={showHindiEvaluation ? editHindiEvaluation.conclusion : editEvaluation.conclusion} 
                       onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('conclusion', e.target.value) : handleEvalFieldChange('conclusion', e.target.value)} 
-                      className="w-full border rounded px-2 py-1 text-sm" 
-                      rows={2} 
+                      className="w-full border rounded px-3 py-2 text-base" 
+                      rows={4} 
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Strengths (one per line)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Strengths (one per line)</label>
                     <textarea 
                       value={showHindiEvaluation ? editHindiEvaluation.strengths : editEvaluation.strengths} 
                       onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('strengths', e.target.value) : handleEvalFieldChange('strengths', e.target.value)} 
-                      className="w-full border rounded px-2 py-1 text-sm" 
-                      rows={2} 
+                      className="w-full border rounded px-3 py-2 text-base" 
+                      rows={4} 
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Weaknesses (one per line)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Weaknesses (one per line)</label>
                     <textarea 
                       value={showHindiEvaluation ? editHindiEvaluation.weaknesses : editEvaluation.weaknesses} 
                       onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('weaknesses', e.target.value) : handleEvalFieldChange('weaknesses', e.target.value)} 
-                      className="w-full border rounded px-2 py-1 text-sm" 
-                      rows={2} 
+                      className="w-full border rounded px-3 py-2 text-base" 
+                      rows={4} 
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Suggestions (one per line)</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Suggestions (one per line)</label>
                     <textarea 
                       value={showHindiEvaluation ? editHindiEvaluation.suggestions : editEvaluation.suggestions} 
                       onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('suggestions', e.target.value) : handleEvalFieldChange('suggestions', e.target.value)} 
-                      className="w-full border rounded px-2 py-1 text-sm" 
-                      rows={2} 
+                      className="w-full border rounded px-3 py-2 text-base" 
+                      rows={4} 
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Feedback</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Feedback</label>
                     <textarea 
                       value={showHindiEvaluation ? editHindiEvaluation.feedback : editEvaluation.feedback} 
                       onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('feedback', e.target.value) : handleEvalFieldChange('feedback', e.target.value)} 
-                      className="w-full border rounded px-2 py-1 text-sm" 
-                      rows={2} 
+                      className="w-full border rounded px-3 py-2 text-base" 
+                      rows={5} 
                     />
                   </div>
                 </div>
@@ -3477,13 +3542,19 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   <h4 className="text-lg font-medium text-gray-800 mb-2">Your Annotations</h4>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                     {imagePreviews.map((preview, index) => (
-                      <div key={index} className="relative">
+                      <button
+                        type="button"
+                        key={index}
+                        onClick={() => { setOpenPreviewIndex(index); setIsZoomed(false); }}
+                        className="relative focus:outline-none"
+                        title="Click to preview"
+                      >
                         <img
                           src={preview}
                           alt={`Annotated ${index + 1}`}
-                          className="w-full h-40 object-cover rounded-lg shadow-md border"
+                          className="w-full h-44 object-cover rounded-lg shadow-md border cursor-zoom-in"
                         />
-                      </div>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -3507,13 +3578,13 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                 >
                   {loading ? 'Publishing...' : 'Publish'}
                 </button>
-                <button
+                {/* <button
                   onClick={handleEditEvaluation}
                   disabled={editLoading}
                   className={`px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 mr-2 ${editLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {editLoading ? 'Updating...' : 'Edit Evaluation'}
-                </button>
+                </button> */}
               </div>
             </div>
           </div>
@@ -3527,9 +3598,11 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         >
           <div className="relative" onClick={(e) => e.stopPropagation()}>
             <img
-              src={annotatedImagePreviews[openPreviewIndex] || "/placeholder.svg"}
+              src={(imagePreviews && imagePreviews[openPreviewIndex]) || annotatedImagePreviews[openPreviewIndex] || "/placeholder.svg"}
               alt={`Full Annotated Preview ${openPreviewIndex + 1}`}
-              className="max-w-[90vw] max-h-[80vh] rounded shadow-lg border-2 border-white"
+              onClick={() => setIsZoomed((z) => !z)}
+              className={`rounded shadow-lg border-2 border-white transition-transform duration-200 ${isZoomed ? 'max-w-none max-h-none scale-125 cursor-zoom-out' : 'max-w-[90vw] max-h-[80vh] cursor-zoom-in'}`}
+              style={isZoomed ? { width: 'auto', height: 'auto' } : {}}
             />
             <button
               onClick={() => setOpenPreviewIndex(null)}
