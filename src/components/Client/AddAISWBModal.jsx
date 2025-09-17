@@ -45,6 +45,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
   const [currentGenerationType, setCurrentGenerationType] = useState(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(null);
   const [defaultFramework, setDefaultFramework] = useState('');
+  const [existingPdfs, setExistingPdfs] = useState([]); // Track existing PDFs for editing
   const pdfSectionRef = React.useRef(null);
 
   
@@ -106,10 +107,18 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
           evaluationType: editingQuestion.evaluationType || '',
           evaluationGuideline: editingQuestion.evaluationGuideline || ''
         };
-        setQuestions([formattedQuestion]);
+        console.log('Editing question:', editingQuestion);
+        
+        // Set existing PDFs for editing mode
+        if (editingQuestion.modalAnswerPdfs && Array.isArray(editingQuestion.modalAnswerPdfs)) {
+          setExistingPdfs(editingQuestion.modalAnswerPdfs.map(pdf => pdf.key));
+        } else {
+          setExistingPdfs([]);
+        }
       } else {
         // For new questions, fetch default framework and set it
         fetchDefaultFramework();
+        setExistingPdfs([]);
       }
       // If asked to scroll to PDF section after opening
       if (scrollToSection === 'pdf') {
@@ -179,6 +188,37 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
     const newQuestions = [...questions];
     newQuestions[qIndex].modalAnswerPdfFiles.splice(fileIndex, 1);
     setQuestions(newQuestions);
+  };
+
+  const handleDeleteExistingPdf = async (pdfKey) => {
+    try {
+      const token = Cookies.get('usertoken');
+      const response = await fetch(`https://test.ailisher.com/api/aiswb/questions/${editingQuestion.id}/pdf/delete`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ key: pdfKey })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          // Remove from existing PDFs state
+          setExistingPdfs(prev => prev.filter(key => key !== pdfKey));
+          toast.success('PDF deleted successfully!');
+        } else {
+          toast.error(data.message || 'Failed to delete PDF');
+        }
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.message || 'Failed to delete PDF');
+      }
+    } catch (error) {
+      console.error('Error deleting PDF:', error);
+      toast.error('Failed to delete PDF');
+    }
   };
 
   const handleAddCustomQP = (questionIndex) => {
@@ -351,6 +391,62 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
         const result = await onEditQuestion(updatedQuestion);
         console.log('Modal: Update result from onEditQuestion:', result);
         if (result) {
+          // Upload and attach new PDFs if any
+          const pdfFiles = questions[0]?.modalAnswerPdfFiles || [];
+          if (Array.isArray(pdfFiles) && pdfFiles.length > 0) {
+            const token = Cookies.get('usertoken');
+            for (const file of pdfFiles) {
+              try {
+                // 1) Get presigned URL
+                const presignRes = await fetch(`https://test.ailisher.com/api/aiswb/questions/${editingQuestion.id}/pdf/presign`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  },
+                  body: JSON.stringify({ fileName: file.name, contentType: 'application/pdf' })
+                });
+                const presignData = await presignRes.json();
+                if (!presignRes.ok || !presignData.success) {
+                  throw new Error(presignData.message || 'Failed to get presigned URL');
+                }
+
+                const { uploadUrl, key } = presignData.data || {};
+                if (!uploadUrl || !key) {
+                  throw new Error('Invalid presign response');
+                }
+
+                // 2) Upload to S3
+                const putRes = await fetch(uploadUrl, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/pdf' },
+                  body: file
+                });
+                if (!putRes.ok) {
+                  const errText = await putRes.text().catch(() => '');
+                  throw new Error(`S3 upload failed: ${putRes.status} ${errText}`);
+                }
+
+                // 3) Attach key to question
+                const attachRes = await fetch(`https://test.ailisher.com/api/aiswb/questions/${editingQuestion.id}/pdf/attach`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                  },
+                  body: JSON.stringify({ key })
+                });
+                const attachData = await attachRes.json();
+                if (!attachRes.ok || !attachData.success) {
+                  throw new Error(attachData.message || 'Failed to attach PDF');
+                }
+              } catch (err) {
+                console.error('PDF upload/attach error:', err);
+                toast.error(`Failed to upload PDF ${file.name}: ${err.message}`);
+              }
+            }
+          }
+          
           console.log('Modal: Question update successful!');
           toast.success('Question updated successfully!');
           onClose();
@@ -864,6 +960,38 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Modal Answer PDFs
                 </label>
+                
+                {/* Existing PDFs (only show in editing mode) */}
+                {editingQuestion && existingPdfs.length > 0 && (
+                  <div className="mb-4">
+                    <h4 className="text-sm font-medium text-gray-600 mb-2">Existing PDFs:</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {existingPdfs.map((pdfKey, pdfIdx) => (
+                        <div key={pdfIdx} className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded p-2">
+                          <div className="flex items-center space-x-2">
+                            <Upload size={14} className="text-blue-500" />
+                            <span className="text-sm text-gray-700 truncate max-w-[220px]">
+                              {pdfKey.split('/').pop()}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500">Existing</span>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteExistingPdf(pdfKey)}
+                              className="p-1 text-red-600 hover:bg-red-50 rounded"
+                              title="Delete PDF"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* New PDF Upload Area */}
                 <div
                   onDrop={(e) => handleDrop(e, index)}
                   onDragOver={handleDragOver}
@@ -871,7 +999,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
                 >
                   <div className="flex items-center justify-between">
                     <div className="text-sm text-gray-600">
-                      Drag and drop PDFs here, or click to select
+                      {editingQuestion ? 'Add new PDFs or drag and drop here' : 'Drag and drop PDFs here, or click to select'}
                     </div>
                     <label className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded cursor-pointer hover:bg-blue-700">
                       Browse
@@ -885,27 +1013,32 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
                     </label>
                   </div>
                 </div>
+                
+                {/* New PDF Files */}
                 {Array.isArray(question.modalAnswerPdfFiles) && question.modalAnswerPdfFiles.length > 0 && (
-                  <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {question.modalAnswerPdfFiles.map((file, fIdx) => (
-                      <div key={fIdx} className="flex items-center justify-between bg-white border border-gray-200 rounded p-2">
-                        <div className="flex items-center space-x-2">
-                          <Upload size={14} className="text-gray-500" />
-                          <span className="text-sm text-gray-700 truncate max-w-[220px]">{file.name}</span>
+                  <div className="mt-3">
+                    <h4 className="text-sm font-medium text-gray-600 mb-2">New PDFs to upload:</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {question.modalAnswerPdfFiles.map((file, fIdx) => (
+                        <div key={fIdx} className="flex items-center justify-between bg-white border border-gray-200 rounded p-2">
+                          <div className="flex items-center space-x-2">
+                            <Upload size={14} className="text-gray-500" />
+                            <span className="text-sm text-gray-700 truncate max-w-[220px]">{file.name}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemovePdfAt(index, fIdx)}
+                              className="p-1 text-red-600 hover:bg-red-50 rounded"
+                              title="Remove"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemovePdfAt(index, fIdx)}
-                            className="p-1 text-red-600 hover:bg-red-50 rounded"
-                            title="Remove"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 )}
                 <p className="mt-1 text-xs text-gray-500">You can attach multiple PDF files as model answers.</p>
