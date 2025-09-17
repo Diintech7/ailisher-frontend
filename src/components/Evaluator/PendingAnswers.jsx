@@ -17,19 +17,35 @@ export default function PendingAnswers() {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [activeImages, setActiveImages] = useState([]);
   const [acceptingAnswer, setAcceptingAnswer] = useState(null);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalCount: 0,
+    limit: 10,
+    hasNextPage: false,
+    hasPrevPage: false,
+  });
 
-  const fetchPendingAnswers = async () => {
+  const fetchPendingAnswers = async (pageParam = page, limitParam = limit) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get('https://test.ailisher.com/api/clients/CLI677117YN7N/mobile/userAnswers/crud/answers', {
+      const response = await axios.get('https://test.ailisher.com/api/answerapis/answers', {
         params: {
           evaluationMode: 'manual',
           submissionStatus: 'submitted',
+          page: pageParam,
+          limit: limitParam,
         },
       });
       if (response.data.success) {
         setPendingAnswers(response.data.data.answers);
+        if (response.data.data.pagination) {
+          setPagination(response.data.data.pagination);
+        }
+        console.log(response.data.data.answers);
       } else {
         setError(response.data.message || 'Failed to fetch pending answers');
       }
@@ -41,8 +57,8 @@ export default function PendingAnswers() {
   };
 
   useEffect(() => {
-    fetchPendingAnswers();
-  }, []);
+    fetchPendingAnswers(page, limit);
+  }, [page, limit]);
 
   const handleEvaluationComplete = async (updatedAnswer) => {
     // Optimistically update UI
@@ -56,7 +72,7 @@ export default function PendingAnswers() {
       const token = Cookies.get('evaluatortoken'); // Assuming you store evaluator token
       console.log(token)
       const response = await axios.put(
-        `https://test.ailisher.com/api/clients/CLI677117YN7N/mobile/userAnswers/crud/answers/${answerId}/accept`,
+        `https://test.ailisher.com/api/answerapis/answers/${answerId}/accept`,
         {},
         {
           headers: {
@@ -223,10 +239,10 @@ export default function PendingAnswers() {
               <h2 className="text-2xl font-bold text-gray-900">Pending Evaluations</h2>
               <p className="text-gray-600">Answers waiting for manual review</p>
             </div>
-            <div className="text-right">
-              <div className="text-3xl font-bold text-blue-600">{pendingAnswers.length}</div>
-              <div className="text-sm text-gray-500">Total Pending</div>
-            </div>
+              <div className="text-right">
+                <div className="text-3xl font-bold text-blue-600">{pagination.totalCount || 0}</div>
+                <div className="text-sm text-gray-500">Total Pending</div>
+              </div>
           </div>
         </div>
 
@@ -259,6 +275,45 @@ export default function PendingAnswers() {
             {pendingAnswers.map((answer) => (
               <AnswerCard key={answer._id} answer={answer} />
             ))}
+            {/* Pagination Controls */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
+              <div className="flex items-center gap-2">
+                <button
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg border hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={!pagination.hasPrevPage}
+                >
+                  Prev
+                </button>
+                <span className="text-sm text-gray-600">
+                  Page <span className="font-semibold">{pagination.currentPage}</span> of <span className="font-semibold">{pagination.totalPages || 1}</span>
+                </span>
+                <button
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg border hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={!pagination.hasNextPage}
+                >
+                  Next
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Rows per page</span>
+                <select
+                  className="px-3 py-2 bg-white border rounded-lg text-sm"
+                  value={limit}
+                  onChange={(e) => {
+                    const newLimit = parseInt(e.target.value, 10);
+                    setLimit(newLimit);
+                    setPage(1);
+                  }}
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
+            </div>
           </div>
         )}
 
