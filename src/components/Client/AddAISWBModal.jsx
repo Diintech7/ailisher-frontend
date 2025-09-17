@@ -108,6 +108,8 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
           evaluationGuideline: editingQuestion.evaluationGuideline || ''
         };
         console.log('Editing question:', editingQuestion);
+        // Populate the form with the editing question
+        setQuestions([formattedQuestion]);
         
         // Set existing PDFs for editing mode
         if (editingQuestion.modalAnswerPdfs && Array.isArray(editingQuestion.modalAnswerPdfs)) {
