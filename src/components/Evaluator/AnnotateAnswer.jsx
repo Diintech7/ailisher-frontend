@@ -3452,7 +3452,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Marks</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Marks (out of {submission.question?.metadata?.maximumMarks || 10})</label>
                       <input 
                         type="number" 
                         value={showHindiEvaluation ? editHindiEvaluation.score : editEvaluation.score} 
@@ -3462,12 +3462,12 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Remark</label>
-                    <input 
-                      type="text" 
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Remark</label>
+                  <textarea 
                       value={showHindiEvaluation ? editHindiEvaluation.remark : editEvaluation.remark} 
                       onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('remark', e.target.value) : handleEvalFieldChange('remark', e.target.value)} 
                       className="w-full border rounded px-3 py-2 text-base" 
+                      rows={2} 
                     />
                   </div>
                   <div>

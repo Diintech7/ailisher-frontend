@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect, useMemo } from 'react'
 import * as pdfjsLib from 'pdfjs-dist'
 import { API_BASE_URL } from '../../config'
 import { ArrowLeft } from 'lucide-react'
-import { toast } from 'react-toastify'
+import { toast, ToastContainer } from 'react-toastify'
+import 'react-toastify/dist/ReactToastify.css'
 import Cookies from 'js-cookie'
 
 // Configure PDF.js worker (no default export available from the worker module)
@@ -692,6 +693,7 @@ const QuestionBankText = ({ onBack, questionBankId }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 w-full">
+      <ToastContainer position="top-right" autoClose={3000} hideProgressBar={false} newestOnTop closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover theme="colored" />
       {onBack && (
         <div className="top-0 z-10 bg-white border-b border-gray-200 shadow-sm mb-6">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
