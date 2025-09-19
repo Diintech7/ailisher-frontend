@@ -7,6 +7,7 @@ const ClientMenu = ({ isExpanded, currentPath, handleNavigate }) => {
     { path: '/ai-books', name: 'AI Books', icon: <Book size={20} /> },
     { path: '/ai-workbook', name: 'AI Workbook', icon: <FileText size={20} /> },
     { path: '/ai-tests', name: 'AI Tests', icon: <BookCheck size={20} /> },
+    { path: '/ai-courses', name: 'AI Courses', icon: <BookCheck size={20} /> },
     { path: '/question-bank', name: 'Question Bank', icon: <MessageCircleQuestionIcon size={20} /> },
     { path: '/datastore', name: 'Datastore', icon: <Database size={20} /> },
     { path: '/tools', name: 'Tools', icon: <Wrench size={20} /> },  

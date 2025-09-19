@@ -43,6 +43,8 @@ import GeneratePage from './components/Client/EditPage';
 import CategoryManagement from './components/Client/CategoryManagement';
 import RechargePlan from './components/Client/RechargePlan';
 import RechargePlanCreate from './components/Client/RechargePlanCreate';
+import AIcourses from './components/Client/AIcourses';
+import CourseDetail from './components/Client/CourseDetail';
 
 const UserApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -200,6 +202,9 @@ const UserApp = () => {
                 <Route path="/ai-tests" element={<AITests />} />
                 <Route path="/ai-tests/:type/:testId" element={<TestDetail/>} />
 
+                {/* AI Courses Route */}
+                <Route path="/ai-courses" element={<AIcourses />} />
+                <Route path="/ai-courses/:courseId" element={<CourseDetail />} />
                 
                 {/* Asset View Routes for AI Workbooks */}
                 <Route path="/ai-workbook/:workbookId/assets" element={<AssetView />} />
