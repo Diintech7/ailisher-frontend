@@ -1018,25 +1018,30 @@ export default function RechargePlan() {
                                   <Clock className="w-4 h-4 text-blue-600" />
                                   <span className="font-medium">Start Date:</span> {new Date(order.startDate).toLocaleDateString()}
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <Clock className="w-4 h-4 text-red-600" />
-                                  <span className="font-medium">Expiry Date:</span> {new Date(order.endDate).toLocaleDateString()}
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium">Duration:</span> {Math.ceil((new Date(order.endDate) - new Date(order.startDate)) / (1000 * 60 * 60 * 24))} days
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium">Days Remaining:</span> 
-                                  <span className={`px-2 py-1 rounded-full text-xs ${
-                                    Math.ceil((new Date(order.endDate) - new Date()) / (1000 * 60 * 60 * 24)) > 7
-                                      ? 'bg-green-100 text-green-700'
-                                      : Math.ceil((new Date(order.endDate) - new Date()) / (1000 * 60 * 60 * 24)) > 0
-                                      ? 'bg-yellow-100 text-yellow-700'
-                                      : 'bg-red-100 text-red-700'
-                                  }`}>
-                                    {Math.ceil((new Date(order.endDate) - new Date()) / (1000 * 60 * 60 * 24))} days
-                                  </span>
-                                </div>
+                                
+                                {order.endDate && (
+                                  <>
+                                    <div className="flex items-center gap-2">
+                                      <Clock className="w-4 h-4 text-red-600" />
+                                      <span className="font-medium">Expiry Date:</span> {new Date(order.endDate).toLocaleDateString()}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-medium">Duration:</span> {Math.ceil((new Date(order.endDate) - new Date(order.startDate)) / (1000 * 60 * 60 * 24))} days
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-medium">Days Remaining:</span> 
+                                      <span className={`px-2 py-1 rounded-full text-xs ${
+                                        Math.ceil((new Date(order.endDate) - new Date()) / (1000 * 60 * 60 * 24)) > 7
+                                          ? 'bg-green-100 text-green-700'
+                                          : Math.ceil((new Date(order.endDate) - new Date()) / (1000 * 60 * 60 * 24)) > 0
+                                          ? 'bg-yellow-100 text-yellow-700'
+                                          : 'bg-red-100 text-red-700'
+                                      }`}>
+                                        {Math.ceil((new Date(order.endDate) - new Date()) / (1000 * 60 * 60 * 24))} days
+                                      </span>
+                                    </div>
+                                  </>
+                                )}
                               </>
                             )}
                             

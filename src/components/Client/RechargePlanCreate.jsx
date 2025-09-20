@@ -13,10 +13,10 @@ const TYPE_TABS = [
 const initialPlan = {
   name: '',
   description: '',
-  duration: 30,
-  credits: 0,
-  MRP: 0,
-  offerPrice: 0,
+  duration: '',
+  credits: '',
+  MRP: '',
+  offerPrice: '',
   category: 'Basic',
   imageKey: '',
   videoKey: ''
@@ -61,10 +61,10 @@ export default function RechargePlanCreate() {
           setPlan({
             name: p.name || '',
             description: p.description || '',
-            duration: p.duration || 30,
-            credits: p.credits || 0,
-            MRP: p.MRP || 0,
-            offerPrice: p.offerPrice || 0,
+            duration: p.duration || '',
+            credits: p.credits || '',
+            MRP: p.MRP || '',
+            offerPrice: p.offerPrice || '',
             category: ['Basic','Premium','Enterprise'].includes(p.category) ? p.category : 'Basic',
             imageKey: p.imageKey || '',
             videoKey: p.videoKey || ''
@@ -200,11 +200,20 @@ export default function RechargePlanCreate() {
     setSubmitting(true);
     setError('');
     try {
+      // Convert empty strings to numbers for submission
+      const planData = {
+        ...plan,
+        duration: plan.duration === '' ? 0 : Number(plan.duration),
+        credits: plan.credits === '' ? 0 : Number(plan.credits),
+        MRP: plan.MRP === '' ? 0 : Number(plan.MRP),
+        offerPrice: plan.offerPrice === '' ? 0 : Number(plan.offerPrice)
+      };
+      
       if (isEdit) {
         const res = await fetch(`${API_BASE_URL}/api/client/credit-recharge-plans/${planId}`, {
           method: 'PUT',
           headers: authHeaders,
-          body: JSON.stringify(plan)
+          body: JSON.stringify(planData)
         });
         const body = await res.json();
         if (!res.ok || !body.success) throw new Error(body.message || 'Failed to update plan');
@@ -225,7 +234,7 @@ export default function RechargePlanCreate() {
         const res = await fetch(`${API_BASE_URL}/api/client/credit-recharge-plans`, {
           method: 'POST',
           headers: authHeaders,
-          body: JSON.stringify({ ...plan, items })
+          body: JSON.stringify({ ...planData, items })
         });
         const body = await res.json();
         if (!res.ok || !body.success) throw new Error(body.message || 'Failed to create plan');
@@ -359,7 +368,7 @@ export default function RechargePlanCreate() {
                       type="number" 
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
                       value={plan.duration} 
-                      onChange={(e) => setPlan({ ...plan, duration: Number(e.target.value) })} 
+                      onChange={(e) => setPlan({ ...plan, duration: e.target.value === '' ? '' : Number(e.target.value) })} 
                       min="1"
                       required 
                     />
@@ -370,9 +379,9 @@ export default function RechargePlanCreate() {
                       type="number" 
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
                       value={plan.credits} 
-                      onChange={(e) => setPlan({ ...plan, credits: Number(e.target.value) })} 
+                      onChange={(e) => setPlan({ ...plan, credits: e.target.value === '' ? '' : Number(e.target.value) })} 
                       min="0"
-                      required 
+                      // required 
                     />
                   </div>
                 </div>
@@ -392,7 +401,7 @@ export default function RechargePlanCreate() {
                       type="number" 
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
                       value={plan.MRP} 
-                      onChange={(e) => setPlan({ ...plan, MRP: Number(e.target.value) })} 
+                      onChange={(e) => setPlan({ ...plan, MRP: e.target.value === '' ? '' : Number(e.target.value) })} 
                       min="0"
                       step="0.01"
                       required 
@@ -404,7 +413,7 @@ export default function RechargePlanCreate() {
                       type="number" 
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
                       value={plan.offerPrice} 
-                      onChange={(e) => setPlan({ ...plan, offerPrice: Number(e.target.value) })} 
+                      onChange={(e) => setPlan({ ...plan, offerPrice: e.target.value === '' ? '' : Number(e.target.value) })} 
                       min="0"
                       step="0.01"
                       required 
