@@ -1,11 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Cookies from 'js-cookie';
-import { Plus, Trash2, Edit, Image as ImageIcon, Loader2, AlertTriangle, Book } from 'lucide-react';
-import { ToastContainer } from 'react-toastify';
+import { Plus, Trash2, Edit, Image as ImageIcon, Loader2, AlertTriangle, Book, Star, TrendingUp } from 'lucide-react';
+import { ToastContainer, toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 
 // const API_BASE_URL = 'https://test.ailisher.com';
-const API_BASE_URL = 'https://test.ailisher.com';
+const API_BASE_URL = 'http://localhost:5000';
 
 
 const initialForm = {
@@ -154,7 +154,13 @@ const AIcourses = () => {
 
   // Close open item menu when clicking anywhere outside menu/button
   useEffect(() => {
-    const handleGlobalMouseDown = () => setMenuOpenIdx(null);
+    const handleGlobalMouseDown = (event) => {
+      const target = event.target;
+      const insideMenu = target && (target.closest && target.closest('[data-menu="aicourse-menu"]'));
+      if (!insideMenu) {
+        setMenuOpenIdx(null);
+      }
+    };
     document.addEventListener('mousedown', handleGlobalMouseDown);
     return () => document.removeEventListener('mousedown', handleGlobalMouseDown);
   }, []);
@@ -279,6 +285,66 @@ const AIcourses = () => {
     }
   };
 
+  // Toggle Highlight similar to AIBooks
+  const handleToggleHighlight = async (courseId, isHighlighted) => {
+    try {
+      const tokenLocal = Cookies.get('usertoken');
+      if (!tokenLocal) {
+        toast.error('Authentication required');
+        return;
+      }
+      const endpoint = `/api/aicourses/${courseId}/highlight`;
+      const method = isHighlighted ? 'POST' : 'DELETE';
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method,
+        headers: {
+          Authorization: `Bearer ${tokenLocal}`,
+          'Content-Type': 'application/json'
+        },
+        body: isHighlighted ? JSON.stringify({ note: '', order: 0 }) : undefined
+      });
+      const data = await response.json();
+      if (!data.success) {
+        toast.error(data.message || 'Failed to update highlight status');
+        return;
+      }
+      setCourses(prev => prev.map(c => c._id === courseId ? { ...c, isHighlighted } : c));
+      toast.success(`Course ${isHighlighted ? 'added to' : 'removed from'} highlights`);
+    } catch (err) {
+      toast.error('Failed to update highlight status');
+    }
+  };
+
+  // Toggle Trending similar to AIBooks
+  const handleToggleTrending = async (courseId, isTrending) => {
+    try {
+      const tokenLocal = Cookies.get('usertoken');
+      if (!tokenLocal) {
+        toast.error('Authentication required');
+        return;
+      }
+      const endpoint = `/api/aicourses/${courseId}/trending`;
+      const method = isTrending ? 'POST' : 'DELETE';
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method,
+        headers: {
+          Authorization: `Bearer ${tokenLocal}`,
+          'Content-Type': 'application/json'
+        },
+        body: isTrending ? JSON.stringify({ score: 0, endDate: null }) : undefined
+      });
+      const data = await response.json();
+      if (!data.success) {
+        toast.error(data.message || 'Failed to update trending status');
+        return;
+      }
+      setCourses(prev => prev.map(c => c._id === courseId ? { ...c, isTrending } : c));
+      toast.success(`Course ${isTrending ? 'marked as' : 'removed from'} trending`);
+    } catch (err) {
+      toast.error('Failed to update trending status');
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <ToastContainer position="top-right" autoClose={3000} />
@@ -380,7 +446,19 @@ const AIcourses = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {getItemsForMain(main, subMap).map((c) => (
                       <div key={c._id} className="relative bg-white rounded-lg border border-gray-200 shadow-sm p-4 flex flex-col cursor-pointer" onClick={() => navigate(`/ai-courses/${c._id}`)}>
-                        <div className="absolute top-2 right-2">
+                        <div className="absolute top-2 right-2" data-menu="aicourse-menu">
+                          {/* <div className="absolute -top-1 -right-1 flex gap-1 pointer-events-none">
+                            {c.isHighlighted && (
+                              <div className="bg-yellow-100 text-yellow-800 p-1 rounded-full">
+                                <Star size={12} />
+                              </div>
+                            )}
+                            {c.isTrending && (
+                              <div className="bg-red-100 text-red-800 p-1 rounded-full">
+                                <TrendingUp size={12} />
+                              </div>
+                            )}
+                          </div> */}
                           <button
                             onClick={(e) => { e.stopPropagation(); setMenuOpenIdx(menuOpenIdx === c._id ? null : c._id); }}
                             className="p-1 rounded-full hover:bg-gray-100"
@@ -388,14 +466,14 @@ const AIcourses = () => {
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" viewBox="0 0 20 20" fill="currentColor"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM18 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
                           </button>
                           {menuOpenIdx === c._id && (
-                            <div className="absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded shadow-md z-10">
+                            <div className="absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded shadow-md z-20">
                               <button
                                 className="w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-50"
-                                onClick={(e) => { e.stopPropagation(); openEdit(c); setMenuOpenIdx(null); }}
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); openEdit(c); setMenuOpenIdx(null); }}
                               >Edit</button>
                               <button
                                 className="w-full text-left px-3 py-2 text-red-600 hover:bg-red-50"
-                                onClick={(e) => { e.stopPropagation(); setMenuOpenIdx(null); handleDelete(c._id); }}
+                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpenIdx(null); handleDelete(c._id); }}
                               >Delete</button>
                             </div>
                           )}
@@ -410,6 +488,22 @@ const AIcourses = () => {
                         <div className="flex-1">
                           <h3 className="text-lg font-semibold text-gray-800 mb-1">{c.title}</h3>
                           <p className="text-sm text-gray-600 line-clamp-2">{c.overview}</p>
+                        </div>
+                        <div className="flex items-center gap-2 mt-3">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleToggleHighlight(c._id, !c.isHighlighted); }}
+                            className={`p-1 rounded transition-colors ${c.isHighlighted ? 'text-yellow-600 bg-yellow-100 hover:bg-yellow-200' : 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'}`}
+                            title={c.isHighlighted ? 'Remove from highlights' : 'Add to highlights'}
+                          >
+                            <Star size={16} />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleToggleTrending(c._id, !c.isTrending); }}
+                            className={`p-1 rounded transition-colors ${c.isTrending ? 'text-red-600 bg-red-100 hover:bg-red-200' : 'text-gray-400 hover:text-red-600 hover:bg-red-50'}`}
+                            title={c.isTrending ? 'Remove from trending' : 'Add to trending'}
+                          >
+                            <TrendingUp size={16} />
+                          </button>
                         </div>
                       </div>
                     ))}

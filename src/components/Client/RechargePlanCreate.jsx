@@ -125,9 +125,29 @@ export default function RechargePlanCreate() {
     };
   }
 
+  // Function to get existing item IDs from plan items
+  const getExistingItemIds = () => {
+    if (!isEdit || !planItems.length) return new Set();
+    
+    const existingIds = new Set();
+    planItems.forEach(item => {
+      if (item.referenceId) {
+        existingIds.add(item.referenceId);
+      }
+    });
+    return existingIds;
+  };
+
   const visibleList = (() => {
     const currentKey = activeTab === 'test' ? (testSubTab === 'objective' ? 'testObjective' : 'testSubjective') : activeTab;
     let list = data[currentKey] || [];
+    
+    // Filter out items that are already in the plan (only in edit mode)
+    if (isEdit) {
+      const existingIds = getExistingItemIds();
+      list = list.filter((i) => !existingIds.has(i.id));
+    }
+    
     if (filterCategory !== 'All') list = list.filter((i) => String(i.category).toLowerCase() === filterCategory.toLowerCase());
     if (!search.trim()) return list;
     const q = search.toLowerCase();
@@ -253,127 +273,306 @@ export default function RechargePlanCreate() {
     <div className="min-h-screen bg-gray-50">
     {/* Header */}
     <div className="bg-white shadow-sm border-b">
-    <div className="flex items-center space-x-4 p-4">
-      <button
-        onClick={() => navigate("/plans")}
-        className="text-gray-500 hover:text-gray-700 transition-colors"
-      >
-        ← Back to Plan
-      </button>
+    <div className="flex items-center justify-between p-4">
+      <div className="flex items-center space-x-4">
+        <button
+          onClick={() => navigate("/plans")}
+          className="text-gray-500 hover:text-gray-700 transition-colors"
+        >
+          ← Back to Plans
+        </button>
+        <h2 className="text-2xl font-semibold">{isEdit ? 'Edit Plan' : 'Create Plan'}</h2>
+      </div>
+      <div className="flex items-center gap-3">
+        <button 
+          type="button" 
+          onClick={() => navigate('/plans')}
+          className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors"
+        >
+          Cancel
+        </button>
+        <button 
+          type="submit" 
+          form="plan-form"
+          disabled={submitting} 
+          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {submitting ? (isEdit ? 'Saving...' : 'Creating...') : (isEdit ? 'Save Changes' : 'Create Plan')}
+        </button>
+      </div>
     </div>
   </div>
     <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-semibold">{isEdit ? 'Edit Plan' : 'Create Plan'}</h2>
-      </div>
 
-      {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">{error}</div>}
+      {error && <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg">{error}</div>}
 
-      <form onSubmit={submitPlan} className="bg-white border rounded shadow-sm p-4 mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Name</label>
-          <input className="w-full border p-2 rounded" value={plan.name} onChange={(e) => setPlan({ ...plan, name: e.target.value })} required />
-        </div>
-        <div className="md:col-span-2">
-          <label className="block text-sm font-medium mb-1">Description</label>
-          <input className="w-full border p-2 rounded" value={plan.description} onChange={(e) => setPlan({ ...plan, description: e.target.value })} required />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Duration (days)</label>
-          <input type="number" className="w-full border p-2 rounded" value={plan.duration} onChange={(e) => setPlan({ ...plan, duration: Number(e.target.value) })} required />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Credits</label>
-          <input type="number" className="w-full border p-2 rounded" value={plan.credits} onChange={(e) => setPlan({ ...plan, credits: Number(e.target.value) })} required />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">MRP</label>
-          <input type="number" className="w-full border p-2 rounded" value={plan.MRP} onChange={(e) => setPlan({ ...plan, MRP: Number(e.target.value) })} required />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Offer Price</label>
-          <input type="number" className="w-full border p-2 rounded" value={plan.offerPrice} onChange={(e) => setPlan({ ...plan, offerPrice: Number(e.target.value) })} required />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Category</label>
-          <select className="w-full border p-2 rounded" value={plan.category} onChange={(e) => setPlan({ ...plan, category: e.target.value })}>
-            {CATEGORY_OPTIONS.map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Image Key</label>
-          <input className="w-full border p-2 rounded" value={plan.imageKey} onChange={(e) => setPlan({ ...plan, imageKey: e.target.value })} />
-        </div>
-        <div>
-          <label className="block text-sm font-medium mb-1">Video Key</label>
-          <input className="w-full border p-2 rounded" value={plan.videoKey} onChange={(e) => setPlan({ ...plan, videoKey: e.target.value })} />
-        </div>
-        <div className="md:col-span-3 flex gap-2">
-          <button disabled={submitting} className="bg-blue-600 text-white px-4 py-2 rounded">{submitting ? (isEdit ? 'Saving...' : 'Creating...') : (isEdit ? 'Save Changes' : 'Create Plan')}</button>
-          <button type="button" className="border px-4 py-2 rounded" onClick={() => navigate('/plans')}>Cancel</button>
+      <form id="plan-form" onSubmit={submitPlan} className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Basic Information */}
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Plan Name *</label>
+                  <input 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                    value={plan.name} 
+                    onChange={(e) => setPlan({ ...plan, name: e.target.value })} 
+                    placeholder="Enter plan name"
+                    required 
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
+                  <textarea 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none" 
+                    rows="3"
+                    value={plan.description} 
+                    onChange={(e) => setPlan({ ...plan, description: e.target.value })} 
+                    placeholder="Describe your plan"
+                    required 
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Duration (days) *</label>
+                    <input 
+                      type="number" 
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                      value={plan.duration} 
+                      onChange={(e) => setPlan({ ...plan, duration: Number(e.target.value) })} 
+                      min="1"
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Credits *</label>
+                    <input 
+                      type="number" 
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                      value={plan.credits} 
+                      onChange={(e) => setPlan({ ...plan, credits: Number(e.target.value) })} 
+                      min="0"
+                      required 
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Pricing Information */}
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Pricing Information</h3>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">MRP (₹) *</label>
+                    <input 
+                      type="number" 
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                      value={plan.MRP} 
+                      onChange={(e) => setPlan({ ...plan, MRP: Number(e.target.value) })} 
+                      min="0"
+                      step="0.01"
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Offer Price (₹) *</label>
+                    <input 
+                      type="number" 
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                      value={plan.offerPrice} 
+                      onChange={(e) => setPlan({ ...plan, offerPrice: Number(e.target.value) })} 
+                      min="0"
+                      step="0.01"
+                      required 
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
+                  <select 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                    value={plan.category} 
+                    onChange={(e) => setPlan({ ...plan, category: e.target.value })}
+                  >
+                    {CATEGORY_OPTIONS.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Media Information */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Media Assets</h3>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Image Key</label>
+                  <input 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                    value={plan.imageKey} 
+                    onChange={(e) => setPlan({ ...plan, imageKey: e.target.value })} 
+                    placeholder="Enter image key (optional)"
+                  />
+                </div>
+                {/* <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Video Key</label>
+                  <input 
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                    value={plan.videoKey} 
+                    onChange={(e) => setPlan({ ...plan, videoKey: e.target.value })} 
+                    placeholder="Enter video key (optional)"
+                  />
+                </div> */}
+              </div>
+            </div>
+          </div>
         </div>
       </form>
 
       {!isEdit && (
-        <div className="bg-white border rounded shadow-sm p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex gap-3">
-              {TYPE_TABS.map((t) => (
-                <button key={t.value} className={`px-3 py-2 rounded ${activeTab === t.value ? 'bg-blue-50 text-blue-700' : 'bg-gray-100 text-gray-700'}`} onClick={() => { setActiveTab(t.value); if ((data[t.value] || []).length === 0) loadTab(t.value); }}>
-                  {t.label}
-                </button>
-              ))}
-            </div>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-gray-900">Select Items to Include</h3>
             <div className="flex items-center gap-3">
-              <select className="border p-2 rounded" value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
-                <option>All</option>
+              <select 
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                value={filterCategory} 
+                onChange={(e) => setFilterCategory(e.target.value)}
+              >
+                <option>All Categories</option>
                 {Array.from(new Set((data[activeTab] || []).map((i) => i.category))).map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>
-              <input className="border p-2 rounded" placeholder="Search..." value={search} onChange={(e) => setSearch(e.target.value)} />
+              <input 
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                placeholder="Search items..." 
+                value={search} 
+                onChange={(e) => setSearch(e.target.value)} 
+              />
             </div>
+          </div>
+          
+          <div className="flex gap-2 mb-6">
+            {TYPE_TABS.map((t) => (
+              <button 
+                key={t.value} 
+                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                  activeTab === t.value 
+                    ? 'bg-blue-600 text-white shadow-sm' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`} 
+                onClick={() => { setActiveTab(t.value); if ((data[t.value] || []).length === 0) loadTab(t.value); }}
+              >
+                {t.label}
+              </button>
+            ))}
           </div>
 
           {loading ? (
-            <div>Loading...</div>
+            <div className="flex items-center justify-center py-12">
+              <div className="text-gray-500">Loading items...</div>
+            </div>
           ) : (
             <>
               {activeTab === 'test' && (
-                <div className="mb-3 flex gap-2">
-                  <button className={`px-3 py-1 rounded text-sm ${testSubTab === 'objective' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`} onClick={() => setTestSubTab('objective')}>Objective</button>
-                  <button className={`px-3 py-1 rounded text-sm ${testSubTab === 'subjective' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`} onClick={() => setTestSubTab('subjective')}>Subjective</button>
+                <div className="mb-6 flex gap-2">
+                  <button 
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      testSubTab === 'objective' 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`} 
+                    onClick={() => setTestSubTab('objective')}
+                  >
+                    Objective Tests
+                  </button>
+                  <button 
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      testSubTab === 'subjective' 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`} 
+                    onClick={() => setTestSubTab('subjective')}
+                  >
+                    Subjective Tests
+                  </button>
                 </div>
               )}
               {visibleList.length === 0 ? (
-                <div className="p-6 text-center text-gray-500">No items</div>
+                <div className="text-center py-12">
+                  <div className="text-gray-500 text-lg mb-2">No items found</div>
+                  <div className="text-gray-400 text-sm">Try adjusting your search or filter criteria</div>
+                </div>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   {visibleList.map((it) => (
-                    <div key={it.id} className={`border rounded overflow-hidden hover:shadow transition relative ${(activeTab === 'test' ? (testSubTab === 'objective' ? selected.testObjective.has(it.id) : selected.testSubjective.has(it.id)) : selected[activeTab].has(it.id)) ? 'ring-2 ring-blue-500' : ''}`}>
+                    <div 
+                      key={it.id} 
+                      className={`border-2 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-200 cursor-pointer relative ${
+                        (activeTab === 'test' ? (testSubTab === 'objective' ? selected.testObjective.has(it.id) : selected.testSubjective.has(it.id)) : selected[activeTab].has(it.id)) 
+                          ? 'ring-2 ring-blue-500 border-blue-500 shadow-lg' 
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                      onClick={() => toggleSelect(it.id)}
+                    >
                       {it.image ? (
                         <img src={it.image} alt={it.name} className="w-full h-32 object-cover bg-gray-100" />
                       ) : (
-                        <div className="w-full h-32 bg-gray-100 flex items-center justify-center text-gray-400">No image</div>
+                        <div className="w-full h-32 bg-gray-100 flex items-center justify-center text-gray-400">
+                          <div className="text-center">
+                            <div className="text-2xl mb-1">📚</div>
+                            <div className="text-xs">No image</div>
+                          </div>
+                        </div>
                       )}
-                      <div className="p-3">
-                        <div className="text-sm font-medium line-clamp-2">{it.name}</div>
-                        <div className="text-xs text-gray-500 mt-1">{it.category}</div>
+                      <div className="p-4">
+                        <div className="text-sm font-medium text-gray-900 line-clamp-2 mb-1">{it.name}</div>
+                        <div className="text-xs text-gray-500">{it.category}</div>
                       </div>
-                      <div className="absolute top-2 right-2">
-                        <input type="checkbox" checked={(activeTab === 'test' ? (testSubTab === 'objective' ? selected.testObjective.has(it.id) : selected.testSubjective.has(it.id)) : selected[activeTab].has(it.id))} onChange={() => toggleSelect(it.id)} />
+                      <div className="absolute top-3 right-3">
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                          (activeTab === 'test' ? (testSubTab === 'objective' ? selected.testObjective.has(it.id) : selected.testSubjective.has(it.id)) : selected[activeTab].has(it.id))
+                            ? 'bg-blue-600 border-blue-600' 
+                            : 'bg-white border-gray-300'
+                        }`}>
+                          {(activeTab === 'test' ? (testSubTab === 'objective' ? selected.testObjective.has(it.id) : selected.testSubjective.has(it.id)) : selected[activeTab].has(it.id)) && (
+                            <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-              <div className="flex items-center justify-between mt-4">
-                <div className="text-sm text-gray-600">Selected: {selected.book.size + selected.workbook.size + selected.testObjective.size + selected.testSubjective.size}</div>
-                <div className="flex gap-2">
-                  <button className="border px-3 py-2 rounded" type="button" onClick={selectAllCurrent}>Select All</button>
-                  <button className="border px-3 py-2 rounded" type="button" onClick={clearSelectedCurrent}>Clear</button>
+              <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-200">
+                <div className="text-sm text-gray-600">
+                  <span className="font-medium">{selected.book.size + selected.workbook.size + selected.testObjective.size + selected.testSubjective.size}</span> items selected
+                </div>
+                <div className="flex gap-3">
+                  <button 
+                    className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors" 
+                    type="button" 
+                    onClick={selectAllCurrent}
+                  >
+                    Select All
+                  </button>
+                  <button 
+                    className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors" 
+                    type="button" 
+                    onClick={clearSelectedCurrent}
+                  >
+                    Clear All
+                  </button>
                 </div>
               </div>
             </>
@@ -382,96 +581,201 @@ export default function RechargePlanCreate() {
       )}
 
       {isEdit && (
-        <div className="bg-white border rounded shadow-sm p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="font-medium">Bundled Items ({planItems.length})</div>
-            <button className="text-blue-600 hover:underline" onClick={() => { setPickerOpen(true); if (data.book.length === 0) loadTab('book'); }}>+ Add Items</button>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">Bundled Items</h3>
+              <p className="text-sm text-gray-600">{planItems.length} items included</p>
+            </div>
+            <button 
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors" 
+              onClick={() => { setPickerOpen(true); if (data.book.length === 0) loadTab('book'); }}
+            >
+              + Add Items
+            </button>
           </div>
           {planItems.length === 0 ? (
-            <div className="text-sm text-gray-500">No items</div>
+            <div className="text-center py-12">
+              <div className="text-gray-500 text-lg mb-2">No items added yet</div>
+              <div className="text-gray-400 text-sm">Click "Add Items" to include content in this plan</div>
+            </div>
           ) : (
-            <ul className="divide-y">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {planItems.map((it) => (
-                <li key={it._id} className="py-2 flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-medium">{it.name}</div>
-                    <div className="text-xs text-gray-500">{it.itemType}</div>
+                <div key={it._id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-gray-900 mb-1">{it.name}</div>
+                      <div className="text-xs text-gray-500 capitalize">{it.itemType.replace('-', ' ')}</div>
+                    </div>
+                    <button 
+                      className="text-red-600 text-sm hover:text-red-700 hover:underline transition-colors" 
+                      onClick={() => deleteItem(it._id)}
+                    >
+                      Remove
+                    </button>
                   </div>
-                  <button className="text-red-600 text-sm hover:underline" onClick={() => deleteItem(it._id)}>Remove</button>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
           )}
         </div>
       )}
 
       {pickerOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-          <div className="bg-white w-full max-w-4xl rounded shadow-lg overflow-hidden">
-            <div className="px-4 py-3 border-b flex items-center justify-between">
-              <div className="text-lg font-semibold">Select Items</div>
-              <button className="text-gray-600" onClick={() => setPickerOpen(false)}>✕</button>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white w-full max-w-6xl rounded-2xl shadow-2xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">Select Items to Add</h3>
+                <p className="text-sm text-gray-600">Choose items to include in this plan</p>
+              </div>
+              <button 
+                className="text-gray-400 hover:text-gray-600 transition-colors" 
+                onClick={() => setPickerOpen(false)}
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
-            <div className="px-4 pt-3">
-              <div className="flex gap-3 border-b">
+            <div className="px-6 py-4">
+              <div className="flex gap-2 mb-6">
                 {TYPE_TABS.map((t) => (
-                  <button key={t.value} className={`px-3 py-2 -mb-px border-b-2 ${activeTab === t.value ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600'}`} onClick={() => { setActiveTab(t.value); if ((data[t.value] || []).length === 0) loadTab(t.value); }}>
+                  <button 
+                    key={t.value} 
+                    className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                      activeTab === t.value 
+                        ? 'bg-blue-600 text-white shadow-sm' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`} 
+                    onClick={() => { setActiveTab(t.value); if ((data[t.value] || []).length === 0) loadTab(t.value); }}
+                  >
                     {t.label}
                   </button>
                 ))}
               </div>
-              <div className="mt-3 flex items-center justify-between">
-                <input className="border p-2 rounded w-1/2" placeholder="Search by name..." value={search} onChange={(e) => setSearch(e.target.value)} />
-                <div className="flex items-center gap-3">
-                <select className="border p-2 rounded" value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
-                <option>All</option>
-                {(() => {
-                  const currentKey = activeTab === 'test' ? (testSubTab === 'objective' ? 'testObjective' : 'testSubjective') : activeTab;
-                  return Array.from(new Set((data[currentKey] || []).map((i) => i.category))).map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ));
-                })()}
-                </select>
-                <div className="text-sm text-gray-600">Selected: {selected.book.size + selected.workbook.size + selected.testObjective.size + selected.testSubjective.size}</div>
+              <div className="flex items-center justify-between mb-6">
+                <input 
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors w-1/2" 
+                  placeholder="Search by name..." 
+                  value={search} 
+                  onChange={(e) => setSearch(e.target.value)} 
+                />
+                <div className="flex items-center gap-4">
+                  <select 
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                    value={filterCategory} 
+                    onChange={(e) => setFilterCategory(e.target.value)}
+                  >
+                    <option>All Categories</option>
+                    {(() => {
+                      const currentKey = activeTab === 'test' ? (testSubTab === 'objective' ? 'testObjective' : 'testSubjective') : activeTab;
+                      return Array.from(new Set((data[currentKey] || []).map((i) => i.category))).map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ));
+                    })()}
+                  </select>
+                  <div className="text-sm text-gray-600">
+                    <span className="font-medium">{selected.book.size + selected.workbook.size + selected.testObjective.size + selected.testSubjective.size}</span> selected
+                  </div>
+                </div>
               </div>
-              </div>
-              <div className="mt-3 max-h-80 overflow-auto border rounded">
+              <div className="max-h-96 overflow-auto border border-gray-200 rounded-lg">
                 {loading ? (
-                  <div className="p-4">Loading...</div>
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-gray-500">Loading items...</div>
+                  </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 p-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 p-4">
                     {activeTab === 'test' && (
-                      <div className="col-span-full mb-2">
-                        <div className="inline-flex gap-2">
-                          <button className={`px-3 py-1 rounded text-sm ${testSubTab === 'objective' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`} onClick={() => setTestSubTab('objective')}>Objective</button>
-                          <button className={`px-3 py-1 rounded text-sm ${testSubTab === 'subjective' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`} onClick={() => setTestSubTab('subjective')}>Subjective</button>
+                      <div className="col-span-full mb-4">
+                        <div className="flex gap-2">
+                          <button 
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                              testSubTab === 'objective' 
+                                ? 'bg-blue-600 text-white' 
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`} 
+                            onClick={() => setTestSubTab('objective')}
+                          >
+                            Objective Tests
+                          </button>
+                          <button 
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                              testSubTab === 'subjective' 
+                                ? 'bg-blue-600 text-white' 
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`} 
+                            onClick={() => setTestSubTab('subjective')}
+                          >
+                            Subjective Tests
+                          </button>
                         </div>
                       </div>
                     )}
                     {visibleList.map((it) => (
-                      <label key={it.id} className={`border rounded overflow-hidden hover:shadow transition relative cursor-pointer ${(activeTab === 'test' ? (testSubTab === 'objective' ? selected.testObjective.has(it.id) : selected.testSubjective.has(it.id)) : selected[activeTab].has(it.id)) ? 'ring-2 ring-blue-500' : ''}`}>
+                      <div 
+                        key={it.id} 
+                        className={`border-2 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-200 cursor-pointer relative ${
+                          (activeTab === 'test' ? (testSubTab === 'objective' ? selected.testObjective.has(it.id) : selected.testSubjective.has(it.id)) : selected[activeTab].has(it.id)) 
+                            ? 'ring-2 ring-blue-500 border-blue-500 shadow-lg' 
+                            : 'border-gray-200 hover:border-gray-300'
+                        }`}
+                        onClick={() => toggleSelect(it.id)}
+                      >
                         {it.image ? (
                           <img src={it.image} alt={it.name} className="w-full h-24 object-cover bg-gray-100" />
                         ) : (
-                          <div className="w-full h-24 bg-gray-100 flex items-center justify-center text-gray-400">No image</div>
+                          <div className="w-full h-24 bg-gray-100 flex items-center justify-center text-gray-400">
+                            <div className="text-center">
+                              <div className="text-xl mb-1">📚</div>
+                              <div className="text-xs">No image</div>
+                            </div>
+                          </div>
                         )}
-                        <div className="p-2 text-xs">
-                          <div className="font-medium line-clamp-2">{it.name}</div>
-                          <div className="text-gray-500">{it.category}</div>
+                        <div className="p-3">
+                          <div className="text-sm font-medium text-gray-900 line-clamp-2 mb-1">{it.name}</div>
+                          <div className="text-xs text-gray-500">{it.category}</div>
                         </div>
-                        <input type="checkbox" className="absolute top-2 right-2" checked={(activeTab === 'test' ? (testSubTab === 'objective' ? selected.testObjective.has(it.id) : selected.testSubjective.has(it.id)) : selected[activeTab].has(it.id))} onChange={() => toggleSelect(it.id)} />
-                      </label>
+                        <div className="absolute top-2 right-2">
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                            (activeTab === 'test' ? (testSubTab === 'objective' ? selected.testObjective.has(it.id) : selected.testSubjective.has(it.id)) : selected[activeTab].has(it.id))
+                              ? 'bg-blue-600 border-blue-600' 
+                              : 'bg-white border-gray-300'
+                          }`}>
+                            {(activeTab === 'test' ? (testSubTab === 'objective' ? selected.testObjective.has(it.id) : selected.testSubjective.has(it.id)) : selected[activeTab].has(it.id)) && (
+                              <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     ))}
                     {visibleList.length === 0 && (
-                      <div className="col-span-full p-6 text-center text-gray-500">No items</div>
+                      <div className="col-span-full text-center py-12">
+                        <div className="text-gray-500 text-lg mb-2">No items found</div>
+                        <div className="text-gray-400 text-sm">Try adjusting your search or filter criteria</div>
+                      </div>
                     )}
                   </div>
                 )}
               </div>
             </div>
-            <div className="px-4 py-3 border-t flex justify-end gap-2">
-              <button className="border px-4 py-2 rounded" onClick={() => setPickerOpen(false)}>Cancel</button>
-              <button className="bg-blue-600 text-white px-4 py-2 rounded" onClick={addSelectedItemsToPlan}>Add Selected</button>
+            <div className="px-6 py-4 border-t border-gray-200 flex justify-end gap-3">
+              <button 
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors" 
+                onClick={() => setPickerOpen(false)}
+              >
+                Cancel
+              </button>
+              <button 
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors" 
+                onClick={addSelectedItemsToPlan}
+              >
+                Add Selected ({selected.book.size + selected.workbook.size + selected.testObjective.size + selected.testSubjective.size})
+              </button>
             </div>
           </div>
         </div>
