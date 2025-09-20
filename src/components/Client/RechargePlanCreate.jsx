@@ -35,6 +35,7 @@ export default function RechargePlanCreate() {
   const [activeTab, setActiveTab] = useState('book');
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('All');
+  const [filterSubCategory, setFilterSubCategory] = useState('All');
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState({ book: [], workbook: [], testObjective: [], testSubjective: [] });
   const [selected, setSelected] = useState({ book: new Set(), workbook: new Set(), testObjective: new Set(), testSubjective: new Set() });
@@ -121,7 +122,9 @@ export default function RechargePlanCreate() {
       id: x._id || x.id,
       name: x.title || x.name || 'Untitled',
       image: x.coverImageUrl || x.imageUrl || '',
-      category: x.mainCategory || x.category || 'General'
+      category: x.mainCategory || x.category || 'General',
+      subCategory: x.subCategory || 'Other',
+      customSubCategory: x.customSubCategory || null
     };
   }
 
@@ -148,7 +151,22 @@ export default function RechargePlanCreate() {
       list = list.filter((i) => !existingIds.has(i.id));
     }
     
-    if (filterCategory !== 'All') list = list.filter((i) => String(i.category).toLowerCase() === filterCategory.toLowerCase());
+    // Filter by main category
+    if (filterCategory !== 'All') {
+      list = list.filter((i) => String(i.category).toLowerCase() === filterCategory.toLowerCase());
+    }
+    
+    // Filter by subcategory
+    if (filterSubCategory !== 'All') {
+      list = list.filter((i) => {
+        const itemSubCategory = i.subCategory === 'Other' && i.customSubCategory 
+          ? i.customSubCategory 
+          : i.subCategory;
+        return String(itemSubCategory).toLowerCase() === filterSubCategory.toLowerCase();
+      });
+    }
+    
+    // Filter by search term
     if (!search.trim()) return list;
     const q = search.toLowerCase();
     return list.filter((i) => (i.name || '').toLowerCase().includes(q));
@@ -444,12 +462,41 @@ export default function RechargePlanCreate() {
               <select 
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
                 value={filterCategory} 
-                onChange={(e) => setFilterCategory(e.target.value)}
+                onChange={(e) => {
+                  setFilterCategory(e.target.value);
+                  setFilterSubCategory('All'); // Reset subcategory when main category changes
+                }}
               >
-                <option>All Categories</option>
+                <option value="All">All Categories</option>
                 {Array.from(new Set((data[activeTab] || []).map((i) => i.category))).map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
+              </select>
+              <select 
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                value={filterSubCategory} 
+                onChange={(e) => setFilterSubCategory(e.target.value)}
+                disabled={filterCategory === 'All'}
+              >
+                <option value="All">All Subcategories</option>
+                {(() => {
+                  const currentKey = activeTab === 'test' ? (testSubTab === 'objective' ? 'testObjective' : 'testSubjective') : activeTab;
+                  const filteredItems = filterCategory === 'All' 
+                    ? (data[currentKey] || [])
+                    : (data[currentKey] || []).filter((i) => String(i.category).toLowerCase() === filterCategory.toLowerCase());
+                  
+                  const subcategories = new Set();
+                  filteredItems.forEach((i) => {
+                    const subCategory = i.subCategory === 'Other' && i.customSubCategory 
+                      ? i.customSubCategory 
+                      : i.subCategory;
+                    if (subCategory) subcategories.add(subCategory);
+                  });
+                  
+                  return Array.from(subcategories).map((sc) => (
+                    <option key={sc} value={sc}>{sc}</option>
+                  ));
+                })()}
               </select>
               <input 
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
@@ -469,7 +516,12 @@ export default function RechargePlanCreate() {
                     ? 'bg-blue-600 text-white shadow-sm' 
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`} 
-                onClick={() => { setActiveTab(t.value); if ((data[t.value] || []).length === 0) loadTab(t.value); }}
+                onClick={() => { 
+                  setActiveTab(t.value); 
+                  setFilterCategory('All');
+                  setFilterSubCategory('All');
+                  if ((data[t.value] || []).length === 0) loadTab(t.value); 
+                }}
               >
                 {t.label}
               </button>
@@ -649,7 +701,12 @@ export default function RechargePlanCreate() {
                         ? 'bg-blue-600 text-white shadow-sm' 
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`} 
-                    onClick={() => { setActiveTab(t.value); if ((data[t.value] || []).length === 0) loadTab(t.value); }}
+                    onClick={() => { 
+                      setActiveTab(t.value); 
+                      setFilterCategory('All');
+                      setFilterSubCategory('All');
+                      if ((data[t.value] || []).length === 0) loadTab(t.value); 
+                    }}
                   >
                     {t.label}
                   </button>
@@ -666,13 +723,42 @@ export default function RechargePlanCreate() {
                   <select 
                     className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
                     value={filterCategory} 
-                    onChange={(e) => setFilterCategory(e.target.value)}
+                    onChange={(e) => {
+                      setFilterCategory(e.target.value);
+                      setFilterSubCategory('All'); // Reset subcategory when main category changes
+                    }}
                   >
-                    <option>All Categories</option>
+                    <option value="All">All Categories</option>
                     {(() => {
                       const currentKey = activeTab === 'test' ? (testSubTab === 'objective' ? 'testObjective' : 'testSubjective') : activeTab;
                       return Array.from(new Set((data[currentKey] || []).map((i) => i.category))).map((c) => (
                         <option key={c} value={c}>{c}</option>
+                      ));
+                    })()}
+                  </select>
+                  <select 
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                    value={filterSubCategory} 
+                    onChange={(e) => setFilterSubCategory(e.target.value)}
+                    disabled={filterCategory === 'All'}
+                  >
+                    <option value="All">All Subcategories</option>
+                    {(() => {
+                      const currentKey = activeTab === 'test' ? (testSubTab === 'objective' ? 'testObjective' : 'testSubjective') : activeTab;
+                      const filteredItems = filterCategory === 'All' 
+                        ? (data[currentKey] || [])
+                        : (data[currentKey] || []).filter((i) => String(i.category).toLowerCase() === filterCategory.toLowerCase());
+                      
+                      const subcategories = new Set();
+                      filteredItems.forEach((i) => {
+                        const subCategory = i.subCategory === 'Other' && i.customSubCategory 
+                          ? i.customSubCategory 
+                          : i.subCategory;
+                        if (subCategory) subcategories.add(subCategory);
+                      });
+                      
+                      return Array.from(subcategories).map((sc) => (
+                        <option key={sc} value={sc}>{sc}</option>
                       ));
                     })()}
                   </select>
