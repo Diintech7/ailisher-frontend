@@ -5,7 +5,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 
 // const API_BASE_URL = 'https://test.ailisher.com';
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'https://test.ailisher.com';
 
 
 const initialForm = {
