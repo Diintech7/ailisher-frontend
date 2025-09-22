@@ -363,24 +363,24 @@ export default function RechargePlanCreate() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Duration (days) *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Duration (days) </label>
                     <input 
                       type="number" 
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
                       value={plan.duration} 
                       onChange={(e) => setPlan({ ...plan, duration: e.target.value === '' ? '' : Number(e.target.value) })} 
-                      min="1"
-                      required 
+                      // min="1"
+                      // required 
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Credits *</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Credits </label>
                     <input 
                       type="number" 
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
                       value={plan.credits} 
                       onChange={(e) => setPlan({ ...plan, credits: e.target.value === '' ? '' : Number(e.target.value) })} 
-                      min="0"
+                      // min="0"
                       // required 
                     />
                   </div>
