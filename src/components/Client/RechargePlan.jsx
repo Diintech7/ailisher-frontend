@@ -22,6 +22,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
+import { MoreVertical } from 'lucide-react';
 
 export default function RechargePlan() {
   const [plans, setPlans] = useState([]);
@@ -48,6 +49,7 @@ export default function RechargePlan() {
   
   // State to track which plans have expanded items
   const [expandedPlans, setExpandedPlans] = useState(new Set());
+  const [openMenuPlanId, setOpenMenuPlanId] = useState(null);
 
   const navigate = useNavigate();
   const token = Cookies.get('usertoken');
@@ -109,6 +111,46 @@ export default function RechargePlan() {
     } finally {
       setDetailLoading(false);
     }
+  }
+
+  async function handleToggleStatus(plan) {
+    setError('');
+    const newStatus = plan.status === 'active' ? 'inactive' : 'active';
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/credit/plan/${plan._id}/toggle-status`, {
+        method: 'PATCH',
+        headers: authHeaders,
+        body: JSON.stringify({ status: newStatus })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'Failed to update status');
+      setPlans((prev) => prev.map((p) => (p._id === plan._id ? { ...p, status: newStatus, updatedAt: new Date().toISOString() } : p)));
+      if (detailPlan && detailPlan._id === plan._id) setDetailPlan((prev) => ({ ...prev, status: newStatus, updatedAt: new Date().toISOString() }));
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  async function handleToggleEnabled(plan) {
+    setError('');
+    const newEnabled = !plan.isEnabled;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/credit/plan/${plan._id}/toggle-enabled`, {
+        method: 'PATCH',
+        headers: authHeaders,
+        body: JSON.stringify({ isEnabled: newEnabled })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'Failed to update isEnabled');
+      setPlans((prev) => prev.map((p) => (p._id === plan._id ? { ...p, isEnabled: newEnabled, updatedAt: new Date().toISOString() } : p)));
+      if (detailPlan && detailPlan._id === plan._id) setDetailPlan((prev) => ({ ...prev, isEnabled: newEnabled, updatedAt: new Date().toISOString() }));
+    } catch (e) {
+      setError(e.message);
+    }
+  }
+
+  function toggleActionMenu(planId) {
+    setOpenMenuPlanId((prev) => (prev === planId ? null : planId));
   }
 
   async function openPlanOrders(plan) {
@@ -397,7 +439,7 @@ export default function RechargePlan() {
           ) : (
             <div className="space-y-8">
             {plans.map((plan) => (
-                <div key={plan._id} className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-200 hover:shadow-xl transition-all duration-300">
+                <div key={plan._id} className="bg-white rounded-2xl shadow-lg overflow-visible border border-gray-200 hover:shadow-xl transition-all duration-300">
                   {/* Plan Header */}
                   <div className="relative">
                     <div className={`h-2 ${getCategoryColor(plan.category)}`}></div>
@@ -415,6 +457,13 @@ export default function RechargePlan() {
                                 : 'bg-gray-100 text-gray-700'
                             }`}>
                               {plan.status}
+                            </span>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              plan.isEnabled 
+                                ? 'bg-emerald-100 text-emerald-700' 
+                                : 'bg-red-100 text-red-700'
+                            }`}>
+                              {plan.isEnabled ? 'enabled' : 'disabled'}
                             </span>
                     </div>
                           <p className="text-gray-600 text-lg leading-relaxed">{plan.description}</p>
@@ -569,13 +618,46 @@ export default function RechargePlan() {
                         <Edit className="w-4 h-4" />
                         Edit
                       </button>
-                      <button 
+                      <div className="relative z-20">
+                        <button
+                          onClick={() => toggleActionMenu(plan._id)}
+                          className="px-2 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center"
+                          aria-haspopup="menu"
+                          aria-expanded={openMenuPlanId === plan._id}
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+                        {openMenuPlanId === plan._id && (
+                          <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                            <button
+                              onClick={() => { handleToggleEnabled(plan); setOpenMenuPlanId(null); }}
+                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50"
+                            >
+                              {plan.isEnabled ? 'Disable' : 'Enable'}
+                            </button>
+                            <button
+                              onClick={() => { handleToggleStatus(plan); setOpenMenuPlanId(null); }}
+                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50"
+                            >
+                              {plan.status === 'active' ? 'Deactivate' : 'Activate'}
+                            </button>
+                            <div className="h-px bg-gray-200" />
+                            <button
+                              onClick={() => { handleDeletePlan(plan._id); setOpenMenuPlanId(null); }}
+                              className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      {/* <button 
                         onClick={() => handleDeletePlan(plan._id)}
                         className="px-4 py-2 text-sm font-medium text-red-700 bg-white border border-red-300 rounded-lg hover:bg-red-50 transition-colors flex items-center gap-2"
                       >
                         <Trash2 className="w-4 h-4" />
                         Delete
-                      </button>
+                      </button> */}
                   </div>
                 </div>
               </div>
