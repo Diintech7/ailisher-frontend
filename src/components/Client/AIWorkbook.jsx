@@ -342,7 +342,14 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
     paper: '',
     subject: '',
     tags: '',
-    summary: ''
+    summary: '',
+    isForSale: false,
+    MRP: '',
+    offerPrice: '',
+    currency: 'INR',
+    validityDays: '',
+    details: '',
+    GST: ''
   });
   const [coverImage, setCoverImage] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
@@ -374,6 +381,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
     rating: "",
     ratingCount: "",
     summary: "",
+    pricing: ""
   });
 
   if (!isOpen) return null;
@@ -512,7 +520,11 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
     if (
       name === "rating" ||
       name === "ratingCount" ||
-      name === "categoryOrder"
+      name === "categoryOrder" ||
+      name === "MRP" ||
+      name === "offerPrice" ||
+      name === "validityDays" ||
+      name === "GST"
     ) {
       const numValue = value === "" ? "" : Number(value);
       setFormData((prev) => ({
@@ -585,6 +597,39 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
           return;
         }
       }
+
+      // Validate pricing if paid
+      if (formData.isForSale) {
+        const mrpNum = Number(formData.MRP);
+        const offerNum = Number(formData.offerPrice);
+        const validityNum = formData.validityDays === '' ? 0 : Number(formData.validityDays);
+        const gstNum = Number(formData.GST);
+        if (!Number.isFinite(mrpNum) || mrpNum < 0) {
+          toast.error('MRP must be a non-negative number');
+          setIsSubmitting(false);
+          return;
+        }
+        if (!Number.isFinite(offerNum) || offerNum < 0) {
+          toast.error('Offer price must be a non-negative number');
+          setIsSubmitting(false);
+          return;
+        }
+        if (offerNum > mrpNum) {
+          toast.error('Offer price cannot exceed MRP');
+          setIsSubmitting(false);
+          return;
+        }
+        if (!Number.isFinite(validityNum) || validityNum < 0) {
+          toast.error('Validity days must be a non-negative number (0 for lifetime)');
+          setIsSubmitting(false);
+          return;
+        }
+        if (!Number.isFinite(gstNum) || gstNum < 0) {
+          toast.error('GST must be a non-negative number');
+          setIsSubmitting(false);
+          return;
+        }
+      }
       let coverImageKey = null;
       if (coverImage) {
         // Get presigned URL
@@ -638,6 +683,18 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
         if (tagsArray.length > 0) workbookData.tags = tagsArray;
       }
       if (coverImageKey) workbookData.coverImageKey = coverImageKey;
+      // Attach pricing fields
+      if (formData.isForSale) {
+        workbookData.isForSale = true;
+        workbookData.MRP = Number(formData.MRP) || 0;
+        workbookData.offerPrice = Number(formData.offerPrice) || 0;
+        workbookData.currency = formData.currency || 'INR';
+        workbookData.validityDays = formData.validityDays === '' ? 0 : Number(formData.validityDays);
+        workbookData.details = formData.details || '';
+        workbookData.GST = Number(formData.GST) || 0;
+      } else {
+        workbookData.isForSale = false;
+      }
       // Send to backend
       const response = await fetch('https://test.ailisher.com/api/workbooks', {
         method: 'POST',
@@ -653,7 +710,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
         onAdd(data.workbook);
         onClose();
         setFormData({
-          title: '', description: '', author: '', publisher: '', language: 'English', mainCategory: 'Other', subCategory: 'Other', customSubCategory: '', exam: '', paper: '', subject: '', tags: '', summary: ''
+          title: '', description: '', author: '', publisher: '', language: 'English', mainCategory: 'Other', subCategory: 'Other', customSubCategory: '', exam: '', paper: '', subject: '', tags: '', summary: '', isPaid: false, MRP: '', offerPrice: '', currency: 'INR', validityDays: '', GST: '', details: ''
         });
         setCoverImage(null);
         setImagePreview('');
@@ -846,6 +903,97 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
               <label className="block text-gray-700 text-sm font-medium mb-2">Summary</label>
               <textarea name="summary" value={formData.summary} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 h-24" maxLength={500} placeholder="Enter a brief summary of the workbook..." />
             </div>
+            {/* Paid workbook section */}
+            <div className="mb-6 border border-gray-200 rounded-lg p-4">
+              <label className="flex items-center gap-2 mb-3">
+                <input type="checkbox" name="isForSale" checked={formData.isForSale} onChange={handleInputChange} className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded" />
+                <span className="text-sm text-gray-700 font-medium">Make this workbook paid</span>
+              </label>
+              {formData.isForSale && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">
+                      MRP (₹) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      name="MRP"
+                      value={formData.MRP}
+                      onChange={handleInputChange}
+                      min="0"
+                      step="0.01"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">
+                      Offer Price (₹) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      name="offerPrice"
+                      value={formData.offerPrice}
+                      onChange={handleInputChange}
+                      min="0"
+                      step="0.01"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Validity Days</label>
+                    <input
+                      type="number"
+                      name="validityDays"
+                      value={formData.validityDays}
+                      onChange={handleInputChange}
+                      min="0"
+                      step="1"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="0"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">0 for lifetime access</p>
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">GST (%)</label>
+                    <input
+                      type="number"
+                      name="GST"
+                      value={formData.GST}
+                      onChange={handleInputChange}
+                      min="0"
+                      step="0.01"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Details</label>
+                    <textarea
+                      name="details"
+                      value={formData.details}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 h-24"
+                      maxLength={500}
+                      placeholder="Enter a detailed description of the workbook..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Currency</label>
+                    <select
+                      name="currency"
+                      value={formData.currency}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    >
+                      <option value="INR">INR</option>
+                      <option value="USD">USD</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="mb-6">
               <label className="block text-gray-700 text-sm font-medium mb-2">Cover Image (Optional)</label>
               <ImageUploadPreview imagePreview={imagePreview} onRemove={handleRemoveImage} />
@@ -892,7 +1040,14 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
     ratingCount: book.ratingCount || 0,
     conversations: book.conversations || [],
     users: book.users || [],
-    summary: book.summary || ''
+    summary: book.summary || '',
+    isForSale: book.isForSale || false,
+    MRP: book.MRP ?? '',
+    offerPrice: book.offerPrice ?? '',
+    currency: book.currency || 'INR',
+    validityDays: book.validityDays ?? '',
+    details: book.details || '',
+    GST: book.GST ?? ''
   });
   const [coverImage, setCoverImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(book.coverImageUrl || book.coverImage || '');
@@ -934,7 +1089,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     
-    if (name === 'rating' || name === 'ratingCount' || name === 'categoryOrder') {
+    if (name === 'rating' || name === 'ratingCount' || name === 'categoryOrder' || name === 'MRP' || name === 'offerPrice' || name === 'validityDays' || name === 'GST') {
       const numValue = value === '' ? '' : Number(value);
       setFormData(prev => ({
         ...prev,
@@ -1102,6 +1257,47 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
         if (tagsArray.length > 0) {
           bookData.tags = tagsArray;
         }
+      }
+      // Attach pricing fields
+      if (formData.isForSale) {
+        const mrpNum = Number(formData.MRP);
+        const offerNum = Number(formData.offerPrice);
+        const validityNum = formData.validityDays === '' ? 0 : Number(formData.validityDays);
+        const gstNum = Number(formData.GST);
+        if (!Number.isFinite(mrpNum) || mrpNum < 0) {
+          toast.error('MRP must be a non-negative number');
+          setIsSubmitting(false);
+          return;
+        }
+        if (!Number.isFinite(offerNum) || offerNum < 0) {
+          toast.error('Offer price must be a non-negative number');
+          setIsSubmitting(false);
+          return;
+        }
+        if (offerNum > mrpNum) {
+          toast.error('Offer price cannot exceed MRP');
+          setIsSubmitting(false);
+          return;
+        }
+        if (!Number.isFinite(validityNum) || validityNum < 0) {
+          toast.error('Validity days must be a non-negative number (0 for lifetime)');
+          setIsSubmitting(false);
+          return;
+        }
+        if (!Number.isFinite(gstNum) || gstNum < 0) {
+          toast.error('GST must be a non-negative number');
+          setIsSubmitting(false);
+          return;
+        }
+        bookData.isForSale = true;
+        bookData.MRP = mrpNum;
+        bookData.offerPrice = offerNum;
+        bookData.currency = formData.currency || 'INR';
+        bookData.validityDays = validityNum;
+        bookData.details = formData.details || '';
+        bookData.GST = gstNum;
+      } else {
+        bookData.isForSale = false;
       }
       
       const response = await fetch(`https://test.ailisher.com/api/workbooks/${book._id}`, {
@@ -1380,6 +1576,80 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
               )}
             </div>
 
+            {/* Paid workbook section */}
+            <div className="mb-6 border border-gray-200 rounded-lg p-4">
+              <label className="flex items-center gap-2 mb-3">
+                <input
+                  type="checkbox"
+                  name="isForSale"
+                  checked={formData.isForSale}
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                />
+                <span className="text-sm text-gray-700 font-medium">Make this workbook paid</span>
+              </label>
+              {formData.isForSale && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">MRP (₹) <span className="text-red-500">*</span></label>
+                    <input
+                      type="number"
+                      name="MRP"
+                      value={formData.MRP}
+                      onChange={handleInputChange}
+                      min="0"
+                      step="0.01"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Offer Price (₹) <span className="text-red-500">*</span></label>
+                    <input
+                      type="number"
+                      name="offerPrice"
+                      value={formData.offerPrice}
+                      onChange={handleInputChange}
+                      min="0"
+                      step="0.01"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Currency</label>
+                    <select name="currency" value={formData.currency} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500">
+                      <option value="INR">INR</option>
+                      <option value="USD">USD</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Validity Days</label>
+                    <input
+                      type="number"
+                      name="validityDays"
+                      value={formData.validityDays}
+                      onChange={handleInputChange}
+                      min="0"
+                      step="1"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="0"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">0 for lifetime access</p>
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">GST (%)</label>
+                    <input type="number" name="GST" value={formData.GST} onChange={handleInputChange} min="0" step="0.01" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500" placeholder="0" />
+                  </div>
+                  <div className="hidden md:block" />
+                  <div className="md:col-span-3">
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Details</label>
+                    <textarea name="details" value={formData.details} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 h-24" maxLength={500} placeholder="Enter a detailed description of the workbook..." />
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="mb-4">
               <label className="block text-gray-700 text-sm font-medium mb-2">Total Conversations</label>
               <input
@@ -1467,7 +1737,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
                 {isSubmitting ? (
                   <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
                 ) : (
-                  'Update Book'
+          'Update Book'
                 )}
               </button>
             </div>

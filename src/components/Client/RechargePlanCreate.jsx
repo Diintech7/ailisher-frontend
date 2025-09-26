@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Cookies from 'js-cookie';
 import { useNavigate, useParams } from 'react-router-dom';
 import { API_BASE_URL } from '../../config';
+import { Trash } from 'lucide-react';
 
 const CATEGORY_OPTIONS = ['Basic', 'Premium', 'Enterprise'];
 const TYPE_TABS = [
@@ -126,6 +127,12 @@ export default function RechargePlanCreate() {
       subCategory: x.subCategory || 'Other',
       customSubCategory: x.customSubCategory || null
     };
+  }
+  
+  function getPlanItemImageUrl(item) {
+    // Try multiple possible fields coming from API
+    if (item?.referencedItemImageUrl) return item.referencedItemImageUrl;
+    return '';
   }
 
   // Function to get existing item IDs from plan items
@@ -354,14 +361,14 @@ export default function RechargePlanCreate() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Description *</label>
                   <textarea 
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none" 
-                    rows="3"
+                    rows="6"
                     value={plan.description} 
                     onChange={(e) => setPlan({ ...plan, description: e.target.value })} 
                     placeholder="Describe your plan"
                     required 
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                {/* <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Duration (days) </label>
                     <input 
@@ -384,7 +391,7 @@ export default function RechargePlanCreate() {
                       // required 
                     />
                   </div>
-                </div>
+                </div> */}
               </div>
             </div>
           </div>
@@ -435,8 +442,32 @@ export default function RechargePlanCreate() {
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Duration (days) </label>
+                    <input 
+                      type="number" 
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                      value={plan.duration} 
+                      onChange={(e) => setPlan({ ...plan, duration: e.target.value === '' ? '' : Number(e.target.value) })} 
+                      // min="1"
+                      // required 
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Credits </label>
+                    <input 
+                      type="number" 
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+                      value={plan.credits} 
+                      onChange={(e) => setPlan({ ...plan, credits: e.target.value === '' ? '' : Number(e.target.value) })} 
+                      // min="0"
+                      // required 
+                    />
+                  </div>
+                </div>
             {/* Media Information */}
-            <div>
+            {/* <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Media Assets</h3>
               <div className="space-y-4">
                 <div>
@@ -448,17 +479,9 @@ export default function RechargePlanCreate() {
                     placeholder="Enter image key (optional)"
                   />
                 </div>
-                {/* <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Video Key</label>
-                  <input 
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
-                    value={plan.videoKey} 
-                    onChange={(e) => setPlan({ ...plan, videoKey: e.target.value })} 
-                    placeholder="Enter video key (optional)"
-                  />
-                </div> */}
+                
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </form>
@@ -661,19 +684,26 @@ export default function RechargePlanCreate() {
               <div className="text-gray-400 text-sm">Click "Add Items" to include content in this plan</div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {planItems.map((it) => (
                 <div key={it._id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                   <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900 mb-1">{it.name}</div>
-                      <div className="text-xs text-gray-500 capitalize">{it.itemType.replace('-', ' ')}</div>
+                    <div className="flex-1 flex items-start gap-3">
+                      {getPlanItemImageUrl(it) ? (
+                        <img src={getPlanItemImageUrl(it)} alt={it.name} className="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+                      ) : (
+                        <div className="w-12 h-12 rounded-lg bg-gray-100 text-gray-400 flex items-center justify-center flex-shrink-0">📦</div>
+                      )}
+                      <div>
+                        <div className="text-sm font-medium text-gray-900 mb-1">{it.name}</div>
+                        <div className="text-xs text-gray-500 capitalize">{it.itemType.replace('-', ' ')}</div>
+                      </div>
                     </div>
                     <button 
                       className="text-red-600 text-sm hover:text-red-700 hover:underline transition-colors" 
                       onClick={() => deleteItem(it._id)}
                     >
-                      Remove
+                      <Trash className="w-4 h-4" />
                     </button>
                   </div>
                 </div>

@@ -65,6 +65,8 @@ const AITests = () => {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
+      console.log(objectiveResponse.data.tests);
+      console.log(subjectiveResponse.data.tests);
 
       setObjectiveTests(objectiveResponse.data.tests || []);
       setSubjectiveTests(subjectiveResponse.data.tests || []);
@@ -97,6 +99,7 @@ const AITests = () => {
 
   const handleUpdateTest = async (testData) => {
     try {
+      console.log(testData)
       const endpoint = activeTab === 'objective' 
         ? `https://test.ailisher.com/api/objectivetests/${editingTest._id}`
         : `https://test.ailisher.com/api/subjectivetests/${editingTest._id}`;
@@ -206,6 +209,15 @@ const AITests = () => {
         onClick={() => showTestModal(test, type)}
           className={`p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full border border-gray-100 relative ${test.isEnabled === true ? 'bg-white' : 'bg-gray-400 opacity-50'}`}
       >
+        <div className='absolute top-1 left-3 items-center'>
+        <span
+            className={`px-2 py-1 rounded text-xs font-medium 
+              ${test.isActive ? (test.isEnabled ? 'bg-green-100 text-green-800' : 'bg-gray-600 text-white' ): 'bg-red-100 text-red-800'}
+            `}
+          >
+            {test.isActive ? 'Active' : 'Inactive'}
+          </span>
+        </div>
         {/* Status indicators and menu (top-right) */}
         <div
           className="absolute top-2 right-2 flex items-center gap-1 z-10"
@@ -295,40 +307,44 @@ const AITests = () => {
         <h3 className="text-xl font-semibold mb-2 text-gray-800 line-clamp-2">{test.name}</h3>
         <p className="text-gray-600 text-sm mb-3 line-clamp-3">{test.description}</p>
 
-        {/* Test Info */}
-        <div className="flex items-center justify-between text-sm text-gray-500 mb-3">
-          <div className="flex items-center">
-            <Clock size={14} className="mr-1" />
-            <span>{test.Estimated_time || 'N/A'}</span>
-          </div>
-          <div className="flex items-center">
-            <BookOpen size={14} className="mr-1" />
-            <span>{test.category || 'Uncategorized'}</span>
-          </div>
-        </div>
+        {/* Schedule Status */}
+        <div className="mt-auto">
+          {(() => {
+            const now = new Date();
+            const start = test.startsAt ? new Date(test.startsAt) : null;
+            const end = test.endsAt ? new Date(test.endsAt) : null;
+            const fmt = (d) => d ? new Date(d).toLocaleString() : null;
 
-        {/* Subcategory */}
-        {test.subcategory && (
-          <div className="mb-3">
-            <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs">
-              {test.subcategory}
-            </span>
-          </div>
-        )}
+            let badgeText = 'Always available';
+            let badgeClass = 'bg-gray-100 text-gray-700';
+            let infoText = '';
 
-        {/* Status */}
-        <div className="flex items-center justify-between mt-auto">
-          <span
-            className={`px-2 py-1 rounded text-xs font-medium 
-              ${test.isActive ? (test.isEnabled ? 'bg-green-100 text-green-800' : 'bg-gray-600 text-white' ): 'bg-red-100 text-red-800'}
-            `}
-          >
-            {test.isActive ? 'Active' : 'Inactive'}
-          </span>
+            if (start && !isNaN(start) && start > now) {
+              badgeText = 'Upcoming';
+              badgeClass = 'bg-yellow-100 text-yellow-800';
+              infoText = `Starts: ${fmt(start)}`;
+            } else if (end && !isNaN(end) && end <= now) {
+              badgeText = 'Ended';
+              badgeClass = 'bg-red-100 text-red-800';
+              infoText = `Ended: ${fmt(end)}`;
+            } else if ((start ? start <= now : true) && (end ? end > now : true)) {
+              // In window
+              if (start || end) {
+                badgeText = 'Live';
+                badgeClass = 'bg-green-100 text-green-800';
+                infoText = end ? `Ends: ${fmt(end)}` : '';
+              }
+            }
 
-          <span className="text-xs text-gray-500">
-            {type === 'objective' ? 'Objective' : 'Subjective'}
-          </span>
+            return (
+              <div className="flex items-center justify-between text-xs mt-2">
+                <span className={`px-2 py-1 rounded ${badgeClass}`}>{badgeText}</span>
+                {infoText ? (
+                  <span className="text-gray-600 truncate max-w-[60%] text-right">{infoText}</span>
+                ) : null}
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>
@@ -617,7 +633,9 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
     instructions: '',
     isTrending: false,
     isHighlighted: false,
-    isActive: true
+    isActive: true,
+    startsAt: '',
+    endsAt: ''
   });
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
@@ -632,6 +650,20 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
 
   const token = Cookies.get('usertoken');
 
+  // Helper to map ISO string to input["datetime-local"] value
+  const toLocalInput = (value) => {
+    if (!value) return '';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return '';
+    const pad = (n) => String(n).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    const mm = pad(d.getMonth() + 1);
+    const dd = pad(d.getDate());
+    const hh = pad(d.getHours());
+    const mi = pad(d.getMinutes());
+    return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+  };
+
   useEffect(() => {
     if (test) {
       setFormData({
@@ -643,7 +675,9 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
         instructions: test.instructions || '',
         isTrending: test.isTrending || false,
         isHighlighted: test.isHighlighted || false,
-        isActive: test.isActive !== undefined ? test.isActive : true
+        isActive: test.isActive !== undefined ? test.isActive : true,
+        startsAt: toLocalInput(test.startsAt),
+        endsAt: toLocalInput(test.endsAt)
       });
       setImageKey(test.imageKey || '');
       setImagePreview(test.imageUrl || '');
@@ -657,7 +691,9 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
         instructions: '',
         isTrending: false,
         isHighlighted: false,
-        isActive: true
+        isActive: true,
+        startsAt: '',
+        endsAt: ''
       });
       setImageKey('');
       setImagePreview('');
@@ -866,6 +902,20 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
       return;
     }
 
+    // Validate schedule if both provided
+    if (formData.startsAt && formData.endsAt) {
+      const start = new Date(formData.startsAt);
+      const end = new Date(formData.endsAt);
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        toast.error('Invalid start/end date');
+        return;
+      }
+      if (end <= start) {
+        toast.error('End time must be after start time');
+        return;
+      }
+    }
+
     try {
       let finalImageKey = imageKey;
       
@@ -876,7 +926,9 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
 
       const submitData = {
         ...formData,
-        imageKey: finalImageKey
+        imageKey: finalImageKey,
+        startsAt: formData.startsAt ? new Date(formData.startsAt).toISOString() : null,
+        endsAt: formData.endsAt ? new Date(formData.endsAt).toISOString() : null
       };
 
       onSubmit(submitData);
@@ -1093,6 +1145,28 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Scheduling */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Starts At</label>
+                <input
+                  type="datetime-local"
+                  value={formData.startsAt}
+                  onChange={(e) => setFormData({ ...formData, startsAt: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Ends At</label>
+                <input
+                  type="datetime-local"
+                  value={formData.endsAt}
+                  onChange={(e) => setFormData({ ...formData, endsAt: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
             </div>
 
             <div className="space-y-3">

@@ -14,10 +14,25 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [setToDelete, setSetToDelete] = useState(null);
+  const [startsAt, setStartsAt] = useState('');
+  const [endsAt, setEndsAt] = useState('');
 
   useEffect(() => {
     fetchSets();
   }, [topicId]);
+
+  const toLocalInput = (value) => {
+    if (!value) return '';
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return '';
+    const pad = (n) => String(n).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    const mm = pad(d.getMonth() + 1);
+    const dd = pad(d.getDate());
+    const hh = pad(d.getHours());
+    const mi = pad(d.getMinutes());
+    return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+  };
 
   const fetchSets = async () => {
     setLoading(true);
@@ -54,6 +69,19 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
       toast.error('Please enter a set name');
       return;
     }
+    // Validate schedule
+    if (startsAt && endsAt) {
+      const s = new Date(startsAt);
+      const e = new Date(endsAt);
+      if (isNaN(s.getTime()) || isNaN(e.getTime())) {
+        toast.error('Invalid date/time');
+        return;
+      }
+      if (e <= s) {
+        toast.error('End time must be after start time');
+        return;
+      }
+    }
 
     try {
       const token = Cookies.get('usertoken');
@@ -68,7 +96,11 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ name: newSetName.trim() })
+        body: JSON.stringify({ 
+          name: newSetName.trim(),
+          startsAt: startsAt ? new Date(startsAt).toISOString() : null,
+          endsAt: endsAt ? new Date(endsAt).toISOString() : null
+        })
       });
 
       const data = await response.json();
@@ -76,6 +108,8 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
       if (data.success) {
         setSets(prevSets => [...prevSets, data.set]);
         setNewSetName('');
+        setStartsAt('');
+        setEndsAt('');
         setShowAddSetModal(false);
         toast.success('Set created successfully');
       } else {
@@ -127,6 +161,8 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
     if (setToEdit) {
       setEditingSet(setToEdit);
       setNewSetName(setToEdit.name);
+      setStartsAt(toLocalInput(setToEdit.startsAt));
+      setEndsAt(toLocalInput(setToEdit.endsAt));
       setShowAddSetModal(true);
     }
   };
@@ -135,6 +171,19 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
     if (!newSetName.trim()) {
       toast.error('Please enter a set name');
       return;
+    }
+    // Validate schedule
+    if (startsAt && endsAt) {
+      const s = new Date(startsAt);
+      const e = new Date(endsAt);
+      if (isNaN(s.getTime()) || isNaN(e.getTime())) {
+        toast.error('Invalid date/time');
+        return;
+      }
+      if (e <= s) {
+        toast.error('End time must be after start time');
+        return;
+      }
     }
 
     try {
@@ -150,7 +199,11 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ name: newSetName.trim() })
+        body: JSON.stringify({ 
+          name: newSetName.trim(),
+          startsAt: startsAt ? new Date(startsAt).toISOString() : null,
+          endsAt: endsAt ? new Date(endsAt).toISOString() : null
+        })
       });
 
       const data = await response.json();
@@ -160,6 +213,8 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
           set.id === editingSet.id ? data.set : set
         ));
         setNewSetName('');
+        setStartsAt('');
+        setEndsAt('');
         setShowAddSetModal(false);
         setEditingSet(null);
         toast.success('Set updated successfully');
@@ -198,6 +253,8 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
             onClick={() => {
               setEditingSet(null);
               setNewSetName('');
+              setStartsAt('');
+              setEndsAt('');
               setShowAddSetModal(true);
             }}
             className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
@@ -267,12 +324,34 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
               placeholder="Enter set name"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
             />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Starts At</label>
+                <input
+                  type="datetime-local"
+                  value={startsAt}
+                  onChange={(e) => setStartsAt(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Ends At</label>
+                <input
+                  type="datetime-local"
+                  value={endsAt}
+                  onChange={(e) => setEndsAt(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
             <div className="flex justify-end space-x-3">
               <button
                 onClick={() => {
                   setShowAddSetModal(false);
                   setEditingSet(null);
                   setNewSetName('');
+                  setStartsAt('');
+                  setEndsAt('');
                 }}
                 className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors"
               >
