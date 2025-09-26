@@ -3,6 +3,8 @@ import { Plus, Trash2, Edit2, ChevronRight } from 'lucide-react';
 import { toast } from 'react-toastify';
 import Cookies from 'js-cookie';
 import BulkUploadAISWBModal from './BulkUploadAISWBModal';
+import axios from 'axios';
+import { API_BASE_URL } from '../../config';
 
 const AISWBSets = ({ topicId, onSetSelect }) => {
   const [sets, setSets] = useState([]);
@@ -52,6 +54,7 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
       const data = await response.json();
       
       if (data.success) {
+        console.log(data.sets);
         setSets(data.sets || []);
       } else {
         setError(data.message || 'Failed to fetch sets');
@@ -227,6 +230,30 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
     }
   };
 
+  const toggleEnable = async (id, nextEnabled) => {
+    const token = Cookies.get('usertoken');
+    // Optimistic update
+    const prev = sets;
+    setSets(prevSets => prevSets.map(s => s.id === id ? { ...s, isEnabled: nextEnabled } : s));
+    try {
+      const res = await axios.patch(
+        `${API_BASE_URL}/api/aiswb/topic/${topicId}/sets/${id}`,
+        { isEnabled: nextEnabled },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const updated = res.data?.set || null;
+      if (updated) {
+        setSets(prevSets => prevSets.map(s => s.id === id ? updated : s));
+      }
+      toast.success(`Set ${nextEnabled ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      console.error('Failed to toggle enable:', error);
+      // rollback
+      setSets(prev);
+      toast.error('Failed to update set status');
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -291,8 +318,54 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
                   <ChevronRight size={20} className="mr-2" />
                   <span className="font-medium">{set.name}</span>
                 </button>
+                {(set.startsAt || set.endsAt) && (
+                  <div className="ml-8 mt-1 text-xs text-gray-600">
+                    {(() => {
+                      const now = new Date();
+                      const start = set.startsAt ? new Date(set.startsAt) : null;
+                      const end = set.endsAt ? new Date(set.endsAt) : null;
+                      const fmt = (d) => d ? new Date(d).toLocaleString() : null;
+                      let badgeText = 'Always available';
+                      let badgeClass = 'bg-gray-100 text-gray-700';
+                      let details = '';
+
+                      if (start && start > now) {
+                        badgeText = 'Upcoming';
+                        badgeClass = 'bg-yellow-100 text-yellow-800';
+                        details = `Starts: ${fmt(start)}`;
+                      } else if (end && end <= now) {
+                        badgeText = 'Ended';
+                        badgeClass = 'bg-red-100 text-red-800';
+                        details = `Ended: ${fmt(end)}`;
+                      } else if ((start ? start <= now : true) && (end ? end > now : true)) {
+                        badgeText = 'Live';
+                        badgeClass = 'bg-green-100 text-green-800';
+                        details = `${start ? `From: ${fmt(start)}` : ''}${start && end ? ' · ' : ''}${end ? `Until: ${fmt(end)}` : ''}`;
+                      }
+
+                      return (
+                        <div className="flex items-center gap-2">
+                          <span className={`px-2 py-0.5 rounded ${badgeClass}`}>{badgeText}</span>
+                          {details ? <span className="text-gray-600">{details}</span> : null}
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
               </div>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-3">
+                <label className="flex items-center cursor-pointer select-none">
+                  <span className={`mr-2 text-xs px-2 py-0.5 rounded ${set.isEnabled ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-700'}`}>
+                    {set.isEnabled ? 'Enabled' : 'Disabled'}
+                  </span>
+                  <input
+                    type="checkbox"
+                    checked={!!set.isEnabled}
+                    onChange={(e) => toggleEnable(set.id, e.target.checked)}
+                    className="h-4 w-4 accent-blue-600"
+                    onClick={(ev) => ev.stopPropagation()}
+                  />
+                </label>
                 <button
                   onClick={() => handleEditSet(set.id)}
                   className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
