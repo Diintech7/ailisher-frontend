@@ -22,49 +22,51 @@ const EvaluatorApp = () => {
     const initializeAuth = async () => {
       const evaluatorToken = Cookies.get('evaluatortoken');
       const evaluatorUser = Cookies.get('evaluatorUser');
-      
-      if (evaluatorToken && evaluatorUser) {
-        try {
-          const userData = JSON.parse(evaluatorUser);
-          if (userData.role === 'evaluator') {
-            // Fetch latest evaluator data from backend
-            try {
-              console.log("user",userData)
-              const res = await fetch(`https://test.ailisher.com/api/evaluators/${userData.id}`, {
-                headers: {
-                  'Authorization': `Bearer ${evaluatorToken}`,
-                  'Content-Type': 'application/json'
-                }
-              });
-              if (!res.ok) throw new Error('Failed to fetch evaluator data');
-              const evaluator = await res.json();
-              console.log(evaluator)
-              if (!evaluator.evaluator.enabled || evaluator.evaluator.status === "NOT_VERIFIED") {
-                clearAuth();
-                setDisabledMessage('You are disabled by admin. Please contact support.');
-                return;
-              }
-              setIsAuthenticated(true);
-              setIsLoading(false);
-              return;
-            } catch (err) {
-              clearAuth();
-              // setDisabledMessage('Unable to verify your account status. Please login again.');
-              return;
-            }
-          }
-        } catch (error) {
-          console.error('Error parsing admin user data:', error);
+  
+      if (!evaluatorToken || !evaluatorUser) {
+        setIsAuthenticated(false);
+        setIsLoading(false);
+        return;
+      }
+  
+      try {
+        const userData = JSON.parse(evaluatorUser);
+        if (userData.role !== 'evaluator') {
           clearAuth();
           return;
         }
+  
+        setIsAuthenticated(true)
+        // Then validate latest data silently
+        const res = await fetch(`http://localhost:5000/api/evaluators/get`, {
+          headers: {
+            'Authorization': `Bearer ${evaluatorToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+  
+        if (res.ok) {
+          console.log("res",res)
+          const evaluator = await res.json();
+          if (!evaluator.evaluator.enabled || evaluator.evaluator.status === "NOT_VERIFIED") {
+            clearAuth();
+            setDisabledMessage('You are disabled by admin. Please contact support.');
+          }
+        } else {
+          console.warn("Auth validation failed but staying logged in locally");
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        clearAuth();
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
-      setIsAuthenticated(false);
     };
-    
+  
     initializeAuth();
   }, []);
+  
+  
 
   const clearAuth = () => {
     Cookies.remove('evaluatortoken', { path: '/' });

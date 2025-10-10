@@ -3,9 +3,12 @@ import { Plus, Search, Edit2, Trash2, CheckCircle, AlertCircle, UserPlus } from 
 import Cookies from 'js-cookie';
 import { toast } from 'react-toastify';
 import axios from 'axios';
+import KycDetail from './KycDetail';
+import Withdrawals from './Withdrawals';
 
 const EvaluatorsManagement = () => {
   const [evaluators, setEvaluators] = useState([]);
+  const [activeTab, setActiveTab] = useState('evaluators');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
@@ -14,8 +17,23 @@ const EvaluatorsManagement = () => {
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [withdrawals, setWithdrawals] = useState([]);
+  const [withdrawalsLoading, setWithdrawalsLoading] = useState(false);
+  const [paymentsView, setPaymentsView] = useState('withdrawals'); // 'withdrawals' | 'approved-kyc' | 'rejected-kyc'
+  const [kycApproved, setKycApproved] = useState([]);
+  const [kycRejected, setKycRejected] = useState([]);
+  const [kycLoading, setKycLoading] = useState(false);
+  const [kycView, setKycView] = useState('approved'); // 'approved' | 'rejected'
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [showKycModal, setShowKycModal] = useState(false);
+  const [kycAction, setKycAction] = useState(null); // 'verify' | 'reject'
+  const [kycReason, setKycReason] = useState('');
+  const [kycTargetEvaluator, setKycTargetEvaluator] = useState(null);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imageZoom, setImageZoom] = useState(1);
+  const adminToken = Cookies.get('admintoken');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -45,7 +63,18 @@ const EvaluatorsManagement = () => {
     fetchEvaluators();
     fetchClients();
     fetchUsers();
+    // also load withdrawals once to have data ready
+    // fetchWithdrawals();
+    // prefetch KYC datasets
+    // fetchKycLists();
   }, []);
+
+  // useEffect(() => {
+  //   if (activeTab === 'payments') {
+  //     fetchWithdrawals();
+  //     fetchKycLists();
+  //   }
+  // }, [activeTab]);
 
   const fetchEvaluators = async () => {
     try {
@@ -79,6 +108,44 @@ const EvaluatorsManagement = () => {
       setLoading(false);
     }
   };
+
+  const fetchEvaluator = async (evaluatorId) => {
+    try {
+      setLoading(true);
+      const token = Cookies.get('admintoken');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+      
+      const response = await fetch(`https://test.ailisher.com/api/evaluators/${evaluatorId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch evaluator details');
+      }
+      
+      const data = await response.json();
+      if (data.success && data.evaluator) {
+        console.log('Fetched evaluator:', data.evaluator);
+        console.log('KYC Details:', data.evaluator.kycDetails);
+        console.log('KYC Documents:', data.evaluator.kycDetails?.documents);
+        return data.evaluator;
+      } else {
+        throw new Error(data.message || 'Invalid response format');
+      }
+    }
+    catch (error) {
+      console.error('Error fetching evaluator:', error);
+      setError(error.message);
+      throw error;
+    }
+    finally {
+      setLoading(false);
+    }
+  }
 
   const fetchClients = async () => {
     try {
@@ -136,6 +203,81 @@ const EvaluatorsManagement = () => {
       setError(error.message);
     }
   };
+
+  // const fetchWithdrawals = async () => {
+  //   try {
+  //     setWithdrawalsLoading(true);
+  //     const token = Cookies.get('admintoken');
+  //     if (!token) {
+  //       throw new Error('Not authenticated');
+  //     }
+
+  //     const response = await fetch('https://test.ailisher.com/api/admin/withdrawals', {
+  //       headers: {
+  //         'Authorization': `Bearer ${token}`
+  //       }
+  //     });
+
+  //     if (!response.ok) {
+  //       throw new Error('Failed to fetch withdrawals');
+  //     }
+
+  //     const data = await response.json();
+  //     if (data.success && Array.isArray(data.data)) {
+  //       setWithdrawals(data.data);
+  //     } else {
+  //       throw new Error('Invalid response format');
+  //     }
+  //   } catch (err) {
+  //     console.error('Error fetching withdrawals:', err);
+  //     toast.error(err.message || 'Failed to fetch withdrawals');
+  //   } finally {
+  //     setWithdrawalsLoading(false);
+  //   }
+  // };
+
+  const formatCurrency = (value) => {
+    const num = Number(value || 0);
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 }).format(num);
+  };
+
+  // const fetchKycLists = async () => {
+  //   try {
+  //     setKycLoading(true);
+  //     const token = Cookies.get('admintoken');
+  //     if (!token) throw new Error('Not authenticated');
+
+  //     const [approvedRes, rejectedRes] = await Promise.all([
+  //       fetch('https://test.ailisher.com/api/admin/verified-kyc', {
+  //         headers: { 'Authorization': `Bearer ${token}` }
+  //       }),
+  //       fetch('https://test.ailisher.com/api/admin/rejected-kyc', {
+  //         headers: { 'Authorization': `Bearer ${token}` }
+  //       })
+  //     ]);
+
+  //     if (!approvedRes.ok) throw new Error('Failed to fetch KYC approved');
+  //     if (!rejectedRes.ok) throw new Error('Failed to fetch KYC rejected');
+
+  //     const approvedData = await approvedRes.json();
+  //     const rejectedData = await rejectedRes.json();
+  //     console.log("approvedData",approvedData);
+  //     console.log("rejectedData",rejectedData);
+  //     if (approvedData.success && Array.isArray(approvedData.data)) {
+  //       setKycApproved(approvedData.data);
+  //     }
+  //     if (rejectedData.success && Array.isArray(rejectedData.data)) {
+  //       setKycRejected(rejectedData.data);
+  //     }
+  //   } catch (err) {
+  //     console.error('KYC fetch error:', err);
+  //     toast.error(err.message || 'Failed to fetch KYC lists');
+  //   } finally {
+  //     setKycLoading(false);
+  //   }
+  // };
+
+  // removed external approved/rejected evaluator tabs per requirement
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -493,6 +635,59 @@ const EvaluatorsManagement = () => {
     }
   };
 
+  const openKycModal = async (evaluator, action = null) => {
+    try {
+      // Fetch the latest evaluator data with KYC details
+      const latestEvaluator = await fetchEvaluator(evaluator._id);
+      console.log("latestEvaluator in openKycModal",latestEvaluator);
+      setKycTargetEvaluator(latestEvaluator);
+      setKycAction(action);
+      setKycReason('');
+      setShowKycModal(true);
+    } catch (error) {
+      console.error('Error fetching evaluator for KYC review:', error);
+      toast.error('Failed to load evaluator details for KYC review');
+    }
+  };
+
+  const submitKycAction = async () => {
+    if (!kycTargetEvaluator || !kycAction) return;
+    try {
+      setLoading(true);
+      const token = Cookies.get('admintoken');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      const baseUrl = `https://test.ailisher.com/api/admin/evaluators/${kycTargetEvaluator._id}/kyc`;
+      const endpoint = kycAction === 'verify' ? `${baseUrl}/verify` : `${baseUrl}/reject`;
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: kycAction === 'reject' ? JSON.stringify({ reason: kycReason || 'Not specified' }) : undefined
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'KYC update failed');
+      }
+      toast.success(data.message || (kycAction === 'verify' ? 'KYC verified' : 'KYC rejected'));
+      await fetchEvaluators();
+      setShowKycModal(false);
+      setKycAction(null);
+      setKycReason('');
+      setKycTargetEvaluator(null);
+    } catch (err) {
+      console.error('KYC action error:', err);
+      toast.error(err.message || 'KYC action failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleVerify = async (evaluatorId) => {
     try {
       setLoading(true);
@@ -605,7 +800,7 @@ const EvaluatorsManagement = () => {
     }
   };
 
-  if (loading && !evaluators.length) {
+  if (activeTab === 'evaluators' && loading && !evaluators.length) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-xl">Loading...</div>
@@ -613,7 +808,7 @@ const EvaluatorsManagement = () => {
     );
   }
 
-  if (error) {
+  if (activeTab === 'evaluators' && error) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-xl text-red-600">Error: {error}</div>
@@ -623,26 +818,51 @@ const EvaluatorsManagement = () => {
 
   return (
     <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Evaluators Management</h1>
-        <div className="flex space-x-4">
+      <div className="flex flex-col mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold text-gray-900">Evaluators Management</h1>
+          {activeTab === 'evaluators' && (
+            <div className="flex space-x-4">
+              <button
+                onClick={() => setShowApproveModal(true)}
+                className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+              >
+                <UserPlus className="w-5 h-5 mr-2" />
+                Add Existing User as Evaluator
+              </button>
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Add New Evaluator
+              </button>
+            </div>
+          )}
+        </div>
+        <div className="flex border-b border-gray-200">
           <button
-            onClick={() => setShowApproveModal(true)}
-            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            className={`px-4 py-2 -mb-px border-b-2 ${activeTab === 'evaluators' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-800'}`}
+            onClick={() => setActiveTab('evaluators')}
           >
-            <UserPlus className="w-5 h-5 mr-2" />
-            Add Existing User as Evaluator
+            Evaluators
           </button>
           <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className={`ml-4 px-4 py-2 -mb-px border-b-2 ${activeTab === 'payments' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-800'}`}
+            onClick={() => setActiveTab('payments')}
           >
-            <Plus className="w-5 h-5 mr-2" />
-            Add New Evaluator
+            Payments
+          </button>
+          <button
+            className={`ml-4 px-4 py-2 -mb-px border-b-2 ${activeTab === 'kyc' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-800'}`}
+            onClick={() => setActiveTab('kyc')}
+          >
+            KYC 
           </button>
         </div>
       </div>
 
+      {activeTab === 'evaluators' && (
       <div className="mb-6">
         <div className="relative">
           <input
@@ -655,7 +875,10 @@ const EvaluatorsManagement = () => {
           <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
         </div>
       </div>
+      )}
 
+
+      {activeTab === 'evaluators' && (
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
@@ -664,6 +887,7 @@ const EvaluatorsManagement = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KYC</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Enabled</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
             </tr>
@@ -684,6 +908,29 @@ const EvaluatorsManagement = () => {
                   {getStatusBadge(evaluator.status)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
+                  {(() => {
+                    const kycStatus = evaluator.kycDetails?.status;
+                    if (kycStatus === 'verified') {
+                      return (
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Verified</span>
+                      );
+                    }
+                    if (kycStatus === 'rejected') {
+                      return (
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Rejected</span>
+                      );
+                    }
+                    if (kycStatus === 'pending') {
+                      return (
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
+                      );
+                    }
+                    return (
+                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Not Submitted</span>
+                    );
+                  })()}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
@@ -696,6 +943,17 @@ const EvaluatorsManagement = () => {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex space-x-2">
+                    <button
+                      onClick={() => openKycModal(evaluator)}
+                      className="px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Review KYC"
+                      disabled={!(
+                        evaluator.status === 'VERIFIED' &&
+                        ['pending', 'verified', 'rejected'].includes(evaluator.kycDetails?.status)
+                      )}
+                    >
+                      Review KYC
+                    </button>
                     {(evaluator.status === 'PENDING' || evaluator.status === 'NOT_VERIFIED') && (
                       <button
                         onClick={() => {
@@ -741,6 +999,15 @@ const EvaluatorsManagement = () => {
           </tbody>
         </table>
       </div>
+      )}
+
+      {activeTab === 'payments' && (
+        <Withdrawals/>
+      )}
+
+      {activeTab === 'kyc' && (
+       <KycDetail/>
+      )}
 
       {showVerifyModal && selectedEvaluator && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -1045,6 +1312,248 @@ const EvaluatorsManagement = () => {
           </div>
         </div>
       )}
+
+      {showKycModal && kycTargetEvaluator && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg w-full max-w-3xl shadow-lg">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-xl font-bold">KYC Review - {kycTargetEvaluator.name}</h2>
+              <button
+                onClick={() => {
+                  setShowKycModal(false);
+                  setKycAction(null);
+                  setKycReason('');
+                  setKycTargetEvaluator(null);
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                Close
+              </button>
+            </div>
+            <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Evaluator Details</h3>
+                  <div className="space-y-1 text-sm text-gray-700">
+                    <div><span className="text-gray-500">Email:</span> {kycTargetEvaluator.email}</div>
+                    <div><span className="text-gray-500">Phone:</span> {kycTargetEvaluator.phoneNumber}</div>
+                    <div><span className="text-gray-500">Subject:</span> {kycTargetEvaluator.subjectMatterExpert}</div>
+                    <div><span className="text-gray-500">Exam Focus:</span> {kycTargetEvaluator.examFocus}</div>
+                    <div><span className="text-gray-500">Experience:</span> {kycTargetEvaluator.experience} yrs</div>
+                    <div><span className="text-gray-500">Grade:</span> {kycTargetEvaluator.grade || '—'}</div>
+                    <div><span className="text-gray-500">Account Status:</span> {kycTargetEvaluator.status}</div>
+                  </div>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3">Credit Summary</h3>
+                  <div className="space-y-1 text-sm text-gray-700">
+                    <div><span className="text-gray-500">Balance:</span> {kycTargetEvaluator.creditBalance ?? 0}</div>
+                    <div><span className="text-gray-500">Total Earned:</span> {kycTargetEvaluator.totalCreditsEarned ?? 0}</div>
+                    <div><span className="text-gray-500">Total Withdrawn:</span> {kycTargetEvaluator.totalCreditsWithdrawn ?? 0}</div>
+                    <div><span className="text-gray-500">Credit Status:</span> {kycTargetEvaluator.creditStatus || '—'}</div>
+                    <div><span className="text-gray-500">Withdrawals Enabled:</span> {kycTargetEvaluator.withdrawalSettings?.withdrawalEnabled ? 'Yes' : 'No'}</div>
+                    <div><span className="text-gray-500">Min/Max Withdrawal:</span> ₹{kycTargetEvaluator.withdrawalSettings?.minimumWithdrawalAmount ?? 0} / ₹{kycTargetEvaluator.withdrawalSettings?.maximumWithdrawalAmount ?? 0}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-3">Bank Details</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
+                  <div><span className="text-gray-500">Account Holder:</span> {kycTargetEvaluator.bankDetails?.accountHolderName || '—'}</div>
+                  <div><span className="text-gray-500">Account Number:</span> {kycTargetEvaluator.bankDetails?.accountNumber || '—'}</div>
+                  <div><span className="text-gray-500">IFSC:</span> {kycTargetEvaluator.bankDetails?.ifscCode || '—'}</div>
+                  <div><span className="text-gray-500">Bank:</span> {kycTargetEvaluator.bankDetails?.bankName || '—'}</div>
+                  <div><span className="text-gray-500">Branch:</span> {kycTargetEvaluator.bankDetails?.branchName || '—'}</div>
+                  <div><span className="text-gray-500">Account Type:</span> {kycTargetEvaluator.bankDetails?.accountType || '—'}</div>
+                  <div><span className="text-gray-500">UPI ID:</span> {kycTargetEvaluator.bankDetails?.upiId || '—'}</div>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-700">KYC Details</h3>
+                  <span className={`px-2 py-1 text-xs font-semibold rounded-full ${kycTargetEvaluator.kycDetails?.status === 'verified' ? 'bg-green-100 text-green-800' : kycTargetEvaluator.kycDetails?.status === 'rejected' ? 'bg-red-100 text-red-800' : kycTargetEvaluator.kycDetails?.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'}`}>{kycTargetEvaluator.kycDetails?.status || 'not_submitted'}</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
+                  <div><span className="text-gray-500">PAN:</span> {kycTargetEvaluator.kycDetails?.panNumber || '—'}</div>
+                  <div><span className="text-gray-500">Aadhar:</span> {kycTargetEvaluator.kycDetails?.aadharNumber || '—'}</div>
+                  <div className="md:col-span-2">
+                    <span className="text-gray-500">Address:</span>{' '}
+                    {(() => {
+                      const a = kycTargetEvaluator.kycDetails?.address;
+                      if (!a) return '—';
+                      return `${a.street || ''}${a.street ? ', ' : ''}${a.city || ''}${a.city ? ', ' : ''}${a.state || ''}${a.state ? ' ' : ''}${a.pincode || ''}${a.country ? `, ${a.country}` : ''}` || '—';
+                    })()}
+                  </div>
+                  <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-gray-500 block mb-2">PAN Document:</span>
+                      {kycTargetEvaluator.kycDetails?.documents?.panDocument?.downloadUrl ? (
+                        <div className="relative">
+                          <img 
+                            src={kycTargetEvaluator.kycDetails.documents.panDocument.downloadUrl} 
+                            alt="PAN Document"
+                            className="w-full h-32 object-cover rounded-lg border border-gray-300 cursor-pointer hover:opacity-80 transition-opacity"
+                            // onClick={() => openImageModal(kycTargetEvaluator.kycDetails.documents.panDocument.downloadUrl, 'PAN Document')}
+                            onError={(e) => {
+                              console.error('PAN Document image failed to load:', e.target.src);
+                              e.target.style.display = 'none';
+                            }}
+                            onLoad={() => console.log('PAN Document image loaded successfully:', kycTargetEvaluator.kycDetails.documents.panDocument.downloadUrl)}
+                          />
+                          <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all rounded-lg flex items-center justify-center">
+                            <span className="text-white text-sm font-medium opacity-0 hover:opacity-100 transition-opacity">Click to zoom</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="w-full h-32 bg-gray-100 rounded-lg border border-gray-300 flex items-center justify-center text-gray-500">
+                          No document
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-gray-500 block mb-2">Aadhar Front:</span>
+                      {kycTargetEvaluator.kycDetails?.documents?.aadharFront?.downloadUrl ? (
+                        <div className="relative">
+                          <img 
+                            src={kycTargetEvaluator.kycDetails.documents.aadharFront.downloadUrl} 
+                            alt="Aadhar Front"
+                            className="w-full h-32 object-cover rounded-lg border border-gray-300 cursor-pointer hover:opacity-80 transition-opacity"
+                            // onClick={() => openImageModal(kycTargetEvaluator.kycDetails.documents.aadharFront.downloadUrl, 'Aadhar Front')}
+                            onError={(e) => {
+                              console.error('Aadhar Front image failed to load:', e.target.src);
+                              e.target.style.display = 'none';
+                            }}
+                            onLoad={() => console.log('Aadhar Front image loaded successfully:', kycTargetEvaluator.kycDetails.documents.aadharFront.downloadUrl)}
+                          />
+                          <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all rounded-lg flex items-center justify-center">
+                            <span className="text-white text-sm font-medium opacity-0 hover:opacity-100 transition-opacity">Click to zoom</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="w-full h-32 bg-gray-100 rounded-lg border border-gray-300 flex items-center justify-center text-gray-500">
+                          No document
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-gray-500 block mb-2">Aadhar Back:</span>
+                      {kycTargetEvaluator.kycDetails?.documents?.aadharBack?.downloadUrl ? (
+                        <div className="relative">
+                          <img 
+                            src={kycTargetEvaluator.kycDetails.documents.aadharBack.downloadUrl} 
+                            alt="Aadhar Back"
+                            className="w-full h-32 object-cover rounded-lg border border-gray-300 cursor-pointer hover:opacity-80 transition-opacity"
+                            // onClick={() => openImageModal(kycTargetEvaluator.kycDetails.documents.aadharBack.downloadUrl, 'Aadhar Back')}
+                          />
+                          <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all rounded-lg flex items-center justify-center">
+                            <span className="text-white text-sm font-medium opacity-0 hover:opacity-100 transition-opacity">Click to zoom</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="w-full h-32 bg-gray-100 rounded-lg border border-gray-300 flex items-center justify-center text-gray-500">
+                          No document
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-gray-500 block mb-2">Bank Passbook:</span>
+                      {kycTargetEvaluator.kycDetails?.documents?.bankPassbook?.downloadUrl ? (
+                        <div className="relative">
+                          <img 
+                            src={kycTargetEvaluator.kycDetails.documents.bankPassbook.downloadUrl} 
+                            alt="Bank Passbook"
+                            className="w-full h-32 object-cover rounded-lg border border-gray-300 cursor-pointer hover:opacity-80 transition-opacity"
+                            // onClick={() => openImageModal(kycTargetEvaluator.kycDetails.documents.bankPassbook.downloadUrl, 'Bank Passbook')}
+                          />
+                          <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all rounded-lg flex items-center justify-center">
+                            <span className="text-white text-sm font-medium opacity-0 hover:opacity-100 transition-opacity">Click to zoom</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="w-full h-32 bg-gray-100 rounded-lg border border-gray-300 flex items-center justify-center text-gray-500">
+                          No document
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  {kycTargetEvaluator.kycDetails?.status === 'rejected' && (
+                    <div className="md:col-span-2 text-sm text-red-700">
+                      <span className="font-medium">Rejection Reason:</span> {kycTargetEvaluator.kycDetails?.rejectionReason || '—'}
+                    </div>
+                  )}
+                </div>
+
+                {kycAction === 'reject' && (
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Reason for rejection</label>
+                    <textarea
+                      value={kycReason}
+                      onChange={(e) => setKycReason(e.target.value)}
+                      rows={4}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter reason"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-end space-x-3">
+              {kycAction === 'reject' ? (
+                <>
+                  <button
+                    onClick={() => setKycAction(null)}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                    type="button"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={submitKycAction}
+                    disabled={loading || !kycReason.trim()}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg disabled:opacity-50"
+                  >
+                    {loading ? 'Processing...' : 'Submit Rejection'}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => {
+                      setShowKycModal(false);
+                      setKycAction(null);
+                      setKycReason('');
+                      setKycTargetEvaluator(null);
+                    }}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                    type="button"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => setKycAction('reject')}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg"
+                    type="button"
+                  >
+                    Reject
+                  </button>
+                  <button
+                    onClick={() => setKycAction('verify') || submitKycAction()}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg"
+                    type="button"
+                    disabled={loading}
+                  >
+                    {loading ? 'Processing...' : 'Verify'}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

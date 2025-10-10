@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { API_BASE_URL } from '../../config';
 import { Trash } from 'lucide-react';
 
-const CATEGORY_OPTIONS = ['Basic', 'Premium', 'Enterprise'];
+const CATEGORY_OPTIONS = ['UPSC', 'BPSC', 'UPPCS','Credit-Recharge','Other'];
 const TYPE_TABS = [
   { value: 'book', label: 'AIBooks' },
   { value: 'workbook', label: 'AIWorkbooks' },
@@ -18,7 +18,7 @@ const initialPlan = {
   credits: '',
   MRP: '',
   offerPrice: '',
-  category: 'Basic',
+  category: 'UPSC',
   imageKey: '',
   videoKey: ''
 };
@@ -66,7 +66,7 @@ export default function RechargePlanCreate() {
             credits: p.credits || '',
             MRP: p.MRP || '',
             offerPrice: p.offerPrice || '',
-            category: ['Basic','Premium','Enterprise'].includes(p.category) ? p.category : 'Basic',
+            category: ['UPSC','BPSC','UPPCS','Credit-Recharge','Other'].includes(p.category) ? p.category : 'UPSC',
             imageKey: p.imageKey || '',
             videoKey: p.videoKey || ''
           });

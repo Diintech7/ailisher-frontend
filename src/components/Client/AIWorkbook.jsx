@@ -342,6 +342,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
     paper: '',
     subject: '',
     tags: '',
+    videoUrl: '',
     summary: '',
     isForSale: false,
     MRP: '',
@@ -682,6 +683,9 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
         const tagsArray = formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0 && tag.length <= 30).slice(0, 10);
         if (tagsArray.length > 0) workbookData.tags = tagsArray;
       }
+      if (formData.videoUrl && formData.videoUrl.trim()) {
+        workbookData.videoUrl = formData.videoUrl.trim();
+      }
       if (coverImageKey) workbookData.coverImageKey = coverImageKey;
       // Attach pricing fields
       if (formData.isForSale) {
@@ -710,7 +714,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
         onAdd(data.workbook);
         onClose();
         setFormData({
-          title: '', description: '', author: '', publisher: '', language: 'English', mainCategory: 'Other', subCategory: 'Other', customSubCategory: '', exam: '', paper: '', subject: '', tags: '', summary: '', isPaid: false, MRP: '', offerPrice: '', currency: 'INR', validityDays: '', GST: '', details: ''
+          title: '', description: '', author: '', publisher: '', language: 'English', mainCategory: 'Other', subCategory: 'Other', customSubCategory: '', exam: '', paper: '', subject: '', tags: '', videoUrl: '', summary: '', isPaid: false, MRP: '', offerPrice: '', currency: 'INR', validityDays: '', GST: '', details: ''
         });
         setCoverImage(null);
         setImagePreview('');
@@ -903,6 +907,17 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
               <label className="block text-gray-700 text-sm font-medium mb-2">Summary</label>
               <textarea name="summary" value={formData.summary} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 h-24" maxLength={500} placeholder="Enter a brief summary of the workbook..." />
             </div>
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-medium mb-2">Video URL (Optional)</label>
+            <input
+              type="url"
+              name="videoUrl"
+              value={formData.videoUrl}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+              placeholder="https://..."
+            />
+          </div>
             {/* Paid workbook section */}
             <div className="mb-6 border border-gray-200 rounded-lg p-4">
               <label className="flex items-center gap-2 mb-3">
@@ -1034,6 +1049,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
     paper: book.paper || '',
     subject: book.subject || '',
     tags: book.tags ? book.tags.join(', ') : '',
+    videoUrl: book.videoUrl || '',
     isHighlighted: book.isHighlighted || false,
     categoryOrder: book.categoryOrder || 0,
     rating: book.rating || 0,
@@ -1257,6 +1273,9 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
         if (tagsArray.length > 0) {
           bookData.tags = tagsArray;
         }
+      }
+      if (formData.videoUrl && formData.videoUrl.trim()) {
+        bookData.videoUrl = formData.videoUrl.trim();
       }
       // Attach pricing fields
       if (formData.isForSale) {

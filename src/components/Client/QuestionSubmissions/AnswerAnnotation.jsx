@@ -2336,6 +2336,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   onChange={handleInputChange}
                   min="0"
                   max={submission.questionId.metadata?.maximumMarks}
+                  step="0.1"
                   className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                   required
                 />
