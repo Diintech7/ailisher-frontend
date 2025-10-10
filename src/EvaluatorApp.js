@@ -38,7 +38,7 @@ const EvaluatorApp = () => {
   
         setIsAuthenticated(true)
         // Then validate latest data silently
-        const res = await fetch(`http://localhost:5000/api/evaluators/get`, {
+        const res = await fetch(`https://test.ailisher.com/api/evaluators/get`, {
           headers: {
             'Authorization': `Bearer ${evaluatorToken}`,
             'Content-Type': 'application/json'
