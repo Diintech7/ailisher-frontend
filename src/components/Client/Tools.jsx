@@ -9,6 +9,7 @@ import {
   Image,
   List,
   CreditCard,
+  Bell,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -91,13 +92,13 @@ export default function Tools() {
       color: "bg-red-500",
       description: "Category management",
     },
-    // {
-    //   id: "plan",
-    //   title: "Plan",
-    //   icon: CreditCard,
-    //   color: "bg-pink-500",
-    //   description: "Plan",
-    // },
+    {
+      id: "notification",
+      title: "notification",
+      icon: Bell,
+      color: "bg-pink-500",
+      description: "notification",
+    },
   ];
 
   const renderToolsGrid = () => (
@@ -161,6 +162,17 @@ export default function Tools() {
             </h2>
             <p className="text-gray-600">
               Telegram bot configuration and management coming soon...
+            </p>
+          </div>
+        );
+        case "notification":
+        return (
+          <div className="p-6">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              Notification
+            </h2>
+            <p className="text-gray-600">
+              Notification configuration and management coming soon...
             </p>
           </div>
         );

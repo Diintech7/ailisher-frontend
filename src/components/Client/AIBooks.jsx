@@ -17,6 +17,9 @@ import {
   TrendingUp,
   Edit,
   ToggleRight,
+  LockIcon,
+  BookLockIcon,
+  Lock,
 } from "lucide-react";
 import Cookies from "js-cookie";
 import { toast, ToastContainer } from "react-toastify";
@@ -184,7 +187,9 @@ const BookItem = ({
       {/* Book Card */}
       <div
         onClick={onClick}
-        className={`p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full border border-gray-100 relative ${book.isEnabled? 'bg-white' : 'bg-gray-400 opacity-50'}`}
+        className={`p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full border border-gray-100 relative ${
+          book.isEnabled ? "bg-white" : "bg-gray-400 opacity-50"
+        }`}
       >
         {/* Status indicators */}
         <div className="absolute top-2 right-2 flex gap-1">
@@ -243,11 +248,16 @@ const BookItem = ({
                   Delete Book
                 </button>
                 <button
-                  onClick={(e) => { e.stopPropagation(); toggleEnabled(book); }}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center ${book.isEnabled === true ? 'text-red-800' : 'text-green-800'}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleEnabled(book);
+                  }}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center ${
+                    book.isEnabled === true ? "text-red-800" : "text-green-800"
+                  }`}
                 >
                   <ToggleRight size={14} className="mr-2" />
-                  {book.isEnabled === true ? 'Disable' : 'Enable'}
+                  {book.isEnabled === true ? "Disable" : "Enable"}
                 </button>
               </div>
             )}
@@ -322,6 +332,23 @@ const BookItem = ({
             >
               <TrendingUp size={16} />
             </button>
+
+            {book.isForSale && (
+  <div className="flex items-center gap-2 text-sm text-gray-700">
+    <Lock size={20} className="text-gray-500" />
+    <span className="text-green-600 font-semibold">
+      ₹{book.offerPrice}
+    </span>
+    |
+    <span>
+      {book.validityDays === 0
+        ? "Lifetime access"
+        : `${book.validityDays} days`}
+    </span>
+  </div>
+)}
+
+
           </div>
         </div>
       </div>
@@ -675,6 +702,13 @@ const AddBookModal = ({
     conversations: [],
     users: [],
     summary: "",
+    isForSale: false,
+    MRP: "",
+    offerPrice: "",
+    currency: "INR",
+    validityDays: "",
+    details: "",
+    GST: "",
   });
   const [coverImage, setCoverImage] = useState(null);
   const [imagePreview, setImagePreview] = useState("");
@@ -844,7 +878,11 @@ const AddBookModal = ({
     if (
       name === "rating" ||
       name === "ratingCount" ||
-      name === "categoryOrder"
+      name === "categoryOrder" ||
+      name === "MRP" ||
+      name === "offerPrice" ||
+      name === "validityDays" ||
+      name === "GST"
     ) {
       const numValue = value === "" ? "" : Number(value);
       setFormData((prev) => ({
@@ -927,6 +965,42 @@ const AddBookModal = ({
           toast.error(
             `${field.charAt(0).toUpperCase() + field.slice(1)} is required`
           );
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // Validate pricing if paid
+      if (formData.isForSale) {
+        const mrpNum = Number(formData.MRP);
+        const offerNum = Number(formData.offerPrice);
+        const validityNum =
+          formData.validityDays === "" ? 0 : Number(formData.validityDays);
+        const gstNum = Number(formData.GST);
+        if (!Number.isFinite(mrpNum) || mrpNum < 0) {
+          toast.error("MRP must be a non-negative number");
+          setIsSubmitting(false);
+          return;
+        }
+        if (!Number.isFinite(offerNum) || offerNum < 0) {
+          toast.error("Offer price must be a non-negative number");
+          setIsSubmitting(false);
+          return;
+        }
+        if (offerNum > mrpNum) {
+          toast.error("Offer price cannot exceed MRP");
+          setIsSubmitting(false);
+          return;
+        }
+        if (!Number.isFinite(validityNum) || validityNum < 0) {
+          toast.error(
+            "Validity days must be a non-negative number (0 for lifetime)"
+          );
+          setIsSubmitting(false);
+          return;
+        }
+        if (!Number.isFinite(gstNum) || gstNum < 0) {
+          toast.error("GST must be a non-negative number");
           setIsSubmitting(false);
           return;
         }
@@ -1032,6 +1106,20 @@ const AddBookModal = ({
         }
       }
 
+      // Attach pricing fields
+      if (formData.isForSale) {
+        bookData.isForSale = true;
+        bookData.MRP = Number(formData.MRP) || 0;
+        bookData.offerPrice = Number(formData.offerPrice) || 0;
+        bookData.currency = formData.currency || "INR";
+        bookData.validityDays =
+          formData.validityDays === "" ? 0 : Number(formData.validityDays);
+        bookData.details = formData.details || "";
+        bookData.GST = Number(formData.GST) || 0;
+      } else {
+        bookData.isForSale = false;
+      }
+
       console.log("Sending book data:", bookData);
 
       const response = await fetch("https://test.ailisher.com/api/books", {
@@ -1068,6 +1156,13 @@ const AddBookModal = ({
           conversations: [],
           users: [],
           summary: "",
+          isPaid: false,
+          MRP: "",
+          offerPrice: "",
+          currency: "INR",
+          validityDays: "",
+          GST: "",
+          details: "",
         });
         setCoverImage(null);
         setImagePreview("");
@@ -1540,6 +1635,115 @@ const AddBookModal = ({
               </p>
             </div>
 
+            {/* Paid book section */}
+            <div className="mb-6 border border-gray-200 rounded-lg p-4">
+              <label className="flex items-center gap-2 mb-3">
+                <input
+                  type="checkbox"
+                  name="isForSale"
+                  checked={formData.isForSale}
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+                />
+                <span className="text-sm text-gray-700 font-medium">
+                  Make this book paid
+                </span>
+              </label>
+              {formData.isForSale && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">
+                      MRP (₹) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      name="MRP"
+                      value={formData.MRP}
+                      onChange={handleInputChange}
+                      min="0"
+                      step="0.01"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">
+                      Offer Price (₹) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      name="offerPrice"
+                      value={formData.offerPrice}
+                      onChange={handleInputChange}
+                      min="0"
+                      step="0.01"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">
+                      Validity Days
+                    </label>
+                    <input
+                      type="number"
+                      name="validityDays"
+                      value={formData.validityDays}
+                      onChange={handleInputChange}
+                      min="0"
+                      step="1"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="0"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      0 for lifetime access
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">
+                      GST (%)
+                    </label>
+                    <input
+                      type="number"
+                      name="GST"
+                      value={formData.GST}
+                      onChange={handleInputChange}
+                      min="0"
+                      step="0.01"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-gray-700 text-sm font-medium mb-2">
+                      Details
+                    </label>
+                    <textarea
+                      name="details"
+                      value={formData.details}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 h-24"
+                      maxLength={500}
+                      placeholder="Enter a detailed description of the workbook..."
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">
+                      Currency
+                    </label>
+                    <select
+                      name="currency"
+                      value={formData.currency}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    >
+                      <option value="INR">INR</option>
+                      <option value="USD">USD</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
             <div className="mb-4">
               <label className="flex items-center">
                 <input
@@ -1639,6 +1843,13 @@ const EditBookModal = ({
     conversations: book.conversations || [],
     users: book.users || [],
     summary: book.summary || "",
+    isForSale: book.isForSale || false,
+    MRP: book.MRP ?? "",
+    offerPrice: book.offerPrice ?? "",
+    currency: book.currency || "INR",
+    validityDays: book.validityDays ?? "",
+    details: book.details || "",
+    GST: book.GST ?? "",
   });
   const [coverImage, setCoverImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(
@@ -1703,7 +1914,11 @@ const EditBookModal = ({
     if (
       name === "rating" ||
       name === "ratingCount" ||
-      name === "categoryOrder"
+      name === "categoryOrder" ||
+      name === "MRP" ||
+      name === "offerPrice" ||
+      name === "validityDays" ||
+      name === "GST"
     ) {
       const numValue = value === "" ? "" : Number(value);
       setFormData((prev) => ({
@@ -1886,6 +2101,51 @@ const EditBookModal = ({
         if (tagsArray.length > 0) {
           bookData.tags = tagsArray;
         }
+      }
+
+      // Attach pricing fields
+      if (formData.isForSale) {
+        const mrpNum = Number(formData.MRP);
+        const offerNum = Number(formData.offerPrice);
+        const validityNum =
+          formData.validityDays === "" ? 0 : Number(formData.validityDays);
+        const gstNum = Number(formData.GST);
+        if (!Number.isFinite(mrpNum) || mrpNum < 0) {
+          toast.error("MRP must be a non-negative number");
+          setIsSubmitting(false);
+          return;
+        }
+        if (!Number.isFinite(offerNum) || offerNum < 0) {
+          toast.error("Offer price must be a non-negative number");
+          setIsSubmitting(false);
+          return;
+        }
+        if (offerNum > mrpNum) {
+          toast.error("Offer price cannot exceed MRP");
+          setIsSubmitting(false);
+          return;
+        }
+        if (!Number.isFinite(validityNum) || validityNum < 0) {
+          toast.error(
+            "Validity days must be a non-negative number (0 for lifetime)"
+          );
+          setIsSubmitting(false);
+          return;
+        }
+        if (!Number.isFinite(gstNum) || gstNum < 0) {
+          toast.error("GST must be a non-negative number");
+          setIsSubmitting(false);
+          return;
+        }
+        bookData.isForSale = true;
+        bookData.MRP = mrpNum;
+        bookData.offerPrice = offerNum;
+        bookData.currency = formData.currency || "INR";
+        bookData.validityDays = validityNum;
+        bookData.details = formData.details || "";
+        bookData.GST = gstNum;
+      } else {
+        bookData.isForSale = false;
       }
 
       const response = await fetch(
@@ -2295,6 +2555,117 @@ const EditBookModal = ({
               </p>
             </div>
 
+            {/* Paid workbook section */}
+            <div className="mb-6 border border-gray-200 rounded-lg p-4">
+              <label className="flex items-center gap-2 mb-3">
+                <input
+                  type="checkbox"
+                  name="isForSale"
+                  checked={formData.isForSale}
+                  onChange={handleInputChange}
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                />
+                <span className="text-sm text-gray-700 font-medium">
+                  Make this book paid
+                </span>
+              </label>
+              {formData.isForSale && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">
+                      MRP (₹) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      name="MRP"
+                      value={formData.MRP}
+                      onChange={handleInputChange}
+                      min="0"
+                      step="0.01"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">
+                      Offer Price (₹) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      name="offerPrice"
+                      value={formData.offerPrice}
+                      onChange={handleInputChange}
+                      min="0"
+                      step="0.01"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">
+                      Currency
+                    </label>
+                    <select
+                      name="currency"
+                      value={formData.currency}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    >
+                      <option value="INR">INR</option>
+                      <option value="USD">USD</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">
+                      Validity Days
+                    </label>
+                    <input
+                      type="number"
+                      name="validityDays"
+                      value={formData.validityDays}
+                      onChange={handleInputChange}
+                      min="0"
+                      step="1"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="0"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      0 for lifetime access
+                    </p>
+                  </div>
+                  <div>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">
+                      GST (%)
+                    </label>
+                    <input
+                      type="number"
+                      name="GST"
+                      value={formData.GST}
+                      onChange={handleInputChange}
+                      min="0"
+                      step="0.01"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="hidden md:block" />
+                  <div className="md:col-span-3">
+                    <label className="block text-gray-700 text-sm font-medium mb-2">
+                      Details
+                    </label>
+                    <textarea
+                      name="details"
+                      value={formData.details}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 h-24"
+                      maxLength={500}
+                      placeholder="Enter a detailed description of the workbook..."
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="mb-4">
               <label className="flex items-center">
                 <input
@@ -2551,11 +2922,9 @@ const AIBooks = () => {
     setBooks((prev) => [...prev, newBook]);
   };
 
-  const handleBookClick = (bookId,isEnabled) => {
-    if(isEnabled)
-    navigate(`/ai-books/${bookId}`);
-    else
-    toast.error('This Book Is Disabled')
+  const handleBookClick = (bookId, isEnabled) => {
+    if (isEnabled) navigate(`/ai-books/${bookId}`);
+    else toast.error("This Book Is Disabled");
   };
 
   const handleToggleHighlight = async (bookId, isHighlighted) => {
@@ -2995,7 +3364,9 @@ const AIBooks = () => {
                         <BookItem
                           key={book._id}
                           book={book}
-                          onClick={() => handleBookClick(book._id,book.isEnabled)}
+                          onClick={() =>
+                            handleBookClick(book._id, book.isEnabled)
+                          }
                           onToggleHighlight={handleToggleHighlight}
                           onToggleTrending={handleToggleTrending}
                           onToggleEnabled={handleToggleEnabled}
