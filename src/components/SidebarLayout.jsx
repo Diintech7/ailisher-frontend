@@ -6,6 +6,7 @@ import UserMenu from './UserMenu';
 import ClientMenu from './ClientMenu';
 import AdminMenu from './AdminMenu';
 import EvaluatorMenu from './EvaluatorMenu';
+import OrgMenu from './OrgMenu';
 
 const SidebarLayout = ({ onLogout, userRole }) => {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -26,6 +27,25 @@ const SidebarLayout = ({ onLogout, userRole }) => {
     if (userRole === 'admin') {
       setUsername('Administrator');
       setBusinessName('Ailisher');
+      return;
+    }
+
+    if (userRole === 'organization') {
+      const orgCookie = Cookies.get('organization');
+      if (orgCookie) {
+        try {
+          const orgData = JSON.parse(orgCookie);
+          setUsername(orgData.name || 'Organization');
+          setEmail(orgData.authEmail || '');
+          setBusinessName(orgData.name || 'Organization');
+        } catch (error) {
+          setUsername('Organization');
+          setBusinessName('Organization');
+        }
+      } else {
+        setUsername('Organization');
+        setBusinessName('Organization');
+      }
       return;
     }
 
@@ -242,6 +262,14 @@ const SidebarLayout = ({ onLogout, userRole }) => {
 
          {userRole === 'evaluator' && (
           <EvaluatorMenu
+            isExpanded={isExpanded}
+            currentPath={currentPath}
+            handleNavigate={handleNavigate}
+          />
+        )}
+
+        {userRole === 'organization' && (
+          <OrgMenu
             isExpanded={isExpanded}
             currentPath={currentPath}
             handleNavigate={handleNavigate}
