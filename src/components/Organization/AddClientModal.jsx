@@ -256,9 +256,9 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded, mode = 'create', initi
         const result = await res.json();
         if (!res.ok || !result.success) throw new Error(result.message || 'Failed to create client');
         setSuccess(result);
-        setShowCredentials(true);
-        if (onClientAdded) onClientAdded();
-        startCountdown();
+        // setShowCredentials(true);
+        // if (onClientAdded) onClientAdded();
+        // startCountdown();
       }
     } catch (error) {
       console.error('Create client error:', error);
