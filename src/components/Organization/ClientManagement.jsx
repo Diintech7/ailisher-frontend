@@ -172,6 +172,7 @@ console.log(token)
   };
 
   const toggleDropdown = (id) => {
+    console.log(id)
     setDropdownOpen(dropdownOpen === id ? null : id);
   };
 
@@ -381,11 +382,11 @@ console.log("clients",filteredClients)
                           <div className="relative inline-block text-left">
                             <button
                               className="text-gray-600 hover:text-gray-900 p-1"
-                              onClick={() => toggleDropdown(client.clientId)}
+                              onClick={() => toggleDropdown(client.id)}
                             >
                               <MoreVertical size={18} />
                             </button>
-                            {dropdownOpen === client.clientId && (
+                            {dropdownOpen === client.id && (
                               <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
                                 <div className="py-1">
                                   <button
