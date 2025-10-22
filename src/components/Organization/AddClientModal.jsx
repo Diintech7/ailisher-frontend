@@ -274,7 +274,7 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded, mode = 'create', initi
 
   if (showCredentials && success) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
         <div className="bg-white rounded-lg p-8 max-w-lg w-full mx-4 shadow-2xl">
           <div className="text-center">
             <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
