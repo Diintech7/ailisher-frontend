@@ -22,6 +22,8 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded, mode = 'create', initi
     businessYoutubeChannel: '',
     turnOverRange: ''
   });
+  console.log("data",initialData)
+
 
   const [loading, setLoading] = useState(false);
   const [logoUploading, setLogoUploading] = useState(false);

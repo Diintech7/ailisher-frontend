@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import Cookies from 'js-cookie'
+import axios from 'axios'
 
 export default function OrganizationDashboard() {
   const [org, setOrg] = useState(null);
+  const [clientStats, setClientStats] = useState({ total: 0, active: 0, inactive: 0, pending: 0, recent: 0 });
+  const [loadingStats, setLoadingStats] = useState(false);
 
   useEffect(() => {
     const orgData = Cookies.get('organization');
@@ -13,6 +16,35 @@ export default function OrganizationDashboard() {
         setOrg(null);
       }
     }
+  }, []);
+
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        setLoadingStats(true);
+        const token = Cookies.get('orgtoken');
+        if (!token) {
+          setClientStats({ total: 0, active: 0, inactive: 0, pending: 0, recent: 0 });
+          return;
+        }
+        const response = await axios.get('https://test.ailisher.com/api/organizations/clients', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const clients = Array.isArray(response.data?.data) ? response.data.data : [];
+        const total = clients.length;
+        const active = clients.filter(c => (c.status || '').toLowerCase() === 'active').length;
+        const inactive = clients.filter(c => (c.status || '').toLowerCase() === 'inactive').length;
+        const pending = clients.filter(c => !c.status || (c.status || '').toLowerCase() === 'pending').length;
+        const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+        const recent = clients.filter(c => c.createdAt && new Date(c.createdAt).getTime() >= thirtyDaysAgo).length;
+        setClientStats({ total, active, inactive, pending, recent });
+      } catch (e) {
+        setClientStats({ total: 0, active: 0, inactive: 0, pending: 0, recent: 0 });
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+    fetchClients();
   }, []);
 
   return (
@@ -28,6 +60,30 @@ export default function OrganizationDashboard() {
             Active
           </span>
         )}
+      </div>
+
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="text-xs uppercase tracking-wide text-slate-500">Total Clients</div>
+          <div className="mt-2 text-3xl font-bold text-slate-800">{loadingStats ? '—' : clientStats.total}</div>
+        </div>
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 shadow-sm">
+          <div className="text-xs uppercase tracking-wide text-emerald-700">Active</div>
+          <div className="mt-2 text-3xl font-bold text-emerald-800">{loadingStats ? '—' : clientStats.active}</div>
+        </div>
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-5 shadow-sm">
+          <div className="text-xs uppercase tracking-wide text-rose-700">Inactive</div>
+          <div className="mt-2 text-3xl font-bold text-rose-800">{loadingStats ? '—' : clientStats.inactive}</div>
+        </div>
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
+          <div className="text-xs uppercase tracking-wide text-amber-700">Pending</div>
+          <div className="mt-2 text-3xl font-bold text-amber-800">{loadingStats ? '—' : clientStats.pending}</div>
+        </div>
+        <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-5 shadow-sm">
+          <div className="text-xs uppercase tracking-wide text-indigo-700">New (30 days)</div>
+          <div className="mt-2 text-3xl font-bold text-indigo-800">{loadingStats ? '—' : clientStats.recent}</div>
+        </div>
       </div>
 
       {org ? (

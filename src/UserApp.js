@@ -45,6 +45,7 @@ import RechargePlan from './components/Client/RechargePlan';
 import RechargePlanCreate from './components/Client/RechargePlanCreate';
 import AIcourses from './components/Client/AIcourses';
 import CourseDetail from './components/Client/CourseDetail';
+import { API_BASE_URL } from './config';
 
 const UserApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -63,7 +64,7 @@ const UserApp = () => {
             setIsAuthenticated(true);
             setUserRole(userData.role);
           }
-          const response = await fetch('https://test.ailisher.com/api/auth/validate', {
+          const response = await fetch(`${API_BASE_URL}/api/auth/validate`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }

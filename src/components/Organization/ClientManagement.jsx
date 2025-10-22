@@ -1,302 +1,442 @@
-import React, { useEffect, useState } from 'react'
-import Cookies from 'js-cookie'
-import { API_BASE_URL } from '../../config'
-import AddClientModal from './AddClientModal'
-import { MoreVertical } from 'lucide-react'
+import React, { useState, useEffect } from "react";
+import {
+  Search,
+  UserPlus,
+  Edit,
+  Trash2,
+  MoreVertical,
+  ArrowUp,
+  ArrowDown,
+  Check,
+  X,
+  UserX,
+  LogIn,
+  SettingsIcon,
+} from "lucide-react";
+import axios from "axios";
+import Cookies from "js-cookie";
+import AddClientModal from "./AddClientModal";
+import { API_BASE_URL } from "../../config";
+import { useNavigate } from "react-router-dom";
 
-export default function ClientManagement() {
-  const [org, setOrg] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [clients, setClients] = useState([])
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
-  const [editingClient, setEditingClient] = useState(null)
-  const [menuOpenId, setMenuOpenId] = useState(null)
-  const [creating, setCreating] = useState(false)
-  const [createForm, setCreateForm] = useState({
-    businessName: '',
-    businessOwnerName: '',
-    email: '',
-    businessNumber: '',
-    businessGSTNumber: '',
-    businessPANNumber: '',
-    businessMobileNumber: '',
-    businessCategory: '',
-    businessAddress: '',
-    city: '',
-    pinCode: '',
-    businessLogo: '',
-    businessWebsite: '',
-    businessYoutubeChannel: '',
-    turnOverRange: ''
-  })
-
-  useEffect(() => {
-    const orgData = Cookies.get('organization')
-    if (orgData) {
-      try {
-        setOrg(JSON.parse(orgData))
-      } catch (e) {
-        setOrg(null)
-      }
-    }
-  }, [])
+const ClientManagement = () => {
+  const [clients, setClients] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortField, setSortField] = useState("name");
+  const [sortDirection, setSortDirection] = useState("asc");
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [loginLoading, setLoginLoading] = useState(null);
+  const [showAddClientModal, setShowAddClientModal] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(null);
+  const [modalMode, setModalMode] = useState("create");
+  const [selectedClient, setSelectedClient] = useState(null);
+  const token = Cookies.get("orgtoken");
+console.log(token)
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (org) fetchClients()
-  }, [org])
+    fetchClients();
+  }, []);
 
   const fetchClients = async () => {
-    setLoading(true)
-    setError('')
     try {
-      const token = Cookies.get('orgtoken')
-      const res = await fetch(`${API_BASE_URL}/api/organizations/clients`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      setLoading(true);
+      const response = await axios.get(
+        `${API_BASE_URL}/api/organizations/clients`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
         }
-      })
-      const data = await res.json()
-      if (!res.ok || !data.success) throw new Error(data.message || 'Failed to load clients')
-      setClients(Array.isArray(data.data) ? data.data : [])
-    } catch (e) {
-      setError(e.message)
+      );
+      console.log("response",response.data);
+      // Backend returns { success: true, data: [...] }
+      setClients(Array.isArray(response.data?.data) ? response.data.data : []);
+      setError(null);
+    } catch (err) {
+      setError("Failed to fetch clients");
+      console.error("Error fetching clients:", err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
-  const handleCreateClient = async (e) => {
-    e.preventDefault()
-    setCreating(true)
-    setError('')
-    try {
-      const token = Cookies.get('orgtoken')
-      const res = await fetch(`${API_BASE_URL}/api/organizations/clients/create`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(createForm)
-      })
-      const data = await res.json()
-      if (!res.ok || !data.success) throw new Error(data.message || 'Failed to create client')
-      // Refresh list
-      await fetchClients()
-      // Reset form
-      setCreateForm({
-        businessName: '',
-        businessOwnerName: '',
-        email: '',
-        businessNumber: '',
-        businessGSTNumber: '',
-        businessPANNumber: '',
-        businessMobileNumber: '',
-        businessCategory: '',
-        businessAddress: '',
-        city: '',
-        pinCode: '',
-        businessLogo: '',
-        businessWebsite: '',
-        businessYoutubeChannel: '',
-        turnOverRange: ''
-      })
-      // Close modal on success
-      setIsAddModalOpen(false)
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setCreating(false)
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
     }
-  }
+  };
+
+  const handleDeleteClient = async (id) => {
+    try {
+      await axios.delete(
+        `${API_BASE_URL}/api/organizations/clients/${id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setClients((prev) =>
+        (Array.isArray(prev) ? prev : []).filter(
+          (client) => client.clientId !== id
+        )
+      );
+      setConfirmDelete(null);
+      setDropdownOpen(null);
+    } catch (err) {
+      setError("Failed to delete client");
+      console.error("Error deleting client:", err);
+    }
+  };
+
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      const token = Cookies.get("admintoken");
+      const response = await axios.put(
+        `https://test.ailisher.com/api/admin/clients/${id}/status`,
+        { status: newStatus },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setClients(
+        clients.map((client) =>
+          client._id === id ? response.data.client : client
+        )
+      );
+    } catch (err) {
+      setError("Failed to update client status");
+      console.error("Error updating client status:", err);
+    }
+  };
+
+  const handleClientLogin = async (id) => {
+    try {
+      setLoginLoading(id);
+      // Open tab synchronously to avoid popup blockers
+      const newTab = window.open("about:blank", "_blank");
+
+      const response = await axios.post(
+        `${API_BASE_URL}/api/organizations/clients/${id}/login-token`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      console.log(response.data);
+
+      if (response.data?.success) {
+        const clientToken = response.data.token;
+        const clientData = {
+          role: response.data.user.role,
+          name: response.data.user.name,
+        };
+
+        const dashboardUrl = `${window.location.origin}/dashboard`;
+
+        if (newTab) {
+          newTab.document.open();
+          newTab.document.write(`
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Redirecting to client dashboard...</title>
+  </head>
+  <body>
+    <p>Redirecting to client dashboard...</p>
+    <script>
+      document.cookie = "usertoken=${clientToken}; path=/; max-age=18000";
+      document.cookie = "user=${encodeURIComponent(JSON.stringify(clientData))}; path=/; max-age=18000";
+      window.location.replace(${JSON.stringify(dashboardUrl)});
+    <\/script>
+  </body>
+</html>
+          `);
+          newTab.document.close();
+        } else {
+          // Fallback if popup blocked
+          document.cookie = `usertoken=${clientToken}; path=/; max-age=18000`;
+          document.cookie = `user=${encodeURIComponent(JSON.stringify(clientData))}; path=/; max-age=18000`;
+          window.location.replace(dashboardUrl);
+        }
+      }
+    } catch (err) {
+      setError("Failed to login as client");
+      console.error("Error logging in as client:", err);
+    } finally {
+      setLoginLoading(null);
+    }
+  };
 
   const handleClientAdded = () => {
     fetchClients();
   };
 
-  const handleUpdateClient = async (clientId, updates) => {
-    setError('')
-    try {
-      const token = Cookies.get('orgtoken')
-      const res = await fetch(`${API_BASE_URL}/api/organizations/clients/${clientId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(updates)
-      })
-      const data = await res.json()
-      if (!res.ok || !data.success) throw new Error(data.message || 'Failed to update client')
-      await fetchClients()
-    } catch (e) {
-      setError(e.message)
-    }
-  }
+  const toggleDropdown = (id) => {
+    setDropdownOpen(dropdownOpen === id ? null : id);
+  };
 
-  const handleRemoveClient = async (clientId) => {
-    setError('')
-    try {
-      const token = Cookies.get('orgtoken')
-      const res = await fetch(`${API_BASE_URL}/api/organizations/clients/${clientId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-      const data = await res.json()
-      if (!res.ok || !data.success) throw new Error(data.message || 'Failed to remove client')
-      await fetchClients()
-    } catch (e) {
-      setError(e.message)
-    }
-  }
-
-  const setField = (field, value) => setCreateForm((p) => ({ ...p, [field]: value }))
-
-  const openEditModal = (client) => {
-    setEditingClient({
-      businessName: client.businessName || client.name || '',
-      businessOwnerName: client.businessOwnerName || '',
-      email: client.email || '',
-      businessNumber: client.businessNumber || '',
-      businessGSTNumber: client.businessGSTNumber || '',
-      businessPANNumber: client.businessPANNumber || '',
-      businessMobileNumber: client.businessMobileNumber || '',
-      businessCategory: client.businessCategory || '',
-      businessAddress: client.businessAddress || '',
-      city: client.city || '',
-      pinCode: client.pinCode || '',
-      businessLogo: client.businessLogo || '',
-      businessWebsite: client.businessWebsite || '',
-      businessYoutubeChannel: client.businessYoutubeChannel || '',
-      turnOverRange: client.turnOverRange || ''
+  const normalizedClients = Array.isArray(clients) ? clients : [];
+  const filteredClients = normalizedClients
+    .filter((client) => {
+      const name = (client.businessName || client.name || "").toLowerCase();
+      const email = (client.email || "").toLowerCase();
+      const term = (searchTerm || "").toLowerCase();
+      return name.includes(term) || email.includes(term);
     })
-    setIsAddModalOpen(true)
-  }
+    .sort((a, b) => {
+      let aVal;
+      let bVal;
+      switch (sortField) {
+        case "createdAt":
+          aVal = new Date(a.createdAt || 0).getTime();
+          bVal = new Date(b.createdAt || 0).getTime();
+          break;
+        case "name":
+          aVal = (a.businessName || a.name || "").toLowerCase();
+          bVal = (b.businessName || b.name || "").toLowerCase();
+          break;
+        default:
+          aVal = (a[sortField] ?? "").toString().toLowerCase();
+          bVal = (b[sortField] ?? "").toString().toLowerCase();
+      }
+      if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
+console.log("clients",filteredClients)
+  const getSortIcon = (field) => {
+    if (sortField !== field) return null;
+    return sortDirection === "asc" ? (
+      <ArrowUp size={14} />
+    ) : (
+      <ArrowDown size={14} />
+    );
+  };
 
-  const closeModal = () => {
-    setIsAddModalOpen(false)
-    setEditingClient(null)
-  }
+  if (loading)
+    return <div className="flex justify-center p-8">Loading clients...</div>;
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-lg border bg-white p-6 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-800">Clients</h2>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={fetchClients}
-              className="rounded-md border px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
-            >
-              Refresh
-            </button>
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700"
-            >
-              Add Client
-            </button>
-          </div>
+    <div className="bg-white rounded-lg shadow-md p-6 ">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Client Management</h1>
+        <button
+          className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center hover:bg-blue-700 transition-colors"
+          onClick={() => {
+            setModalMode("create");
+            setSelectedClient(null);
+            setShowAddClientModal(true);
+          }}
+        >
+          <UserPlus size={16} className="mr-2" />
+          Add New Client
+        </button>
+      </div>
+
+      {error && (
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6">
+          <p>{error}</p>
         </div>
+      )}
 
-        {error && (
-          <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>
-        )}
+      <div className="mb-6 relative">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <Search size={18} className="text-gray-400" />
+        </div>
+        <input
+          type="text"
+          placeholder="Search clients by name or email"
+          className="pl-10 pr-4 py-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
 
-        {loading ? (
-          <div className="text-gray-600">Loading clients...</div>
-        ) : (
-          <div className="rounded-lg border overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 text-gray-600">
-                <tr>
-                  <th className="px-4 py-2 text-left font-medium">Business</th>
-                  <th className="px-4 py-2 text-left font-medium">Contact</th>
-                  <th className="px-4 py-2 text-left font-medium">City</th>
-                  <th className="px-4 py-2 text-left font-medium">Role</th>
-                  <th className="px-4 py-2 text-left font-medium">Status</th>
-                  <th className="px-4 py-2 text-right font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {clients.length === 0 && (
-                  <tr>
-                    <td className="px-4 py-6 text-gray-500" colSpan={6}>No clients yet</td>
-                  </tr>
-                )}
-                {clients.map((c) => (
-                  <tr key={c.clientId} className="border-t">
-                    <td className="px-4 py-2">
-                      <div className="font-medium text-gray-800">{c.businessName || c.name}</div>
-                      <div className="text-xs text-gray-500">{c.email}</div>
-                    </td>
-                    <td className="px-4 py-2">{c.businessMobileNumber || '-'}</td>
-                    <td className="px-4 py-2">{c.city || '-'}</td>
-                    <td className="px-4 py-2">
-                      <select
-                        className="rounded-md border px-2 py-1 text-xs"
-                        value={c.role || 'member'}
-                        onChange={(e) => handleUpdateClient(c.clientId, { role: e.target.value })}
-                      >
-                        <option value="owner">owner</option>
-                        <option value="admin">admin</option>
-                        <option value="member">member</option>
-                      </select>
-                    </td>
-                    <td className="px-4 py-2">
-                      <select
-                        className="rounded-md border px-2 py-1 text-xs"
-                        value={c.status || 'active'}
-                        onChange={(e) => handleUpdateClient(c.clientId, { status: e.target.value })}
-                      >
-                        <option value="active">active</option>
-                        <option value="inactive">inactive</option>
-                        <option value="suspended">suspended</option>
-                      </select>
-                    </td>
-                <td className="px-4 py-2 text-right relative">
-                  <button
-                    onClick={() => setMenuOpenId(menuOpenId === c.clientId ? null : c.clientId)}
-                    className="inline-flex items-center rounded-md border px-2 py-1 text-sm text-gray-700 hover:bg-gray-50"
-                  >
-                    <MoreVertical size={16} />
-                  </button>
-                  {menuOpenId === c.clientId && (
-                    <div className="absolute right-0 mt-2 w-32 rounded-md border bg-white shadow-md z-10">
-                      <button
-                        onClick={() => { setMenuOpenId(null); openEditModal(c); }}
-                        className="block w-full text-left px-3 py-2 text-sm hover:bg-gray-50"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => { setMenuOpenId(null); handleRemoveClient(c.clientId); }}
-                        className="block w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  )}
+      <div className="overflow-x-auto min-h-screen">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                onClick={() => handleSort("name")}
+              >
+                <div className="flex items-center">
+                  Business Name {getSortIcon("name")}
+                </div>
+              </th>
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                onClick={() => handleSort("email")}
+              >
+                <div className="flex items-center">
+                  Email {getSortIcon("email")}
+                </div>
+              </th>
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                onClick={() => handleSort("createdAt")}
+              >
+                <div className="flex items-center">
+                  Created On {getSortIcon("createdAt")}
+                </div>
+              </th>
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                onClick={() => handleSort("status")}
+              >
+                <div className="flex items-center">
+                  Status {getSortIcon("status")}
+                </div>
+              </th>
+              <th
+                scope="col"
+                className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {filteredClients.length === 0 ? (
+              <tr>
+                <td colSpan="5" className="px-6 py-4 text-center text-gray-500">
+                  No clients found
                 </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              </tr>
+            ) : (
+              filteredClients.map((client) => (
+                <tr key={client.clientId} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
+                        {(client.businessName || client.name || "?")
+                          .charAt(0)
+                          .toUpperCase()}
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          {client.businessName || client.name || ""}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {client.email || ""}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {client.createdAt
+                      ? new Date(client.createdAt).toLocaleDateString()
+                      : "-"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        client.status === "active"
+                          ? "bg-green-100 text-green-800"
+                          : client.status === "inactive"
+                          ? "bg-red-100 text-red-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}
+                    >
+                      {client.status || "pending"}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <div className="flex justify-end space-x-2">
+                      {client.clientId === confirmDelete ? (
+                        <>
+                          <button
+                            onClick={() => handleDeleteClient(client.clientId)}
+                            className="text-red-600 hover:text-red-900 p-1"
+                            title="Confirm delete"
+                          >
+                            <Check size={18} />
+                          </button>
+                          <button
+                            onClick={() => setConfirmDelete(null)}
+                            className="text-gray-600 hover:text-gray-900 p-1"
+                            title="Cancel"
+                          >
+                            <X size={18} />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => handleClientLogin(client.clientId)}
+                            className="text-green-600 hover:text-green-900 p-1"
+                            disabled={loginLoading === client.clientId}
+                            title="Login as client"
+                          >
+                            {loginLoading === client.clientId ? (
+                              <span className="animate-pulse">...</span>
+                            ) : (
+                              <LogIn size={18} />
+                            )}
+                          </button>
+                          <div className="relative inline-block text-left">
+                            <button
+                              className="text-gray-600 hover:text-gray-900 p-1"
+                              onClick={() => toggleDropdown(client.clientId)}
+                            >
+                              <MoreVertical size={18} />
+                            </button>
+                            {dropdownOpen === client.clientId && (
+                              <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                                <div className="py-1">
+                                  <button
+                                    className="block px-4 py-2 text-sm text-blue-600 hover:bg-gray-100 w-full text-left flex items-center"
+                                    title="Edit client"
+                                    onClick={() => {
+                                      setSelectedClient(client);
+                                      setModalMode("edit");
+                                      setShowAddClientModal(true);
+                                      setDropdownOpen(null);
+                                    }}
+                                  >
+                                    <Edit size={16} className="mr-2" />
+                                    Edit Client
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setConfirmDelete(client.clientId);
+                                      setDropdownOpen(null);
+                                    }}
+                                    className="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left flex items-center"
+                                  >
+                                    <Trash2 size={16} className="mr-2" />
+                                    Delete Client
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
 
       <AddClientModal
-        isOpen={isAddModalOpen}
-        onClose={closeModal}
+        isOpen={showAddClientModal}
+        mode={modalMode}
+        initialData={selectedClient}
+        clientId={selectedClient?.clientId}
+        onClose={() => setShowAddClientModal(false)}
         onClientAdded={handleClientAdded}
-        mode={editingClient ? 'edit' : 'create'}
-        initialData={editingClient || undefined}
-        clientId={editingClient ? (clients.find(c => c.email === editingClient.email)?.clientId || null) : null}
       />
+      
     </div>
-  )
-}
+  );
+};
+
+export default ClientManagement;

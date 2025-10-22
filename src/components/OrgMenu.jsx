@@ -1,11 +1,14 @@
 import React from 'react';
-import { Home, Users, CreditCard, Settings, UserPlus } from 'lucide-react';
+import { Home, Users, CreditCard, Settings, UserPlus, Wrench } from 'lucide-react';
 
 const OrgMenu = ({ isExpanded, currentPath, handleNavigate }) => {
   const menuItems = [
     { path: '/organization/dashboard', name: 'Overview', icon: <Home size={20} /> },
     { path: '/organization/members', name: 'Members', icon: <UserPlus size={20} /> },
     { path: '/organization/clients', name: 'Clients', icon: <Users size={20} /> },
+    { path: '/organization/users', name: 'Users', icon: <Users size={20} /> },
+    { path: '/organization/tools', name: 'Tools', icon: <Wrench size={20} /> },
+    // { path: '/organization/payments', name: 'Payments', icon: <CreditCard size={20} /> },
     { path: '/organization/billing', name: 'Billing', icon: <CreditCard size={20} /> },
     // { path: '/organization/settings', name: 'Settings', icon: <Settings size={20} /> }
   ];

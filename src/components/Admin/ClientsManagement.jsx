@@ -29,7 +29,7 @@ const ClientManagement = () => {
   const [loginLoading, setLoginLoading] = useState(null);
   const [showAddClientModal, setShowAddClientModal] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(null);
-
+  const [mode, setMode] = useState("create");
   const navigate = useNavigate();
 
   const handleconfig = (id) => {
@@ -141,7 +141,7 @@ const ClientManagement = () => {
         JSON.stringify(clientData)
       )}; path=/; max-age=18000";
       
-      window.location.href = 'https://www.ailisher.com/dashboard';
+      window.location.href = 'http://localhost:3000/dashboard';
     </script>
   </body>
 </html>
@@ -196,7 +196,7 @@ const ClientManagement = () => {
         <h1 className="text-2xl font-bold text-gray-800">Client Management</h1>
         <button
           className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center hover:bg-blue-700 transition-colors"
-          onClick={() => setShowAddClientModal(true)}
+          onClick={() => {setShowAddClientModal(true);setMode("create")}}
         >
           <UserPlus size={16} className="mr-2" />
           Add New Client
@@ -365,6 +365,7 @@ const ClientManagement = () => {
                                   <button
                                     className="block px-4 py-2 text-sm text-blue-600 hover:bg-gray-100 w-full text-left flex items-center"
                                     title="Edit client"
+                                    onClick={() => {setShowAddClientModal(true);setMode("edit")}}
                                   >
                                     <Edit size={16} className="mr-2" />
                                     Edit Client
@@ -398,6 +399,7 @@ const ClientManagement = () => {
         isOpen={showAddClientModal}
         onClose={() => setShowAddClientModal(false)}
         onClientAdded={handleClientAdded}
+        mode={mode}
       />
     </div>
   );
