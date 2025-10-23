@@ -530,3 +530,4 @@ const AdminManagement = ({ onAdminLogin }) => {
 };
 
 export default AdminManagement;
+

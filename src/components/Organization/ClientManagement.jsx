@@ -24,8 +24,8 @@ const ClientManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortField, setSortField] = useState("name");
-  const [sortDirection, setSortDirection] = useState("asc");
+  const [sortField, setSortField] = useState("createdAt");
+  const [sortDirection, setSortDirection] = useState("desc");
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [loginLoading, setLoginLoading] = useState(null);
   const [showAddClientModal, setShowAddClientModal] = useState(false);
@@ -39,6 +39,13 @@ console.log(token)
   useEffect(() => {
     fetchClients();
   }, []);
+
+  // Reset selectedClient when modal closes
+  useEffect(() => {
+    if (!showAddClientModal) {
+      setSelectedClient(null);
+    }
+  }, [showAddClientModal]);
 
   const fetchClients = async () => {
     try {
@@ -80,7 +87,7 @@ console.log(token)
       );
       setClients((prev) =>
         (Array.isArray(prev) ? prev : []).filter(
-          (client) => client.clientId !== id
+          (client) => client.id !== id
         )
       );
       setConfirmDelete(null);
@@ -111,14 +118,14 @@ console.log(token)
     }
   };
 
-  const handleClientLogin = async (id) => {
+  const handleClientLogin = async (client) => {
     try {
-      setLoginLoading(id);
+      setLoginLoading(client.id);
       // Open tab synchronously to avoid popup blockers
       const newTab = window.open("about:blank", "_blank");
 
       const response = await axios.post(
-        `${API_BASE_URL}/api/organizations/clients/${id}/login-token`,
+        `${API_BASE_URL}/api/organizations/clients/${client.id}/login-token`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -251,6 +258,22 @@ console.log("clients",filteredClients)
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
+        <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+          <select
+            className="border border-gray-300 rounded-md text-sm py-1 pl-2 pr-7 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={`${sortField}:${sortDirection}`}
+            onChange={(e) => {
+              const [field, direction] = e.target.value.split(":");
+              setSortField(field);
+              setSortDirection(direction);
+            }}
+          >
+            <option value="name:asc">A-Z</option>
+            <option value="name:desc">Z-A</option>
+            <option value="createdAt:desc">Newest first</option>
+            <option value="createdAt:asc">Oldest first</option>
+          </select>
+        </div>
       </div>
 
       <div className="overflow-x-auto min-h-screen">
@@ -313,16 +336,25 @@ console.log("clients",filteredClients)
                 <tr key={client.clientId} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
-                        {(client.businessName || client.name || "?")
-                          .charAt(0)
-                          .toUpperCase()}
-                      </div>
+                    <div className="h-12 w-12 rounded-full flex items-center justify-center bg-gray-100 overflow-hidden shadow-sm border border-gray-200">
+  {client.businessLogo ? (
+    <img
+      src={client.businessLogo}
+      alt={client.businessName || client.name || "Client"}
+      className="w-full h-full object-cover"
+    />
+  ) : (
+    <span className="text-lg font-semibold text-gray-700">
+      {(client.businessName || client.name)?.charAt(0).toUpperCase()}
+    </span>
+  )}
+</div>
+
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">
                           {client.businessName || client.name || ""}
+                          </div>
                         </div>
-                      </div>
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -348,10 +380,10 @@ console.log("clients",filteredClients)
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex justify-end space-x-2">
-                      {client.clientId === confirmDelete ? (
+                      {client.id === confirmDelete ? (
                         <>
                           <button
-                            onClick={() => handleDeleteClient(client.clientId)}
+                            onClick={() => handleDeleteClient(client.id)}
                             className="text-red-600 hover:text-red-900 p-1"
                             title="Confirm delete"
                           >
@@ -368,12 +400,12 @@ console.log("clients",filteredClients)
                       ) : (
                         <>
                           <button
-                            onClick={() => handleClientLogin(client.clientId)}
+                            onClick={() => handleClientLogin(client)}
                             className="text-green-600 hover:text-green-900 p-1"
-                            disabled={loginLoading === client.clientId}
+                            disabled={loginLoading === client.id}
                             title="Login as client"
                           >
-                            {loginLoading === client.clientId ? (
+                            {loginLoading === client.id ? (
                               <span className="animate-pulse">...</span>
                             ) : (
                               <LogIn size={18} />
@@ -404,7 +436,7 @@ console.log("clients",filteredClients)
                                   </button>
                                   <button
                                     onClick={() => {
-                                      setConfirmDelete(client.clientId);
+                                      setConfirmDelete(client.id);
                                       setDropdownOpen(null);
                                     }}
                                     className="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left flex items-center"
@@ -428,11 +460,12 @@ console.log("clients",filteredClients)
       </div>
 
       <AddClientModal
+        key={`${modalMode}-${selectedClient?.id || 'new'}`}
         isOpen={showAddClientModal}
         mode={modalMode}
         initialData={selectedClient}
-        clientId={selectedClient?.clientId}
-        onClose={() => setShowAddClientModal(false)}
+        clientId={selectedClient?.id}
+        onClose={() => {setShowAddClientModal(false);setSelectedClient(null);}}
         onClientAdded={handleClientAdded}
       />
       

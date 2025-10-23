@@ -32,7 +32,6 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded, mode = 'create', initi
   const [showCredentials, setShowCredentials] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [copied, setCopied] = useState({ userId: false, password: false });
-  const [countdown, setCountdown] = useState(0);
 
   const businessCategories = [
     'Technology',
@@ -182,19 +181,6 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded, mode = 'create', initi
     }
   };
 
-  const startCountdown = () => {
-    setCountdown(10);
-    const timer = setInterval(() => {
-      setCountdown(prev => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          resetModal();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
 
   const resetModal = () => {
     setFormData({
@@ -218,7 +204,6 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded, mode = 'create', initi
     setShowCredentials(false);
     setShowPassword(false);
     setCopied({ userId: false, password: false });
-    setCountdown(0);
     onClose();
   };
 
@@ -257,10 +242,9 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded, mode = 'create', initi
         });
         const result = await res.json();
         if (!res.ok || !result.success) throw new Error(result.message || 'Failed to create client');
-        setSuccess(result);
-        setShowCredentials(true);
         if (onClientAdded) onClientAdded();
-        startCountdown();
+        // Close form immediately after successful creation
+        resetModal();
       }
     } catch (error) {
       console.error('Create client error:', error);
@@ -359,29 +343,23 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded, mode = 'create', initi
               </div>
             </div>
 
-            {/* Auto-close countdown */}
-            <div className="flex justify-between items-center">
-              <p className="text-sm text-gray-500">
-                Auto-closing in {countdown} seconds...
-              </p>
-              <div className="flex space-x-3">
-                <button
-                  onClick={resetModal}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors text-sm"
-                >
-                  Close Now
-                </button>
-                <button
-                  onClick={() => {
-                    setCountdown(0);
-                    setShowCredentials(false);
-                    setSuccess(null);
-                  }}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
-                >
-                  Add Another Client
-                </button>
-              </div>
+            {/* Action buttons */}
+            <div className="flex justify-center space-x-3">
+              <button
+                onClick={resetModal}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors text-sm"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  setShowCredentials(false);
+                  setSuccess(null);
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+              >
+                Add Another Client
+              </button>
             </div>
           </div>
         </div>
@@ -510,7 +488,7 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded, mode = 'create', initi
             {/* Business Mobile Number */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Business Mobile Number *
+               Mobile Number *
               </label>
               <input
                 type="tel"
