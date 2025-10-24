@@ -76,6 +76,7 @@ const SidebarLayout = ({ onLogout, userRole }) => {
         
         // For clients, try to get business info from stored user data
         if (userRole === 'client') {
+          console.log("userData",userData)
           setBusinessName(userData.businessName || 'Client Dashboard');
           setBusinessLogo(userData.businessLogo || '');
         } else {

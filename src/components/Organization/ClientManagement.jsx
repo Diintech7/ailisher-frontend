@@ -12,6 +12,7 @@ import {
   UserX,
   LogIn,
   SettingsIcon,
+  ToggleRight,
 } from "lucide-react";
 import axios from "axios";
 import Cookies from "js-cookie";
@@ -118,6 +119,32 @@ console.log(token)
     }
   };
 
+  const handleToggleStatus = async (client) => {
+    try {
+      const newEnabled = !client.isEnabled;
+      const response = await axios.patch(
+        `${API_BASE_URL}/api/organizations/clients/${client.id}/toggle-status`,
+        { isEnabled: newEnabled },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data?.success) {
+        // Update the client in the local state
+        setClients(prevClients =>
+          prevClients.map(c =>
+            c.id === client.id
+              ? { ...c, isEnabled: response.data.client.isEnabled }
+              : c
+          )
+        );
+        setError(null);
+      }
+    } catch (err) {
+      setError("Failed to toggle client status");
+      console.error("Error toggling client status:", err);
+    }
+  };
+
   const handleClientLogin = async (client) => {
     try {
       setLoginLoading(client.id);
@@ -202,6 +229,10 @@ console.log(token)
         case "name":
           aVal = (a.businessName || a.name || "").toLowerCase();
           bVal = (b.businessName || b.name || "").toLowerCase();
+          break;
+        case "status":
+          aVal = a.isEnabled === true ? "enabled" : a.isEnabled === false ? "disabled" : "pending";
+          bVal = b.isEnabled === true ? "enabled" : b.isEnabled === false ? "disabled" : "pending";
           break;
         default:
           aVal = (a[sortField] ?? "").toString().toLowerCase();
@@ -368,14 +399,14 @@ console.log("clients",filteredClients)
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        client.status === "active"
+                        client.isEnabled === true
                           ? "bg-green-100 text-green-800"
-                          : client.status === "inactive"
+                          : client.isEnabled === false
                           ? "bg-red-100 text-red-800"
                           : "bg-yellow-100 text-yellow-800"
                       }`}
                     >
-                      {client.status || "pending"}
+                      {client.isEnabled === true ? "Enabled" : client.isEnabled === false ? "Disabled" : "Pending"}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -411,6 +442,7 @@ console.log("clients",filteredClients)
                               <LogIn size={18} />
                             )}
                           </button>
+                          
                           <div className="relative inline-block text-left">
                             <button
                               className="text-gray-600 hover:text-gray-900 p-1"
@@ -433,6 +465,21 @@ console.log("clients",filteredClients)
                                   >
                                     <Edit size={16} className="mr-2" />
                                     Edit Client
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      handleToggleStatus(client);
+                                      setDropdownOpen(null);
+                                    }}
+                                    className={`block px-4 py-2 text-sm hover:bg-gray-100 w-full text-left flex items-center ${
+                                      client.isEnabled === true
+                                        ? 'text-red-600'
+                                        : 'text-green-600'
+                                    }`}
+                                    title={client.isEnabled === true ? 'Disable client' : 'Enable client'}
+                                  >
+                                    <ToggleRight size={16} className="mr-2" />
+                                    {client.isEnabled === true ? 'Disable Client' : 'Enable Client'}
                                   </button>
                                   <button
                                     onClick={() => {
