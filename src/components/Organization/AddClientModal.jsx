@@ -34,18 +34,49 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded, mode = 'create', initi
   const [copied, setCopied] = useState({ userId: false, password: false });
 
   const businessCategories = [
-    'Technology',
-    'Healthcare',
-    'Education',
-    'Finance',
-    'Retail',
-    'Manufacturing',
-    'Real Estate',
-    'Food & Beverage',
-    'Transportation',
-    'Consulting',
-    'Marketing',
-    'Other'
+'Coaching Institute',
+
+
+'School',
+
+
+'College',
+
+
+'University',
+
+
+'Publisher',
+
+
+'Skill Development Center',
+
+
+'Training Institute',
+
+
+'EdTech Company',
+
+
+'NGO / Educational Trust',
+
+
+'Individual Teacher / Tutor',
+
+
+'Test Series Provider',
+
+
+'Online Course Creator',
+
+
+'Content Developer / Author',
+
+
+'Bookstore / Distributor',
+
+
+'Others'
   ];
 
   const turnoverRanges = [
