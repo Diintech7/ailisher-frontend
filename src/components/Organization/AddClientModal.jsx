@@ -422,7 +422,7 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded, mode = 'create', initi
             </div>
 
             {/* Business Number */}
-            <div>
+            {/* <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Business Number *
               </label>
@@ -435,7 +435,7 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded, mode = 'create', initi
                 placeholder="Enter business number"
                 required
               />
-            </div>
+            </div> */}
 
             {/* Business Email */}
             <div>

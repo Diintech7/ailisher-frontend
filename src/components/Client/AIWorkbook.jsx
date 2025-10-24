@@ -1036,7 +1036,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
   );
 };
 
-const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMappings }) => {
+const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMappings, onCategoriesUpdated }) => {
   const [formData, setFormData] = useState({
     title: book.title || '',
     description: book.description || '',
@@ -1069,17 +1069,142 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
   const [imagePreview, setImagePreview] = useState(book.coverImageUrl || book.coverImage || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
-  
+  const [creatingCategory, setCreatingCategory] = useState(false);
+  const [creatingSubcategory, setCreatingSubcategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newSubcategoryName, setNewSubcategoryName] = useState("");
+
   const languages = [
-    'Hindi', 'English', 'Bengali', 'Telugu', 'Marathi', 'Tamil', 
-    'Gujarati', 'Urdu', 'Kannada', 'Odia', 'Malayalam', 'Punjabi', 'Assamese', 'Other'
+    "Hindi",
+    "English",
+    "Bengali",
+    "Telugu",
+    "Marathi",
+    "Tamil",
+    "Gujarati",
+    "Urdu",
+    "Kannada",
+    "Odia",
+    "Malayalam",
+    "Punjabi",
+    "Assamese",
+    "Other",
   ];
-  
+
   const [formErrors, setFormErrors] = useState({
-    rating: '',
-    ratingCount: '',
-    summary: ''
+    rating: "",
+    ratingCount: "",
+    summary: "",
+    pricing: ""
   });
+
+  if (!isOpen) return null;
+
+  const refreshCategories = async () => {
+    try {
+      const token = Cookies.get("usertoken");
+      const res = await fetch("https://test.ailisher.com/api/categories", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const list = await res.json();
+      if (!Array.isArray(list)) return;
+      // Convert list to mappings
+      const mappings = {};
+      list.forEach((cat) => {
+        mappings[cat.name] = (cat.subcategories || []).map((sc) => sc.name);
+        if (mappings[cat.name].length === 0) mappings[cat.name] = ["Other"];
+      });
+      if (onCategoriesUpdated) onCategoriesUpdated(mappings);
+    } catch (e) {
+      console.error("Failed to refresh categories", e);
+    }
+  };
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) {
+      toast.error("Category name is required");
+      return;
+    }
+    try {
+      setCreatingCategory(true);
+      const token = Cookies.get("usertoken");
+      const res = await fetch("https://test.ailisher.com/api/categories", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name: newCategoryName.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data?.error || "Failed to add category");
+      } else {
+        toast.success("Category created");
+        await refreshCategories();
+        setFormData((prev) => ({
+          ...prev,
+          mainCategory: data.name,
+          subCategory: "Other",
+        }));
+        setNewCategoryName("");
+      }
+    } catch (e) {
+      toast.error("Failed to create category");
+    } finally {
+      setCreatingCategory(false);
+    }
+  };
+
+  const handleCreateSubcategory = async () => {
+    if (!newSubcategoryName.trim()) {
+      toast.error("Subcategory name is required");
+      return;
+    }
+    try {
+      setCreatingSubcategory(true);
+      const token = Cookies.get("usertoken");
+      // Need category id; fetch categories and find the current mainCategory
+      const listRes = await fetch("https://test.ailisher.com/api/categories", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const list = await listRes.json();
+      const currentCat = Array.isArray(list)
+        ? list.find((c) => c.name === formData.mainCategory)
+        : null;
+      if (!currentCat) {
+        toast.error("Select a valid main category first");
+        return;
+      }
+      const res = await fetch(
+        `https://test.ailisher.com/api/categories/${currentCat._id}/subcategories`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ name: newSubcategoryName.trim() }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data?.error || "Failed to add subcategory");
+      } else {
+        toast.success("Subcategory created");
+        await refreshCategories();
+        setFormData((prev) => ({
+          ...prev,
+          subCategory: newSubcategoryName.trim(),
+        }));
+        setNewSubcategoryName("");
+      }
+    } catch (e) {
+      toast.error("Failed to create subcategory");
+    } finally {
+      setCreatingSubcategory(false);
+    }
+  };
   
   if (!isOpen) return null;
   
@@ -1450,32 +1575,117 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
-                <label className="block text-gray-700 text-sm font-medium mb-2">Main Category *</label>
-                <select
-                  name="mainCategory"
-                  value={formData.mainCategory}
-                  onChange={handleInputChange}
-                  className="w-full h-10 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 truncate"
-                  required
-                >
-                  {Object.keys(categoryMappings).map(category => (
-                    <option key={category} value={category}>{category}</option>
-                  ))}
-                </select>
+                <label className="block text-gray-700 text-sm font-medium mb-2">
+                  Main Category *
+                </label>
+                <div className="grid grid-cols-[1fr_auto] items-center gap-2 w-full">
+                  <select
+                    name="mainCategory"
+                    value={formData.mainCategory}
+                    onChange={handleInputChange}
+                    className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 truncate"
+                    required
+                  >
+                    {Object.keys(categoryMappings).map((category) => (
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="px-2 py-2 bg-indigo-600 text-white rounded-md"
+                    onClick={() => setCreatingCategory((prev) => !prev)}
+                  >
+                    New
+                  </button>
+                </div>
+                {creatingCategory && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={newCategoryName}
+                      onChange={(e) => setNewCategoryName(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
+                      placeholder="Category name"
+                    />
+                    <button
+                      type="button"
+                      className="px-3 py-2 bg-green-600 text-white rounded-md"
+                      onClick={handleCreateCategory}
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      className="px-3 py-2 bg-gray-200 text-gray-700 rounded-md"
+                      onClick={() => {
+                        setCreatingCategory(false);
+                        setNewCategoryName("");
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
               </div>
               <div>
-                <label className="block text-gray-700 text-sm font-medium mb-2">Sub Category *</label>
-                <select
-                  name="subCategory"
-                  value={formData.subCategory}
-                  onChange={handleInputChange}
-                  className="w-full h-10 min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 truncate"
-                  required
-                >
-                  {getValidSubCategories().map(subCategory => (
-                    <option key={subCategory} value={subCategory}>{subCategory}</option>
-                  ))}
-                </select>
+                <label className="block text-gray-700 text-sm font-medium mb-2">
+                  Sub Category *
+                </label>
+                <div className="grid grid-cols-[1fr_auto] items-center gap-2 w-full">
+                  <select
+                    name="subCategory"
+                    value={formData.subCategory}
+                    onChange={handleInputChange}
+                    className="w-full min-w-0 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 truncate"
+                    required
+                  >
+                    {(categoryMappings[formData.mainCategory] || ["Other"]).map(
+                      (subCategory) => (
+                        <option key={subCategory} value={subCategory}>
+                          {subCategory}
+                        </option>
+                      )
+                    )}
+                  </select>
+                  <button
+                    type="button"
+                    className="px-2 py-2 bg-indigo-600 text-white rounded-md"
+                    onClick={() => setCreatingSubcategory((prev) => !prev)}
+                    disabled={!formData.mainCategory}
+                  >
+                    New
+                  </button>
+                </div>
+                {creatingSubcategory && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={newSubcategoryName}
+                      onChange={(e) => setNewSubcategoryName(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
+                      placeholder="Subcategory name"
+                    />
+                    <button
+                      type="button"
+                      className="px-3 py-2 bg-green-600 text-white rounded-md"
+                      onClick={handleCreateSubcategory}
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      className="px-3 py-2 bg-gray-200 text-gray-700 rounded-md"
+                      onClick={() => {
+                        setCreatingSubcategory(false);
+                        setNewSubcategoryName("");
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
             
@@ -1937,6 +2147,26 @@ const AIWorkbook = () => {
 
   const navigate = useNavigate();
 
+  const refreshCategories = async () => {
+    try {
+      const token = Cookies.get("usertoken");
+      const res = await fetch("https://test.ailisher.com/api/categories", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const list = await res.json();
+      if (!Array.isArray(list)) return;
+      // Convert list to mappings
+      const mappings = {};
+      list.forEach((cat) => {
+        mappings[cat.name] = (cat.subcategories || []).map((sc) => sc.name);
+        if (mappings[cat.name].length === 0) mappings[cat.name] = ["Other"];
+      });
+      setCategoryMappings(mappings);
+    } catch (e) {
+      console.error("Failed to refresh categories", e);
+    }
+  };
+
   const fetchWorkbooks = async () => {
     setLoading(true);
     try {
@@ -2031,7 +2261,8 @@ const AIWorkbook = () => {
 
   // Get all subcategories for a main category
   const getSubCategories = (mainCategory) => {
-    const standardCategories = CATEGORY_MAPPINGS[mainCategory] || [];
+    // Use the dynamically fetched categoryMappings instead of hardcoded CATEGORY_MAPPINGS
+    const standardCategories = categoryMappings[mainCategory] || [];
     const customCategories = workbooks
       .filter(wb => wb.mainCategory === mainCategory && wb.subCategory === 'Other' && wb.customSubCategory)
       .map(wb => wb.customSubCategory);
@@ -2062,6 +2293,8 @@ const AIWorkbook = () => {
 
   const handleWorkbookAdded = (newWorkbook) => {
     setWorkbooks([...workbooks, newWorkbook]);
+    // Refresh categories to ensure we have the latest category data
+    refreshCategories();
   };
 
   const handleWorkbookClick = (workbookId,isEnabled) => {
@@ -2109,6 +2342,8 @@ const AIWorkbook = () => {
     setWorkbooks((prev) =>
       prev.map((wb) => (wb._id === updatedWorkbook._id ? updatedWorkbook : wb))
     );
+    // Refresh categories to ensure we have the latest category data
+    refreshCategories();
   };
 
   const handleWorkbookDeleted = (deletedId) => {
@@ -2306,6 +2541,8 @@ const AIWorkbook = () => {
           book={editingWorkbook}
           currentUser={currentUser}
           categoryMappings={categoryMappings}
+          onCategoriesUpdated={setCategoryMappings}
+
         />
       )}
     </div>
