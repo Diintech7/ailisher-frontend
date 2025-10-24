@@ -141,7 +141,7 @@ const ClientManagement = () => {
         JSON.stringify(clientData)
       )}; path=/; max-age=18000";
       
-      window.location.href = 'http://localhost:3000/dashboard';
+      window.location.href = 'https://ailisher.com/dashboard';
     </script>
   </body>
 </html>
