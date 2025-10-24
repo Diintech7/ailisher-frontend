@@ -603,7 +603,7 @@ const OrgManagement = ({ onOrgLogin }) => {
               <p className="text-gray-400 text-sm mt-1">Get started by adding your first organization</p>
             </div>
           ) : (
-            <div className="p-6">
+            <div className="p-6 h-screen">
               <div className="space-y-4">
                 {filteredOrganizations.map((org, index) => (
                   <div key={index} className="group bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg hover:border-orange-200 transition-all duration-300">
@@ -660,7 +660,7 @@ const OrgManagement = ({ onOrgLogin }) => {
                                 <FaEdit className="text-green-500" />
                                 <span>Edit Organization</span>
                               </button>
-                              {org.status === 'active' ? (
+                              {/* {org.status === 'active' ? (
                                 <button
                                   onClick={() => handleDropdownClick(org._id, 'suspend', org)}
                                   className="w-full px-4 py-2 text-left text-yellow-600 hover:bg-yellow-50 flex items-center space-x-2"
@@ -677,7 +677,7 @@ const OrgManagement = ({ onOrgLogin }) => {
                                   <span>Restore Organization</span>
                                 </button>
                               )}
-                              <hr className="my-1" />
+                              <hr className="my-1" /> */}
                               <button
                                 onClick={() => handleDropdownClick(org._id, 'delete', org)}
                                 className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 flex items-center space-x-2"
