@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import SuperAdminAuthLayout from './components/Auth/SuperAdminAuthLayout';
 import SuperAdminDashboard from './components/Superadmin/SuperAdminDashboard';
+import { API_BASE_URL } from './config';
 
 const Superadmin = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -15,16 +16,31 @@ const Superadmin = () => {
       
       if (superAdminToken && superAdminData) {
         try {
-          const parsedSuperAdminData = JSON.parse(superAdminData);
-          if (parsedSuperAdminData.role === 'superadmin') {
-            setIsAuthenticated(true);
-            // Update super admin user data if needed
-            localStorage.setItem('superAdminData', JSON.stringify({
-              ...parsedSuperAdminData,
-              name: parsedSuperAdminData.name
-            }));
+          // Validate token with backend
+          const response = await fetch(`${API_BASE_URL}/api/superadmin/validate`, {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${superAdminToken}`,
+              'Content-Type': 'application/json'
+            }
+          });
+
+          if (response.ok) {
+            const validationData = await response.json();
+            if (validationData.success && validationData.role === 'superadmin') {
+              setIsAuthenticated(true);
+              // Update super admin user data with fresh data from server
+              localStorage.setItem('superAdminData', JSON.stringify({
+                role: validationData.role,
+                name: validationData.name,
+                email: validationData.email,
+                _id: validationData._id
+              }));
+            } else {
+              throw new Error('Invalid token validation response');
+            }
           } else {
-            throw new Error('Invalid role');
+            throw new Error('Token validation failed');
           }
         } catch (error) {
           console.error('Error validating super admin token:', error);
@@ -51,7 +67,7 @@ const Superadmin = () => {
     // Store super admin token and user data
     localStorage.setItem('superadmintoken', superAdminData.token);
     localStorage.setItem('superAdminData', JSON.stringify({
-      role: superAdminData.role,
+      role: superAdminData.role || 'superadmin',
       name: superAdminData.name,
       email: superAdminData.email
     }));
