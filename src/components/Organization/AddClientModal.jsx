@@ -159,7 +159,7 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded, mode = 'create', initi
       'businessName',
       'businessOwnerName',
       'email',
-      'businessNumber',
+      // 'businessNumber',
       'businessGSTNumber',
       'businessPANNumber',
       'businessMobileNumber',
