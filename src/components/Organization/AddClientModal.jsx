@@ -484,6 +484,23 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded, mode = 'create', initi
               />
             </div>
 
+            {/* Business Mobile Number */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+               BusinessMobile Number *
+              </label>
+              <input
+                type="tel"
+                name="businessMobileNumber"
+                value={formData.businessMobileNumber}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter 10-digit mobile number"
+                maxLength="10"
+                required
+              />
+            </div>
+
             {/* Business GST Number */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -516,22 +533,7 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded, mode = 'create', initi
               />
             </div>
 
-            {/* Business Mobile Number */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-               Mobile Number *
-              </label>
-              <input
-                type="tel"
-                name="businessMobileNumber"
-                value={formData.businessMobileNumber}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter 10-digit mobile number"
-                maxLength="10"
-                required
-              />
-            </div>
+            
 
             {/* Business Category */}
             <div>
