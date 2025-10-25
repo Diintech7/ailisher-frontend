@@ -487,7 +487,7 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded, mode = 'create', initi
             {/* Business Mobile Number */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-               BusinessMobile Number *
+               Business Mobile Number *
               </label>
               <input
                 type="tel"
