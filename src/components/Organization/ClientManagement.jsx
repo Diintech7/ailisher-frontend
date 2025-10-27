@@ -19,6 +19,7 @@ import Cookies from "js-cookie";
 import AddClientModal from "./AddClientModal";
 import { API_BASE_URL } from "../../config";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 const ClientManagement = () => {
   const [clients, setClients] = useState([]);
@@ -34,7 +35,7 @@ const ClientManagement = () => {
   const [modalMode, setModalMode] = useState("create");
   const [selectedClient, setSelectedClient] = useState(null);
   const token = Cookies.get("orgtoken");
-console.log(token)
+console.log("token",token)
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -80,17 +81,23 @@ console.log(token)
 
   const handleDeleteClient = async (id) => {
     try {
-      await axios.delete(
+      const response = await axios.delete(
         `${API_BASE_URL}/api/organizations/clients/${id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
+      console.log("response",response.data);
       setClients((prev) =>
         (Array.isArray(prev) ? prev : []).filter(
           (client) => client.id !== id
         )
       );
+      if(response.data.success) {
+        toast.success(response.data.message);
+      } else {
+        toast.error(response.data.message);
+      }
       setConfirmDelete(null);
       setDropdownOpen(null);
     } catch (err) {
