@@ -295,9 +295,9 @@ const AITests = () => {
               src={test.imageUrl}
               alt={test.name}
               className="h-full w-full object-fill rounded-lg"
-              onError={(e) => {
-                e.target.src = 'https://via.placeholder.com/400x200?text=No+Image';
-              }}
+              // onError={(e) => {
+              //   e.target.src = 'https://via.placeholder.com/400x200?text=No+Image';
+              // }}
             />
           ) : (
             <FileText size={64} className="text-indigo-400" />
