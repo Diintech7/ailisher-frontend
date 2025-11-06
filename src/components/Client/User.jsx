@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, ChevronDown, ChevronUp, AlertTriangle, User as UserIcon, Filter } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 export default function User() {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -300,6 +302,16 @@ export default function User() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(user.createdAt).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <button
+                        onClick={() => {
+                          const targetUserId = user.userId?._id || user.userId || user._id;
+                          if (!targetUserId || !user.clientId) return;
+                          navigate(`/client/users/${targetUserId}?clientId=${encodeURIComponent(user.clientId)}`);
+                        }}
+                        className="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                      >View</button>
                     </td>
                   </tr>
                 ))}

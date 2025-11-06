@@ -46,6 +46,7 @@ import RechargePlanCreate from './components/Client/RechargePlanCreate';
 import AIcourses from './components/Client/AIcourses';
 import CourseDetail from './components/Client/CourseDetail';
 import { API_BASE_URL } from './config';
+import UserDetail from './components/Client/UserDetail';
 
 const UserApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -213,6 +214,7 @@ const UserApp = () => {
                 <Route path="/ai-workbook/:workbookId/chapters/:chapterId/topics/:topicId/assets" element={<AssetView />} />
                 <Route path="/ai-workbook/:workbookId/chapters/:chapterId/topics/:topicId/subtopics/:subtopicId/assets" element={<AssetView />} />
                 <Route path="/users" element={<User/>} />
+                <Route path="/client/users/:userId" element={<UserDetail/>} />
                 <Route path="/generate" element={<GeneratePage/>} />
                 <Route path="/tools" element={<Tools/>} />
                 <Route path="/reels" element={<Reels/>} />
