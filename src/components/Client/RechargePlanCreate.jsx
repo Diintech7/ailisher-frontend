@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { API_BASE_URL } from '../../config';
 import { Trash } from 'lucide-react';
 
-const CATEGORY_OPTIONS = ['UPSC', 'BPSC', 'UPPCS','Credit-Recharge','Other'];
+const CATEGORY_OPTIONS = ['UPSC', 'BPSC', 'UPPCS','Credit-Recharge','Trial','Other'];
 const TYPE_TABS = [
   { value: 'book', label: 'AIBooks' },
   { value: 'workbook', label: 'AIWorkbooks' },

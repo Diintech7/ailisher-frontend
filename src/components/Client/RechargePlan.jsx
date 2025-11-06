@@ -296,6 +296,8 @@ export default function RechargePlan() {
 
   function getCategoryColor(category) {
     switch (category) {
+      case 'Trial':
+        return 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white';
       case 'Premium':
         return 'bg-gradient-to-r from-purple-500 to-purple-600 text-white';
       case 'Enterprise':
