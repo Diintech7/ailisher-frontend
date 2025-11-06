@@ -78,6 +78,7 @@ const Reels = React.memo(function Reels() {
   };
 
   const navigate = useNavigate();
+  const [orderInputs, setOrderInputs] = useState({});
 
   const token = Cookies.get("usertoken");
   const user = JSON.parse(Cookies.get("user") || "{}");
@@ -106,8 +107,7 @@ const Reels = React.memo(function Reels() {
   };
 
   const axiosConfig = {
-    baseURL: 'https://test.ailisher.com',
-    // baseURL: "https://test.ailisher.com",
+    baseURL: "https://test.ailisher.com",
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
@@ -375,6 +375,27 @@ const Reels = React.memo(function Reels() {
       toast.error(error.response?.data?.message || "Failed to update reel");
     } finally {
       setOpenMenuId(null);
+    }
+  };
+
+  const updateReelOrder = async (reel, newOrder) => {
+    try {
+      const orderNum = Number(newOrder);
+      if (!Number.isFinite(orderNum) || orderNum < 1) return;
+      const response = await axios.patch(
+        `/api/reels/${reel._id}/order`,
+        { order: orderNum },
+        axiosConfig
+      );
+      if (response.data?.success) {
+        const list = Array.isArray(response.data.data) ? response.data.data : [];
+        setReels(list);
+        toast.success("Order updated");
+        setOrderInputs((prev) => ({ ...prev, [reel._id]: undefined }));
+      }
+    } catch (error) {
+      console.error("Order update error:", error);
+      toast.error(error.response?.data?.message || "Failed to update order");
     }
   };
 
@@ -857,9 +878,42 @@ const Reels = React.memo(function Reels() {
                                 {reel.description}
                               </p>
                             )}
-                            <div className="flex justify-between text-sm text-gray-500 mb-4">
+                            <div className="flex justify-between text-sm text-gray-500 mb-2">
                               <span>👁️ {reel.metrics?.views ?? 0} views</span>
                               <span>❤️ {reel.metrics?.likes ?? 0} likes</span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm text-gray-700 mb-4">
+                              <div>
+                                <span className="font-medium">Order:</span>
+                                <span className="ml-1">{reel.order ?? 0}</span>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <input
+                                  type="number"
+                                  min={1}
+                                  value={orderInputs[reel._id] ?? (reel.order ?? 1)}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    setOrderInputs((prev) => ({ ...prev, [reel._id]: val }));
+                                  }}
+                                  className="w-20 px-2 py-1 border border-gray-300 rounded"
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      const val = orderInputs[reel._id] ?? e.currentTarget.value;
+                                      updateReelOrder(reel, val);
+                                    }
+                                  }}
+                                />
+                                <button
+                                  className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded"
+                                  onClick={() => {
+                                    const val = orderInputs[reel._id] ?? (reel.order ?? 1);
+                                    updateReelOrder(reel, val);
+                                  }}
+                                >
+                                  Save
+                                </button>
+                              </div>
                             </div>
                           </div>
                           </div>

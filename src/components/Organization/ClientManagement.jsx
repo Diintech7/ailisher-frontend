@@ -106,26 +106,6 @@ console.log("token",token)
     }
   };
 
-  const handleStatusChange = async (id, newStatus) => {
-    try {
-      const token = Cookies.get("admintoken");
-      const response = await axios.put(
-        `https://test.ailisher.com/api/admin/clients/${id}/status`,
-        { status: newStatus },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      setClients(
-        clients.map((client) =>
-          client._id === id ? response.data.client : client
-        )
-      );
-    } catch (err) {
-      setError("Failed to update client status");
-      console.error("Error updating client status:", err);
-    }
-  };
-
   const handleToggleStatus = async (client) => {
     try {
       const newEnabled = !client.isEnabled;

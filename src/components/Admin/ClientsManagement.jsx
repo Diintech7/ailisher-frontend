@@ -124,7 +124,7 @@ const ClientManagement = () => {
           role: response.data.user.role,
           name: response.data.user.name,
         };
-
+        console.log(response.data)
         const newTab = window.open("", "_blank");
 
         if (newTab) {

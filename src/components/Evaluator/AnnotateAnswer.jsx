@@ -2401,7 +2401,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
       const uploadPayload = {
         fileName: file.name,
         contentType: file.type,
-        clientId: submission.clientId || "CLI677117YN7N",
+        clientId: submission.clientId,
         answerId: submission._id,
       }
       console.log(`[handleImageUpload] Upload payload:`, uploadPayload)

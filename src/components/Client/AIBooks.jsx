@@ -2831,7 +2831,7 @@ const AIBooks = () => {
           ...prev,
           total: booksData.total,
         }));
-
+        console.log("booksData", booksData);
         // Set category orders from the API response
         if (booksData.categoryOrders) {
           setCategoryOrders(booksData.categoryOrders);
@@ -2858,7 +2858,6 @@ const AIBooks = () => {
       setLoading(false);
     }
   };
-  console.log("categoryMappings", categoryMappings);
   useEffect(() => {
     fetchBooks();
   }, [navigate, pagination.page, pagination.limit, categoryOrder, filters]);

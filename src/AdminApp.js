@@ -13,6 +13,7 @@ import AiServiceManager from './components/Admin/AiServiceManager';
 import Configuration from './components/Admin/Configuration';
 import CreditAccount from './components/Admin/CreditAccount';
 import CreditAccountDetail from './components/Admin/CreditAccountDetail';
+import ClassroomManagement from './components/LiveClasses/ClassroomManagement';
 // import UserManagement from './components/Admin/UserManagement';
 // import AiAgentsManagement from './components/Admin/AiAgentsManagement';
 // import ConversationsManagement from './components/Admin/ConversationsManagement';
@@ -104,6 +105,7 @@ const AdminApp = () => {
             <Route path="/users" element={<User/>} />
             <Route path="/evaluators" element={<EvaluatorsManagement />} />
             <Route path="/services" element={<AiServiceManager />} />
+            <Route path="/live-classes" element={<ClassroomManagement />} />
             <Route path="/credit-account" element={<CreditAccount/>} />
             <Route path="/credit-account/:accountId" element={<CreditAccountDetail/>} />
             <Route path="/configuration/:clientId" element={<Configuration />} />
