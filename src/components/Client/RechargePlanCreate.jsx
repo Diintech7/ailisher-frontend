@@ -20,7 +20,9 @@ const initialPlan = {
   offerPrice: '',
   category: 'UPSC',
   imageKey: '',
-  videoKey: ''
+  videoKey: '',
+  offerStartAt: '', // datetime-local string
+  offerEndAt: '' // datetime-local string
 };
 
 export default function RechargePlanCreate() {
@@ -59,6 +61,17 @@ export default function RechargePlanCreate() {
           const body = await res.json();
           if (!res.ok || !body.success) throw new Error(body.message || 'Failed to load plan');
           const p = body.data;
+          const toLocalInput = (d) => {
+            if (!d) return '';
+            const dt = new Date(d);
+            const pad = (n) => String(n).padStart(2, '0');
+            const yyyy = dt.getFullYear();
+            const mm = pad(dt.getMonth() + 1);
+            const dd = pad(dt.getDate());
+            const hh = pad(dt.getHours());
+            const mi = pad(dt.getMinutes());
+            return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
+          };
           setPlan({
             name: p.name || '',
             description: p.description || '',
@@ -68,7 +81,9 @@ export default function RechargePlanCreate() {
             offerPrice: p.offerPrice || '',
             category: ['UPSC','BPSC','UPPCS','Credit-Recharge','Other'].includes(p.category) ? p.category : 'UPSC',
             imageKey: p.imageKey || '',
-            videoKey: p.videoKey || ''
+            videoKey: p.videoKey || '',
+            offerStartAt: toLocalInput(p.offerStartAt),
+            offerEndAt: toLocalInput(p.offerEndAt)
           });
           setPlanItems(Array.isArray(p.items) ? p.items : []);
         } catch (e) {
@@ -215,6 +230,24 @@ export default function RechargePlanCreate() {
         MRP: plan.MRP === '' ? 0 : Number(plan.MRP),
         offerPrice: plan.offerPrice === '' ? 0 : Number(plan.offerPrice)
       };
+
+      // Trial offer window validation and conversion
+      if (plan.category === 'Trial') {
+        if (!plan.offerEndAt) {
+          throw new Error('Offer end time is required for Trial plan');
+        }
+        const start = plan.offerStartAt ? new Date(plan.offerStartAt) : null;
+        const end = new Date(plan.offerEndAt);
+        if (start && end <= start) {
+          throw new Error('Offer end time must be after start time');
+        }
+        planData.offerStartAt = start ? start.toISOString() : undefined;
+        planData.offerEndAt = end.toISOString();
+      } else {
+        // Ensure we don't send stale offer window for non-trial categories
+        planData.offerStartAt = undefined;
+        planData.offerEndAt = undefined;
+      }
       
       if (isEdit) {
         const res = await fetch(`${API_BASE_URL}/api/client/credit-recharge-plans/${planId}`, {
@@ -439,6 +472,29 @@ export default function RechargePlanCreate() {
                     ))}
                   </select>
                 </div>
+              {plan.category === 'Trial' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Offer Start (optional)</label>
+                    <input
+                      type="datetime-local"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      value={plan.offerStartAt}
+                      onChange={(e) => setPlan({ ...plan, offerStartAt: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Offer End (required)</label>
+                    <input
+                      type="datetime-local"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      value={plan.offerEndAt}
+                      onChange={(e) => setPlan({ ...plan, offerEndAt: e.target.value })}
+                      required
+                    />
+                  </div>
+                </div>
+              )}
               </div>
             </div>
 

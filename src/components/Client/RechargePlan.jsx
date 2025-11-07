@@ -28,6 +28,7 @@ export default function RechargePlan() {
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [categoryTab, setCategoryTab] = useState('all'); // 'all' | 'regular' | 'trial'
 
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -77,6 +78,14 @@ export default function RechargePlan() {
       setLoading(false);
     }
   }
+
+  // Filter plans by category tab
+  const filteredPlans = useMemo(() => {
+    if (categoryTab === 'all') return plans;
+    if (categoryTab === 'trial') return plans.filter((p) => String(p.category).toLowerCase() === 'trial');
+    if (categoryTab === 'regular') return plans.filter((p) => String(p.category).toLowerCase() !== 'trial');
+    return plans;
+  }, [plans, categoryTab]);
 
   async function handleDeletePlan(planId) {
     if (!window.confirm('Delete this plan and its items?')) return;
@@ -440,7 +449,28 @@ export default function RechargePlan() {
             </div>
           ) : (
             <div className="space-y-8">
-            {plans.map((plan) => (
+            {/* Category Tabs */}
+            <div className="flex items-center gap-2 mb-2">
+              {[
+                { id: 'all', label: 'All' },
+                { id: 'regular', label: 'Regular' },
+                { id: 'trial', label: 'Trial' }
+              ].map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setCategoryTab(t.id)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
+                    categoryTab === t.id
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {filteredPlans.map((plan) => (
                 <div key={plan._id} className="bg-white rounded-2xl shadow-lg overflow-visible border border-gray-200 hover:shadow-xl transition-all duration-300">
                   {/* Plan Header */}
                   <div className="relative">
@@ -480,7 +510,7 @@ export default function RechargePlan() {
                             </div>
                             <div className="text-lg text-gray-500 line-through">₹{plan.MRP}</div>
                           </div>
-                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <div className="flex items-center gap-4 text-sm text-gray-600">
                             <div className="flex items-center gap-1">
                               <CreditCard className="w-4 h-4" />
                               {plan.credits} credits
@@ -613,13 +643,6 @@ export default function RechargePlan() {
                         <ShoppingCart className="w-4 h-4" />
                         Orders
                       </button>
-                      <button 
-                        onClick={() => navigate(`/plan/${plan._id}/edit`)}
-                        className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
-                      >
-                        <Edit className="w-4 h-4" />
-                        Edit
-                      </button>
                       <div className="relative z-20">
                         <button
                           onClick={() => toggleActionMenu(plan._id)}
@@ -631,6 +654,12 @@ export default function RechargePlan() {
                         </button>
                         {openMenuPlanId === plan._id && (
                           <div className="absolute right-0 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                            <button
+                              onClick={() => { navigate(`/plan/${plan._id}/edit`); setOpenMenuPlanId(null); }}
+                              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center gap-2"
+                            >
+                              Edit
+                            </button>
                             <button
                               onClick={() => { handleToggleEnabled(plan); setOpenMenuPlanId(null); }}
                               className="w-full text-left px-4 py-2 text-sm hover:bg-gray-50"

@@ -13,13 +13,33 @@ export default function User() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState({ key: 'createdAt', direction: 'desc' });
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedClientId, setSelectedClientId] = useState('');
-  const itemsPerPage = 10;
+  const [selectedCity, setSelectedCity] = useState('');
+  const [activeWithinDays, setActiveWithinDays] = useState(10);
+  const [onlyActive, setOnlyActive] = useState(false);
+  const itemsPerPage = 50;
 
-  // Get unique client IDs from users
-  const clientIds = React.useMemo(() => {
-    const uniqueIds = [...new Set(users.map(user => user.clientId))];
-    return uniqueIds.sort();
+  // Helpers to extract derived fields safely
+  const getCity = (u) => u?.city || u?.address?.city || u?.userId?.city || '';
+  const getLastLoginDate = (u) => u?.lastLoginAt || u?.lastLogin || u?.userId?.lastLoginAt || u?.userId?.lastLogin || null;
+  const formatCity = (city) => {
+    if (!city) return '-';
+    const trimmed = String(city).trim();
+    if (!trimmed) return '-';
+    const [firstWord, ...rest] = trimmed.split(/\s+/);
+    return rest.length > 0 ? `${firstWord}...` : firstWord;
+  };
+  const parseDate = (d) => (d ? new Date(d) : null);
+  const isActiveWithin = (u, days) => {
+    const ll = parseDate(getLastLoginDate(u));
+    if (!ll) return false;
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    return ll >= cutoff;
+  };
+
+  // Unique cities for filter
+  const cityOptions = React.useMemo(() => {
+    const set = new Set(users.map(getCity).filter(Boolean));
+    return Array.from(set).sort((a,b) => a.localeCompare(b));
   }, [users]);
 
   useEffect(() => {
@@ -71,17 +91,27 @@ export default function User() {
     let sortableUsers = [...users];
     if (sortConfig.key) {
       sortableUsers.sort((a, b) => {
+        let av;
+        let bv;
         if (sortConfig.key === 'userId.mobile') {
-          return sortConfig.direction === 'asc' 
-            ? a.userId.mobile.localeCompare(b.userId.mobile)
-            : b.userId.mobile.localeCompare(a.userId.mobile);
+          av = a?.userId?.mobile || '';
+          bv = b?.userId?.mobile || '';
+          return sortConfig.direction === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
         }
-        if (a[sortConfig.key] < b[sortConfig.key]) {
-          return sortConfig.direction === 'asc' ? -1 : 1;
+        if (sortConfig.key === 'city') {
+          av = getCity(a) || '';
+          bv = getCity(b) || '';
+          return sortConfig.direction === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
         }
-        if (a[sortConfig.key] > b[sortConfig.key]) {
-          return sortConfig.direction === 'asc' ? 1 : -1;
+        if (sortConfig.key === 'lastLoginAt') {
+          av = parseDate(getLastLoginDate(a))?.getTime() || 0;
+          bv = parseDate(getLastLoginDate(b))?.getTime() || 0;
+          return sortConfig.direction === 'asc' ? av - bv : bv - av;
         }
+        av = a[sortConfig.key];
+        bv = b[sortConfig.key];
+        if (av < bv) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (av > bv) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
       });
     }
@@ -91,23 +121,31 @@ export default function User() {
   // Filter users based on search term and client ID
   const filteredUsers = React.useMemo(() => {
     return sortedUsers.filter(user => {
-      const matchesSearch = 
+      const matchesSearch =
         user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.userId?.mobile?.includes(searchTerm) ||
         user.exams?.some(exam => exam.toLowerCase().includes(searchTerm.toLowerCase()));
-      
-      const matchesClientId = !selectedClientId || user.clientId === selectedClientId;
-      
-      return matchesSearch && matchesClientId;
+
+      const matchesCity = !selectedCity || getCity(user) === selectedCity;
+      const matchesActive = !onlyActive || isActiveWithin(user, activeWithinDays);
+
+      return matchesSearch && matchesCity && matchesActive;
     });
-  }, [sortedUsers, searchTerm, selectedClientId]);
+  }, [sortedUsers, searchTerm, selectedCity, onlyActive, activeWithinDays]);
 
   // Reset filters
   const resetFilters = () => {
     setSearchTerm('');
-    setSelectedClientId('');
+    setSelectedCity('');
+    setOnlyActive(false);
+    setActiveWithinDays(10);
     setCurrentPage(1);
   };
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, selectedCity, onlyActive, activeWithinDays]);
 
   // Pagination
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
@@ -135,17 +173,42 @@ export default function User() {
       <ChevronDown size={16} className="text-indigo-600" />;
   };
 
+  // Overview metrics
+  const totalUsers = users.length;
+  const activeUsers = users.filter(u => isActiveWithin(u, activeWithinDays)).length;
+  const verifiedUsers = users.filter(u => u?.userId?.isVerified).length;
+  const totalCities = cityOptions.length;
+
   return (
     <div className="container mx-auto px-4 py-8">
       <ToastContainer position="top-right" autoClose={3000} />
       
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">User Profiles</h1>
-          <p className="text-gray-600">Manage your application user profiles</p>
-        </div>
+
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">User Profiles</h1>
+        <p className="text-gray-600">Manage and analyze your users</p>
       </div>
 
+      {/* Overview */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="text-sm text-gray-500">Total Users</div>
+          <div className="text-2xl font-semibold text-gray-900">{totalUsers}</div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="text-sm text-gray-500">Active (last {activeWithinDays} days)</div>
+          <div className="text-2xl font-semibold text-gray-900">{activeUsers}</div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="text-sm text-gray-500">Verified</div>
+          <div className="text-2xl font-semibold text-gray-900">{verifiedUsers}</div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="text-sm text-gray-500">Cities</div>
+          <div className="text-2xl font-semibold text-gray-900">{totalCities}</div>
+        </div>
+      </div>
+      
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-indigo-600"></div>
@@ -168,7 +231,7 @@ export default function User() {
         <div className="bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
           {/* Filters */}
           <div className="p-4 border-b border-gray-200">
-            <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex flex-col xl:flex-row gap-4">
               {/* Search Bar */}
               <div className="relative flex-1">
                 <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -180,27 +243,40 @@ export default function User() {
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
-              
-              {/* Client ID Filter */}
-              <div className="relative flex-1">
+              {/* City Filter */}
+              <div className="relative w-full xl:w-72">
                 <Filter size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <select
-                  value={selectedClientId}
-                  onChange={(e) => setSelectedClientId(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none bg-white"
+                  value={selectedCity}
+                  onChange={(e) => setSelectedCity(e.target.value)}
+                  className="w-full pl-10 pr-8 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 appearance-none bg-white"
                 >
-                  <option value="">All Client IDs</option>
-                  {clientIds.map((clientId) => (
-                    <option key={clientId} value={clientId}>
-                      {clientId}
-                    </option>
+                  <option value="">All Cities</option>
+                  {cityOptions.map((city) => (
+                    <option key={city} value={city}>{formatCity(city)}</option>
                   ))}
                 </select>
                 <ChevronDown size={16} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none" />
               </div>
+              {/* Active within N days */}
+              <div className="flex items-center gap-3">
+                <label className="inline-flex items-center gap-2">
+                  {/* <input type="checkbox" className="rounded" checked={onlyActive} onChange={(e) => setOnlyActive(e.target.checked)} /> */}
+                  <span className="text-sm text-gray-700">Active within</span>
+                </label>
+                <select
+                  value={activeWithinDays}
+                  onChange={(e) => setActiveWithinDays(Number(e.target.value))}
+                  className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
+                >
+                  {[7, 10, 14, 30, 60, 90].map(d => (
+                    <option key={d} value={d}>{d} days</option>
+                  ))}
+                </select>
+              </div>
 
               {/* Reset Filters Button */}
-              {(searchTerm || selectedClientId) && (
+              {(searchTerm || selectedCity || onlyActive) && (
                 <button
                   onClick={resetFilters}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -225,17 +301,22 @@ export default function User() {
                       {getSortIcon('name')}
                     </div>
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ClientId
-                  </th>
                   <th 
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                     onClick={() => requestSort('userId.mobile')}
                   >
-
                     <div className="flex items-center gap-2">
                       Mobile
                       {getSortIcon('userId.mobile')}
+                    </div>
+                  </th>
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                    onClick={() => requestSort('city')}
+                  >
+                    <div className="flex items-center gap-2">
+                      City
+                      {getSortIcon('city')}
                     </div>
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -246,6 +327,15 @@ export default function User() {
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Exams
+                  </th>
+                  <th 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                    onClick={() => requestSort('lastLoginAt')}
+                  >
+                    <div className="flex items-center gap-2">
+                      Last Login
+                      {getSortIcon('lastLoginAt')}
+                    </div>
                   </th>
                   <th 
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
@@ -262,25 +352,30 @@ export default function User() {
                 {paginatedUsers.map((user) => (
                   <tr key={user._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                          <span className="text-indigo-600 font-medium">
-                            {user.name?.charAt(0).toUpperCase()}
-                          </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const targetUserId = user.userId?._id || user.userId || user._id;
+                          if (!targetUserId || !user.clientId) return;
+                          navigate(`/client/users/${targetUserId}?clientId=${encodeURIComponent(user.clientId)}`);
+                        }}
+                        className="flex items-center gap-3 text-left focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded-lg px-2 py-1"
+                      >
+                        <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-medium">
+                          {user.name?.charAt(0)?.toUpperCase() || '-'}
                         </div>
-                        <div className="ml-4">
+                        <div>
                           <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                          <div className="text-xs text-indigo-600">View profile →</div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {user.clientId}
+                      </button>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{user.userId?.mobile}</div>
-                      <div className="text-xs text-gray-500">
-                        {user.userId?.isVerified ? 'Verified' : 'Not Verified'}
-                      </div>
+                      
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formatCity(getCity(user))}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {user.age}
@@ -301,17 +396,27 @@ export default function User() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(user.createdAt).toLocaleDateString()}
+                      {(() => {
+                        const ll = parseDate(getLastLoginDate(user));
+                        if (!ll) return '-';
+                        return (
+                          <div>
+                            <div>{ll.toLocaleDateString()}</div>
+                            <div className="text-xs text-gray-400">{ll.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                          </div>
+                        );
+                      })()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <button
-                        onClick={() => {
-                          const targetUserId = user.userId?._id || user.userId || user._id;
-                          if (!targetUserId || !user.clientId) return;
-                          navigate(`/client/users/${targetUserId}?clientId=${encodeURIComponent(user.clientId)}`);
-                        }}
-                        className="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700"
-                      >View</button>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {(() => {
+                        const joined = new Date(user.createdAt);
+                        return (
+                          <div>
+                            <div>{joined.toLocaleDateString()}</div>
+                            <div className="text-xs text-gray-400">{joined.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                          </div>
+                        );
+                      })()}
                     </td>
                   </tr>
                 ))}
@@ -349,6 +454,6 @@ export default function User() {
           )}
         </div>
       )}
-    </div>
+      </div>
   );
 }
