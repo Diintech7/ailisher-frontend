@@ -399,6 +399,7 @@ export default function AcceptedAnswers() {
         {AnnotatedAnswer && (
           <AnnotateAnswer
             submission={AnnotatedAnswer}
+            onSave={handleEvaluationComplete}
             onClose={() => setAnnotatedAnswer(null)}
           />
         )}
