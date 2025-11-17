@@ -305,6 +305,46 @@ const MyQuestion = () => {
     }
   };
 
+  const handleRejectQuestion = async (questionId) => {
+    try {
+      const token = Cookies.get("usertoken");
+      if (!token) {
+        toast.error("Authentication required");
+        return false;
+      }
+      setActionLoading((prev) => ({ ...prev, [`reject-${questionId}`]: true }));
+      const response = await fetch(
+        `${API_BASE_URL}/api/myquestion/questions/${questionId}/reject`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const data = await response.json();
+      if (response.ok && data.success) {
+        toast.success("Question rejected successfully!");
+        reloadActiveTab();
+        return true;
+      } else {
+        toast.error(data.message || "Failed to reject question");
+        reloadActiveTab();
+        return false;
+      }
+    } catch (err) {
+      console.error("Reject question error:", err);
+      toast.error(err.message || "Failed to reject question");
+      return false;
+    } finally {
+      setActionLoading((prev) => ({
+        ...prev,
+        [`reject-${questionId}`]: false,
+      }));
+    }
+  };
+
   const handleFormatModalClose = () => {
     setShowFormatModal(false);
     setSelectedQuestion(null);
@@ -429,7 +469,13 @@ const MyQuestion = () => {
                     <Eye className="h-4 w-4" />
                     View Detail
                   </button>
-
+                  <button
+                    onClick={() => handleRejectQuestion(question.id)}
+                    className="inline-flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+                  >
+                    <XCircle className="h-4 w-4" />
+                    Reject Question
+                  </button>
                 <button
                   onClick={() => handleFormatClick(question.id)}
                   disabled={actionLoading[`format-${question.id}`]}
