@@ -47,6 +47,8 @@ import AIcourses from './components/Client/AIcourses';
 import CourseDetail from './components/Client/CourseDetail';
 import { API_BASE_URL } from './config';
 import UserDetail from './components/Client/UserDetail';
+import MyQuestion from './components/Client/MyQuestion';
+import SubmissionsPage from './components/Client/SubmissionsDrawer';
 
 const UserApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -227,6 +229,8 @@ const UserApp = () => {
                 <Route path="/chat/:id" element={<ChatApplication />} />
                 <Route path="/question-bank" element={<QuestionBank/>}/>
                 <Route path="/question-bank/:type/:id" element={<QuestionBankDetail/>}/>
+                <Route path="/my-question" element={<MyQuestion/>}/>
+                <Route path="/my-question/:questionId/submissions" element={<SubmissionsPage/>}/>
               </>
             )}
             {userRole === 'user' && (

@@ -4,7 +4,7 @@ import { toast } from 'react-toastify';
 import GeminiModal from '../GeminiModal';
 import Cookies from 'js-cookie';
 
-const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editingQuestion, onQuestions, scrollToSection }) => {
+const FormatMyQuestionModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editingQuestion, onQuestions, scrollToSection }) => {
   const initialQuestionState = {
     question: '',
     detailedAnswer: '',
@@ -92,21 +92,35 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
           ...editingQuestion,
           metadata: {
             ...editingQuestion.metadata,
-            keywords: Array.isArray(editingQuestion.metadata.keywords) 
+            keywords: Array.isArray(editingQuestion.metadata?.keywords) 
               ? editingQuestion.metadata.keywords.join(', ')
-              : editingQuestion.metadata.keywords,
+              : (editingQuestion.metadata?.keywords || ''),
+            difficultyLevel: editingQuestion.metadata?.difficultyLevel || 'level1',
+            wordLimit: editingQuestion.metadata?.wordLimit || editingQuestion.wordLimit || '',
+            estimatedTime: editingQuestion.metadata?.estimatedTime || '',
+            maximumMarks: editingQuestion.metadata?.maximumMarks || editingQuestion.maximumMarks || '',
             qualityParameters: {
-              ...editingQuestion.metadata.qualityParameters,
-              customParams: editingQuestion.metadata.qualityParameters.customParams || []
+              ...(editingQuestion.metadata?.qualityParameters || {}),
+              intro: editingQuestion.metadata?.qualityParameters?.intro || false,
+              body: {
+                enabled: editingQuestion.metadata?.qualityParameters?.body?.enabled || false,
+                features: editingQuestion.metadata?.qualityParameters?.body?.features || false,
+                examples: editingQuestion.metadata?.qualityParameters?.body?.examples || false,
+                facts: editingQuestion.metadata?.qualityParameters?.body?.facts || false,
+                diagram: editingQuestion.metadata?.qualityParameters?.body?.diagram || false
+              },
+              conclusion: editingQuestion.metadata?.qualityParameters?.conclusion || false,
+              customParams: editingQuestion.metadata?.qualityParameters?.customParams || []
             }
           },
           // Keep answerVideoUrls as array, convert to comma-separated string for display
           answerVideoUrls: Array.isArray(editingQuestion.answerVideoUrls) 
             ? editingQuestion.answerVideoUrls.join(', ')
-            : editingQuestion.answerVideoUrls || '',
-            
+            : (editingQuestion.answerVideoUrls || ''),
+          languageMode: editingQuestion.languageMode || 'english',
+          evaluationMode: editingQuestion.evaluationMode || 'auto',
           evaluationType: editingQuestion.evaluationType || '',
-          evaluationGuideline: editingQuestion.evaluationGuideline || ''
+          evaluationGuideline: editingQuestion.evaluationGuideline || defaultFramework
         };
         console.log('Editing question:', editingQuestion);
         // Populate the form with the editing question
@@ -348,26 +362,26 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
         const processedData = {
           ...rest,
           metadata: {
-            keywords: q.metadata.keywords.split(',').map(k => k.trim()).filter(k => k),
-            difficultyLevel: q.metadata.difficultyLevel,
-            wordLimit: parseInt(q.metadata.wordLimit) || 0,
-            estimatedTime: parseInt(q.metadata.estimatedTime) || 0,
-            maximumMarks: parseInt(q.metadata.maximumMarks) || 0,
+            keywords: (q.metadata?.keywords || '').split(',').map(k => k.trim()).filter(k => k),
+            difficultyLevel: q.metadata?.difficultyLevel || 'level1',
+            wordLimit: parseInt(q.metadata?.wordLimit || q.wordLimit || 0) || 0,
+            estimatedTime: parseInt(q.metadata?.estimatedTime || 0) || 0,
+            maximumMarks: parseInt(q.metadata?.maximumMarks || q.maximumMarks || 0) || 0,
             qualityParameters: {
-              intro: q.metadata.qualityParameters.intro,
+              intro: q.metadata?.qualityParameters?.intro || false,
               body: {
-                enabled: q.metadata.qualityParameters.body.enabled,
-                features: q.metadata.qualityParameters.body.features,
-                examples: q.metadata.qualityParameters.body.examples,
-                facts: q.metadata.qualityParameters.body.facts,
-                diagram: q.metadata.qualityParameters.body.diagram
+                enabled: q.metadata?.qualityParameters?.body?.enabled || false,
+                features: q.metadata?.qualityParameters?.body?.features || false,
+                examples: q.metadata?.qualityParameters?.body?.examples || false,
+                facts: q.metadata?.qualityParameters?.body?.facts || false,
+                diagram: q.metadata?.qualityParameters?.body?.diagram || false
               },
-              conclusion: q.metadata.qualityParameters.conclusion,
-              customParams: q.metadata.qualityParameters.customParams.filter(param => param.trim())
+              conclusion: q.metadata?.qualityParameters?.conclusion || false,
+              customParams: (q.metadata?.qualityParameters?.customParams || []).filter(param => param.trim())
             }
           },
-          languageMode: q.languageMode,
-          evaluationMode: q.evaluationMode,
+          languageMode: q.languageMode || 'english',
+          evaluationMode: q.evaluationMode || 'auto',
           evaluationGuideline: q.evaluationGuideline && q.evaluationGuideline.trim() ? q.evaluationGuideline.trim() : undefined,
           answerVideoUrls: videoUrls
         };
@@ -1107,4 +1121,4 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
   );
 };
 
-export default AddAISWBModal; 
+export default FormatMyQuestionModal; 

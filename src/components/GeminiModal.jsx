@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
-const GEMINI_API_KEY = 'AIzaSyA8Te6wAOX6EE6d1toR2IOsgWrOKB286B8';
+const GEMINI_API_KEY = 'AIzaSyBlfYuSZQCYEbv1yoCpXsw68ng40i5hSEU';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
 
 const GeminiModal = ({ isOpen, onClose, onResponse, question, detailedAnswer, metadata, qualityParams, title }) => {

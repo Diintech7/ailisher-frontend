@@ -4,6 +4,7 @@ import ManualEvaluationModal from '../Client/QuestionSubmissions/ManualEvaluatio
 import { Badge } from '../UI/Badge';
 import Cookies from 'js-cookie';
 import { toast } from 'react-toastify';
+import { API_BASE_URL } from '../../config';
 
 
 export default function PendingAnswers() {
@@ -32,7 +33,7 @@ export default function PendingAnswers() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get('https://test.ailisher.com/api/answerapis/answers', {
+      const response = await axios.get(`${API_BASE_URL}/api/answerapis/answers`, {
         params: {
           evaluationMode: 'manual',
           submissionStatus: 'submitted',
