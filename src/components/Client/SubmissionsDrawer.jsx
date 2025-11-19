@@ -54,11 +54,17 @@ const SubmissionsPage = () => {
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState({});
   const [activeTab, setActiveTab] = useState('pending');
-  const [total, setTotal] = useState(0);
+  const [tabTotals, setTabTotals] = useState({
+    pending: 0,
+    ai_evaluated: 0,
+    expert_evaluation: 0,
+    completed: 0,
+  });
   useEffect(() => {
     if (questionId) {
       fetchQuestion();
       fetchSubmissions(activeTab);
+      fetchAllTabTotals();
     }
   }, [questionId]);
 
@@ -97,10 +103,21 @@ const SubmissionsPage = () => {
     }
   };
 
-  const fetchSubmissions = async (status = null) => {
+  const fetchAllTabTotals = async () => {
+    await Promise.all(
+      SUBMISSION_TABS.map((tab) =>
+        fetchSubmissions(tab.key, { onlyTotal: true, suppressLoading: true })
+      )
+    );
+  };
+
+  const fetchSubmissions = async (status = null, options = {}) => {
+    const { onlyTotal = false, suppressLoading = false } = options;
     if (!questionId) return;
 
-    setLoading(true);
+    if (!suppressLoading) {
+      setLoading(true);
+    }
     setError(null);
 
     try {
@@ -117,6 +134,7 @@ const SubmissionsPage = () => {
         'completed': 'completed'
       };
 
+      const currentTab = status || activeTab;
       const evaluationStatus = status ? statusMap[status] || status : statusMap[activeTab] || 'pending';
 
       const url = new URL(
@@ -138,14 +156,23 @@ const SubmissionsPage = () => {
         throw new Error(data.message || 'Failed to fetch submissions');
       }
 
-      setSubmissions(data.data?.answers || []);
-      setTotal(data.data?.total || 0);
+      if (!onlyTotal) {
+        setSubmissions(data.data?.answers || []);
+      }
+      setTabTotals(prev => ({
+        ...prev,
+        [currentTab]: data.data?.total || 0,
+      }));
     } catch (err) {
       console.error('Fetch submissions error:', err);
-      setError(err.message || 'Failed to load submissions');
-      toast.error(err.message || 'Failed to load submissions');
+      if (!onlyTotal) {
+        setError(err.message || 'Failed to load submissions');
+        toast.error(err.message || 'Failed to load submissions');
+      }
     } finally {
-      setLoading(false);
+      if (!suppressLoading) {
+        setLoading(false);
+      }
     }
   };
 
@@ -263,7 +290,7 @@ const SubmissionsPage = () => {
                     : 'bg-white text-gray-600 hover:bg-gray-100'
                 }`}
               >
-                {tab.label} ({total})
+                {tab.label} ({tabTotals[tab.key] ?? 0})
               </button>
             );
           })}
@@ -345,8 +372,9 @@ const SubmissionsPage = () => {
                     )}
                   </div>
 
+     
                   {/* AI Evaluation Results */}
-                  {submission.evaluation && (
+                  {activeTab !== 'pending' && submission.evaluation && (
                     <div className="mb-4 rounded-lg border border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100/50 p-5 shadow-sm">
                       <div className="mb-4 flex items-center gap-2 border-b border-purple-200 pb-3">
                         <Sparkles className="h-5 w-5 text-purple-600" />
