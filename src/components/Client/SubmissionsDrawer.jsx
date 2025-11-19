@@ -558,7 +558,7 @@ const SubmissionsPage = () => {
 
                   {/* Actions */}
                   <div className="flex flex-wrap gap-2 border-t border-gray-200 pt-3">
-                    {activeTab === 'pending' && !submission.evaluation && (
+                    {activeTab === 'pending' && (
                       <button
                         onClick={() => handleAIEvaluate(submission._id)}
                         disabled={actionLoading[`evaluate-${submission._id}`]}
@@ -578,7 +578,7 @@ const SubmissionsPage = () => {
                       </button>
                     )}
 
-                    {activeTab === 'ai_evaluated' && submission.evaluation && !submission.reviewStatus && (
+                    {activeTab === 'ai_evaluated' && (
                       <button
                         onClick={() => handleSendToExpert(submission._id)}
                         disabled={actionLoading[`expert-${submission._id}`]}

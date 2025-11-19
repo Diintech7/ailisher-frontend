@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import Cookies from 'js-cookie';
-import { User, Activity, Award, BookOpen, ShoppingCart, Clock, TrendingUp, Calendar, CheckCircle, XCircle, ArrowLeft, Gift } from 'lucide-react';
+import { User, Activity, Award, BookOpen, ShoppingCart, Clock, TrendingUp, Calendar, CheckCircle, XCircle, ArrowLeft, Gift, BarChart3 } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
 
 function useQuery() {
@@ -25,6 +25,9 @@ export default function UserDetail() {
   const [trialPlans, setTrialPlans] = useState([]);
   const [plansLoading, setPlansLoading] = useState(false);
   const [activeTrial, setActiveTrial] = useState(null);
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [analyticsError, setAnalyticsError] = useState(null);
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -91,6 +94,30 @@ export default function UserDetail() {
     };
     fetchActiveTrial();
   }, [clientId, data?.profile?._id]);
+
+  useEffect(() => {
+    const fetchAnalytics = async () => {
+      if (tab !== 'analytics' || !clientId || !userId) return;
+      setAnalyticsLoading(true);
+      setAnalyticsError(null);
+      try {
+        const token = Cookies.get('usertoken');
+        if (!token) throw new Error('Authentication required');
+        const res = await fetch(`${API_BASE_URL}/api/clients/${clientId}/app-analytics/${userId}/analytics`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        if (!json.success) throw new Error(json.message || 'Failed to load analytics');
+        setAnalyticsData(json);
+      } catch (e) {
+        setAnalyticsError(e.message || 'Failed to load analytics');
+      } finally {
+        setAnalyticsLoading(false);
+      }
+    };
+    fetchAnalytics();
+  }, [tab, clientId, userId]);
 
   const user = data?.user || {};
   const profile = data?.profile || {};
@@ -172,6 +199,7 @@ export default function UserDetail() {
                 { id: 'overview', label: 'Overview', icon: User },
                 { id: 'activity', label: 'Activity', icon: Activity },
                 { id: 'performance', label: 'Performance', icon: Award },
+                { id: 'analytics', label: 'App Analytics', icon: BarChart3 },
               ].map(t => (
                 <button
                   key={t.id}
@@ -312,6 +340,74 @@ export default function UserDetail() {
                 </Section>
               </div>
             )}
+
+            {tab === 'analytics' && (
+              <div className="space-y-8">
+                {analyticsLoading && (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-slate-600">Loading analytics...</div>
+                  </div>
+                )}
+
+                {analyticsError && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-800">
+                    Error: {analyticsError}
+                  </div>
+                )}
+
+                {!analyticsLoading && !analyticsError && analyticsData && (
+                  <>
+                    <Section title="Time Spent Summary" icon={Clock}>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="text-sm font-medium text-blue-700">Today</div>
+                            <Clock className="w-5 h-5 text-blue-600" />
+                          </div>
+                          <div className="text-3xl font-bold text-blue-900">
+                            {analyticsData.summary?.last1DayMinutes || 0} min
+                          </div>
+                          <div className="text-xs text-blue-600 mt-1">
+                            {analyticsData.summary?.last1DaySeconds || 0} seconds
+                          </div>
+                        </div>
+
+                        <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-200">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="text-sm font-medium text-purple-700">Last 7 Days</div>
+                            <Calendar className="w-5 h-5 text-purple-600" />
+                          </div>
+                          <div className="text-3xl font-bold text-purple-900">
+                            {analyticsData.summary?.last7DaysMinutes || 0} min
+                          </div>
+                          <div className="text-xs text-purple-600 mt-1">
+                            {analyticsData.summary?.last7DaysSeconds || 0} seconds
+                          </div>
+                        </div>
+                      </div>
+                    </Section>
+
+                    <Section title="Daily Usage (Last 7 Days)" icon={BarChart3}>
+                      <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
+                        {analyticsData.summary?.perDay && analyticsData.summary.perDay.length > 0 ? (
+                          <UsageChart data={analyticsData.summary.perDay} />
+                        ) : (
+                          <div className="text-center py-8 text-slate-500">No usage data available</div>
+                        )}
+                      </div>
+                    </Section>
+
+                    <Section title="Page Analytics" icon={Activity}>
+                      {analyticsData.data && analyticsData.data.length > 0 ? (
+                        <PageAnalyticsByDate data={analyticsData.data} />
+                      ) : (
+                        <div className="text-center py-8 text-slate-500">No page analytics available</div>
+                      )}
+                    </Section>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -370,6 +466,177 @@ function InfoCard({ label, value, variant = 'default' }) {
     <div className={variant === 'light' ? '' : 'bg-slate-50 rounded-lg p-4 border border-slate-200'}>
       <div className="text-xs font-medium text-slate-500 mb-1">{label}</div>
       <div className="text-sm font-semibold text-slate-900">{value || '-'}</div>
+    </div>
+  );
+}
+
+function UsageChart({ data }) {
+  if (!data || data.length === 0) return <div className="text-center py-8 text-slate-500">No data available</div>;
+  
+  // Use seconds for more accurate scaling, especially for small values
+  const maxSeconds = Math.max(...data.map(d => d.seconds || 0), 1);
+  const maxMinutes = Math.max(...data.map(d => d.minutes || 0), 1);
+  const chartHeight = 200;
+
+  const formatDate = (dateStr) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  };
+
+  return (
+    <div className="w-full">
+      <div className="flex items-end justify-between gap-2 h-[200px] mb-4">
+        {data.map((day, idx) => {
+          // Use seconds for more accurate height calculation
+          const height = maxSeconds > 0 ? (day.seconds / maxSeconds) * chartHeight : 0;
+          // Ensure minimum height for visibility if there's any data
+          const barHeight = day.seconds > 0 ? Math.max(height, 8) : 4;
+          return (
+            <div key={idx} className="flex-1 flex flex-col items-center justify-end">
+              <div className="relative w-full flex flex-col items-center group">
+                <div
+                  className="w-full bg-gradient-to-t from-indigo-500 to-indigo-400 rounded-t-lg transition-all hover:from-indigo-600 hover:to-indigo-500 cursor-pointer"
+                  style={{ height: `${barHeight}px`, minHeight: '4px' }}
+                >
+                  <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-xs px-2 py-1 rounded whitespace-nowrap pointer-events-none z-10">
+                    {day.seconds > 0 ? (
+                      day.seconds < 60 ? `${day.seconds} sec` : `${day.minutes} min (${day.seconds}s)`
+                    ) : '0 sec'}
+                  </div>
+                </div>
+                <div className="text-xs text-slate-600 mt-2 text-center" style={{ writingMode: 'horizontal-tb' }}>
+                  {formatDate(day.date)}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex items-center justify-center gap-4 mt-4 text-xs text-slate-600">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-indigo-500 rounded"></div>
+          <span>Minutes spent per day</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PageAnalyticsByDate({ data }) {
+  // Helper to parse time strings like "20 min" to seconds
+  const parseTimeToSeconds = (timeStr) => {
+    if (!timeStr) return 0;
+    const str = String(timeStr).trim().toLowerCase();
+    const minMatch = str.match(/(\d+)\s*(min|mins|minute|minutes)/);
+    if (minMatch) return parseInt(minMatch[1]) * 60;
+    const secMatch = str.match(/(\d+)\s*(s|sec|secs|second|seconds)/);
+    if (secMatch) return parseInt(secMatch[1]);
+    const num = parseInt(str);
+    return isNaN(num) ? 0 : num;
+  };
+
+  // Helper to format seconds back to readable format
+  const formatSeconds = (seconds) => {
+    if (seconds < 60) return `${seconds} s`;
+    const mins = Math.floor(seconds / 60);
+    return `${mins} min`;
+  };
+
+  // Group entries by date (YYYY-MM-DD)
+  const groupedByDate = {};
+  
+  data.forEach((entry) => {
+    if (!entry.createdAt) return;
+    const date = new Date(entry.createdAt);
+    const dateKey = date.toISOString().slice(0, 10); // YYYY-MM-DD
+    
+    if (!groupedByDate[dateKey]) {
+      groupedByDate[dateKey] = {
+        date: dateKey,
+        dateObj: date,
+        entries: [],
+        pages: new Map(), // page_name -> { timeSpentSeconds, visitedCount }
+        totalTimeSeconds: 0
+      };
+    }
+    
+    groupedByDate[dateKey].entries.push(entry);
+    
+    // Parse total_time for this entry
+    const entryTimeSeconds = parseTimeToSeconds(entry.total_time);
+    groupedByDate[dateKey].totalTimeSeconds += entryTimeSeconds;
+    
+    // Aggregate pages
+    if (entry.pages && Array.isArray(entry.pages)) {
+      entry.pages.forEach((page) => {
+        const pageName = page.page_name || 'Unknown';
+        const pageTimeSeconds = parseTimeToSeconds(page.time_spent);
+        const pageVisits = page.visited_count || 0;
+        
+        if (!groupedByDate[dateKey].pages.has(pageName)) {
+          groupedByDate[dateKey].pages.set(pageName, {
+            timeSpentSeconds: 0,
+            visitedCount: 0
+          });
+        }
+        
+        const pageData = groupedByDate[dateKey].pages.get(pageName);
+        pageData.timeSpentSeconds += pageTimeSeconds;
+        pageData.visitedCount += pageVisits;
+      });
+    }
+  });
+
+  // Convert to array and sort by date (newest first)
+  const datesArray = Object.values(groupedByDate).sort((a, b) => {
+    return new Date(b.dateObj) - new Date(a.dateObj);
+  });
+
+  // Show last 7 days
+  const recentDates = datesArray.slice(0, 7);
+
+  if (recentDates.length === 0) {
+    return <div className="text-center py-8 text-slate-500">No page analytics available</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      {recentDates.map((dayData, idx) => {
+        const pagesArray = Array.from(dayData.pages.entries())
+          .map(([name, data]) => ({
+            name,
+            timeSpent: formatSeconds(data.timeSpentSeconds),
+            visitedCount: data.visitedCount
+          }))
+          .sort((a, b) => b.visitedCount - a.visitedCount); // Sort by visits
+
+        return (
+          <div key={idx} className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-sm font-semibold text-slate-900">
+                {dayData.dateObj.toLocaleDateString('en-US', { 
+                  weekday: 'short', 
+                  month: 'short', 
+                  day: 'numeric',
+                  year: 'numeric'
+                })}
+              </div>
+              <div className="text-sm font-medium text-indigo-600">
+                {formatSeconds(dayData.totalTimeSeconds)} total
+              </div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {pagesArray.map((page, pIdx) => (
+                <div key={pIdx} className="bg-white rounded-lg p-3 border border-slate-200">
+                  <div className="text-xs font-medium text-slate-700 mb-1">{page.name}</div>
+                  <div className="text-xs text-slate-600">{page.timeSpent}</div>
+                  <div className="text-xs text-slate-500 mt-1">{page.visitedCount} visits</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
