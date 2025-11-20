@@ -54,12 +54,24 @@ const SubmissionsPage = () => {
   const [error, setError] = useState(null);
   const [actionLoading, setActionLoading] = useState({});
   const [activeTab, setActiveTab] = useState('pending');
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [activeImage, setActiveImage] = useState(null);
   const [tabTotals, setTabTotals] = useState({
     pending: 0,
     ai_evaluated: 0,
     expert_evaluation: 0,
     completed: 0,
   });
+
+  const handleImageClick = (imgUrl) => {
+    setActiveImage(imgUrl);
+    setImageModalOpen(true);
+  };
+
+  const closeImageModal = () => {
+    setImageModalOpen(false);
+    setActiveImage(null);
+  };
   useEffect(() => {
     if (questionId) {
       fetchQuestion();
@@ -360,6 +372,10 @@ const SubmissionsPage = () => {
                                 e.currentTarget.src =
                                   'https://via.placeholder.com/128?text=Image';
                               }}
+                              onClick={() =>
+                                handleImageClick(image.imageUrl)
+                              }
+                              style={{ cursor: "zoom-in" }}
                             />
                           </div>
                         ))}
@@ -580,9 +596,61 @@ const SubmissionsPage = () => {
                           )}
                         </div>
                       )}
+
+                      {/* annotated images */}
+          {submission.annotations && submission.annotations.length > 0 && (
+            <div className="mb-8">
+              <h3 className="text-xl font-bold text-gray-900 mb-4">
+                Annotated Images
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {submission.annotations.map((annotations, idx) => (
+                  <div key={idx} className="group cursor-pointer">
+                    <div className="bg-gray-100 rounded-lg p-4 border-2 border-dashed border-gray-300 hover:border-blue-400 transition-colors">
+                      <img
+                        src={annotations.downloadUrl}
+                        className="w-full h-48 object-contain rounded-lg shadow-sm transition-transform group-hover:scale-105"
+                        onClick={() =>
+                          handleImageClick(annotations.downloadUrl)
+                        }
+                        style={{ cursor: "zoom-in" }}
+                      />
+                      <div className="mt-3 text-center">
+                        <p className="text-xs text-gray-500">
+                          {annotations.uploadedAt
+                            ? new Date(annotations.uploadedAt).toLocaleString()
+                            : "N/A"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
                     </div>
                   )}
-
+{/* Image Lightbox */}
+{imageModalOpen && activeImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90"
+          onClick={closeImageModal}
+        >
+          <img
+            src={activeImage}
+            alt="Large Answer"
+            className="max-w-4xl max-h-[90vh] rounded-lg border-4 border-white shadow-2xl"
+            style={{ objectFit: "contain" }}
+          />
+          <button
+            className="absolute top-8 right-8 text-white text-3xl font-bold bg-black bg-opacity-40 rounded-full w-12 h-12 flex items-center justify-center hover:bg-opacity-70 transition-all"
+            onClick={closeImageModal}
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
                   {/* Actions */}
                   <div className="flex flex-wrap gap-2 border-t border-gray-200 pt-3">

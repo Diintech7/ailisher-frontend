@@ -13,6 +13,9 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
+  Pencil,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import FormatMyQuestionModal from "./FormatMyQuestionModal";
 
@@ -20,6 +23,15 @@ const TABS = [
   { key: "pending", label: "Pending Formatting", status: "pending" },
   { key: "formatted", label: "Formatted", status: "formatted" },
   { key: "rejected", label: "Rejected", status: "rejected" },
+];
+
+const SORT_OPTIONS = [
+  { value: "newest", label: "Newest first" },
+  { value: "oldest", label: "Oldest first" },
+  { value: "subject-asc", label: "Subject A → Z" },
+  { value: "subject-desc", label: "Subject Z → A" },
+  { value: "marks-high", label: "Highest marks" },
+  { value: "marks-low", label: "Lowest marks" },
 ];
 
 const QUESTIONS_PER_PAGE = 100;
@@ -54,16 +66,102 @@ const MyQuestion = () => {
   const [error, setError] = useState(null);
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [showFormatModal, setShowFormatModal] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [answersForEvaluation, setAnswersForEvaluation] = useState([]);
   const [actionLoading, setActionLoading] = useState({});
   const [refreshCounter, setRefreshCounter] = useState(0);
   const [questionSubmissions, setQuestionSubmissions] = useState({}); // questionId -> submissions array
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dateRange, setDateRange] = useState({ from: "", to: "" });
+  const [sortOption, setSortOption] = useState(SORT_OPTIONS[0].value);
+  const [expandedQuestionId, setExpandedQuestionId] = useState(null);
+  const [imageModalOpen, setImageModalOpen] = useState(false);
+  const [activeImage, setActiveImage] = useState(null);
 
   const activeTab = useMemo(
     () => TABS.find((tab) => tab.key === activeTabKey),
     [activeTabKey]
   );
+
+  const handleImageClick = (imgUrl) => {
+    setActiveImage(imgUrl);
+    setImageModalOpen(true);
+  };
+
+  const closeImageModal = () => {
+    setImageModalOpen(false);
+    setActiveImage(null);
+  };
+
+  const displayedQuestions = useMemo(() => {
+    const normalizedSearch = searchQuery.trim().toLowerCase();
+    const fromDate = dateRange.from
+      ? new Date(dateRange.from).setHours(0, 0, 0, 0)
+      : null;
+    const toDate = dateRange.to
+      ? new Date(dateRange.to).setHours(23, 59, 59, 999)
+      : null;
+
+    let data = [...questions];
+
+    if (normalizedSearch) {
+      data = data.filter((question) => {
+        const subject = question.subject?.toLowerCase() || "";
+        const exam = question.exam?.toLowerCase() || "";
+        const paper = question.paper?.toLowerCase() || "";
+        const prompt = question.question?.toLowerCase() || "";
+        return [subject, exam, paper, prompt].some((value) =>
+          value.includes(normalizedSearch)
+        );
+      });
+    }
+
+    if (fromDate) {
+      data = data.filter((question) => {
+        const created = question.createdAt
+          ? new Date(question.createdAt).getTime()
+          : null;
+        return created ? created >= fromDate : true;
+      });
+    }
+
+    if (toDate) {
+      data = data.filter((question) => {
+        const created = question.createdAt
+          ? new Date(question.createdAt).getTime()
+          : null;
+        return created ? created <= toDate : true;
+      });
+    }
+
+    data.sort((a, b) => {
+      const createdA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const createdB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      const subjectA = (a.subject || "").toLowerCase();
+      const subjectB = (b.subject || "").toLowerCase();
+      const marksA = Number(a.maximumMarks) || 0;
+      const marksB = Number(b.maximumMarks) || 0;
+
+      switch (sortOption) {
+        case "oldest":
+          return createdA - createdB;
+        case "subject-asc":
+          return subjectA.localeCompare(subjectB);
+        case "subject-desc":
+          return subjectB.localeCompare(subjectA);
+        case "marks-high":
+          return marksB - marksA;
+        case "marks-low":
+          return marksA - marksB;
+        case "newest":
+        default:
+          return createdB - createdA;
+      }
+    });
+
+    return data;
+  }, [questions, searchQuery, dateRange, sortOption]);
 
   useEffect(() => {
     if (!activeTab) return;
@@ -128,7 +226,26 @@ const MyQuestion = () => {
     return () => controller.abort();
   }, [activeTab, refreshCounter]);
 
+  useEffect(() => {
+    setExpandedQuestionId(null);
+  }, [activeTabKey]);
+
   const reloadActiveTab = () => setRefreshCounter((prev) => prev + 1);
+
+  const handleFiltersReset = () => {
+    setSearchQuery("");
+    setDateRange({ from: "", to: "" });
+    setSortOption(SORT_OPTIONS[0].value);
+    setExpandedQuestionId(null);
+  };
+
+  const handleToggleSubmissions = (questionId) => {
+    const isExpanding = expandedQuestionId !== questionId;
+    setExpandedQuestionId(isExpanding ? questionId : null);
+    if (isExpanding && !questionSubmissions[questionId]) {
+      fetchSubmissionsForQuestion(questionId);
+    }
+  };
 
   const handleFormatSubmit = async (updatedQuestion) => {
     try {
@@ -266,8 +383,8 @@ const MyQuestion = () => {
       const response = await fetch(
         `${API_BASE_URL}/api/myquestion/questions/${question.id}`,
         {
-                headers: {
-                  Authorization: `Bearer ${token}`,
+          headers: {
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
         }
@@ -301,6 +418,23 @@ const MyQuestion = () => {
       setActionLoading((prev) => ({
         ...prev,
         [`format-${questionId}`]: false,
+      }));
+    }
+  };
+
+  const handleUpdateClick = async (questionId) => {
+    try {
+      setActionLoading((prev) => ({ ...prev, [`update-${questionId}`]: true }));
+      const details = await fetchQuestionDetails(questionId);
+      setSelectedQuestion(details);
+      setShowUpdateModal(true);
+    } catch (err) {
+      console.error("Update question error:", err);
+      toast.error(err.message || "Failed to open update form");
+    } finally {
+      setActionLoading((prev) => ({
+        ...prev,
+        [`update-${questionId}`]: false,
       }));
     }
   };
@@ -345,6 +479,48 @@ const MyQuestion = () => {
     }
   };
 
+  const handleUpdateQuestion = async (updatedQuestion) => {
+    try {
+      const token = Cookies.get("usertoken");
+      if (!token) {
+        toast.error("Authentication required");
+        return false;
+      }
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/myquestion/questions/${updatedQuestion.id}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedQuestion),
+        }
+      );
+      const data = await response.json();
+      if (response.ok && data.success) {
+        toast.success("Question updated successfully!");
+        return true;
+      }
+      const detailMsg = data?.error?.details
+        ? Array.isArray(data.error.details)
+          ? data.error.details.map((d) => d.msg || d).join(", ")
+          : data.error.details
+        : "";
+      toast.error(
+        `${data.message || "Failed to update question"}${
+          detailMsg ? `: ${detailMsg}` : ""
+        }`
+      );
+      return false;
+    } catch (error) {
+      console.error("Error updating question:", error);
+      toast.error("Failed to update question");
+      return false;
+    }
+  };
+
   const handleFormatModalClose = () => {
     setShowFormatModal(false);
     setSelectedQuestion(null);
@@ -386,7 +562,7 @@ const MyQuestion = () => {
       );
     }
 
-    if (!questions.length) {
+    if (!displayedQuestions.length) {
       return (
         <div className="rounded-lg border border-gray-200 bg-white p-12 text-center text-gray-500">
           No questions found for this tab.
@@ -396,427 +572,478 @@ const MyQuestion = () => {
 
     return (
       <div className="space-y-6">
-        {questions.map((question) => (
-          <div
-            key={question.id}
-            className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
-          >
-            <div className="flex flex-col gap-4 lg:flex-row lg:justify-between">
-              <div className="flex-1">
-                <div className="mb-3 flex items-center text-xs uppercase tracking-wide text-blue-600">
-                  <FileText className="mr-2 h-4 w-4" />
-                  Question Overview
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {question.question || "Untitled question"}
-                </h3>
-                <div className="mt-3 grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-lg bg-blue-50 p-3">
-                    <div className="text-xs uppercase text-blue-600">
-                      Subject
-                    </div>
-                    <div className="text-sm font-medium text-blue-900">
-                      {question.subject || "Not specified"}
-                    </div>
+        {displayedQuestions.map((question) => {
+          const submissions = questionSubmissions[question.id];
+          const submissionCount = submissions?.length || 0;
+          const isExpanded = expandedQuestionId === question.id;
+
+          return (
+            <div
+              key={question.id}
+              className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm"
+            >
+              <div className="flex flex-col gap-4 lg:flex-row lg:justify-between">
+                <div className="flex-1">
+                  <div className="mb-3 flex items-center text-xs uppercase tracking-wide text-blue-600">
+                    <FileText className="mr-2 h-4 w-4" />
+                    Question Overview
                   </div>
-                  <div className="rounded-lg bg-purple-50 p-3">
-                    <div className="text-xs uppercase text-purple-600">
-                      Exam
-                    </div>
-                    <div className="text-sm font-medium text-purple-900">
-                      {question.exam || "Not specified"}
-                    </div>
-                  </div>
-                  <div className="rounded-lg bg-green-50 p-3">
-                    <div className="text-xs uppercase text-green-600">
-                      Word Limit
-                    </div>
-                    <div className="text-sm font-medium text-green-900">
-                      {question.wordLimit || "N/A"}
-                    </div>
-                  </div>
-                  <div className="rounded-lg bg-amber-50 p-3">
-                    <div className="text-xs uppercase text-amber-600">
-                      Maximum Marks
-                    </div>
-                    <div className="text-sm font-medium text-amber-900">
-                      {question.maximumMarks || "N/A"}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="w-full max-w-xs rounded-lg border border-gray-100 bg-gray-50 p-4">
-                <div className="mb-3 flex items-center text-xs uppercase tracking-wide text-gray-500">
-                  <Users className="mr-2 h-4 w-4" />
-                  Created By
-                </div>
-                <div className="text-sm font-medium text-gray-800">
-                  {getCreatorDisplay(question.createdBy)}
-                </div>
-                <div className="mt-2 text-xs text-gray-500">
-                  Created on {formatDateTime(question.createdAt)}
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-3">
-              {activeTab.status === "pending" && (
-                <>
-                  <button
-                    onClick={() => handleViewClick(question)}
-                    className="inline-flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
-                  >
-                    <Eye className="h-4 w-4" />
-                    View Detail
-                  </button>
-                  <button
-                    onClick={() => handleRejectQuestion(question.id)}
-                    className="inline-flex items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
-                  >
-                    <XCircle className="h-4 w-4" />
-                    Reject Question
-                  </button>
-                <button
-                  onClick={() => handleFormatClick(question.id)}
-                  disabled={actionLoading[`format-${question.id}`]}
-                  className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {actionLoading[`format-${question.id}`] ? (
-                    <span className="flex items-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Opening...
-                    </span>
-                  ) : (
-                      "Format Question"
-                  )}
-                </button>
-                </>
-              )}
-
-              {activeTab.status === "formatted" && (
-                <>
-                <button
-                    onClick={() => handleViewClick(question)}
-                    className="inline-flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
-                  >
-                    <Eye className="h-4 w-4" />
-                    View Detail
-                  </button>
-
-                  <button
-                    onClick={() => handleViewSubmissions(question)}
-                    className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    Manage Submissions
-                  </button>
-                </>
-              )}
-
-              {activeTab.status === "rejected" && (
-                <>
-                  <button
-                    onClick={() => handleViewClick(question)}
-                    className="inline-flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
-                  >
-                    <Eye className="h-4 w-4" />
-                    View Detail
-                  </button>
-                    </>
-                  )}
-            </div>
-
-            {/* Submissions Section */}
-            <div className="mt-6 border-t border-gray-200 pt-6">
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-gray-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Submissions
+                  {/* Question Title */}
+                  <h3 className="text-base font-semibold text-gray-900">
+                    {question.question || "Untitled question"}
                   </h3>
-                  {questionSubmissions[question.id] && (
-                    <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700">
-                      {questionSubmissions[question.id].length}
-                    </span>
-                  )}
+
+                  {/* User Created Info */}
+                  <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
+                    <Users className="h-3 w-3" />
+                    {getCreatorDisplay(question.createdBy)}
+                    <span className="mx-1">•</span>
+                    Created on {formatDateTime(question.createdAt)}
+                  </div>
+
+                  {/* Question Metadata in a Single Row */}
+                  <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-5 gap-2 text-xs">
+                    <div className="p-2 rounded-md bg-blue-50">
+                      <span className="text-blue-600 font-semibold">
+                        Subject
+                      </span>
+                      <br />
+                      <span className="text-blue-900 text-[13px]">
+                        {question.subject || "N/A"}
+                      </span>
+                    </div>
+
+                    <div className="p-2 rounded-md bg-purple-50">
+                      <span className="text-purple-600 font-semibold">
+                        Exam
+                      </span>
+                      <br />
+                      <span className="text-purple-900 text-[13px]">
+                        {question.exam || "N/A"}
+                      </span>
+                    </div>
+
+                    <div className="p-2 rounded-md bg-indigo-50">
+                      <span className="text-indigo-600 font-semibold">
+                        Paper
+                      </span>
+                      <br />
+                      <span className="text-indigo-900 text-[13px]">
+                        {question.paper || "N/A"}
+                      </span>
+                    </div>
+
+                    <div className="p-2 rounded-md bg-green-50">
+                      <span className="text-green-600 font-semibold">
+                        Word Limit
+                      </span>
+                      <br />
+                      <span className="text-green-900 text-[13px]">
+                        {question.wordLimit || "N/A"}
+                      </span>
+                    </div>
+
+                    <div className="p-2 rounded-md bg-amber-50">
+                      <span className="text-amber-600 font-semibold">
+                        Max Marks
+                      </span>
+                      <br />
+                      <span className="text-amber-900 text-[13px]">
+                        {question.maximumMarks || "N/A"}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-            </div>
-
-              {questionSubmissions[question.id] ? (
-                questionSubmissions[question.id].length > 0 ? (
-                  <div className="space-y-4">
-                    {questionSubmissions[question.id]
-                      .slice(0, 3)
-                      .map((submission, idx) => {
-                        const images = submission.answerImages || [];
-                        const hasImages =
-                          Array.isArray(images) && images.length > 0;
-
-                        const getStatusConfig = (status) => {
-                          switch (status) {
-                            case "pending":
-                              return {
-                                bg: "bg-yellow-50",
-                                text: "text-yellow-700",
-                                border: "border-yellow-200",
-                                icon: Clock,
-                              };
-                            case "ai_evaluated":
-                              return {
-                                bg: "bg-purple-50",
-                                text: "text-purple-700",
-                                border: "border-purple-200",
-                                icon: CheckCircle2,
-                              };
-                            case "expert_evaluated":
-                              return {
-                                bg: "bg-blue-50",
-                                text: "text-blue-700",
-                                border: "border-blue-200",
-                                icon: CheckCircle2,
-                              };
-                            case "completed":
-                              return {
-                                bg: "bg-green-50",
-                                text: "text-green-700",
-                                border: "border-green-200",
-                                icon: CheckCircle2,
-                              };
-                            default:
-                              return {
-                                bg: "bg-gray-50",
-                                text: "text-gray-700",
-                                border: "border-gray-200",
-                                icon: Clock,
-                              };
-                          }
-                        };
-
-                        const statusConfig = submission.evaluationStatus
-                          ? getStatusConfig(submission.evaluationStatus)
-                          : null;
-                        const StatusIcon = statusConfig?.icon || Clock;
-
-                        return (
-                          <div
-                            key={submission._id || idx}
-                            className="rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow"
-                          >
-                            <div className="p-4">
-                              {/* Header */}
-                              <div className="flex items-start justify-between mb-4">
-                                <div className="flex items-center gap-3">
-                                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
-                                    <span className="text-sm font-semibold text-gray-700">
-                                      #{idx + 1}
-                                    </span>
-                </div>
-                                  <div>
-                                    <div className="flex items-center gap-2">
-                                      <h4 className="text-sm font-semibold text-gray-900">
-                                        Submission {idx + 1}
-                                      </h4>
-                                      {submission.evaluationStatus &&
-                                        statusConfig && (
-                                          <span
-                                            className={`inline-flex items-center gap-1 rounded-full border ${statusConfig.border} ${statusConfig.bg} px-2.5 py-0.5 text-xs font-medium ${statusConfig.text}`}
-                                          >
-                                            <StatusIcon className="h-3 w-3" />
-                                            {submission.evaluationStatus
-                                              .replace(/_/g, " ")
-                                              .replace(/\b\w/g, (l) =>
-                                                l.toUpperCase()
-                                              )}
-                                          </span>
-                                        )}
               </div>
-                                    {submission.submittedAt && (
-                                      <div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
-                                        <Clock className="h-3 w-3" />
-                                        Submitted{" "}
-                                        {formatDateTime(submission.submittedAt)}
+              <div className="mt-4 flex flex-wrap gap-3">
+                {activeTab.status === "pending" && (
+                  <>
+                    <button
+                      onClick={() => handleViewClick(question)}
+                      className="inline-flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+                    >
+                      <Eye className="h-4 w-4" />
+                      View Detail
+                    </button>
+
+                    <button
+                      onClick={() => handleFormatClick(question.id)}
+                      disabled={actionLoading[`format-${question.id}`]}
+                      className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {actionLoading[`format-${question.id}`] ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Opening...
+                        </span>
+                      ) : (
+                        "Format Question"
+                      )}
+                    </button>
+                  </>
+                )}
+
+                {activeTab.status === "formatted" && (
+                  <>
+                    <button
+                      onClick={() => handleViewClick(question)}
+                      className="inline-flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+                    >
+                      <Eye className="h-4 w-4" />
+                      View Detail
+                    </button>
+
+                    <button
+                      onClick={() => handleUpdateClick(question.id)}
+                      disabled={actionLoading[`update-${question.id}`]}
+                      className="rounded-md bg-yellow-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {actionLoading[`update-${question.id}`] ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Updating...
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-2">
+                          <Pencil className="h-4 w-4" />
+                          Update
+                        </span>
+                      )}
+                    </button>
+                    <button
+                      onClick={() => handleViewSubmissions(question)}
+                      className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      Manage Submissions
+                    </button>
+                  </>
+                )}
+
+                {activeTab.status === "rejected" && (
+                  <>
+                    <button
+                      onClick={() => handleViewClick(question)}
+                      className="inline-flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+                    >
+                      <Eye className="h-4 w-4" />
+                      View Detail
+                    </button>
+                  </>
+                )}
+                <button
+                  onClick={() => handleToggleSubmissions(question.id)}
+                  className="inline-flex justify-end items-center gap-2 rounded-md border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 hover:border-blue-200 hover:text-blue-600"
+                >
+                  {/* <FileText className="h-4 w-4" /> */}
+                  {isExpanded ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-600">
+                    {submissionCount}
+                  </span>
+                </button>
+              </div>
+
+              {/* Submissions Section */}
+              {isExpanded && (
+                <div className="mt-6 border-t border-gray-200 pt-6">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-gray-600" />
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Submissions
+                      </h3>
+                      {submissionCount > 0 && (
+                        <span className="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-700">
+                          {submissionCount}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {submissions ? (
+                    submissions.length > 0 ? (
+                      <div className="space-y-4">
+                        {submissions.slice(0, 3).map((submission, idx) => {
+                          const images = submission.answerImages || [];
+                          const hasImages =
+                            Array.isArray(images) && images.length > 0;
+
+                          const getStatusConfig = (status) => {
+                            switch (status) {
+                              case "pending":
+                                return {
+                                  bg: "bg-yellow-50",
+                                  text: "text-yellow-700",
+                                  border: "border-yellow-200",
+                                  icon: Clock,
+                                };
+                              case "ai_evaluated":
+                                return {
+                                  bg: "bg-purple-50",
+                                  text: "text-purple-700",
+                                  border: "border-purple-200",
+                                  icon: CheckCircle2,
+                                };
+                              case "expert_evaluated":
+                                return {
+                                  bg: "bg-blue-50",
+                                  text: "text-blue-700",
+                                  border: "border-blue-200",
+                                  icon: CheckCircle2,
+                                };
+                              case "completed":
+                                return {
+                                  bg: "bg-green-50",
+                                  text: "text-green-700",
+                                  border: "border-green-200",
+                                  icon: CheckCircle2,
+                                };
+                              default:
+                                return {
+                                  bg: "bg-gray-50",
+                                  text: "text-gray-700",
+                                  border: "border-gray-200",
+                                  icon: Clock,
+                                };
+                            }
+                          };
+
+                          const statusConfig = submission.evaluationStatus
+                            ? getStatusConfig(submission.evaluationStatus)
+                            : null;
+                          const StatusIcon = statusConfig?.icon || Clock;
+
+                          return (
+                            <div
+                              key={submission._id || idx}
+                              className="rounded-lg border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow"
+                            >
+                              <div className="p-4">
+                                {/* Header */}
+                                <div className="flex items-start justify-between mb-4">
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
+                                      <span className="text-sm font-semibold text-gray-700">
+                                        #{idx + 1}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <div className="flex items-center gap-2">
+                                        <h4 className="text-sm font-semibold text-gray-900">
+                                          Submission {idx + 1}
+                                        </h4>
+                                        {submission.evaluationStatus &&
+                                          statusConfig && (
+                                            <span
+                                              className={`inline-flex items-center gap-1 rounded-full border ${statusConfig.border} ${statusConfig.bg} px-2.5 py-0.5 text-xs font-medium ${statusConfig.text}`}
+                                            >
+                                              <StatusIcon className="h-3 w-3" />
+                                              {submission.evaluationStatus
+                                                .replace(/_/g, " ")
+                                                .replace(/\b\w/g, (l) =>
+                                                  l.toUpperCase()
+                                                )}
+                                            </span>
+                                          )}
+                                      </div>
+                                      {submission.submittedAt && (
+                                        <div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                                          <Clock className="h-3 w-3" />
+                                          Submitted{" "}
+                                          {formatDateTime(
+                                            submission.submittedAt
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {hasImages && (
+                                    <div className="flex items-center gap-1 rounded-md bg-gray-100 px-2.5 py-1.5">
+                                      <ImageIcon className="h-4 w-4 text-gray-600" />
+                                      <span className="text-xs font-medium text-gray-700">
+                                        {images.length}{" "}
+                                        {images.length === 1
+                                          ? "Image"
+                                          : "Images"}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Answer Images Gallery */}
+                                {hasImages ? (
+                                  <div className="mt-4">
+                                    <div className="mb-2 flex items-center gap-2">
+                                      <ImageIcon className="h-4 w-4 text-gray-400" />
+                                      <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+                                        Answer Images
+                                      </span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                                      {images.map((image, imgIndex) => {
+                                        const imageUrl =
+                                          image?.imageUrl ||
+                                          image?.url ||
+                                          image?.secure_url ||
+                                          image?.path ||
+                                          (typeof image === "string"
+                                            ? image
+                                            : null);
+
+                                        if (
+                                          !imageUrl ||
+                                          typeof imageUrl !== "string"
+                                        ) {
+                                          return (
+                                            <div
+                                              key={imgIndex}
+                                              className="group relative aspect-square overflow-hidden rounded-lg border-2 border-red-200 bg-red-50"
+                                            >
+                                              <div className="flex h-full flex-col items-center justify-center p-2">
+                                                <XCircle className="h-6 w-6 text-red-400" />
+                                                <span className="mt-1 text-[10px] font-medium text-red-600">
+                                                  Invalid
+                                                </span>
+                                              </div>
+                                            </div>
+                                          );
+                                        }
+
+                                        return (
+                                          <div
+                                            key={image._id || imgIndex}
+                                            className="group relative aspect-square overflow-hidden rounded-lg border border-gray-200 bg-gray-50 cursor-zoom-in"
+                                            onClick={() =>
+                                              handleImageClick(imageUrl)
+                                            }
+                                            role="button"
+                                            tabIndex={0}
+                                          >
+                                            <img
+                                              src={imageUrl}
+                                              alt={
+                                                image?.originalName ||
+                                                image?.originalname ||
+                                                `Submission ${
+                                                  idx + 1
+                                                } - Image ${imgIndex + 1}`
+                                              }
+                                              className="h-full w-full object-contain transition-transform group-hover:scale-105 pointer-events-none"
+                                              onError={(e) => {
+                                                e.target.style.display = "none";
+                                                const errorDiv =
+                                                  e.target.nextElementSibling;
+                                                if (errorDiv) {
+                                                  errorDiv.classList.remove(
+                                                    "hidden"
+                                                  );
+                                                }
+                                              }}
+                                            />
+                                            <div className="hidden absolute inset-0 flex items-center justify-center bg-red-50 border-2 border-red-200 rounded-lg pointer-events-none">
+                                              <div className="text-center">
+                                                <XCircle className="mx-auto h-6 w-6 text-red-400" />
+                                                <span className="mt-1 block text-[10px] font-medium text-red-600">
+                                                  Failed to load
+                                                </span>
+                                              </div>
+                                            </div>
+                                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all rounded-lg pointer-events-none" />
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="mt-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
+                                    <ImageIcon className="mx-auto h-8 w-8 text-gray-400" />
+                                    <p className="mt-2 text-sm font-medium text-gray-500">
+                                      No images uploaded
+                                    </p>
+                                    <p className="mt-1 text-xs text-gray-400">
+                                      This submission doesn't contain any answer
+                                      images
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* Evaluation Info (if available) */}
+                                {submission.evaluation && (
+                                  <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                                      <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
+                                        Evaluation
+                                      </span>
+                                    </div>
+                                    {submission.evaluation.score !==
+                                      undefined && (
+                                      <div className="text-sm text-gray-700">
+                                        <span className="font-medium">
+                                          Score:
+                                        </span>{" "}
+                                        {submission.evaluation.score}
+                                      </div>
+                                    )}
+                                    {submission.evaluation.remark && (
+                                      <div className="mt-1 text-xs text-gray-600 line-clamp-2">
+                                        {submission.evaluation.remark}
                                       </div>
                                     )}
                                   </div>
-                                </div>
-                                {hasImages && (
-                                  <div className="flex items-center gap-1 rounded-md bg-gray-100 px-2.5 py-1.5">
-                                    <ImageIcon className="h-4 w-4 text-gray-600" />
-                                    <span className="text-xs font-medium text-gray-700">
-                                      {images.length}{" "}
-                                      {images.length === 1 ? "Image" : "Images"}
-                                    </span>
-                                  </div>
                                 )}
                               </div>
-
-                              {/* Answer Images Gallery */}
-                              {hasImages ? (
-                                <div className="mt-4">
-                                  <div className="mb-2 flex items-center gap-2">
-                                    <ImageIcon className="h-4 w-4 text-gray-400" />
-                                    <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
-                                      Answer Images
-                                    </span>
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
-                                    {images.map((image, imgIndex) => {
-                                      const imageUrl =
-                                        image?.imageUrl ||
-                                        image?.url ||
-                                        image?.secure_url ||
-                                        image?.path ||
-                                        (typeof image === "string"
-                                          ? image
-                                          : null);
-
-                                      if (
-                                        !imageUrl ||
-                                        typeof imageUrl !== "string"
-                                      ) {
-                                        return (
-                                          <div
-                                            key={imgIndex}
-                                            className="group relative aspect-square overflow-hidden rounded-lg border-2 border-red-200 bg-red-50"
-                                          >
-                                            <div className="flex h-full flex-col items-center justify-center p-2">
-                                              <XCircle className="h-6 w-6 text-red-400" />
-                                              <span className="mt-1 text-[10px] font-medium text-red-600">
-                                                Invalid
-                                              </span>
-                                            </div>
-                                          </div>
-                                        );
-                                      }
-
-                                      return (
-                                        <div
-                                          key={image._id || imgIndex}
-                                          className="group relative aspect-square overflow-hidden rounded-lg border border-gray-200 bg-gray-50"
-                                        >
-                                          <img
-                                            src={imageUrl}
-                                            alt={
-                                              image?.originalName ||
-                                              image?.originalname ||
-                                              `Submission ${idx + 1} - Image ${
-                                                imgIndex + 1
-                                              }`
-                                            }
-                                            className="h-full w-full object-contain transition-transform group-hover:scale-105 cursor-pointer"
-                                            onClick={() =>
-                                              window.open(imageUrl, "_blank")
-                                            }
-                                            onError={(e) => {
-                                              e.target.style.display = "none";
-                                              const errorDiv =
-                                                e.target.nextElementSibling;
-                                              if (errorDiv) {
-                                                errorDiv.classList.remove(
-                                                  "hidden"
-                                                );
-                                              }
-                                            }}
-                                          />
-                                          <div className="hidden absolute inset-0 flex items-center justify-center bg-red-50 border-2 border-red-200 rounded-lg">
-                                            <div className="text-center">
-                                              <XCircle className="mx-auto h-6 w-6 text-red-400" />
-                                              <span className="mt-1 block text-[10px] font-medium text-red-600">
-                                                Failed to load
-                                              </span>
-                                            </div>
-                                          </div>
-                                          <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-all rounded-lg" />
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="mt-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center">
-                                  <ImageIcon className="mx-auto h-8 w-8 text-gray-400" />
-                                  <p className="mt-2 text-sm font-medium text-gray-500">
-                                    No images uploaded
-                                  </p>
-                                  <p className="mt-1 text-xs text-gray-400">
-                                    This submission doesn't contain any answer
-                                    images
-                                  </p>
-                                </div>
-                              )}
-
-                              {/* Evaluation Info (if available) */}
-                              {submission.evaluation && (
-                                <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-3">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <CheckCircle2 className="h-4 w-4 text-green-600" />
-                                    <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">
-                                      Evaluation
-                                    </span>
-                                  </div>
-                                  {submission.evaluation.score !==
-                                    undefined && (
-                                    <div className="text-sm text-gray-700">
-                                      <span className="font-medium">
-                                        Score:
-                                      </span>{" "}
-                                      {submission.evaluation.score}
-                                    </div>
-                                  )}
-                                  {submission.evaluation.remark && (
-                                    <div className="mt-1 text-xs text-gray-600 line-clamp-2">
-                                      {submission.evaluation.remark}
-                                    </div>
-                                  )}
-                                </div>
-                              )}
                             </div>
+                          );
+                        })}
+                        {submissionCount > 3 && (
+                          <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 text-center">
+                            <p className="text-sm font-medium text-gray-700">
+                              +{submissionCount - 3} more submission
+                              {submissionCount - 3 !== 1 ? "s" : ""}
+                            </p>
+                            <button
+                              onClick={() => handleViewSubmissions(question)}
+                              className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-700"
+                            >
+                              View all submissions →
+                            </button>
                           </div>
-                        );
-                      })}
-                    {questionSubmissions[question.id].length > 3 && (
-                      <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 text-center">
-                        <p className="text-sm font-medium text-gray-700">
-                          +{questionSubmissions[question.id].length - 3} more
-                          submission
-                          {questionSubmissions[question.id].length - 3 !== 1
-                            ? "s"
-                            : ""}
-                        </p>
-                        <button
-                          onClick={() => handleViewSubmissions(question)}
-                          className="mt-2 text-xs font-medium text-blue-600 hover:text-blue-700"
-                        >
-                          View all submissions →
-                        </button>
+                        )}
+
                       </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-12 text-center">
-                    <FileText className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-4 text-sm font-semibold text-gray-900">
-                      No Submissions
-                    </h3>
-                    <p className="mt-2 text-sm text-gray-500">
-                      This question hasn't received any submissions yet.
-                    </p>
-                  </div>
-                )
-              ) : (
-                <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-12 text-center">
-                  <FileText className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-4 text-sm font-semibold text-gray-900">
-                    No Submissions
-                  </h3>
-                  <p className="mt-2 text-sm text-gray-500">
-                    Submissions will appear here once students submit their
-                    answers.
-                  </p>
+                    ) : (
+                      <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-12 text-center">
+                        <FileText className="mx-auto h-12 w-12 text-gray-400" />
+                        <h3 className="mt-4 text-sm font-semibold text-gray-900">
+                          No Submissions
+                        </h3>
+                        <p className="mt-2 text-sm text-gray-500">
+                          This question hasn't received any submissions yet.
+                        </p>
+                      </div>
+                    )
+                  ) : (
+                    <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-12 text-center">
+                      <FileText className="mx-auto h-12 w-12 text-gray-400" />
+                      <h3 className="mt-4 text-sm font-semibold text-gray-900">
+                        No Submissions
+                      </h3>
+                      <p className="mt-2 text-sm text-gray-500">
+                        Submissions will appear here once students submit their
+                        answers.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          </div>
-        ))}
+          );
+        })}
+        
       </div>
     );
   };
@@ -850,7 +1077,89 @@ const MyQuestion = () => {
         })}
       </div>
 
+      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end">
+          <div className="flex-1">
+            <label className="text-xs font-medium uppercase text-gray-500">
+              Search (exam, paper, subject)
+            </label>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="e.g. UPSC GS Paper 1"
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            />
+          </div>
+          <div className="flex flex-1 gap-4">
+            <div className="flex-1">
+              <label className="text-xs font-medium uppercase text-gray-500">
+                From Date
+              </label>
+              <input
+                type="date"
+                value={dateRange.from}
+                onChange={(e) =>
+                  setDateRange((prev) => ({ ...prev, from: e.target.value }))
+                }
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+            <div className="flex-1">
+              <label className="text-xs font-medium uppercase text-gray-500">
+                To Date
+              </label>
+              <input
+                type="date"
+                value={dateRange.to}
+                onChange={(e) =>
+                  setDateRange((prev) => ({ ...prev, to: e.target.value }))
+                }
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+          <div className="w-full lg:w-56">
+            <label className="text-xs font-medium uppercase text-gray-500">
+              Sort By
+            </label>
+            <select
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              {SORT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm text-gray-500">
+          <div>
+            Showing{" "}
+            <span className="font-semibold text-gray-900">
+              {displayedQuestions.length}
+            </span>{" "}
+            of{" "}
+            <span className="font-semibold text-gray-900">
+              {questions.length}
+            </span>{" "}
+            questions
+          </div>
+          <button
+            onClick={handleFiltersReset}
+            className="text-xs font-semibold uppercase tracking-wide text-blue-600 hover:text-blue-700"
+          >
+            Reset Filters
+          </button>
+        </div>
+      </div>
+
       {renderQuestions()}
+
+
 
       {showFormatModal && selectedQuestion && (
         <FormatMyQuestionModal
@@ -864,6 +1173,18 @@ const MyQuestion = () => {
             }
             return ok;
           }}
+          editingQuestion={selectedQuestion}
+          scrollToSection={null}
+          onGenerateAnswer={() => {}}
+        />
+      )}
+
+      {showUpdateModal && selectedQuestion && (
+        <FormatMyQuestionModal
+          isOpen={showUpdateModal}
+          onClose={() => setShowUpdateModal(false)}
+          onQuestions={reloadActiveTab}
+          onEditQuestion={(payload) => handleUpdateQuestion(payload)}
           editingQuestion={selectedQuestion}
           scrollToSection={null}
           onGenerateAnswer={() => {}}
@@ -887,7 +1208,7 @@ const MyQuestion = () => {
               >
                 <span className="text-2xl">&times;</span>
               </button>
-    </div>
+            </div>
             <div className="p-6">
               <div className="space-y-6">
                 {/* Basic Question Info */}
@@ -1202,9 +1523,10 @@ const MyQuestion = () => {
                                         style={{
                                           minWidth: "128px",
                                           minHeight: "128px",
+                                          cursor: "zoom-in"
                                         }}
                                         onClick={() =>
-                                          window.open(imageUrl, "_blank")
+                                          handleImageClick(imageUrl)
                                         }
                                         onError={(e) => {
                                           console.error(
@@ -1253,9 +1575,40 @@ const MyQuestion = () => {
                     </div>
                   </div>
                 )}
+
+                <button
+                  onClick={() => handleRejectQuestion(selectedQuestion.id)}
+                  className="inline-flex mr-0 items-center gap-2 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+                >
+                  <XCircle className="h-4 w-4" />
+                  Reject Question
+                </button>
               </div>
             </div>
           </div>
+        </div>
+      )}
+      
+      {/* Image Lightbox */}
+      {imageModalOpen && activeImage && (
+        
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90"
+          onClick={closeImageModal}
+        >
+          <img
+            src={activeImage}
+            alt="Large Answer"
+            className="max-w-4xl max-h-[90vh] rounded-lg border-4 border-white shadow-2xl"
+            style={{ objectFit: "contain" }}
+          />
+          <button
+            className="absolute top-8 right-8 text-white text-3xl font-bold bg-black bg-opacity-40 rounded-full w-12 h-12 flex items-center justify-center hover:bg-opacity-70 transition-all"
+            onClick={closeImageModal}
+            aria-label="Close"
+          >
+            ×
+          </button>
         </div>
       )}
     </div>

@@ -106,7 +106,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
             : editingQuestion.answerVideoUrls || '',
             
           evaluationType: editingQuestion.evaluationType || '',
-          evaluationGuideline: editingQuestion.evaluationGuideline || ''
+          evaluationGuideline: editingQuestion.evaluationGuideline || '',
         };
         console.log('Editing question:', editingQuestion);
         // Populate the form with the editing question

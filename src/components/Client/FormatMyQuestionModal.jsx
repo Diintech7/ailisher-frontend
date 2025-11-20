@@ -64,17 +64,19 @@ const FormatMyQuestionModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion,
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          setDefaultFramework(data.data.defaultFramework);
-          console.log(data.data.defaultFramework)
+          const framework = data.data.defaultFramework || '';
+          setDefaultFramework(framework);
+          console.log(framework);
           // Only set the default framework if we're not editing
           if (!editingQuestion) {
-            setQuestions(prevQuestions => 
+            setQuestions(prevQuestions =>
               prevQuestions.map(q => ({
                 ...q,
-                evaluationGuideline: data.data.defaultFramework
+                evaluationGuideline: framework
               }))
             );
           }
+          return framework;
         }
       } else {
         console.error('Failed to fetch default framework');
@@ -82,50 +84,57 @@ const FormatMyQuestionModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion,
     } catch (error) {
       console.error('Error fetching default framework:', error);
     }
+    return '';
   };
 
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) return;
+
+    const prepareModal = async () => {
       if (editingQuestion) {
-        // Pre-fill the form with editing question data
+        const shouldUseDefault =
+          !editingQuestion.evaluationGuideline ||
+          !editingQuestion.evaluationGuideline.trim();
+        const evaluationGuidelineValue = shouldUseDefault
+          ? defaultFramework
+          : editingQuestion.evaluationGuideline;
+
         const formattedQuestion = {
           ...editingQuestion,
           metadata: {
             ...editingQuestion.metadata,
-            keywords: Array.isArray(editingQuestion.metadata?.keywords) 
+            keywords: Array.isArray(editingQuestion.metadata.keywords)
               ? editingQuestion.metadata.keywords.join(', ')
-              : (editingQuestion.metadata?.keywords || ''),
-            difficultyLevel: editingQuestion.metadata?.difficultyLevel || 'level1',
-            wordLimit: editingQuestion.metadata?.wordLimit || editingQuestion.wordLimit || '',
-            estimatedTime: editingQuestion.metadata?.estimatedTime || '',
-            maximumMarks: editingQuestion.metadata?.maximumMarks || editingQuestion.maximumMarks || '',
+              : editingQuestion.metadata.keywords,
             qualityParameters: {
-              ...(editingQuestion.metadata?.qualityParameters || {}),
-              intro: editingQuestion.metadata?.qualityParameters?.intro || false,
-              body: {
-                enabled: editingQuestion.metadata?.qualityParameters?.body?.enabled || false,
-                features: editingQuestion.metadata?.qualityParameters?.body?.features || false,
-                examples: editingQuestion.metadata?.qualityParameters?.body?.examples || false,
-                facts: editingQuestion.metadata?.qualityParameters?.body?.facts || false,
-                diagram: editingQuestion.metadata?.qualityParameters?.body?.diagram || false
-              },
-              conclusion: editingQuestion.metadata?.qualityParameters?.conclusion || false,
-              customParams: editingQuestion.metadata?.qualityParameters?.customParams || []
+              ...editingQuestion.metadata.qualityParameters,
+              customParams:
+                editingQuestion.metadata.qualityParameters.customParams || []
             }
           },
           // Keep answerVideoUrls as array, convert to comma-separated string for display
-          answerVideoUrls: Array.isArray(editingQuestion.answerVideoUrls) 
+          answerVideoUrls: Array.isArray(editingQuestion.answerVideoUrls)
             ? editingQuestion.answerVideoUrls.join(', ')
-            : (editingQuestion.answerVideoUrls || ''),
-          languageMode: editingQuestion.languageMode || 'english',
-          evaluationMode: editingQuestion.evaluationMode || 'auto',
+            : editingQuestion.answerVideoUrls || '',
+
           evaluationType: editingQuestion.evaluationType || '',
-          evaluationGuideline: editingQuestion.evaluationGuideline || defaultFramework
+          evaluationGuideline: evaluationGuidelineValue || ''
         };
         console.log('Editing question:', editingQuestion);
         // Populate the form with the editing question
         setQuestions([formattedQuestion]);
-        
+
+        if (shouldUseDefault && !defaultFramework) {
+          const framework = await fetchDefaultFramework();
+          if (framework) {
+            setQuestions(prevQuestions =>
+              prevQuestions.map((q, index) =>
+                index === 0 ? { ...q, evaluationGuideline: framework } : q
+              )
+            );
+          }
+        }
+
         // Set existing PDFs for editing mode
         if (editingQuestion.modalAnswerPdfs && Array.isArray(editingQuestion.modalAnswerPdfs)) {
           setExistingPdfs(editingQuestion.modalAnswerPdfs.map(pdf => pdf.key));
@@ -134,17 +143,22 @@ const FormatMyQuestionModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion,
         }
       } else {
         // For new questions, fetch default framework and set it
-        fetchDefaultFramework();
+        await fetchDefaultFramework();
         setExistingPdfs([]);
       }
-      // If asked to scroll to PDF section after opening
+
       if (scrollToSection === 'pdf') {
         setTimeout(() => {
-          pdfSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          pdfSectionRef.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center'
+          });
         }, 200);
       }
-    }
-  }, [isOpen, editingQuestion]);
+    };
+
+    prepareModal();
+  }, [isOpen, editingQuestion, scrollToSection, defaultFramework]);
 
   const handleAddQuestion = () => {
     setQuestions([...questions, { ...initialQuestionState }]);
