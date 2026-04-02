@@ -524,7 +524,14 @@ const BookDetail = () => {
             <div className="flex flex-col md:flex-row gap-8">
               <div className="md:w-1/4 lg:w-1/5">
                 <div className="bg-gradient-to-br from-indigo-50 to-blue-100 rounded-lg h-48 flex items-center justify-center overflow-hidden">
-                  {book?.coverImage && !imageError ? (
+                  {book?.coverImageUrl ? (
+                    <img 
+                      src={book.coverImageUrl} 
+                      alt={book.title} 
+                      className="h-full w-full object-cover rounded-lg"
+                      onError={handleImageError}
+                    />
+                  ) : book?.coverImage && !imageError ? (
                     <img 
                       src={getCompleteImageUrl(book.coverImage)} 
                       alt={book.title} 

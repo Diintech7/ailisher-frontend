@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Upload, Loader2, Check, Copy, Eye, EyeOff } from 'lucide-react';
 
 import Cookies from 'js-cookie';
+import { API_BASE_URL } from '../../config';
 
 const AddClientModal = ({ isOpen, onClose, onClientAdded }) => {
   const [formData, setFormData] = useState({
@@ -87,22 +88,40 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded }) => {
     setError('');
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('upload_preset', 'post_blog'); // Replace with your Cloudinary upload preset
-      formData.append('cloud_name', 'dsbuzlxpw'); // Replace with your Cloudinary cloud name
-
-      const response = await fetch(
-        `https://api.cloudinary.com/v1_1/dsbuzlxpw/image/upload`, // Replace with your Cloudinary cloud name
-        {
-          method: 'POST',
-          body: formData
-        }
-      ).then(res => res.json());
+      // Get presigned URL
+      const presignedResponse = await fetch(`${API_BASE_URL}/api/r2/presigned-upload`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          folder: 'client_logos',
+          filename: file.name,
+          contentType: file.type
+        })
+      });
+      
+      const presignedData = await presignedResponse.json();
+      if (!presignedData.success) {
+        throw new Error(presignedData.message || 'Failed to get upload URL');
+      }
+      
+      const { uploadUrl, publicUrl } = presignedData.data;
+      
+      // Upload file directly to R2
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type
+        },
+        body: file
+      });
+      
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload file to R2');
+      }
 
       setFormData(prev => ({
         ...prev,
-        businessLogo: response.secure_url
+        businessLogo: publicUrl
       }));
     } catch (error) {
       console.error('Logo upload error:', error);

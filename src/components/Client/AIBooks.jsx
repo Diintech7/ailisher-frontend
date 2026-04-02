@@ -25,6 +25,7 @@ import Cookies from "js-cookie";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
+import { API_BASE_URL } from "../../config";
 
 // 1. Add constants for languages and categories (can be hardcoded or fetched if needed)
 const LANGUAGES = [
@@ -84,7 +85,7 @@ const BookItem = ({
     }
 
     // For local files, construct the full URL
-    return `https://test.ailisher.com/${imageUrl}`;
+    return `${API_BASE_URL}/${imageUrl}`;
   };
 
   // Close menu when clicking outside
@@ -155,7 +156,7 @@ const BookItem = ({
       }
 
       const response = await fetch(
-        `https://test.ailisher.com/api/books/${book._id}`,
+        `${API_BASE_URL}/api/books/${book._id}`,
         {
           method: "DELETE",
           headers: {
@@ -747,7 +748,7 @@ const AddBookModal = ({
   const refreshCategories = async () => {
     try {
       const token = Cookies.get("usertoken");
-      const res = await fetch("https://test.ailisher.com/api/categories", {
+      const res = await fetch(`${API_BASE_URL}/api/categories`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await res.json();
@@ -772,7 +773,7 @@ const AddBookModal = ({
     try {
       setCreatingCategory(true);
       const token = Cookies.get("usertoken");
-      const res = await fetch("https://test.ailisher.com/api/categories", {
+      const res = await fetch(`${API_BASE_URL}/api/categories`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -809,7 +810,7 @@ const AddBookModal = ({
       setCreatingSubcategory(true);
       const token = Cookies.get("usertoken");
       // Need category id; fetch categories and find the current mainCategory
-      const listRes = await fetch("https://test.ailisher.com/api/categories", {
+      const listRes = await fetch(`${API_BASE_URL}/api/categories`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await listRes.json();
@@ -821,7 +822,7 @@ const AddBookModal = ({
         return;
       }
       const res = await fetch(
-        `https://test.ailisher.com/api/categories/${currentCat._id}/subcategories`,
+        `${API_BASE_URL}/api/categories/${currentCat._id}/subcategories`,
         {
           method: "POST",
           headers: {
@@ -2010,7 +2011,7 @@ const EditBookModal = ({
       if (coverImage) {
         try {
           const uploadUrlResponse = await fetch(
-            "https://test.ailisher.com/api/books/cover-upload-url",
+            `${API_BASE_URL}/api/books/cover-upload-url`,
             {
               method: "POST",
               headers: {
@@ -2816,7 +2817,7 @@ const AIBooks = () => {
 
       // Then fetch the books with pagination and filters
       const booksResponse = await fetch(
-        `https://test.ailisher.com/api/books?${queryParams}`,
+        `${API_BASE_URL}/api/books?${queryParams}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -2937,7 +2938,7 @@ const AIBooks = () => {
       const endpoint = `/api/books/${bookId}/highlight`;
       const method = isHighlighted ? "POST" : "DELETE";
 
-      const response = await fetch(`https://test.ailisher.com${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method,
         headers: {
           Authorization: `Bearer ${token}`,
@@ -2983,7 +2984,7 @@ const AIBooks = () => {
       const endpoint = `/api/books/${bookId}/trending`;
       const method = isTrending ? "POST" : "DELETE";
 
-      const response = await fetch(`https://test.ailisher.com${endpoint}`, {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
         method,
         headers: {
           Authorization: `Bearer ${token}`,
@@ -3023,7 +3024,7 @@ const AIBooks = () => {
       }
 
       const response = await fetch(
-        `https://test.ailisher.com/api/books/${bookId}`,
+        `${API_BASE_URL}/api/books/${bookId}`,
         {
           method: "PATCH",
           headers: {
@@ -3157,7 +3158,7 @@ const AIBooks = () => {
 
       // Update category order for all books in the category
       const response = await fetch(
-        `https://test.ailisher.com/api/books/categories/${mainCategory}/order`,
+        `${API_BASE_URL}/api/books/categories/${mainCategory}/order`,
         {
           method: "PUT",
           headers: {

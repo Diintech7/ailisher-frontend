@@ -1,5 +1,5 @@
-export const API_BASE_URL = 'https://test.ailisher.com';
-// export const API_BASE_URL = 'http://localhost:5000';
+export const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:4000';
+export const FRONTEND_URL = process.env.REACT_APP_FRONTEND_URL || window.location.origin;
 
 
 export const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB

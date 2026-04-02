@@ -225,54 +225,53 @@ const DatastoreContent = () => {
     showNotification(`File "${file.name}" selected. Click Save to upload to Cloudinary.`, 'info');
   };
 
-  const uploadToCloudinary = async (file) => {
+  const uploadToR2 = async (file) => {
     try {
       setIsUploading(true);
-      showNotification('Uploading to Cloudinary...', 'info');
-      
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('upload_preset', 'post_blog');
-      
+      showNotification('Uploading file...', 'info');
+
       let uploadType = 'image';
-      if (file.type.startsWith('video/')) {
+      if (file.type && file.type.startsWith('video/')) {
         uploadType = 'video';
-      } else if (file.type === 'application/pdf') {
-        uploadType = 'raw';
+      } else if (file.type && file.type === 'application/pdf') {
+        uploadType = 'pdf';
       }
-      
-      const response = await axios.post(
-        `https://api.cloudinary.com/v1_1/dsbuzlxpw/${uploadType}/upload`,
-        formData,
-        {
-          onUploadProgress: (progressEvent) => {
-            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            setUploadProgress(percentCompleted);
-          }
+
+      const presignedRes = await axios.post('https://test.ailisher.com/api/r2/presigned-upload', {
+        folder: `datastore_${uploadType}s`,
+        filename: file.name,
+        contentType: file.type || 'application/octet-stream'
+      });
+
+      const { uploadUrl, publicUrl } = presignedRes.data.data;
+
+      await axios.put(uploadUrl, file, {
+        headers: {
+          'Content-Type': file.type || 'application/octet-stream'
+        },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(percentCompleted);
         }
-      );
-      
+      });
+
       setIsUploading(false);
-      
-      if (response.data && response.data.secure_url) {
-        if (newItemData.cloudinaryUrl && newItemData.cloudinaryUrl.startsWith('blob:')) {
-          URL.revokeObjectURL(newItemData.cloudinaryUrl);
-        }
-        
-        setNewItemData({
-          ...newItemData,
-          cloudinaryUrl: response.data.secure_url,
-          localFile: null
-        });
-        
-        showNotification('File uploaded to Cloudinary successfully', 'success');
-        return response.data.secure_url;
-      } else {
-        throw new Error('No secure URL returned from Cloudinary');
+
+      if (newItemData.cloudinaryUrl && newItemData.cloudinaryUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(newItemData.cloudinaryUrl);
       }
+
+      setNewItemData({
+        ...newItemData,
+        cloudinaryUrl: publicUrl,
+        localFile: null
+      });
+
+      showNotification('File uploaded successfully', 'success');
+      return publicUrl;
     } catch (err) {
       setIsUploading(false);
-      showNotification('Failed to upload to Cloudinary: ' + (err.message || 'Unknown error'), 'error');
+      showNotification('Failed to upload: ' + (err.message || 'Unknown error'), 'error');
       throw err;
     }
   };
@@ -292,8 +291,8 @@ const DatastoreContent = () => {
       };
 
       if ((newItemType === 'image' || newItemType === 'video' || newItemType === 'pdf') && newItemData.localFile) {
-        const cloudinaryUrl = await uploadToCloudinary(newItemData.localFile);
-        requestData.url = cloudinaryUrl;
+        const r2Key = await uploadToR2(newItemData.localFile);
+        requestData.url = r2Key;
       } else {
       switch (newItemType) {
         case 'text':

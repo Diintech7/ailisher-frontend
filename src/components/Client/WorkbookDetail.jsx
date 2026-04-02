@@ -447,7 +447,14 @@ const WorkbookDetail = () => {
             <div className="flex flex-col md:flex-row gap-8">
               <div className="md:w-1/4 lg:w-1/5">
                 <div className="bg-gradient-to-br from-teal-50 to-green-100 rounded-lg h-48 flex items-center justify-center overflow-hidden">
-                  {workbook?.coverImage ? (
+                  {workbook?.coverImageUrl ? (
+                    <img 
+                      src={workbook.coverImageUrl} 
+                      alt={workbook.title} 
+                      className="h-full w-full object-cover rounded-lg"
+                      onError={handleImageError}
+                    />
+                  ) : workbook?.coverImage ? (
                     <img 
                       src={getCompleteImageUrl(workbook.coverImage)} 
                       alt={workbook.title} 

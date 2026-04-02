@@ -17,6 +17,7 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import AddClientModal from "./AddClientModal";
 import { useNavigate } from 'react-router-dom';
+import { API_BASE_URL, FRONTEND_URL } from "../../config";
 
 const ClientManagement = () => {
   const [clients, setClients] = useState([]);
@@ -45,7 +46,7 @@ const ClientManagement = () => {
       setLoading(true);
       const token = Cookies.get("admintoken");
       const response = await axios.get(
-        "https://test.ailisher.com/api/admin/clients",
+        `${API_BASE_URL}/api/admin/clients`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -73,7 +74,7 @@ const ClientManagement = () => {
     try {
       const token = Cookies.get("admintoken");
       await axios.delete(
-        `https://test.ailisher.com/api/admin/clients/${id}`,
+        `${API_BASE_URL}/api/admin/clients/${id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -91,7 +92,7 @@ const ClientManagement = () => {
     try {
       const token = Cookies.get("admintoken");
       const response = await axios.put(
-        `https://test.ailisher.com/api/admin/clients/${id}/status`,
+        `${API_BASE_URL}/api/admin/clients/${id}/status`,
         { status: newStatus },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -113,7 +114,7 @@ const ClientManagement = () => {
       const adminToken = Cookies.get("admintoken");
 
       const response = await axios.post(
-        `https://test.ailisher.com/api/admin/clients/${id}/login-token`,
+        `${API_BASE_URL}/api/admin/clients/${id}/login-token`,
         {},
         { headers: { Authorization: `Bearer ${adminToken}` } }
       );
@@ -141,7 +142,7 @@ const ClientManagement = () => {
         JSON.stringify(clientData)
       )}; path=/; max-age=18000";
       
-      window.location.href = 'https://ailisher.com/dashboard';
+      window.location.href = '${FRONTEND_URL}/dashboard';
     </script>
   </body>
 </html>
