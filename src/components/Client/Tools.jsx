@@ -10,6 +10,7 @@ import {
   List,
   CreditCard,
   Bell,
+  Layout,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -28,6 +29,8 @@ export default function Tools() {
       navigate("/image-generator");
     } else if (activeTab === 'category-management') {
       navigate("/category-management")
+    } else if (activeTab === 'app-banners') {
+      navigate("/app-banners")
     }
     // else if (activeTab === 'plan') {
     //   navigate("/plans")
@@ -98,6 +101,13 @@ export default function Tools() {
       icon: Bell,
       color: "bg-pink-500",
       description: "notification",
+    },
+    {
+      id: "app-banners",
+      title: "App Banners",
+      icon: Layout,
+      color: "bg-indigo-600",
+      description: "Manage app screen banners",
     },
   ];
 

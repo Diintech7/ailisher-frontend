@@ -16,11 +16,15 @@ import {
   Star,
   TrendingUp,
   Edit,
+  Lock,
+  Sparkles,
+  Loader2,
+  Check,
   ToggleRight,
   LockIcon,
-  BookLockIcon,
-  Lock,
+  BookLockIcon
 } from "lucide-react";
+import { generateAIImage, saveAIImageToR2 } from "../utils/api";
 import Cookies from "js-cookie";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -719,6 +723,10 @@ const AddBookModal = ({
   const [creatingSubcategory, setCreatingSubcategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newSubcategoryName, setNewSubcategoryName] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [showAiPrompt, setShowAiPrompt] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiCoverImageKey, setAiCoverImageKey] = useState(null);
 
   const languages = [
     "Hindi",
@@ -848,6 +856,54 @@ const AddBookModal = ({
       toast.error("Failed to create subcategory");
     } finally {
       setCreatingSubcategory(false);
+      setNewSubcategoryName("");
+    }
+  };
+
+  const handleAiGenerate = async () => {
+    if (!formData.title) {
+      toast.error('Please enter a book title first to generate a prompt.');
+      return;
+    }
+    
+    if (!aiPrompt && !showAiPrompt) {
+      setAiPrompt(`A professional book cover for ${formData.title} - ${formData.description.substring(0, 80)}`);
+      setShowAiPrompt(true);
+      return;
+    }
+
+    if (!aiPrompt) {
+      toast.error('Please enter a prompt.');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      // Using OpenAI DALL-E 3 for AI Books section
+      const res = await generateAIImage(aiPrompt, 'realistic', '1:1', '5', 'openai');
+      if (res?.success && res?.image) {
+        const dataUrl = `data:image/png;base64,${res.image}`;
+        setImagePreview(dataUrl);
+        
+        // Auto-save to R2 to get a key
+        const saveRes = await saveAIImageToR2({
+          url: dataUrl,
+          prompt: aiPrompt,
+        });
+        
+        if (saveRes?.success) {
+          setAiCoverImageKey(saveRes.data.key);
+          setCoverImage(null); // Clear manual file if AI is used
+        } else {
+          throw new Error('Failed to save AI image to R2');
+        }
+      } else {
+        throw new Error('Failed to generate image');
+      }
+    } catch (err) {
+      toast.error('AI Generation failed: ' + err.message);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -1007,7 +1063,7 @@ const AddBookModal = ({
         }
       }
 
-      let coverImageKey = null;
+      let coverImageKey = aiCoverImageKey;
 
       // If there's a cover image, first get a presigned URL and upload to S3
       if (coverImage) {
@@ -1739,12 +1795,13 @@ const AddBookModal = ({
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                     >
                       <option value="INR">INR</option>
-                      <option value="USD">USD</option>
+                  <option value="USD">USD</option>
                     </select>
                   </div>
                 </div>
               )}
             </div>
+
             <div className="mb-4">
               <label className="flex items-center">
                 <input
@@ -1759,6 +1816,50 @@ const AddBookModal = ({
                 </span>
               </label>
             </div>
+
+            {/* AI Generation Section */}
+            <div className="bg-purple-50 p-4 rounded-lg border border-purple-100 mb-6 font-sans">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-semibold text-purple-700 uppercase tracking-wider">AI Cover Lab</span>
+                {isGenerating && <Loader2 className="animate-spin h-4 w-4 text-purple-700" />}
+              </div>
+              
+              <button 
+                type="button" 
+                onClick={handleAiGenerate}
+                disabled={isGenerating || isSubmitting}
+                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-white text-purple-700 rounded-md hover:bg-purple-50 transition-all border border-purple-200 shadow-sm font-medium"
+              >
+                {isGenerating ? (
+                   <Loader2 className="animate-spin h-4 w-4" />
+                ) : (
+                  <Sparkles size={18} />
+                )}
+                {isGenerating ? 'Generating Magic...' : (showAiPrompt ? 'Generate Image' : 'Generate with AI')}
+              </button>
+              
+              {showAiPrompt && (
+                <div className="mt-3 animate-in fade-in slide-in-from-top-1 duration-300">
+                  <textarea
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    placeholder="Describe the book cover you imagine..."
+                    className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 h-20 text-sm bg-white/50"
+                  />
+                  <div className="flex justify-between mt-1">
+                    <p className="text-[10px] text-purple-500 italic">
+                      Tip: Realistic, Oil painting, Minimalist, etc.
+                    </p>
+                    {aiCoverImageKey && (
+                      <span className="text-[10px] text-green-600 flex items-center gap-1 font-medium">
+                        <Check size={10} /> AI Cover Ready
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="mb-6">
               <label className="block text-gray-700 text-sm font-medium mb-2">
                 Cover Image (Optional)
@@ -1858,6 +1959,10 @@ const EditBookModal = ({
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [showAiPrompt, setShowAiPrompt] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiCoverImageKey, setAiCoverImageKey] = useState(null);
 
   const languages = [
     "Hindi",
@@ -1977,6 +2082,53 @@ const EditBookModal = ({
     }
   };
 
+  const handleAiGenerate = async () => {
+    if (!formData.title) {
+      toast.error('Please enter a book title first to generate a prompt.');
+      return;
+    }
+    
+    if (!aiPrompt && !showAiPrompt) {
+      setAiPrompt(`A professional book cover for ${formData.title} - ${formData.description.substring(0, 80)}`);
+      setShowAiPrompt(true);
+      return;
+    }
+
+    if (!aiPrompt) {
+      toast.error('Please enter a prompt.');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      // Using OpenAI DALL-E 3 for AI Books section
+      const res = await generateAIImage(aiPrompt, 'realistic', '1:1', '5', 'openai');
+      if (res?.success && res?.image) {
+        const dataUrl = `data:image/png;base64,${res.image}`;
+        setImagePreview(dataUrl);
+        
+        // Auto-save to R2 to get a key
+        const saveRes = await saveAIImageToR2({
+          url: dataUrl,
+          prompt: aiPrompt,
+        });
+        
+        if (saveRes?.success) {
+          setAiCoverImageKey(saveRes.data.key);
+          setCoverImage(null); // Clear manual file if AI is used
+        } else {
+          throw new Error('Failed to save AI image to R2');
+        }
+      } else {
+        throw new Error('Failed to generate image');
+      }
+    } catch (err) {
+      toast.error('AI Generation failed: ' + err.message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -2006,7 +2158,7 @@ const EditBookModal = ({
         }
       }
 
-      let coverImageKey = null;
+      let coverImageKey = aiCoverImageKey;
 
       if (coverImage) {
         try {
@@ -2681,6 +2833,50 @@ const EditBookModal = ({
                 </span>
               </label>
             </div>
+
+            {/* AI Generation Section */}
+            <div className="bg-purple-50 p-4 rounded-lg border border-purple-100 mb-6 font-sans">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-semibold text-purple-700 uppercase tracking-wider">AI Cover Lab</span>
+                {isGenerating && <Loader2 className="animate-spin h-4 w-4 text-purple-700" />}
+              </div>
+              
+              <button 
+                type="button" 
+                onClick={handleAiGenerate}
+                disabled={isGenerating || isSubmitting}
+                className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-white text-purple-700 rounded-md hover:bg-purple-50 transition-all border border-purple-200 shadow-sm font-medium"
+              >
+                {isGenerating ? (
+                   <Loader2 className="animate-spin h-4 w-4" />
+                ) : (
+                  <Sparkles size={18} />
+                )}
+                {isGenerating ? 'Generating Magic...' : (showAiPrompt ? 'Generate Image' : 'Generate with AI')}
+              </button>
+              
+              {showAiPrompt && (
+                <div className="mt-3 animate-in fade-in slide-in-from-top-1 duration-300">
+                  <textarea
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    placeholder="Describe the book cover you imagine..."
+                    className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 h-20 text-sm bg-white/50"
+                  />
+                  <div className="flex justify-between mt-1">
+                    <p className="text-[10px] text-purple-500 italic">
+                      Tip: Realistic, Oil painting, Minimalist, etc.
+                    </p>
+                    {aiCoverImageKey && (
+                      <span className="text-[10px] text-green-600 flex items-center gap-1 font-medium">
+                        <Check size={10} /> AI Cover Ready
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="mb-6">
               <label className="block text-gray-700 text-sm font-medium mb-2">
                 Cover Image (Optional)

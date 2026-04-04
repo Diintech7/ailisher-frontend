@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Upload } from 'lucide-react';
-import { getS3UploadUrl, uploadFileToS3, createCourse, updateCourse } from '../utils/api';
+import { X, Plus, Trash2, Upload, Sparkles } from 'lucide-react';
+import { getS3UploadUrl, uploadFileToS3, createCourse, updateCourse, generateAIImage, saveAIImageToR2 } from '../utils/api';
 import { useParams } from 'react-router-dom';
 
 const AddBookCourse = ({ isOpen, onClose, onAdd, initialData }) => {
@@ -13,6 +13,9 @@ const AddBookCourse = ({ isOpen, onClose, onAdd, initialData }) => {
   const [coverImageKey, setCoverImageKey] = useState('');
   const [coverUploading, setCoverUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [showAiPrompt, setShowAiPrompt] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -102,6 +105,51 @@ const AddBookCourse = ({ isOpen, onClose, onAdd, initialData }) => {
       alert('Failed to upload cover image: ' + err.message);
     } finally {
       setCoverUploading(false);
+    }
+  };
+
+  const handleAiGenerate = async () => {
+    if (!courseName) {
+      alert('Please enter a course name first to generate a prompt.');
+      return;
+    }
+    
+    if (!aiPrompt && !showAiPrompt) {
+      setAiPrompt(`A professional book cover for "${courseName}" - ${overview.substring(0, 100)}`);
+      setShowAiPrompt(true);
+      return;
+    }
+
+    if (!aiPrompt) {
+      alert('Please enter a prompt.');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const res = await generateAIImage(aiPrompt);
+      if (res?.success && res?.image) {
+        const dataUrl = `data:image/png;base64,${res.image}`;
+        setCoverImagePreview(dataUrl);
+        
+        // Auto-save to R2 to get a key
+        const saveRes = await saveAIImageToR2({
+          url: dataUrl,
+          prompt: aiPrompt,
+        });
+        
+        if (saveRes?.success) {
+          setCoverImageKey(saveRes.data.key);
+        } else {
+          throw new Error('Failed to save AI image to R2');
+        }
+      } else {
+        throw new Error('Failed to generate image');
+      }
+    } catch (err) {
+      alert('AI Generation failed: ' + err.message);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -206,6 +254,36 @@ const AddBookCourse = ({ isOpen, onClose, onAdd, initialData }) => {
               </label>
               {coverUploading && <div className="text-xs text-orange-600 mt-2">Uploading...</div>}
               {coverImagePreview && <img src={coverImagePreview} alt="Cover Preview" className="w-full max-w-xs h-32 object-cover rounded-md border mt-2 mx-auto" />}
+            </div>
+            
+            <div className="flex flex-col gap-3">
+              <button 
+                type="button" 
+                onClick={handleAiGenerate}
+                disabled={isGenerating || coverUploading}
+                className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-purple-100 text-purple-700 rounded-md hover:bg-purple-200 transition-colors border border-purple-200"
+              >
+                {isGenerating ? (
+                  <div className="animate-spin h-4 w-4 border-2 border-purple-700 border-t-transparent rounded-full"></div>
+                ) : (
+                  <Sparkles size={18} />
+                )}
+                {isGenerating ? 'Generating...' : (showAiPrompt ? 'Generate Image' : 'Generate by AI')}
+              </button>
+              
+              {showAiPrompt && (
+                <div className="animate-in fade-in slide-in-from-top-1 duration-200">
+                  <textarea
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    placeholder="Describe the cover you want..."
+                    className="w-full px-3 py-2 border border-purple-200 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 h-20 text-sm"
+                  />
+                  <p className="text-[10px] text-gray-500 mt-1">
+                    Tip: Add details like "realistic", "minimalist", "3D render", etc.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
           <div className="flex justify-end">

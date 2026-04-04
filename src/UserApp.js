@@ -41,6 +41,7 @@ import QuestionBank from './components/Client/QuestionBank';
 import QuestionBankDetail from './components/Client/QuestionBankDetail';
 import GeneratePage from './components/Client/EditPage';
 import CategoryManagement from './components/Client/CategoryManagement';
+import AppBannersManagement from './components/Client/AppBannersManagement';
 import RechargePlan from './components/Client/RechargePlan';
 import RechargePlanCreate from './components/Client/RechargePlanCreate';
 import AIcourses from './components/Client/AIcourses';
@@ -223,6 +224,7 @@ const UserApp = () => {
                 <Route path="/marketing" element={<Marketing/>} />
                 <Route path="/image-generator" element={<ImageGenerator/>} />
                 <Route path='/category-management' element={<CategoryManagement/>}/>
+                <Route path='/app-banners' element={<AppBannersManagement/>}/>
                 <Route path='/plans' element={<RechargePlan/>}/>
                 <Route path='/plan/create' element={<RechargePlanCreate/>}/>
                 <Route path='/plan/:planId/edit' element={<RechargePlanCreate/>}/>

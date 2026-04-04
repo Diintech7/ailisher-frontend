@@ -1,7 +1,5 @@
-// utils/api.js
 import Cookies from 'js-cookie';
-
-const API_BASE_URL = 'https://test.ailisher.com';
+import { API_BASE_URL } from '../../config';
 
 export const apiRequest = async (method, endpoint, data = null) => {
   const token = Cookies.get('usertoken');
@@ -160,3 +158,34 @@ export async function fetchYouTubeTranscript(url) {
   if (!response.ok) throw new Error('Failed to fetch transcript');
   return response.json();
 }
+
+// AI Image Generation
+export const generateAIImage = async (prompt, style = 'realistic', aspectRatio = '9:16', seed = '5', provider = 'imagineart') => {
+  console.log('[generateAIImage] Generating image:', { prompt, style, aspectRatio, seed, provider });
+  const res = await apiRequest('POST', '/api/image-generator/generate-image', {
+    prompt,
+    style,
+    aspect_ratio: aspectRatio,
+    seed,
+    variation: '1',
+    provider
+  });
+  console.log('[generateAIImage] AI generation response:', res);
+  return res;
+};
+
+export const saveAIImageToR2 = async (imageData) => {
+  console.log('[saveAIImageToR2] Saving AI image to R2:', imageData.prompt);
+  const res = await apiRequest('POST', '/api/image-generator/save-image', {
+    imageBase64: imageData.url.includes(',') ? imageData.url.split(',')[1] : imageData.url,
+    prompt: imageData.prompt,
+    style: imageData.style || 'realistic',
+    aspectRatio: imageData.aspectRatio || '9:16',
+    seed: imageData.seed || '5',
+    tags: [],
+    isPublic: false,
+    contentType: 'image/png'
+  });
+  console.log('[saveAIImageToR2] AI save response:', res);
+  return res;
+};
