@@ -26,7 +26,7 @@ import SubTopicViewer from './components/Client/SubTopicViewer';
 import MobileAssetView from './components/MobileAssetView';
 import User from './components/Client/User';
 import AISWBPage from './components/Client/AISWBPage';
-import AISWBQuestions from './components/Client/AISWBQuestions';
+// import AISWBQuestions from './components/Client/AISWBQuestions';
 // import AssessmentDashboard from './components/Client/AssessmentDashboard';
 import QuestionSubmissions from './components/Client/QuestionSubmissions';
 import QRQuestionPage from './components/QRQuestionPage';

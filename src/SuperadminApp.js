@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import SuperAdminAuthLayout from './components/Auth/SuperAdminAuthLayout';
 import SuperAdminDashboard from './components/Superadmin/SuperAdminDashboard';
 import { API_BASE_URL } from './config';
