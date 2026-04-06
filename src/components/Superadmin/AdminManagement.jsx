@@ -6,12 +6,9 @@ import {
   FaSearch,
   FaEdit,
   FaTrash,
-  FaEye,
   FaEllipsisV,
   FaTimes,
-  FaExclamationTriangle,
-  FaCheckCircle,
-  FaArrowUp
+  FaExclamationTriangle
 } from "react-icons/fa";
 import LoginForm from "../Auth/SuperAdminLoginForm";
 

@@ -9,12 +9,7 @@ import {
   FaEye,
   FaEllipsisV,
   FaTimes,
-  FaExclamationTriangle,
-  FaUserShield,
-  FaShieldAlt,
-  FaPlay,
-  FaPause,
-  FaCheckCircle
+  FaExclamationTriangle
 } from "react-icons/fa";
 import axios from "axios";
 
