@@ -879,8 +879,8 @@ const AddBookModal = ({
 
     setIsGenerating(true);
     try {
-      // Using OpenAI DALL-E 3 for AI Books section
-      const res = await generateAIImage(aiPrompt, 'realistic', '1:1', '5', 'openai');
+      // Using ImaginArt (Vyro AI) as requested by user
+      const res = await generateAIImage(aiPrompt, 'realistic', '1:1', '5', 'imagineart');
       if (res?.success && res?.image) {
         const dataUrl = `data:image/png;base64,${res.image}`;
         setImagePreview(dataUrl);
@@ -2101,8 +2101,8 @@ const EditBookModal = ({
 
     setIsGenerating(true);
     try {
-      // Using OpenAI DALL-E 3 for AI Books section
-      const res = await generateAIImage(aiPrompt, 'realistic', '1:1', '5', 'openai');
+      // Using ImaginArt (Vyro AI) as requested by user
+      const res = await generateAIImage(aiPrompt, 'realistic', '1:1', '5', 'imagineart');
       if (res?.success && res?.image) {
         const dataUrl = `data:image/png;base64,${res.image}`;
         setImagePreview(dataUrl);

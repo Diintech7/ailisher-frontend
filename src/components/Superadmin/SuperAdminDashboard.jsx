@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE_URL } from '../../config';
 import {
@@ -44,14 +44,11 @@ import {
   FaArrowDown,
   FaMinus
 } from "react-icons/fa";
-import LoginForm from "../Auth/SuperAdminLoginForm";
 import AdminManagement from "./AdminManagement";
 import ClientManagement from "./ClientManagement";
 import OrgManagement from "./OrgManagement";
-import axios from "axios";
 
 const SuperAdminDashboard = ({ user, onLogout }) => {
-  const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeTab, setActiveTab] = useState("Overview");
   const [isMobile, setIsMobile] = useState(false);
@@ -105,7 +102,7 @@ const SuperAdminDashboard = ({ user, onLogout }) => {
   };
 
 
-  const updateStatsData = () => {
+  const updateStatsData = useCallback(() => {
     setStatsData({
       totalAdmins: admincount || 0,
       totalClients: clientcount || 0,
@@ -114,9 +111,9 @@ const SuperAdminDashboard = ({ user, onLogout }) => {
       newAdminsThisMonth: Math.floor((admincount || 0) * 0.1),
       clientGrowthRate: 12
     });
-  };
+  }, [admincount, clientcount, organizationscount]);
 
-  const getAdmins = async () => {
+  const getAdmins = useCallback(async () => {
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/superadmin/getadmins`
@@ -127,9 +124,9 @@ const SuperAdminDashboard = ({ user, onLogout }) => {
     } catch (error) {
       console.log(error);
     }
-  };
+  }, []);
 
-  const getClients = async () => {
+  const getClients = useCallback(async () => {
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/superadmin/getclients`
@@ -140,9 +137,9 @@ const SuperAdminDashboard = ({ user, onLogout }) => {
     } catch (error) {
       console.log(error);
     }
-  };
+  }, []);
 
-  const getOrganizations = async () => {
+  const getOrganizations = useCallback(async () => {
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/superadmin/organizations`
@@ -157,7 +154,7 @@ const SuperAdminDashboard = ({ user, onLogout }) => {
     } catch (error) {
       console.log(error);
     }
-  };
+  }, [token]);
 
 
   useEffect(() => {
@@ -167,11 +164,11 @@ const SuperAdminDashboard = ({ user, onLogout }) => {
       getClients();
       getOrganizations();
     }
-  }, [activeTab]);
+  }, [activeTab, getAdmins, getClients, getOrganizations]);
 
   useEffect(() => {
     updateStatsData();
-  }, [admincount, clientcount, organizationscount]);
+  }, [admincount, clientcount, organizationscount, updateStatsData]);
 
   // Handle admin login
   const handleAdminLogin = (loginData) => {
@@ -388,9 +385,9 @@ const SuperAdminDashboard = ({ user, onLogout }) => {
                 <nav className="text-sm text-gray-500 mt-1">
                   <ol className="flex items-center space-x-2">
                     <li>
-                      <a href="#" className="text-purple-600 hover:text-purple-700">
+                      <span className="text-purple-600">
                         Dashboard
-                      </a>
+                      </span>
                     </li>
                     <li>/</li>
                     <li>{activeTab}</li>

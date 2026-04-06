@@ -27,8 +27,6 @@ const YouTube = ({ url = '', onTranscript, showInput = true }) => {
   const [transcribing, setTranscribing] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [paragraphs, setParagraphs] = useState([]);
-  const [totalParagraphs, setTotalParagraphs] = useState(0);
-  const [totalSentences, setTotalSentences] = useState(0);
 
   // Sync input with url prop
   useEffect(() => {
@@ -86,8 +84,6 @@ const YouTube = ({ url = '', onTranscript, showInput = true }) => {
       const data = await response.json();
       setTranscript(data.transcript || 'No transcript found.');
       setParagraphs(data.paragraphs || []);
-      setTotalParagraphs(data.totalParagraphs || 0);
-      setTotalSentences(data.totalSentences || 0);
       if (onTranscript) {
         onTranscript(data.transcript || '', data.paragraphs || []);
       }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Bot, BookOpen, Book, ClipboardList, Video, Settings, FileText } from 'lucide-react';
+import { Home, Bot, BookOpen, Book, Video, Settings } from 'lucide-react';
 
 const UserMenu = ({ isExpanded, currentPath, handleNavigate }) => {
   const menuItems = [
