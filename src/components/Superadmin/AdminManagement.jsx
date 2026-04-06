@@ -6,6 +6,7 @@ import {
   FaSearch,
   FaEdit,
   FaTrash,
+  FaEye,
   FaEllipsisV,
   FaTimes,
   FaExclamationTriangle
