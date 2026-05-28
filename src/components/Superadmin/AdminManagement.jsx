@@ -139,15 +139,71 @@ const AdminManagement = ({ onAdminLogin }) => {
     onAdminLogin(loginData);
   };
 
-  // Open login modal for a specific admin
-  const openAdminLogin = (adminId, adminEmail, adminName) => {
-    setSelectedAdminId(adminId);
-    setSelectedAdminName(adminName);
-    setShowLoginModal(true);
-    
-    // Store the admin email in sessionStorage for the login form to use
-    if (adminEmail) {
-      sessionStorage.setItem('tempadminEmail', adminEmail);
+  // Open login for a specific admin using impersonation
+  const openAdminLogin = async (adminId, adminEmail, adminName) => {
+    try {
+      const token = localStorage.getItem('superadmintoken');
+      if (!token) {
+        alert('No super admin token found');
+        return;
+      }
+
+      // Open tab synchronously to avoid popup blockers
+      const newTab = window.open("about:blank", "_blank");
+
+      const response = await fetch(`${API_BASE_URL}/api/superadmin/admin/${adminId}/login-token`, {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        if (newTab) newTab.close();
+        throw new Error(data.message || 'Failed to get login token');
+      }
+
+      const adminToken = data.token;
+      const adminUser = {
+        role: 'admin',
+        id: data.user.id || data.user._id,
+        name: data.user.name,
+        email: data.user.email
+      };
+
+      const dashboardUrl = `${window.location.origin}/admin/dashboard`;
+
+      if (newTab) {
+        newTab.document.open();
+        newTab.document.write(`
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Redirecting to admin dashboard...</title>
+  </head>
+  <body>
+    <p>Redirecting to admin dashboard...</p>
+    <script>
+      document.cookie = "admintoken=${adminToken}; path=/; max-age=18000";
+      document.cookie = "adminUser=${encodeURIComponent(JSON.stringify(adminUser))}; path=/; max-age=18000";
+      window.location.replace(${JSON.stringify(dashboardUrl)});
+    </script>
+  </body>
+</html>
+        `);
+        newTab.document.close();
+      } else {
+        // Fallback if popup blocked
+        document.cookie = `admintoken=${adminToken}; path=/; max-age=18000`;
+        document.cookie = `adminUser=${encodeURIComponent(JSON.stringify(adminUser))}; path=/; max-age=18000`;
+        window.location.replace(dashboardUrl);
+      }
+    } catch (error) {
+      console.error('Error logging in as admin:', error);
+      alert(error.message || 'Failed to login as admin. Please try again.');
     }
   };
 
