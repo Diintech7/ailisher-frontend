@@ -13,9 +13,9 @@ const TopicViewer = () => {
     const fetchTopicData = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`https://test.ailisher.com/api/qrcode/book-data/${bookId}/chapters/${chapterId}/topics/${topicId}`);
+        const response = await fetch(`http://localhost:4000/api/qrcode/book-data/${bookId}/chapters/${chapterId}/topics/${topicId}`);
         const data = await response.json();
-        
+
         if (data.success) {
           setTopicData(data);
         } else {
@@ -37,20 +37,20 @@ const TopicViewer = () => {
   // Function to get complete image URL
   const getCompleteImageUrl = (imageUrl) => {
     if (!imageUrl) return null;
-    
+
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl;
     }
-    
-    return `https://test.ailisher.com/${imageUrl}`;
+
+    return `http://localhost:4000/${imageUrl}`;
   };
 
   // Get file icon based on file type
   const getFileIcon = (fileType) => {
     if (!fileType) return <File className="text-gray-600" />;
-    
+
     const type = fileType.toLowerCase();
-    
+
     if (type.includes('image/')) {
       return <Image className="text-green-600" />;
     } else if (type.includes('audio/') || type.includes('music')) {
@@ -73,9 +73,9 @@ const TopicViewer = () => {
   // Get color class based on file type
   const getColorClass = (fileType) => {
     if (!fileType) return 'bg-gray-100';
-    
+
     const type = fileType.toLowerCase();
-    
+
     if (type.includes('image/')) {
       return 'bg-green-100';
     } else if (type.includes('audio/') || type.includes('music')) {
@@ -98,7 +98,7 @@ const TopicViewer = () => {
   // Function to format file type
   const formatFileType = (fileType) => {
     if (!fileType) return 'Unknown type';
-    
+
     return fileType
       .replace('application/', '')
       .replace('image/', '')
@@ -128,7 +128,7 @@ const TopicViewer = () => {
           <div>
             <h3 className="font-medium text-red-800">Error</h3>
             <p className="text-red-700">{error}</p>
-            <button 
+            <button
               onClick={handleBackClick}
               className="mt-3 text-red-600 hover:text-red-800 flex items-center"
             >
@@ -149,7 +149,7 @@ const TopicViewer = () => {
           <div>
             <h3 className="font-medium text-yellow-800">Not Found</h3>
             <p className="text-yellow-700">Topic data could not be found</p>
-            <button 
+            <button
               onClick={handleBackClick}
               className="mt-3 text-yellow-600 hover:text-yellow-800 flex items-center"
             >
@@ -165,7 +165,7 @@ const TopicViewer = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center mb-4">
-        <button 
+        <button
           onClick={handleBackClick}
           className="flex items-center text-emerald-600 hover:text-emerald-800 transition-colors"
         >
@@ -173,15 +173,15 @@ const TopicViewer = () => {
           <span>Back to Chapter</span>
         </button>
       </div>
-      
+
       <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6 mb-8">
         <div className="flex flex-col md:flex-row gap-8">
           <div className="md:w-1/4 lg:w-1/5">
             <div className="bg-gradient-to-br from-emerald-50 to-teal-100 rounded-lg h-48 flex items-center justify-center overflow-hidden">
               {topicData.book?.coverImage ? (
-                <img 
-                  src={getCompleteImageUrl(topicData.book.coverImage)} 
-                  alt={topicData.book.title} 
+                <img
+                  src={getCompleteImageUrl(topicData.book.coverImage)}
+                  alt={topicData.book.title}
                   className="h-full w-full object-cover rounded-lg"
                   onError={(e) => {
                     e.target.style.display = 'none';
@@ -202,24 +202,24 @@ const TopicViewer = () => {
             <h1 className="text-3xl font-bold text-gray-800 mb-2">{topicData.topic?.title}</h1>
             <p className="text-gray-700 mb-6">{topicData.topic?.description || 'No description available'}</p>
             <div className="flex flex-wrap gap-3">
-              <button 
+              <button
                 onClick={() => navigate(`/ai-books/${bookId}/chapters/${chapterId}/topics/${topicId}`)}
                 className="flex items-center px-4 py-2 bg-emerald-600 text-white rounded-md hover:bg-emerald-700 transition-colors shadow-sm"
               >
                 <FileText size={16} className="mr-2" />
                 <span>View Full Topic</span>
               </button>
-              
+
               <button
-                onClick={() => navigate(`/ai-books/${bookId}/chapters/${chapterId}/topics/${topicId}/datastore`)} 
+                onClick={() => navigate(`/ai-books/${bookId}/chapters/${chapterId}/topics/${topicId}/datastore`)}
                 className="flex items-center px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-900 transition-colors shadow-sm"
               >
                 <Database size={16} className="mr-2" />
                 <span>Topic Datastore</span>
               </button>
-              
+
               <button
-                onClick={() => navigate(`/book-viewer/${bookId}/chapters/${chapterId}`)} 
+                onClick={() => navigate(`/book-viewer/${bookId}/chapters/${chapterId}`)}
                 className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors shadow-sm"
               >
                 <Book size={16} className="mr-2" />
@@ -229,7 +229,7 @@ const TopicViewer = () => {
           </div>
         </div>
       </div>
-      
+
       {topicData.topic?.content && (
         <div className="mb-8">
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">Content</h2>
@@ -238,7 +238,7 @@ const TopicViewer = () => {
           </div>
         </div>
       )}
-      
+
       <div className="mb-8">
         <h2 className="text-2xl font-semibold text-gray-800 mb-4">Sub-Topics ({topicData.subtopics?.length || 0})</h2>
         {!topicData.subtopics || topicData.subtopics.length === 0 ? (
@@ -250,7 +250,7 @@ const TopicViewer = () => {
             {topicData.subtopics
               .sort((a, b) => (a.order || 0) - (b.order || 0))
               .map((subtopic) => (
-                <div 
+                <div
                   key={subtopic._id}
                   className="bg-white p-5 rounded-lg shadow-sm border border-gray-100"
                 >
@@ -260,11 +260,11 @@ const TopicViewer = () => {
                     </div>
                     <h3 className="font-medium text-gray-800">{subtopic.title}</h3>
                   </div>
-                  
+
                   {subtopic.description && (
                     <p className="text-sm text-gray-600 mb-3 pl-10">{subtopic.description}</p>
                   )}
-                  
+
                   {subtopic.content && (
                     <div className="mt-4 bg-gray-50 p-4 rounded-md">
                       <h4 className="font-medium text-gray-700 mb-2">Content Preview</h4>
@@ -273,7 +273,7 @@ const TopicViewer = () => {
                       </div>
                     </div>
                   )}
-                  
+
                   <div className="mt-3 pl-10">
                     <button
                       onClick={() => navigate(`/ai-books/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopic._id}`)}
@@ -288,7 +288,7 @@ const TopicViewer = () => {
           </div>
         )}
       </div>
-      
+
       <div>
         <h2 className="text-2xl font-semibold text-gray-800 mb-4">Datastore Items ({topicData.datastoreItems?.length || 0})</h2>
         {!topicData.datastoreItems || topicData.datastoreItems.length === 0 ? (
@@ -300,14 +300,14 @@ const TopicViewer = () => {
             {topicData.datastoreItems.map((item) => {
               const isImage = item.fileType && item.fileType.toLowerCase().includes('image/');
               return (
-                <div 
+                <div
                   key={item._id}
                   className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
                 >
                   {isImage && item.url && (
                     <div className="h-40 overflow-hidden bg-gray-100">
-                      <img 
-                        src={getCompleteImageUrl(item.url)} 
+                      <img
+                        src={getCompleteImageUrl(item.url)}
                         alt={item.name}
                         className="w-full h-full object-cover"
                         onError={(e) => {
@@ -327,9 +327,9 @@ const TopicViewer = () => {
                         <p className="text-xs text-gray-500">{formatFileType(item.fileType)}</p>
                       </div>
                     </div>
-                    <a 
-                      href={getCompleteImageUrl(item.url)} 
-                      target="_blank" 
+                    <a
+                      href={getCompleteImageUrl(item.url)}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs text-emerald-600 hover:text-emerald-800 flex items-center mt-2"
                     >

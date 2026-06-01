@@ -22,7 +22,7 @@ const ClientDetailPage = () => {
   const fetchClientDetails = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       // Get admin token from cookies
       const token = Cookies.get('admintoken');
@@ -30,7 +30,7 @@ const ClientDetailPage = () => {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`https://test.ailisher.com/api/admin/clients/${clientId}`, {
+      const response = await fetch(`http://localhost:4000/api/admin/clients/${clientId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -44,7 +44,7 @@ const ClientDetailPage = () => {
 
       const data = await response.json();
       setClient(data.client);
-      
+
       // Set mock stats for now - in a real app, this would come from the API
       setStats({
         conversationsCount: Math.floor(Math.random() * 50),
@@ -67,7 +67,7 @@ const ClientDetailPage = () => {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`https://test.ailisher.com/api/admin/login-as-client/${clientId}`, {
+      const response = await fetch(`http://localhost:4000/api/admin/login-as-client/${clientId}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -80,7 +80,7 @@ const ClientDetailPage = () => {
       }
 
       const data = await response.json();
-      
+
       // Store client token in a separate cookie
       Cookies.set('clienttoken', data.token, { path: '/' });
       Cookies.set('clientUser', JSON.stringify({
@@ -133,7 +133,7 @@ const ClientDetailPage = () => {
             <p className="text-red-700">{error}</p>
           </div>
         </div>
-        <button 
+        <button
           className="mt-4 px-4 py-2 text-blue-600 flex items-center hover:underline"
           onClick={handleBack}
         >
@@ -153,7 +153,7 @@ const ClientDetailPage = () => {
             <p className="text-yellow-700">Client not found</p>
           </div>
         </div>
-        <button 
+        <button
           className="mt-4 px-4 py-2 text-blue-600 flex items-center hover:underline"
           onClick={handleBack}
         >
@@ -167,7 +167,7 @@ const ClientDetailPage = () => {
   return (
     <div className="container mx-auto pb-8">
       {/* Back button */}
-      <button 
+      <button
         className="mb-6 px-4 py-2 text-blue-600 flex items-center hover:underline"
         onClick={handleBack}
       >

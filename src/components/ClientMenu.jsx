@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Book, FileText, Database, ClipboardList, Users, Wrench, MessageCircleQuestionIcon, BookCheck, TvMinimalPlay} from 'lucide-react';
+import { Home, Book, FileText, Database, ClipboardList, Users, Wrench, MessageCircleQuestionIcon, BookCheck, TvMinimalPlay, School} from 'lucide-react';
 
 const ClientMenu = ({ isExpanded, currentPath, handleNavigate }) => {
   const menuItems = [
@@ -8,6 +8,7 @@ const ClientMenu = ({ isExpanded, currentPath, handleNavigate }) => {
     { path: '/ai-workbook', name: 'AI Workbook', icon: <FileText size={20} /> },
     { path: '/ai-tests', name: 'AI Tests', icon: <BookCheck size={20} /> },
     { path: '/ai-courses', name: 'AI Courses', icon: <TvMinimalPlay size={20} /> },
+    { path: '/classroom', name: 'Classroom', icon: <School size={20} /> },
     { path: '/question-bank', name: 'Question Bank', icon: <MessageCircleQuestionIcon size={20} /> },
     { path: '/my-question', name: 'My Question', icon: <MessageCircleQuestionIcon size={20} /> },
     { path: '/datastore', name: 'Datastore', icon: <Database size={20} /> },

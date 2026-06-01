@@ -25,12 +25,12 @@ const EvaluatorRegistrationPage = ({ onAuthSuccess }) => {
       setPasswordError('Passwords do not match');
       return false;
     }
-    
+
     if (formData.password.length < 8) {
       setPasswordError('Password must be at least 8 characters long');
       return false;
     }
-    
+
     setPasswordError('');
     return true;
   };
@@ -45,23 +45,23 @@ const EvaluatorRegistrationPage = ({ onAuthSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validatePasswords()) {
       return;
     }
-    
+
     setIsLoading(true);
     setError('');
-    
+
     try {
-      const response = await fetch('https://test.ailisher.com/api/evaluators/register', {
+      const response = await fetch('http://localhost:4000/api/evaluators/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(formData),
       });
-      
+
       const data = await response.json();
       console.log('Registration response data:', data);
       if (data.success) {
@@ -75,7 +75,7 @@ const EvaluatorRegistrationPage = ({ onAuthSuccess }) => {
         console.log('Setting evaluator user data:', userData);
         Cookies.set('evaluatortoken', data.token, { expires: 7 });
         Cookies.set('evaluatorUser', JSON.stringify(userData), { expires: 7 });
-        
+
         // Notify parent component of success
         onAuthSuccess();
       } else {

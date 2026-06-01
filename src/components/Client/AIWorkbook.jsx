@@ -26,140 +26,140 @@ const CATEGORY_MAPPINGS = {
 
 // Workbook Item Component
 const WorkbookItem = ({ workbook, onClick, onEdit, onUpdateWorkbook, onToggleEnabled, onDeleted }) => {
-    const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [showMenu, setShowMenu] = useState(false);
-    const menuRef = useRef(null);
-    // Close menu when clicking outside
-    useEffect(() => {
-      const handleClickOutside = (event) => {
-        if (menuRef.current && !menuRef.current.contains(event.target)) {
-          setShowMenu(false);
-        }
-      };
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }, []);
-
-    const handleDelete = async (e) => {
-      e.stopPropagation();
-      setShowDeleteModal(true);
-      setShowMenu(false);
-    };
-
-    const handleEdit = (e) => {
-      e.stopPropagation();
-      setShowMenu(false);
-      onEdit(workbook);
-    };
-
-    const handleDeleteWorkbook = async (id) => {
-      const token = Cookies.get('usertoken');
-
-      const res = await fetch(`https://test.ailisher.com/api/workbooks/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      const data = await res.json();
-      if (data.success) {
-        setShowDeleteModal(false);
-        
-        toast.success(data.message || 'Workbook deleted successfully');
-        if (typeof onDeleted === 'function') {
-          onDeleted(id);
-        }
-      } else {
-        toast.error(data.message || 'Failed to delete workbook');
-        setShowDeleteModal(false);
-      }
-    };
-
-    // Highlight/Trending handlers
-    const handleToggleHighlight = async (e) => {
-      e.stopPropagation();
-      try {
-        const token = Cookies.get('usertoken');
-        console.log(token)
-        const method = workbook.isHighlighted ? 'DELETE' : 'POST';
-        const options = {
-          method,
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        };
-        if (method === 'POST') {
-          options.body = JSON.stringify({
-            note: 'Highlighted by user',
-            order: 0
-          });
-        }
-        console.log(options)
-        const response = await fetch(`https://test.ailisher.com/api/workbooks/${workbook._id}/highlight`, options);
-        const data = await response.json();
-        console.log(data)
-        if (data.success) {
-          toast.success(data.message || 'Highlight status updated');
-          if (data.workbook && onUpdateWorkbook) {
-            onUpdateWorkbook(data.workbook);
-          }
-        } else {
-          toast.error(data.message || 'Failed to update highlight');
-        }
-      } catch (error) {
-        toast.error('Failed to update highlight');
-      }
-    };
-    const handleToggleTrending = async (e) => {
-      e.stopPropagation();
-      try {
-        const token = Cookies.get('usertoken');
-        console.log(token)
-        const method = workbook.isTrending ? 'DELETE' : 'POST';
-        const options = {
-          method,
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        };
-        if (method === 'POST') {
-          options.body = JSON.stringify({
-            score: 1,
-            endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
-          });
-        }
-        const response = await fetch(`https://test.ailisher.com/api/workbooks/${workbook._id}/trending`, options);
-        const data = await response.json();
-        if (data.success) {
-          toast.success(data.message || 'Trending status updated');
-          if (data.workbook && onUpdateWorkbook) {
-            onUpdateWorkbook(data.workbook);
-          }
-        } else {
-          toast.error(data.message || 'Failed to update trending');
-        }
-      } catch (error) {
-        toast.error('Failed to update trending');
-      }
-    };
-    const toggleEnabled = async (workbook) => {
-      try {
-        await onToggleEnabled(workbook._id, !workbook.isEnabled);
-      } finally {
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef(null);
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
         setShowMenu(false);
       }
     };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
-    return (
-      <div className="flex flex-col">
+  const handleDelete = async (e) => {
+    e.stopPropagation();
+    setShowDeleteModal(true);
+    setShowMenu(false);
+  };
+
+  const handleEdit = (e) => {
+    e.stopPropagation();
+    setShowMenu(false);
+    onEdit(workbook);
+  };
+
+  const handleDeleteWorkbook = async (id) => {
+    const token = Cookies.get('usertoken');
+
+    const res = await fetch(`http://localhost:4000/api/workbooks/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    const data = await res.json();
+    if (data.success) {
+      setShowDeleteModal(false);
+
+      toast.success(data.message || 'Workbook deleted successfully');
+      if (typeof onDeleted === 'function') {
+        onDeleted(id);
+      }
+    } else {
+      toast.error(data.message || 'Failed to delete workbook');
+      setShowDeleteModal(false);
+    }
+  };
+
+  // Highlight/Trending handlers
+  const handleToggleHighlight = async (e) => {
+    e.stopPropagation();
+    try {
+      const token = Cookies.get('usertoken');
+      console.log(token)
+      const method = workbook.isHighlighted ? 'DELETE' : 'POST';
+      const options = {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      };
+      if (method === 'POST') {
+        options.body = JSON.stringify({
+          note: 'Highlighted by user',
+          order: 0
+        });
+      }
+      console.log(options)
+      const response = await fetch(`http://localhost:4000/api/workbooks/${workbook._id}/highlight`, options);
+      const data = await response.json();
+      console.log(data)
+      if (data.success) {
+        toast.success(data.message || 'Highlight status updated');
+        if (data.workbook && onUpdateWorkbook) {
+          onUpdateWorkbook(data.workbook);
+        }
+      } else {
+        toast.error(data.message || 'Failed to update highlight');
+      }
+    } catch (error) {
+      toast.error('Failed to update highlight');
+    }
+  };
+  const handleToggleTrending = async (e) => {
+    e.stopPropagation();
+    try {
+      const token = Cookies.get('usertoken');
+      console.log(token)
+      const method = workbook.isTrending ? 'DELETE' : 'POST';
+      const options = {
+        method,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      };
+      if (method === 'POST') {
+        options.body = JSON.stringify({
+          score: 1,
+          endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
+        });
+      }
+      const response = await fetch(`http://localhost:4000/api/workbooks/${workbook._id}/trending`, options);
+      const data = await response.json();
+      if (data.success) {
+        toast.success(data.message || 'Trending status updated');
+        if (data.workbook && onUpdateWorkbook) {
+          onUpdateWorkbook(data.workbook);
+        }
+      } else {
+        toast.error(data.message || 'Failed to update trending');
+      }
+    } catch (error) {
+      toast.error('Failed to update trending');
+    }
+  };
+  const toggleEnabled = async (workbook) => {
+    try {
+      await onToggleEnabled(workbook._id, !workbook.isEnabled);
+    } finally {
+      setShowMenu(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col">
       {/* Book Card */}
-      <div 
+      <div
         onClick={onClick}
-        className={`p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full border border-gray-100 relative ${workbook.isEnabled? 'bg-white' : 'bg-gray-400 opacity-50'}`}
+        className={`p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full border border-gray-100 relative ${workbook.isEnabled ? 'bg-white' : 'bg-gray-400 opacity-50'}`}
       >
         {/* Status indicators */}
         <div className="absolute top-2 right-2 flex gap-1">
@@ -175,54 +175,54 @@ const WorkbookItem = ({ workbook, onClick, onEdit, onUpdateWorkbook, onToggleEna
           )}
           {/* Three dots menu button */}
           <div className="relative" ref={menuRef}>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowMenu(!showMenu);
-                }}
-                className="p-1 rounded-full transition-colors text-gray-400 hover:text-red-600 hover:bg-pink-100 bg-pink-50"
-                title="More options"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="1" />
-                  <circle cx="12" cy="5" r="1" />
-                  <circle cx="12" cy="19" r="1" />
-                </svg>
-              </button>
-              {/* Dropdown menu */}
-              {showMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-100">
-                  <button
-                    onClick={handleEdit}
-                    className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 flex items-center"
-                  >
-                    <Edit size={14} className="mr-2" />
-                    Edit Book
-                  </button>
-                  <button
-                    onClick={handleDelete}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
-                  >
-                    <X size={14} className="mr-2" />
-                    Delete Book
-                  </button>
-                  <button
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowMenu(!showMenu);
+              }}
+              className="p-1 rounded-full transition-colors text-gray-400 hover:text-red-600 hover:bg-pink-100 bg-pink-50"
+              title="More options"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="1" />
+                <circle cx="12" cy="5" r="1" />
+                <circle cx="12" cy="19" r="1" />
+              </svg>
+            </button>
+            {/* Dropdown menu */}
+            {showMenu && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 border border-gray-100">
+                <button
+                  onClick={handleEdit}
+                  className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 flex items-center"
+                >
+                  <Edit size={14} className="mr-2" />
+                  Edit Book
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
+                >
+                  <X size={14} className="mr-2" />
+                  Delete Book
+                </button>
+                <button
                   onClick={(e) => { e.stopPropagation(); toggleEnabled(workbook); }}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center ${workbook.isEnabled === true ? 'text-red-800' : 'text-green-800'}`}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center ${workbook.isEnabled === true ? 'text-red-800' : 'text-green-800'}`}
                 >
                   <ToggleRight size={14} className="mr-2" />
                   {workbook.isEnabled === true ? 'Disable' : 'Enable'}
                 </button>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
+          </div>
         </div>
         <h3 className="text-xl font-semibold mb-2 text-gray-800">{workbook.title}</h3>
         <div className="h-48 bg-gradient-to-br from-blue-50 to-indigo-100 mb-4 rounded-lg flex items-center justify-center overflow-hidden">
           {workbook.coverImageUrl ? (
-            <img 
-              src={workbook.coverImageUrl} 
-              alt={workbook.title} 
+            <img
+              src={workbook.coverImageUrl}
+              alt={workbook.title}
               className="h-full w-full object-fill rounded-lg"
               onError={(e) => {
                 e.target.onerror = null;
@@ -230,9 +230,9 @@ const WorkbookItem = ({ workbook, onClick, onEdit, onUpdateWorkbook, onToggleEna
               }}
             />
           ) : workbook.coverImage ? (
-            <img 
-              src={workbook.coverImage} 
-              alt={workbook.title} 
+            <img
+              src={workbook.coverImage}
+              alt={workbook.title}
               className="h-full w-full object-fill rounded-lg"
               onError={(e) => {
                 e.target.onerror = null;
@@ -250,22 +250,20 @@ const WorkbookItem = ({ workbook, onClick, onEdit, onUpdateWorkbook, onToggleEna
           <div className="flex items-center gap-2">
             <button
               onClick={handleToggleHighlight}
-              className={`p-1 rounded transition-colors ${
-                workbook.isHighlighted 
-                  ? 'text-yellow-600 bg-yellow-100 hover:bg-yellow-200' 
+              className={`p-1 rounded transition-colors ${workbook.isHighlighted
+                  ? 'text-yellow-600 bg-yellow-100 hover:bg-yellow-200'
                   : 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'
-              }`}
+                }`}
               title={workbook.isHighlighted ? 'Remove from highlights' : 'Add to highlights'}
             >
               <Star size={16} />
             </button>
             <button
               onClick={handleToggleTrending}
-              className={`p-1 rounded transition-colors ${
-                workbook.isTrending 
-                  ? 'text-red-600 bg-red-100 hover:bg-red-200' 
+              className={`p-1 rounded transition-colors ${workbook.isTrending
+                  ? 'text-red-600 bg-red-100 hover:bg-red-200'
                   : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
-              }`}
+                }`}
               title={workbook.isTrending ? 'Remove from trending' : 'Add to trending'}
             >
               <TrendingUp size={16} />
@@ -306,17 +304,17 @@ const WorkbookItem = ({ workbook, onClick, onEdit, onUpdateWorkbook, onToggleEna
 // Image Upload Preview Component
 const ImageUploadPreview = ({ imagePreview, onRemove }) => {
   if (!imagePreview) return null;
-  
+
   return (
     <div className="relative mt-2 mb-4">
       <div className="h-48 w-full rounded-md overflow-hidden">
-        <img 
-          src={imagePreview} 
-          alt="Cover preview" 
+        <img
+          src={imagePreview}
+          alt="Cover preview"
           className="h-full w-full object-cover"
         />
       </div>
-      <button 
+      <button
         type="button"
         onClick={onRemove}
         className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
@@ -390,7 +388,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
   const refreshCategories = async () => {
     try {
       const token = Cookies.get("usertoken");
-      const res = await fetch("https://test.ailisher.com/api/categories", {
+      const res = await fetch("http://localhost:4000/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await res.json();
@@ -415,7 +413,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
     try {
       setCreatingCategory(true);
       const token = Cookies.get("usertoken");
-      const res = await fetch("https://test.ailisher.com/api/categories", {
+      const res = await fetch("http://localhost:4000/api/categories", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -452,7 +450,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
       setCreatingSubcategory(true);
       const token = Cookies.get("usertoken");
       // Need category id; fetch categories and find the current mainCategory
-      const listRes = await fetch("https://test.ailisher.com/api/categories", {
+      const listRes = await fetch("http://localhost:4000/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await listRes.json();
@@ -464,7 +462,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
         return;
       }
       const res = await fetch(
-        `https://test.ailisher.com/api/categories/${currentCat._id}/subcategories`,
+        `http://localhost:4000/api/categories/${currentCat._id}/subcategories`,
         {
           method: "POST",
           headers: {
@@ -634,7 +632,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
       let coverImageKey = null;
       if (coverImage) {
         // Get presigned URL
-        const uploadUrlResponse = await fetch('https://test.ailisher.com/api/workbooks/cover-upload-url', {
+        const uploadUrlResponse = await fetch('http://localhost:4000/api/workbooks/cover-upload-url', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -700,7 +698,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
         workbookData.isForSale = false;
       }
       // Send to backend
-      const response = await fetch('https://test.ailisher.com/api/workbooks', {
+      const response = await fetch('http://localhost:4000/api/workbooks', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -884,7 +882,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
                 )}
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
                 <label className="block text-gray-700 text-sm font-medium mb-2">Exam</label>
@@ -907,17 +905,17 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
               <label className="block text-gray-700 text-sm font-medium mb-2">Summary</label>
               <textarea name="summary" value={formData.summary} onChange={handleInputChange} className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500 h-24" maxLength={500} placeholder="Enter a brief summary of the workbook..." />
             </div>
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-medium mb-2">Video URL (Optional)</label>
-            <input
-              type="url"
-              name="videoUrl"
-              value={formData.videoUrl}
-              onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
-              placeholder="https://..."
-            />
-          </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-medium mb-2">Video URL (Optional)</label>
+              <input
+                type="url"
+                name="videoUrl"
+                value={formData.videoUrl}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
+                placeholder="https://..."
+              />
+            </div>
             {/* Paid workbook section */}
             <div className="mb-6 border border-gray-200 rounded-lg p-4">
               <label className="flex items-center gap-2 mb-3">
@@ -1103,7 +1101,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
   const refreshCategories = async () => {
     try {
       const token = Cookies.get("usertoken");
-      const res = await fetch("https://test.ailisher.com/api/categories", {
+      const res = await fetch("http://localhost:4000/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await res.json();
@@ -1128,7 +1126,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
     try {
       setCreatingCategory(true);
       const token = Cookies.get("usertoken");
-      const res = await fetch("https://test.ailisher.com/api/categories", {
+      const res = await fetch("http://localhost:4000/api/categories", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1165,7 +1163,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
       setCreatingSubcategory(true);
       const token = Cookies.get("usertoken");
       // Need category id; fetch categories and find the current mainCategory
-      const listRes = await fetch("https://test.ailisher.com/api/categories", {
+      const listRes = await fetch("http://localhost:4000/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await listRes.json();
@@ -1177,7 +1175,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
         return;
       }
       const res = await fetch(
-        `https://test.ailisher.com/api/categories/${currentCat._id}/subcategories`,
+        `http://localhost:4000/api/categories/${currentCat._id}/subcategories`,
         {
           method: "POST",
           headers: {
@@ -1205,31 +1203,31 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
       setCreatingSubcategory(false);
     }
   };
-  
+
   if (!isOpen) return null;
-  
+
   const validateForm = () => {
     const errors = {};
-    
+
     if (formData.rating && (isNaN(formData.rating) || formData.rating < 0 || formData.rating > 5)) {
       errors.rating = 'Rating must be between 0 and 5';
     }
-    
+
     if (formData.ratingCount && (isNaN(formData.ratingCount) || formData.ratingCount < 0)) {
       errors.ratingCount = 'Rating count must be a non-negative number';
     }
-    
+
     if (formData.summary && formData.summary.length > 1000) {
       errors.summary = 'Summary cannot exceed 1000 characters';
     }
-    
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    
+
     if (name === 'rating' || name === 'ratingCount' || name === 'categoryOrder' || name === 'MRP' || name === 'offerPrice' || name === 'validityDays' || name === 'GST') {
       const numValue = value === '' ? '' : Number(value);
       setFormData(prev => ({
@@ -1248,28 +1246,28 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
       setFormData(prev => ({
         ...prev,
         [name]: type === 'checkbox' ? checked : value,
-        ...(name === 'mainCategory' && { 
+        ...(name === 'mainCategory' && {
           subCategory: categoryMappings[value]?.[0] || 'Other',
-          customSubCategory: '' 
+          customSubCategory: ''
         })
       }));
     }
   };
-  
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     if (!file.type.match('image.*')) {
       toast.error('Please select an image file');
       return;
     }
-    
+
     if (file.size > 5 * 1024 * 1024) {
       toast.error('Image size should be less than 5MB');
       return;
     }
-    
+
     setCoverImage(file);
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -1277,7 +1275,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
     };
     reader.readAsDataURL(file);
   };
-  
+
   const handleRemoveImage = () => {
     setCoverImage(null);
     setImagePreview('');
@@ -1285,17 +1283,17 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
       fileInputRef.current.value = '';
     }
   };
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       toast.error('Please fix the form errors before submitting');
       return;
     }
-    
+
     setIsSubmitting(true);
-    
+
     try {
       const token = Cookies.get('usertoken');
       if (!token) {
@@ -1303,7 +1301,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
         onClose();
         return;
       }
-      
+
       const requiredFields = ['title', 'description', 'author', 'publisher'];
       for (const field of requiredFields) {
         if (!formData[field] || !formData[field].trim()) {
@@ -1314,10 +1312,10 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
       }
 
       let coverImageKey = null;
-      
+
       if (coverImage) {
         try {
-          const uploadUrlResponse = await fetch('https://test.ailisher.com/api/workbooks/cover-upload-url', {
+          const uploadUrlResponse = await fetch('http://localhost:4000/api/workbooks/cover-upload-url', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -1330,7 +1328,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
           });
 
           const uploadUrlData = await uploadUrlResponse.json();
-          
+
           if (!uploadUrlData.success) {
             throw new Error(uploadUrlData.message || 'Failed to get upload URL');
           }
@@ -1355,7 +1353,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
           return;
         }
       }
-      
+
       const bookData = {
         title: formData.title.trim(),
         description: formData.description.trim(),
@@ -1372,24 +1370,24 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
         users: Array.isArray(formData.users) ? formData.users : [],
         summary: formData.summary.trim()
       };
-      
+
       if (coverImageKey) {
         bookData.coverImageKey = coverImageKey;
       }
-      
+
       if (formData.exam.trim()) bookData.exam = formData.exam.trim();
       if (formData.paper.trim()) bookData.paper = formData.paper.trim();
       if (formData.subject.trim()) bookData.subject = formData.subject.trim();
-      
+
       if (currentUser) {
         const clientId = currentUser.userId || currentUser.id;
         bookData.clientId = clientId;
       }
-      
+
       if (formData.subCategory === 'Other' && formData.customSubCategory.trim()) {
         bookData.customSubCategory = formData.customSubCategory.trim();
       }
-      
+
       if (formData.tags.trim()) {
         const tagsArray = formData.tags.split(',')
           .map(tag => tag.trim())
@@ -1443,8 +1441,8 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
       } else {
         bookData.isForSale = false;
       }
-      
-      const response = await fetch(`https://test.ailisher.com/api/workbooks/${book._id}`, {
+
+      const response = await fetch(`http://localhost:4000/api/workbooks/${book._id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1452,9 +1450,9 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
         },
         body: JSON.stringify(bookData)
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         toast.success('Book updated successfully!');
         onEdit(data.workbook); // Changed from data.book to data.workbook
@@ -1473,11 +1471,11 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
       setIsSubmitting(false);
     }
   };
-  
+
   const getValidSubCategories = () => {
     return categoryMappings[formData.mainCategory] || ['Other'];
   };
-  
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
@@ -1491,7 +1489,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
               <X size={24} />
             </button>
           </div>
-          
+
           <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
@@ -1525,7 +1523,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
                 />
               </div>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-gray-700 text-sm font-medium mb-2">
@@ -1557,7 +1555,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
                 </select>
               </div>
             </div>
-            
+
             <div className="mb-4">
               <label className="block text-gray-700 text-sm font-medium mb-2">
                 Description * <span className="text-gray-500">({formData.description.length}/1000)</span>
@@ -1572,7 +1570,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
                 placeholder="Enter a detailed description of the book..."
               />
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-gray-700 text-sm font-medium mb-2">
@@ -1688,7 +1686,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
                 )}
               </div>
             </div>
-            
+
             {/* New fields: Exam, Paper, Subject */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
               <div>
@@ -1734,7 +1732,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
                 />
               </div>
             </div>
-            
+
             <div className="mb-4">
               <label className="block text-gray-700 text-sm font-medium mb-2">Tags (Optional)</label>
               <input
@@ -1747,7 +1745,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
               />
               <p className="text-xs text-gray-500 mt-1">Separate multiple tags with commas. Maximum 10 tags, 30 characters each.</p>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="block text-gray-700 text-sm font-medium mb-2">
@@ -1939,17 +1937,17 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
                     </p>
                     <p className="text-xs text-gray-500">PNG, JPG, GIF (Max: 5MB)</p>
                   </div>
-                  <input 
+                  <input
                     ref={fileInputRef}
-                    type="file" 
-                    className="hidden" 
+                    type="file"
+                    className="hidden"
                     accept="image/*"
                     onChange={handleImageChange}
                   />
                 </label>
               </div>
             </div>
-            
+
             <div className="flex justify-end space-x-3">
               <button
                 type="button"
@@ -1966,7 +1964,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
                 {isSubmitting ? (
                   <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
                 ) : (
-          'Update Book'
+                  'Update Book'
                 )}
               </button>
             </div>
@@ -2150,7 +2148,7 @@ const AIWorkbook = () => {
   const refreshCategories = async () => {
     try {
       const token = Cookies.get("usertoken");
-      const res = await fetch("https://test.ailisher.com/api/categories", {
+      const res = await fetch("http://localhost:4000/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await res.json();
@@ -2176,38 +2174,38 @@ const AIWorkbook = () => {
         navigate('/login');
         return;
       }
-           // Fetch categories from backend
-           const categoriesResponse = await fetch(
-            "https://test.ailisher.com/api/categories",
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-          const categoriesData = await categoriesResponse.json();
-    
-          // Transform to expected format
-          const transformedCategories = {};
-          categoriesData.forEach((category) => {
-            if (category.name && category.subcategories) {
-              transformedCategories[category.name] = category.subcategories.map(
-                (sub) => sub.name
-              );
-            }
-          });
-    
-          setCategoryMappings(transformedCategories);
-    
-          // Build query parameters
-          const queryParams = new URLSearchParams({
-            page: pagination.page,
-            limit: pagination.limit,
-            ...filters,
-          });
-    
+      // Fetch categories from backend
+      const categoriesResponse = await fetch(
+        "http://localhost:4000/api/categories",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      const categoriesData = await categoriesResponse.json();
 
-          const response = await fetch('https://test.ailisher.com/api/workbooks', {
+      // Transform to expected format
+      const transformedCategories = {};
+      categoriesData.forEach((category) => {
+        if (category.name && category.subcategories) {
+          transformedCategories[category.name] = category.subcategories.map(
+            (sub) => sub.name
+          );
+        }
+      });
+
+      setCategoryMappings(transformedCategories);
+
+      // Build query parameters
+      const queryParams = new URLSearchParams({
+        page: pagination.page,
+        limit: pagination.limit,
+        ...filters,
+      });
+
+
+      const response = await fetch('http://localhost:4000/api/workbooks', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -2297,11 +2295,11 @@ const AIWorkbook = () => {
     refreshCategories();
   };
 
-  const handleWorkbookClick = (workbookId,isEnabled) => {
-    if(isEnabled)
-    navigate(`/ai-workbook/${workbookId}`);
+  const handleWorkbookClick = (workbookId, isEnabled) => {
+    if (isEnabled)
+      navigate(`/ai-workbook/${workbookId}`);
     else
-    toast.error('This Workbook Is Disabled')
+      toast.error('This Workbook Is Disabled')
   };
 
   const handleToggleEnabled = async (workbookId, isEnabled) => {
@@ -2311,7 +2309,7 @@ const AIWorkbook = () => {
         toast.error('Authentication required');
         return;
       }
-      const response = await fetch(`https://test.ailisher.com/api/workbooks/${workbookId}` , {
+      const response = await fetch(`http://localhost:4000/api/workbooks/${workbookId}`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -2354,65 +2352,65 @@ const AIWorkbook = () => {
   const authors = [...new Set(workbooks.map(wb => wb.author))].sort();
   const publishers = [...new Set(workbooks.map(wb => wb.publisher))].sort();
 
-    // Add pagination controls component
-    const PaginationControls = () => {
-      const totalPages = Math.ceil(pagination.total / pagination.limit);
-  
-      return (
-        <div className="flex justify-between items-center mt-8">
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600">Items per page:</label>
-            <select
-              value={pagination.limit}
-              onChange={(e) =>
-                setPagination((prev) => ({
-                  ...prev,
-                  limit: parseInt(e.target.value),
-                  page: 1,
-                }))
-              }
-              className="border border-gray-300 rounded-md px-2 py-1 text-sm"
-            >
-              <option value="500">500</option>
-              <option value="600">600</option>
-              <option value="700">700</option>
-              <option value="800">800</option>
-            </select>
-          </div>
-  
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() =>
-                setPagination((prev) => ({
-                  ...prev,
-                  page: Math.max(1, prev.page - 1),
-                }))
-              }
-              disabled={pagination.page === 1}
-              className="px-3 py-1 border border-gray-300 rounded-md disabled:opacity-50"
-            >
-              Previous
-            </button>
-  
-            <span className="text-sm text-gray-600">
-              Page {pagination.page} of {totalPages}
-            </span>
-  
-            <button
-              onClick={() =>
-                setPagination((prev) => ({
-                  ...prev,
-                  page: Math.min(totalPages, prev.page + 1),
-                }))
-              }
-              disabled={pagination.page === totalPages}
-              className="px-3 py-1 border border-gray-300 rounded-md disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-  
-          {/* <div className="flex items-center gap-2">
+  // Add pagination controls component
+  const PaginationControls = () => {
+    const totalPages = Math.ceil(pagination.total / pagination.limit);
+
+    return (
+      <div className="flex justify-between items-center mt-8">
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-gray-600">Items per page:</label>
+          <select
+            value={pagination.limit}
+            onChange={(e) =>
+              setPagination((prev) => ({
+                ...prev,
+                limit: parseInt(e.target.value),
+                page: 1,
+              }))
+            }
+            className="border border-gray-300 rounded-md px-2 py-1 text-sm"
+          >
+            <option value="500">500</option>
+            <option value="600">600</option>
+            <option value="700">700</option>
+            <option value="800">800</option>
+          </select>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() =>
+              setPagination((prev) => ({
+                ...prev,
+                page: Math.max(1, prev.page - 1),
+              }))
+            }
+            disabled={pagination.page === 1}
+            className="px-3 py-1 border border-gray-300 rounded-md disabled:opacity-50"
+          >
+            Previous
+          </button>
+
+          <span className="text-sm text-gray-600">
+            Page {pagination.page} of {totalPages}
+          </span>
+
+          <button
+            onClick={() =>
+              setPagination((prev) => ({
+                ...prev,
+                page: Math.min(totalPages, prev.page + 1),
+              }))
+            }
+            disabled={pagination.page === totalPages}
+            className="px-3 py-1 border border-gray-300 rounded-md disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+
+        {/* <div className="flex items-center gap-2">
             <label className="text-sm text-gray-600">Sort by:</label>
             <select
               value={categoryOrder}
@@ -2423,9 +2421,9 @@ const AIWorkbook = () => {
               <option value="oldest">Oldest First</option>
             </select>
           </div> */}
-        </div>
-      );
-    };
+      </div>
+    );
+  };
 
   // Add filter panel and grouped view
   return (
@@ -2485,11 +2483,10 @@ const AIWorkbook = () => {
               <div className="flex flex-wrap gap-2 mb-6">
                 <button
                   onClick={() => toggleSubCategory(mainCategory, null)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                    !selectedSubCategories[mainCategory]
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${!selectedSubCategories[mainCategory]
                       ? 'bg-teal-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+                    }`}
                 >
                   All {mainCategory}
                 </button>
@@ -2497,11 +2494,10 @@ const AIWorkbook = () => {
                   <button
                     key={subCategory}
                     onClick={() => toggleSubCategory(mainCategory, subCategory)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                      selectedSubCategories[mainCategory] === subCategory
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedSubCategories[mainCategory] === subCategory
                         ? 'bg-teal-600 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
+                      }`}
                   >
                     {subCategory}
                   </button>
@@ -2513,7 +2509,7 @@ const AIWorkbook = () => {
                   <WorkbookItem
                     key={workbook._id}
                     workbook={workbook}
-                    onClick={() => handleWorkbookClick(workbook._id,workbook.isEnabled)}
+                    onClick={() => handleWorkbookClick(workbook._id, workbook.isEnabled)}
                     onEdit={handleEditWorkbook}
                     onUpdateWorkbook={handleWorkbookEdited}
                     onToggleEnabled={handleToggleEnabled}

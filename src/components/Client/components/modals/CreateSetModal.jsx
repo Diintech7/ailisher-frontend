@@ -59,9 +59,9 @@ const CreateSetModal = ({
 
     try {
       const token = Cookies.get("usertoken")
-      
+
       // Use the new subjective assets endpoint
-      const endpoint = `https://test.ailisher.com/api/subjective-assets/${itemType}/${itemId}/question-sets`
+      const endpoint = `http://localhost:4000/api/subjective-assets/${itemType}/${itemId}/question-sets`
 
       const response = await axios.post(
         endpoint,
@@ -71,7 +71,7 @@ const CreateSetModal = ({
           level: localSetData.level,
           isWorkbook: isWorkbook,
         },
-        { 
+        {
           headers: { Authorization: `Bearer ${token}` },
           params: { isWorkbook: isWorkbook }
         },

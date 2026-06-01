@@ -24,17 +24,17 @@ const ReviewSubmissions = ({ questionId }) => {
   const fetchSubmissions = async () => {
     try {
       setLoading(true);
-      
+
       if (activeTab === 'review_pending') {
         // Use new API for pending reviews
         const response = await userAnswerService.getPendingReviews();
-        
+
         if (response.success) {
           // Filter reviews for the current question
           const filteredReviews = response.data.requests.filter(
             review => review.questionId._id === questionId
           );
-          
+
           // Transform the data to match the expected format
           const transformedReviews = filteredReviews.map(review => ({
             _id: review._id,
@@ -49,10 +49,10 @@ const ReviewSubmissions = ({ questionId }) => {
             priority: review.priority,
             evaluatedAt: review.requestedAt
           }));
-          
+
           setSubmissions(transformedReviews);
           setTotalPages(Math.ceil(filteredReviews.length / 10));
-          
+
           const initialExpandedState = {};
           transformedReviews.forEach(sub => {
             initialExpandedState[sub._id] = false;
@@ -71,15 +71,15 @@ const ReviewSubmissions = ({ questionId }) => {
           limit: 10,
           questionId: questionId
         });
-        
+
         if (response.success) {
-          const filteredSubmissions = response.data.answers.filter(submission => 
+          const filteredSubmissions = response.data.answers.filter(submission =>
             submission.question?._id === questionId &&
             submission.submissionStatus === 'evaluated' &&
             submission.publishStatus === 'published' &&
             submission.reviewStatus === activeTab
           );
-          
+
           setSubmissions(filteredSubmissions);
           setTotalPages(Math.ceil(response.data.pagination.totalPages));
           const initialExpandedState = {};
@@ -103,9 +103,9 @@ const ReviewSubmissions = ({ questionId }) => {
     try {
       if (activeTab === 'review_pending') {
         // Make API call with POST method and log response
-        const response = await axios.post(`https://test.ailisher.com/api/review/${answerId}/accept`);
+        const response = await axios.post(`http://localhost:4000/api/review/${answerId}/accept`);
         console.log('Review accept response:', response.data);
-        
+
         if (response.data.success) {
           toast.success('Review accepted successfully');
           fetchSubmissions(); // Refresh the list
@@ -115,7 +115,7 @@ const ReviewSubmissions = ({ questionId }) => {
       } else {
         // Existing logic for other tabs
         const existingSubmissions = JSON.parse(localStorage.getItem(`review_submissions_${questionId}`) || '[]');
-        
+
         const updatedSubmissions = existingSubmissions.map(sub => {
           if (sub._id === answerId) {
             return {
@@ -139,7 +139,7 @@ const ReviewSubmissions = ({ questionId }) => {
         }
 
         localStorage.setItem(`review_submissions_${questionId}`, JSON.stringify(updatedSubmissions));
-        
+
         toast.success('Review accepted successfully');
         fetchSubmissions();
       }
@@ -224,31 +224,28 @@ const ReviewSubmissions = ({ questionId }) => {
         <nav className="-mb-px flex space-x-8" aria-label="Tabs">
           <button
             onClick={() => setActiveTab('review_pending')}
-            className={`${
-              activeTab === 'review_pending'
+            className={`${activeTab === 'review_pending'
                 ? 'border-indigo-500 text-indigo-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
           >
             Pending Review
           </button>
           <button
             onClick={() => setActiveTab('review_accepted')}
-            className={`${
-              activeTab === 'review_accepted'
+            className={`${activeTab === 'review_accepted'
                 ? 'border-indigo-500 text-indigo-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
           >
             Accepted
           </button>
           <button
             onClick={() => setActiveTab('review_completed')}
-            className={`${
-              activeTab === 'review_completed'
+            className={`${activeTab === 'review_completed'
                 ? 'border-indigo-500 text-indigo-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
           >
             Completed
           </button>
@@ -270,9 +267,9 @@ const ReviewSubmissions = ({ questionId }) => {
       ) : (
         submissions.map((submission) => (
           <div key={submission._id} className="bg-white shadow rounded-lg overflow-hidden">
-            
+
             {/* Basic Info - Always Visible */}
-            <div 
+            <div
               className="p-6 flex justify-between items-center cursor-pointer"
               onClick={() => toggleExpand(submission._id)}
             >
@@ -289,10 +286,9 @@ const ReviewSubmissions = ({ questionId }) => {
                   {submission.reviewStatus}
                 </span>
                 {/* Expand/Collapse Icon */}
-                <svg 
-                  className={`w-5 h-5 text-gray-500 transform transition-transform ${
-                    expandedSubmissions[submission._id] ? 'rotate-180' : 'rotate-0'
-                  }`}
+                <svg
+                  className={`w-5 h-5 text-gray-500 transform transition-transform ${expandedSubmissions[submission._id] ? 'rotate-180' : 'rotate-0'
+                    }`}
                   fill="none" stroke="currentColor" viewBox="0 0 24 24"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -309,8 +305,8 @@ const ReviewSubmissions = ({ questionId }) => {
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Annotated Images:</h4>
                     <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
                       {submission.feedback.expertReview.annotatedImages.map((image, index) => (
-                        <div 
-                          key={index} 
+                        <div
+                          key={index}
                           className="relative cursor-pointer group aspect-w-4 aspect-h-3 rounded-lg overflow-hidden bg-white border border-gray-200"
                           onClick={() => setSelectedImage(image)}
                         >
@@ -337,8 +333,8 @@ const ReviewSubmissions = ({ questionId }) => {
                     <h4 className="text-sm font-medium text-gray-700 mb-2">Submitted Images:</h4>
                     <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2">
                       {submission.annotations.map((image, index) => (
-                        <div 
-                          key={index} 
+                        <div
+                          key={index}
                           className="relative cursor-pointer group aspect-w-4 aspect-h-3 rounded-lg overflow-hidden bg-white border border-gray-200"
                           onClick={() => setSelectedImage(image)}
                         >
@@ -370,7 +366,7 @@ const ReviewSubmissions = ({ questionId }) => {
                       <pre className="text-sm text-gray-800 whitespace-pre-wrap">
                         {submission.extractedTexts[0].split('\n').map((line, lineIndex) => {
                           const cleanedLine = line.replace(/^\*\s+|^-\s+/, '');
-                          return <span key={lineIndex}>{cleanedLine}<br/></span>;
+                          return <span key={lineIndex}>{cleanedLine}<br /></span>;
                         })}
                       </pre>
                     </div>
@@ -552,17 +548,17 @@ const ReviewSubmissions = ({ questionId }) => {
                       onClick={() => setSelectedSubmission(submission)}
                       className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center space-x-2"
                     >
-                      <svg 
-                        className="w-5 h-5" 
-                        fill="none" 
-                        stroke="currentColor" 
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
                         viewBox="0 0 24 24"
                       >
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth={2} 
-                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" 
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
                         />
                       </svg>
                       <span>Annotate Answer</span>

@@ -84,7 +84,7 @@ const EvaluatorsManagement = () => {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch('https://test.ailisher.com/api/evaluators', {
+      const response = await fetch('http://localhost:4000/api/evaluators', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -116,17 +116,17 @@ const EvaluatorsManagement = () => {
       if (!token) {
         throw new Error('Not authenticated');
       }
-      
-      const response = await fetch(`https://test.ailisher.com/api/evaluators/${evaluatorId}`, {
+
+      const response = await fetch(`http://localhost:4000/api/evaluators/${evaluatorId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to fetch evaluator details');
       }
-      
+
       const data = await response.json();
       if (data.success && data.evaluator) {
         console.log('Fetched evaluator:', data.evaluator);
@@ -154,7 +154,7 @@ const EvaluatorsManagement = () => {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch('https://test.ailisher.com/api/admin/clients', {
+      const response = await fetch('http://localhost:4000/api/admin/clients', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -184,7 +184,7 @@ const EvaluatorsManagement = () => {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch('https://test.ailisher.com/api/admin/users', {
+      const response = await fetch('http://localhost:4000/api/admin/users', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -212,7 +212,7 @@ const EvaluatorsManagement = () => {
   //       throw new Error('Not authenticated');
   //     }
 
-  //     const response = await fetch('https://test.ailisher.com/api/admin/withdrawals', {
+  //     const response = await fetch('http://localhost:4000/api/admin/withdrawals', {
   //       headers: {
   //         'Authorization': `Bearer ${token}`
   //       }
@@ -248,10 +248,10 @@ const EvaluatorsManagement = () => {
   //     if (!token) throw new Error('Not authenticated');
 
   //     const [approvedRes, rejectedRes] = await Promise.all([
-  //       fetch('https://test.ailisher.com/api/admin/verified-kyc', {
+  //       fetch('http://localhost:4000/api/admin/verified-kyc', {
   //         headers: { 'Authorization': `Bearer ${token}` }
   //       }),
-  //       fetch('https://test.ailisher.com/api/admin/rejected-kyc', {
+  //       fetch('http://localhost:4000/api/admin/rejected-kyc', {
   //         headers: { 'Authorization': `Bearer ${token}` }
   //       })
   //     ]);
@@ -281,7 +281,7 @@ const EvaluatorsManagement = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    
+
     if (name === 'phoneNumber') {
       const phoneValue = value.replace(/\D/g, '').slice(0, 10);
       setFormData(prev => ({
@@ -326,37 +326,37 @@ const EvaluatorsManagement = () => {
 
   const validateForm = () => {
     const errors = {};
-    
+
     if (!formData.name || formData.name.trim().length < 2) {
       errors.name = 'Name must be at least 2 characters long';
     } else if (formData.name.trim().length > 50) {
       errors.name = 'Name must not exceed 50 characters';
     }
-    
+
     if (!formData.email) {
       errors.email = 'Email is required';
     } else if (!/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(formData.email)) {
       errors.email = 'Please enter a valid email';
     }
-    
+
     if (!formData.phoneNumber) {
       errors.phoneNumber = 'Phone number is required';
     } else if (!/^\d{10}$/.test(formData.phoneNumber)) {
       errors.phoneNumber = 'Phone number must be exactly 10 digits';
     }
-    
+
     if (!formData.subjectMatterExpert || formData.subjectMatterExpert.trim().length < 2) {
       errors.subjectMatterExpert = 'Subject matter expert must be at least 2 characters long';
     } else if (formData.subjectMatterExpert.trim().length > 100) {
       errors.subjectMatterExpert = 'Subject matter expert must not exceed 100 characters';
     }
-    
+
     if (!formData.examFocus || formData.examFocus.trim().length < 2) {
       errors.examFocus = 'Exam focus must be at least 2 characters long';
     } else if (formData.examFocus.trim().length > 100) {
       errors.examFocus = 'Exam focus must not exceed 100 characters';
     }
-    
+
     const experience = Number(formData.experience);
     if (!formData.experience || isNaN(experience)) {
       errors.experience = 'Experience is required';
@@ -365,22 +365,22 @@ const EvaluatorsManagement = () => {
     } else if (experience > 50) {
       errors.experience = 'Experience cannot exceed 50 years';
     }
-    
+
     if (!formData.grade || !['1st grade', '2nd grade', '3rd grade'].includes(formData.grade)) {
       errors.grade = 'Please select a valid grade';
     }
-    
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
-    
+
     try {
       setLoading(true);
       const token = Cookies.get('admintoken');
@@ -403,7 +403,7 @@ const EvaluatorsManagement = () => {
         status: 'PENDING'
       };
 
-      const response = await fetch('https://test.ailisher.com/api/evaluators', {
+      const response = await fetch('http://localhost:4000/api/evaluators', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -413,7 +413,7 @@ const EvaluatorsManagement = () => {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         if (data.errors) {
           const errors = data.errors.reduce((acc, err) => ({
@@ -459,7 +459,7 @@ const EvaluatorsManagement = () => {
           throw new Error('Not authenticated');
         }
 
-        const response = await fetch(`https://test.ailisher.com/api/evaluators/${evaluatorId}`, {
+        const response = await fetch(`http://localhost:4000/api/evaluators/${evaluatorId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -467,7 +467,7 @@ const EvaluatorsManagement = () => {
         });
 
         const data = await response.json();
-        
+
         if (!response.ok) {
           throw new Error(data.message || 'Failed to delete evaluator');
         }
@@ -508,7 +508,7 @@ const EvaluatorsManagement = () => {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`https://test.ailisher.com/api/evaluators/${selectedEvaluator._id}`, {
+      const response = await fetch(`http://localhost:4000/api/evaluators/${selectedEvaluator._id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -518,7 +518,7 @@ const EvaluatorsManagement = () => {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.message || 'Failed to update evaluator');
       }
@@ -575,7 +575,7 @@ const EvaluatorsManagement = () => {
         mobile: approveFormData.mobile
       });
 
-      const response = await fetch('https://test.ailisher.com/api/clients/CLI677117YN7N/mobile/evaluations/addexistinguserasevaluator', {
+      const response = await fetch('http://localhost:4000/api/clients/CLI677117YN7N/mobile/evaluations/addexistinguserasevaluator', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -589,10 +589,10 @@ const EvaluatorsManagement = () => {
       });
 
       const data = await response.json();
-      
+
       // Log the response data
       console.log('Response data:', data);
-      
+
       if (!response.ok) {
         // Handle specific error cases
         if (data.message.includes('already exists')) {
@@ -628,8 +628,8 @@ const EvaluatorsManagement = () => {
     const user = users.find(u => u._id === userId);
     if (user) {
       setSelectedUser(user);
-    setApproveFormData(prev => ({
-      ...prev,
+      setApproveFormData(prev => ({
+        ...prev,
         userId: user._id
       }));
     }
@@ -639,7 +639,7 @@ const EvaluatorsManagement = () => {
     try {
       // Fetch the latest evaluator data with KYC details
       const latestEvaluator = await fetchEvaluator(evaluator._id);
-      console.log("latestEvaluator in openKycModal",latestEvaluator);
+      console.log("latestEvaluator in openKycModal", latestEvaluator);
       setKycTargetEvaluator(latestEvaluator);
       setKycAction(action);
       setKycReason('');
@@ -659,7 +659,7 @@ const EvaluatorsManagement = () => {
         throw new Error('Not authenticated');
       }
 
-      const baseUrl = `https://test.ailisher.com/api/admin/evaluators/${kycTargetEvaluator._id}/kyc`;
+      const baseUrl = `http://localhost:4000/api/admin/evaluators/${kycTargetEvaluator._id}/kyc`;
       const endpoint = kycAction === 'verify' ? `${baseUrl}/verify` : `${baseUrl}/reject`;
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -696,7 +696,7 @@ const EvaluatorsManagement = () => {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`https://test.ailisher.com/api/evaluators/${evaluatorId}/verify`, {
+      const response = await fetch(`http://localhost:4000/api/evaluators/${evaluatorId}/verify`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -705,7 +705,7 @@ const EvaluatorsManagement = () => {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.message || 'Failed to update evaluator status');
       }
@@ -756,7 +756,7 @@ const EvaluatorsManagement = () => {
   const filteredEvaluators = evaluators.filter(evaluator => {
     const searchTerm = searchQuery.toLowerCase().trim();
     if (!searchTerm) return true;
-    
+
     return (
       evaluator.name.toLowerCase().includes(searchTerm) ||
       evaluator.email.toLowerCase().includes(searchTerm) ||
@@ -774,7 +774,7 @@ const EvaluatorsManagement = () => {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`https://test.ailisher.com/api/evaluators/${evaluatorId}/togglestatus`, {
+      const response = await fetch(`http://localhost:4000/api/evaluators/${evaluatorId}/togglestatus`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -783,7 +783,7 @@ const EvaluatorsManagement = () => {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to update evaluator status');
       }
@@ -857,156 +857,156 @@ const EvaluatorsManagement = () => {
             className={`ml-4 px-4 py-2 -mb-px border-b-2 ${activeTab === 'kyc' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-600 hover:text-gray-800'}`}
             onClick={() => setActiveTab('kyc')}
           >
-            KYC 
+            KYC
           </button>
         </div>
       </div>
 
       {activeTab === 'evaluators' && (
-      <div className="mb-6">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search evaluators..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
+        <div className="mb-6">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search evaluators..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <Search className="absolute left-3 top-2.5 w-5 h-5 text-gray-400" />
+          </div>
         </div>
-      </div>
       )}
 
 
       {activeTab === 'evaluators' && (
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KYC</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Enabled</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredEvaluators.map((evaluator) => (
-              <tr key={evaluator._id}>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">{evaluator.name}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-500">{evaluator.email}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm text-gray-500">{evaluator.phoneNumber}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {getStatusBadge(evaluator.status)}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  {(() => {
-                    const kycStatus = evaluator.kycDetails?.status;
-                    if (kycStatus === 'verified') {
-                      return (
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Verified</span>
-                      );
-                    }
-                    if (kycStatus === 'rejected') {
-                      return (
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Rejected</span>
-                      );
-                    }
-                    if (kycStatus === 'pending') {
-                      return (
-                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
-                      );
-                    }
-                    return (
-                      <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Not Submitted</span>
-                    );
-                  })()}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={evaluator.enabled}
-                      onChange={() => handleToggleStatus(evaluator._id, evaluator.enabled)}
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
-                  </label>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => openKycModal(evaluator)}
-                      className="px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Review KYC"
-                      disabled={!(
-                        evaluator.status === 'VERIFIED' &&
-                        ['pending', 'verified', 'rejected'].includes(evaluator.kycDetails?.status)
-                      )}
-                    >
-                      Review KYC
-                    </button>
-                    {(evaluator.status === 'PENDING' || evaluator.status === 'NOT_VERIFIED') && (
-                      <button
-                        onClick={() => {
-                          setSelectedEvaluator(evaluator);
-                          setShowVerifyModal(true);
-                        }}
-                        className="text-green-600 hover:text-green-900"
-                        title="Verify"
-                      >
-                        <CheckCircle className="w-5 h-5" />
-                      </button>
-                    )}
-                    {evaluator.status === 'VERIFIED' && (
-                      <button
-                        onClick={() => {
-                          setSelectedEvaluator(evaluator);
-                          setShowVerifyModal(true);
-                        }}
-                        className="text-red-600 hover:text-red-900"
-                        title="Mark as Not Verified"
-                      >
-                        <AlertCircle className="w-5 h-5" />
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleEdit(evaluator)}
-                      className="text-blue-600 hover:text-blue-900"
-                      title="Edit"
-                    >
-                      <Edit2 className="w-5 h-5" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(evaluator._id)}
-                      className="text-red-600 hover:text-red-900"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
-                  </div>
-                </td>
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">KYC</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Enabled</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredEvaluators.map((evaluator) => (
+                <tr key={evaluator._id}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">{evaluator.name}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">{evaluator.email}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">{evaluator.phoneNumber}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {getStatusBadge(evaluator.status)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {(() => {
+                      const kycStatus = evaluator.kycDetails?.status;
+                      if (kycStatus === 'verified') {
+                        return (
+                          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Verified</span>
+                        );
+                      }
+                      if (kycStatus === 'rejected') {
+                        return (
+                          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Rejected</span>
+                        );
+                      }
+                      if (kycStatus === 'pending') {
+                        return (
+                          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>
+                        );
+                      }
+                      return (
+                        <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Not Submitted</span>
+                      );
+                    })()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="sr-only peer"
+                        checked={evaluator.enabled}
+                        onChange={() => handleToggleStatus(evaluator._id, evaluator.enabled)}
+                      />
+                      <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => openKycModal(evaluator)}
+                        className="px-3 py-1.5 rounded bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Review KYC"
+                        disabled={!(
+                          evaluator.status === 'VERIFIED' &&
+                          ['pending', 'verified', 'rejected'].includes(evaluator.kycDetails?.status)
+                        )}
+                      >
+                        Review KYC
+                      </button>
+                      {(evaluator.status === 'PENDING' || evaluator.status === 'NOT_VERIFIED') && (
+                        <button
+                          onClick={() => {
+                            setSelectedEvaluator(evaluator);
+                            setShowVerifyModal(true);
+                          }}
+                          className="text-green-600 hover:text-green-900"
+                          title="Verify"
+                        >
+                          <CheckCircle className="w-5 h-5" />
+                        </button>
+                      )}
+                      {evaluator.status === 'VERIFIED' && (
+                        <button
+                          onClick={() => {
+                            setSelectedEvaluator(evaluator);
+                            setShowVerifyModal(true);
+                          }}
+                          className="text-red-600 hover:text-red-900"
+                          title="Mark as Not Verified"
+                        >
+                          <AlertCircle className="w-5 h-5" />
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleEdit(evaluator)}
+                        className="text-blue-600 hover:text-blue-900"
+                        title="Edit"
+                      >
+                        <Edit2 className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(evaluator._id)}
+                        className="text-red-600 hover:text-red-900"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
 
       {activeTab === 'payments' && (
-        <Withdrawals/>
+        <Withdrawals />
       )}
 
       {activeTab === 'kyc' && (
-       <KycDetail/>
+        <KycDetail />
       )}
 
       {showVerifyModal && selectedEvaluator && (
@@ -1030,11 +1030,10 @@ const EvaluatorsManagement = () => {
               </button>
               <button
                 onClick={() => handleVerify(selectedEvaluator._id)}
-                className={`px-4 py-2 rounded ${
-                  selectedEvaluator.status === 'VERIFIED'
+                className={`px-4 py-2 rounded ${selectedEvaluator.status === 'VERIFIED'
                     ? 'bg-red-500 hover:bg-red-600 text-white'
                     : 'bg-green-500 hover:bg-green-600 text-white'
-                }`}
+                  }`}
                 disabled={loading}
               >
                 {loading ? 'Processing...' : selectedEvaluator.status === 'VERIFIED' ? 'Mark as Not Verified' : 'Verify'}
@@ -1066,7 +1065,7 @@ const EvaluatorsManagement = () => {
                     <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>
                   )}
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
                   <input
@@ -1081,7 +1080,7 @@ const EvaluatorsManagement = () => {
                     <p className="mt-1 text-sm text-red-600">{formErrors.email}</p>
                   )}
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number *</label>
                   <input
@@ -1097,7 +1096,7 @@ const EvaluatorsManagement = () => {
                     <p className="mt-1 text-sm text-red-600">{formErrors.phoneNumber}</p>
                   )}
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Subject Matter Expert *</label>
                   <input
@@ -1112,7 +1111,7 @@ const EvaluatorsManagement = () => {
                     <p className="mt-1 text-sm text-red-600">{formErrors.subjectMatterExpert}</p>
                   )}
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Exam Focus *</label>
                   <input
@@ -1127,7 +1126,7 @@ const EvaluatorsManagement = () => {
                     <p className="mt-1 text-sm text-red-600">{formErrors.examFocus}</p>
                   )}
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Experience (years) *</label>
                   <input
@@ -1144,7 +1143,7 @@ const EvaluatorsManagement = () => {
                     <p className="mt-1 text-sm text-red-600">{formErrors.experience}</p>
                   )}
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Grade *</label>
                   <select
@@ -1179,7 +1178,7 @@ const EvaluatorsManagement = () => {
                       />
                       <label htmlFor={`client-${client._id}`} className="ml-2 text-sm text-gray-700">
                         {client.businessName}
-                    </label>
+                      </label>
                     </div>
                   ))}
                 </div>
@@ -1391,8 +1390,8 @@ const EvaluatorsManagement = () => {
                       <span className="text-gray-500 block mb-2">PAN Document:</span>
                       {kycTargetEvaluator.kycDetails?.documents?.panDocument?.downloadUrl ? (
                         <div className="relative">
-                          <img 
-                            src={kycTargetEvaluator.kycDetails.documents.panDocument.downloadUrl} 
+                          <img
+                            src={kycTargetEvaluator.kycDetails.documents.panDocument.downloadUrl}
                             alt="PAN Document"
                             className="w-full h-32 object-cover rounded-lg border border-gray-300 cursor-pointer hover:opacity-80 transition-opacity"
                             // onClick={() => openImageModal(kycTargetEvaluator.kycDetails.documents.panDocument.downloadUrl, 'PAN Document')}
@@ -1416,8 +1415,8 @@ const EvaluatorsManagement = () => {
                       <span className="text-gray-500 block mb-2">Aadhar Front:</span>
                       {kycTargetEvaluator.kycDetails?.documents?.aadharFront?.downloadUrl ? (
                         <div className="relative">
-                          <img 
-                            src={kycTargetEvaluator.kycDetails.documents.aadharFront.downloadUrl} 
+                          <img
+                            src={kycTargetEvaluator.kycDetails.documents.aadharFront.downloadUrl}
                             alt="Aadhar Front"
                             className="w-full h-32 object-cover rounded-lg border border-gray-300 cursor-pointer hover:opacity-80 transition-opacity"
                             // onClick={() => openImageModal(kycTargetEvaluator.kycDetails.documents.aadharFront.downloadUrl, 'Aadhar Front')}
@@ -1441,11 +1440,11 @@ const EvaluatorsManagement = () => {
                       <span className="text-gray-500 block mb-2">Aadhar Back:</span>
                       {kycTargetEvaluator.kycDetails?.documents?.aadharBack?.downloadUrl ? (
                         <div className="relative">
-                          <img 
-                            src={kycTargetEvaluator.kycDetails.documents.aadharBack.downloadUrl} 
+                          <img
+                            src={kycTargetEvaluator.kycDetails.documents.aadharBack.downloadUrl}
                             alt="Aadhar Back"
                             className="w-full h-32 object-cover rounded-lg border border-gray-300 cursor-pointer hover:opacity-80 transition-opacity"
-                            // onClick={() => openImageModal(kycTargetEvaluator.kycDetails.documents.aadharBack.downloadUrl, 'Aadhar Back')}
+                          // onClick={() => openImageModal(kycTargetEvaluator.kycDetails.documents.aadharBack.downloadUrl, 'Aadhar Back')}
                           />
                           <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all rounded-lg flex items-center justify-center">
                             <span className="text-white text-sm font-medium opacity-0 hover:opacity-100 transition-opacity">Click to zoom</span>
@@ -1461,11 +1460,11 @@ const EvaluatorsManagement = () => {
                       <span className="text-gray-500 block mb-2">Bank Passbook:</span>
                       {kycTargetEvaluator.kycDetails?.documents?.bankPassbook?.downloadUrl ? (
                         <div className="relative">
-                          <img 
-                            src={kycTargetEvaluator.kycDetails.documents.bankPassbook.downloadUrl} 
+                          <img
+                            src={kycTargetEvaluator.kycDetails.documents.bankPassbook.downloadUrl}
                             alt="Bank Passbook"
                             className="w-full h-32 object-cover rounded-lg border border-gray-300 cursor-pointer hover:opacity-80 transition-opacity"
-                            // onClick={() => openImageModal(kycTargetEvaluator.kycDetails.documents.bankPassbook.downloadUrl, 'Bank Passbook')}
+                          // onClick={() => openImageModal(kycTargetEvaluator.kycDetails.documents.bankPassbook.downloadUrl, 'Bank Passbook')}
                           />
                           <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all rounded-lg flex items-center justify-center">
                             <span className="text-white text-sm font-medium opacity-0 hover:opacity-100 transition-opacity">Click to zoom</span>

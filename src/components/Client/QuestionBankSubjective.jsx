@@ -58,7 +58,7 @@ export default function QuestionBankSubjective() {
     try {
       setLoading(true);
       const response = await axios.get(
-        `https://test.ailisher.com/api/questionbank/${questionBankId}`,
+        `http://localhost:4000/api/questionbank/${questionBankId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -76,7 +76,7 @@ export default function QuestionBankSubjective() {
     try {
       setLoading(true);
       const response = await axios.get(
-        `https://test.ailisher.com/api/questionbank/${questionBankId}/questions`,
+        `http://localhost:4000/api/questionbank/${questionBankId}/questions`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -104,7 +104,7 @@ export default function QuestionBankSubjective() {
         toast.error("Authentication required");
         return;
       }
-      
+
       const payload = {
         question: formData.question,
         detailedAnswer: formData.detailedAnswer,
@@ -119,7 +119,7 @@ export default function QuestionBankSubjective() {
       };
 
       const res = await axios.post(
-        `https://test.ailisher.com/api/questionbank/${questionBankId}/questions`,
+        `http://localhost:4000/api/questionbank/${questionBankId}/questions`,
         payload,
         {
           headers: {
@@ -165,7 +165,7 @@ export default function QuestionBankSubjective() {
           Back
         </button>
       </div>
-      
+
       <div className="min-h-screen bg-gray-50">
         {/* Header */}
         <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6 mb-8">
@@ -185,7 +185,7 @@ export default function QuestionBankSubjective() {
                 )}
               </div>
             </div>
-            
+
             <div className="md:w-3/4 lg:w-4/5">
               <div className="flex flex-col sm:flex-row justify-start items-start sm:items-center mb-4">
                 <div>
@@ -197,7 +197,7 @@ export default function QuestionBankSubjective() {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center justify-start flex-1">
                 {questionBank && (
                   <div className="rounded-xl">
@@ -213,7 +213,7 @@ export default function QuestionBankSubjective() {
                           </p>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center space-x-3">
                         <div className="p-3 bg-green-100 rounded-lg">
                           <Clock size={20} className="text-green-600" />
@@ -225,7 +225,7 @@ export default function QuestionBankSubjective() {
                           </p>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center space-x-3">
                         <div className="p-3 bg-purple-100 rounded-lg">
                           <Target size={20} className="text-purple-600" />
@@ -235,7 +235,7 @@ export default function QuestionBankSubjective() {
                           <p className="text-lg font-semibold text-gray-900">Subjective</p>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center space-x-3">
                         <div className="p-3 bg-orange-100 rounded-lg">
                           <Award size={20} className="text-orange-600" />
@@ -251,26 +251,24 @@ export default function QuestionBankSubjective() {
                   </div>
                 )}
               </div>
-              
+
               <div className="flex flex-wrap gap-4 mt-6">
                 <div className="inline-flex rounded-md border border-gray-300 overflow-hidden">
                   <button
                     onClick={() => setActiveView("questions")}
-                    className={`px-4 py-2 text-sm ${
-                      activeView === "questions"
+                    className={`px-4 py-2 text-sm ${activeView === "questions"
                         ? "bg-gray-800 text-white"
                         : "bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
+                      }`}
                   >
                     Questions
                   </button>
                   <button
                     onClick={() => setActiveView("uploadPdf")}
-                    className={`px-4 py-2 text-sm ${
-                      activeView === "uploadPdf"
+                    className={`px-4 py-2 text-sm ${activeView === "uploadPdf"
                         ? "bg-gray-800 text-white"
                         : "bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
+                      }`}
                   >
                     Upload PDF
                   </button>
@@ -366,7 +364,7 @@ export default function QuestionBankSubjective() {
                 <p className="text-gray-600 mb-6">
                   Upload a PDF file containing subjective questions. The system will automatically extract and create questions.
                 </p>
-                
+
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-8">
                   <Upload size={48} className="text-gray-400 mx-auto mb-4" />
                   <span className="text-lg font-medium text-gray-700 mb-2 block">
@@ -384,15 +382,15 @@ export default function QuestionBankSubjective() {
         {/* Add/Edit Question Modal */}
         {showQuestionModal && (
           <AddAISWBModal
-          isOpen={showQuestionModal}
-          onClose={() => {
-            setShowQuestionModal(false);
-            setEditingQuestion(null);
-          }}
-          onAddQuestion={handleAddQuestion}
-        //   onEditQuestion={handleEditQuestion}
-          editingQuestion={editingQuestion}
-        />
+            isOpen={showQuestionModal}
+            onClose={() => {
+              setShowQuestionModal(false);
+              setEditingQuestion(null);
+            }}
+            onAddQuestion={handleAddQuestion}
+            //   onEditQuestion={handleEditQuestion}
+            editingQuestion={editingQuestion}
+          />
         )}
       </div>
     </>

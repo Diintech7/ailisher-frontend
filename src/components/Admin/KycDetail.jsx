@@ -2,88 +2,88 @@ import React, { useEffect, useState } from 'react'
 import Cookies from 'js-cookie';
 import { toast } from 'react-toastify';
 export default function KycDetail() {
-    const token = Cookies.get('admintoken');
+  const token = Cookies.get('admintoken');
 
-    const [items, setItems] = useState([]);
-    const [kycLoading, setKycLoading] = useState(false);
-    const [activeTab, setActiveTab] = useState('pending');
-    const [detailOpen, setDetailOpen] = useState(false);
-    const [detailLoading, setDetailLoading] = useState(false);
-    const [detail, setDetail] = useState(null);
+  const [items, setItems] = useState([]);
+  const [kycLoading, setKycLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('pending');
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detail, setDetail] = useState(null);
 
-    const endpointForTab = (tab) => {
-      switch (tab) {
-        case 'pending':
-          return 'submitted-kyc';
-        case 'verified':
-          return 'verified-kyc';
-        case 'rejected':
-          return 'rejected-kyc';
-        default:
-          return 'submitted-kyc';
-      }
-    };
+  const endpointForTab = (tab) => {
+    switch (tab) {
+      case 'pending':
+        return 'submitted-kyc';
+      case 'verified':
+        return 'verified-kyc';
+      case 'rejected':
+        return 'rejected-kyc';
+      default:
+        return 'submitted-kyc';
+    }
+  };
 
-    const fetchKycLists = async (tab) => {
-      try {
-        setKycLoading(true);
-        const token = Cookies.get('admintoken');
-        if (!token) throw new Error('Not authenticated');
+  const fetchKycLists = async (tab) => {
+    try {
+      setKycLoading(true);
+      const token = Cookies.get('admintoken');
+      if (!token) throw new Error('Not authenticated');
 
-        const res = await fetch(`https://test.ailisher.com/api/admin/${endpointForTab(tab)}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!res.ok) throw new Error('Failed to fetch KYC list');
-        const data = await res.json();
-        if (data.success && Array.isArray(data.data)) {
-          setItems(data.data);
-        } else {
-          setItems([]);
-        }
-      } catch (err) {
-        console.error('KYC fetch error:', err);
-        toast.error(err.message || 'Failed to fetch KYC list');
+      const res = await fetch(`http://localhost:4000/api/admin/${endpointForTab(tab)}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch KYC list');
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
+        setItems(data.data);
+      } else {
         setItems([]);
-      } finally {
-        setKycLoading(false);
       }
-    };
+    } catch (err) {
+      console.error('KYC fetch error:', err);
+      toast.error(err.message || 'Failed to fetch KYC list');
+      setItems([]);
+    } finally {
+      setKycLoading(false);
+    }
+  };
 
-    useEffect(() => {
-      fetchKycLists(activeTab);
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTab]);
+  useEffect(() => {
+    fetchKycLists(activeTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
-    const openDetail = async (id) => {
-      try {
-        setDetailLoading(true);
-        setDetail(null);
-        setDetailOpen(true);
-        const token = Cookies.get('admintoken');
-        if (!token) throw new Error('Not authenticated');
-        const res = await fetch(`https://test.ailisher.com/api/evaluators/${id}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        if (!res.ok) throw new Error('Failed to fetch evaluator');
-        const data = await res.json();
-        if (data?.success !== false && (data?.evaluator || data?.data || data)) {
-          setDetail(data.evaluator || data.data || data);
-        } else {
-          setDetail(null);
-        }
-      } catch (err) {
-        console.error('Evaluator detail error:', err);
-        toast.error(err.message || 'Failed to fetch evaluator');
-        setDetail(null);
-      } finally {
-        setDetailLoading(false);
-      }
-    };
-
-    const closeDetail = () => {
-      setDetailOpen(false);
+  const openDetail = async (id) => {
+    try {
+      setDetailLoading(true);
       setDetail(null);
-    };
+      setDetailOpen(true);
+      const token = Cookies.get('admintoken');
+      if (!token) throw new Error('Not authenticated');
+      const res = await fetch(`http://localhost:4000/api/evaluators/${id}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!res.ok) throw new Error('Failed to fetch evaluator');
+      const data = await res.json();
+      if (data?.success !== false && (data?.evaluator || data?.data || data)) {
+        setDetail(data.evaluator || data.data || data);
+      } else {
+        setDetail(null);
+      }
+    } catch (err) {
+      console.error('Evaluator detail error:', err);
+      toast.error(err.message || 'Failed to fetch evaluator');
+      setDetail(null);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const closeDetail = () => {
+    setDetailOpen(false);
+    setDetail(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -98,11 +98,10 @@ export default function KycDetail() {
               <button
                 key={tab.key}
                 onClick={() => { setActiveTab(tab.key); }}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === tab.key
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === tab.key
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>
@@ -113,11 +112,10 @@ export default function KycDetail() {
           <button
             onClick={() => fetchKycLists(activeTab)}
             disabled={kycLoading}
-            className={`inline-flex items-center px-3 py-2 border text-sm rounded-md shadow-sm ${
-              kycLoading
+            className={`inline-flex items-center px-3 py-2 border text-sm rounded-md shadow-sm ${kycLoading
                 ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
                 : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-            }`}
+              }`}
           >
             {kycLoading ? 'Refreshing…' : 'Refresh'}
           </button>
@@ -128,7 +126,7 @@ export default function KycDetail() {
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
-               <tr>
+              <tr>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mobile</th>
@@ -155,11 +153,11 @@ export default function KycDetail() {
                 const email = item?.email || item?.user?.email || item?.profile?.email || '—';
                 const mobile = item?.phoneNumber || item?.user?.phoneNumber || item?.profile?.phoneNumber || '—';
                 const status = (item?.status || activeTab || '—').toString();
-                 const submittedAt = item?.kycDetails?.submittedAt || item?.submittedAt || item?.createdAt;
-                 const verifiedAt = item?.kycDetails?.verifiedAt || item?.verifiedAt;
-                 const rejectedAt = item?.kycDetails?.rejectedAt || item?.rejectedAt; // may be undefined
-                 const timeForTab = activeTab === 'verified' ? verifiedAt : activeTab === 'rejected' ? rejectedAt : submittedAt;
-                 const timeDisplay = timeForTab ? new Date(timeForTab).toLocaleString() : '—';
+                const submittedAt = item?.kycDetails?.submittedAt || item?.submittedAt || item?.createdAt;
+                const verifiedAt = item?.kycDetails?.verifiedAt || item?.verifiedAt;
+                const rejectedAt = item?.kycDetails?.rejectedAt || item?.rejectedAt; // may be undefined
+                const timeForTab = activeTab === 'verified' ? verifiedAt : activeTab === 'rejected' ? rejectedAt : submittedAt;
+                const timeDisplay = timeForTab ? new Date(timeForTab).toLocaleString() : '—';
                 const id = item?._id || item?.id || '—';
                 return (
                   <tr key={id} className="hover:bg-gray-50">
@@ -167,23 +165,22 @@ export default function KycDetail() {
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{email}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{mobile}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-xs">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-medium ${
-                        status.toLowerCase() === 'verified' ? 'bg-green-100 text-green-800' :
-                        status.toLowerCase() === 'rejected' ? 'bg-red-100 text-red-800' :
-                        'bg-yellow-100 text-yellow-800'
-                      }`}>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-medium ${status.toLowerCase() === 'verified' ? 'bg-green-100 text-green-800' :
+                          status.toLowerCase() === 'rejected' ? 'bg-red-100 text-red-800' :
+                            'bg-yellow-100 text-yellow-800'
+                        }`}>
                         {status.charAt(0).toUpperCase() + status.slice(1)}
                       </span>
                     </td>
-                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{timeDisplay}</td>
-                     <td className="px-4 py-3 whitespace-nowrap text-sm">
-                       <button
-                         onClick={() => openDetail(id)}
-                         className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50"
-                       >
-                         View Detail
-                       </button>
-                     </td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{timeDisplay}</td>
+                    <td className="px-4 py-3 whitespace-nowrap text-sm">
+                      <button
+                        onClick={() => openDetail(id)}
+                        className="inline-flex items-center px-3 py-1.5 border border-gray-300 rounded-md text-sm text-gray-700 bg-white hover:bg-gray-50"
+                      >
+                        View Detail
+                      </button>
+                    </td>
                   </tr>
                 );
               })}
@@ -251,32 +248,32 @@ export default function KycDetail() {
                         <div>
                           <div className="text-gray-500">PAN Document</div>
                           {detail.kycDetails?.documents?.panDocument?.downloadUrl ? (
-                          <img src={detail.kycDetails.documents.panDocument.downloadUrl} alt="PAN Document" className="w-full h-32 object-cover rounded-lg border border-gray-300 cursor-pointer hover:opacity-80 transition-opacity" />
+                            <img src={detail.kycDetails.documents.panDocument.downloadUrl} alt="PAN Document" className="w-full h-32 object-cover rounded-lg border border-gray-300 cursor-pointer hover:opacity-80 transition-opacity" />
                           ) : (<span className="text-gray-400">Not uploaded</span>)}
                         </div>
                         <div>
                           <div className="text-gray-500">Aadhar Front</div>
                           {detail.kycDetails?.documents?.aadharFront?.downloadUrl ? (
-                          <img src={detail.kycDetails.documents.aadharFront.downloadUrl} alt="PAN Document" className="w-full h-32 object-cover rounded-lg border border-gray-300 cursor-pointer hover:opacity-80 transition-opacity" />
-                        ) : (<span className="text-gray-400">Not uploaded</span>)}
+                            <img src={detail.kycDetails.documents.aadharFront.downloadUrl} alt="PAN Document" className="w-full h-32 object-cover rounded-lg border border-gray-300 cursor-pointer hover:opacity-80 transition-opacity" />
+                          ) : (<span className="text-gray-400">Not uploaded</span>)}
                         </div>
                         <div>
                           <div className="text-gray-500">Aadhar Back</div>
                           {detail.kycDetails?.documents?.aadharBack?.downloadUrl ? (
-                          <img src={detail.kycDetails.documents.aadharBack.downloadUrl} alt="PAN Document" className="w-full h-32 object-cover rounded-lg border border-gray-300 cursor-pointer hover:opacity-80 transition-opacity" />
-                        ) : (<span className="text-gray-400">Not uploaded</span>)}
+                            <img src={detail.kycDetails.documents.aadharBack.downloadUrl} alt="PAN Document" className="w-full h-32 object-cover rounded-lg border border-gray-300 cursor-pointer hover:opacity-80 transition-opacity" />
+                          ) : (<span className="text-gray-400">Not uploaded</span>)}
                         </div>
                         <div>
                           <div className="text-gray-500">Bank Passbook</div>
                           {detail.kycDetails?.documents?.bankPassbook?.downloadUrl ? (
-                          <img src={detail.kycDetails.documents.bankPassbook.downloadUrl} alt="PAN Document" className="w-full h-32 object-cover rounded-lg border border-gray-300 cursor-pointer hover:opacity-80 transition-opacity" />
-                        ) : (<span className="text-gray-400">Not uploaded</span>)}
+                            <img src={detail.kycDetails.documents.bankPassbook.downloadUrl} alt="PAN Document" className="w-full h-32 object-cover rounded-lg border border-gray-300 cursor-pointer hover:opacity-80 transition-opacity" />
+                          ) : (<span className="text-gray-400">Not uploaded</span>)}
                         </div>
                       </div>
                     </div>
                   </section>
 
-                  
+
                 </div>
               )}
             </div>

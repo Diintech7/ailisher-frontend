@@ -39,7 +39,7 @@ export default function User() {
   // Unique cities for filter
   const cityOptions = React.useMemo(() => {
     const set = new Set(users.map(getCity).filter(Boolean));
-    return Array.from(set).sort((a,b) => a.localeCompare(b));
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
   }, [users]);
 
   useEffect(() => {
@@ -55,7 +55,7 @@ export default function User() {
         return;
       }
 
-      const response = await fetch('https://test.ailisher.com/api/client/userprofile', {
+      const response = await fetch('http://localhost:4000/api/client/userprofile', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -168,8 +168,8 @@ export default function User() {
     if (sortConfig.key !== key) {
       return <ChevronDown size={16} className="text-gray-400" />;
     }
-    return sortConfig.direction === 'asc' ? 
-      <ChevronUp size={16} className="text-indigo-600" /> : 
+    return sortConfig.direction === 'asc' ?
+      <ChevronUp size={16} className="text-indigo-600" /> :
       <ChevronDown size={16} className="text-indigo-600" />;
   };
 
@@ -182,7 +182,7 @@ export default function User() {
   return (
     <div className="container mx-auto px-4 py-8">
       <ToastContainer position="top-right" autoClose={3000} />
-      
+
 
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-gray-800">User Profiles</h1>
@@ -208,7 +208,7 @@ export default function User() {
           <div className="text-2xl font-semibold text-gray-900">{totalCities}</div>
         </div>
       </div>
-      
+
       {loading ? (
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-indigo-600"></div>
@@ -292,7 +292,7 @@ export default function User() {
             <table className="w-full">
               <thead>
                 <tr>
-                  <th 
+                  <th
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                     onClick={() => requestSort('name')}
                   >
@@ -301,7 +301,7 @@ export default function User() {
                       {getSortIcon('name')}
                     </div>
                   </th>
-                  <th 
+                  <th
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                     onClick={() => requestSort('userId.mobile')}
                   >
@@ -310,7 +310,7 @@ export default function User() {
                       {getSortIcon('userId.mobile')}
                     </div>
                   </th>
-                  <th 
+                  <th
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                     onClick={() => requestSort('city')}
                   >
@@ -328,7 +328,7 @@ export default function User() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Exams
                   </th>
-                  <th 
+                  <th
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                     onClick={() => requestSort('lastLoginAt')}
                   >
@@ -337,7 +337,7 @@ export default function User() {
                       {getSortIcon('lastLoginAt')}
                     </div>
                   </th>
-                  <th 
+                  <th
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                     onClick={() => requestSort('createdAt')}
                   >
@@ -372,7 +372,7 @@ export default function User() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{user.userId?.mobile}</div>
-                      
+
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {formatCity(getCity(user))}
@@ -386,7 +386,7 @@ export default function User() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-wrap gap-1">
                         {user.exams?.map((exam, index) => (
-                          <span 
+                          <span
                             key={index}
                             className="px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-800 rounded-full"
                           >
@@ -454,6 +454,6 @@ export default function User() {
           )}
         </div>
       )}
-      </div>
+    </div>
   );
 }

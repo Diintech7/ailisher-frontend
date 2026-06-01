@@ -21,21 +21,21 @@ const AuthFlow = ({ onAuthSuccess }) => {
   const handleLogin = async (email, password) => {
     setIsLoading(true);
     setError('');
-    
+
     try {
       console.log('Attempting login with:', { email, role: selectedRole });
-      
-      const response = await fetch('https://test.ailisher.com/api/auth/login', {
+
+      const response = await fetch('http://localhost:4000/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
       });
-      
+
       const data = await response.json();
       console.log('Login response:', data);
-      
+
       if (data.success) {
         // Store token and user data
         Cookies.set('usertoken', data.token, { expires: 7 });
@@ -45,7 +45,7 @@ const AuthFlow = ({ onAuthSuccess }) => {
           email: data.user.email,
           role: data.user.role
         }), { expires: 7 });
-        
+
         onAuthSuccess(data.user.role);
         navigate('/dashboard');
       } else {
@@ -62,24 +62,24 @@ const AuthFlow = ({ onAuthSuccess }) => {
   const handleRegister = async (name, email, password) => {
     setIsLoading(true);
     setError('');
-    
+
     try {
-      const response = await fetch('https://test.ailisher.com/api/auth/register', {
+      const response = await fetch('http://localhost:4000/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
-          name, 
-          email, 
+        body: JSON.stringify({
+          name,
+          email,
           password,
-          role: selectedRole 
+          role: selectedRole
         }),
       });
-      
+
       const data = await response.json();
       console.log('Registration response:', data);
-      
+
       if (data.success) {
         // Store token and user data
         Cookies.set('usertoken', data.token, { expires: 7 });
@@ -89,9 +89,9 @@ const AuthFlow = ({ onAuthSuccess }) => {
           email: data.user.email,
           role: selectedRole
         }), { expires: 7 });
-        
-          onAuthSuccess(selectedRole);
-          setCurrentStep('login')        
+
+        onAuthSuccess(selectedRole);
+        setCurrentStep('login')
       } else {
         setError(data.message || 'Registration failed. Please try again.');
       }
@@ -115,7 +115,7 @@ const AuthFlow = ({ onAuthSuccess }) => {
 
       // console.log('Submitting client registration with token:', token);
 
-      const response = await fetch('https://test.ailisher.com/api/auth/clients', {
+      const response = await fetch('http://localhost:4000/api/auth/clients', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -155,7 +155,7 @@ const AuthFlow = ({ onAuthSuccess }) => {
           businessOwnerName: data.client.businessOwnerName,
           userId: data.client.userId
         }), { expires: 7 });
-        
+
         // Show success message and redirect to dashboard
         alert('Registration successful!');
         onAuthSuccess('client');
@@ -193,7 +193,7 @@ const AuthFlow = ({ onAuthSuccess }) => {
     switch (currentStep) {
       case 'role-selection':
         return (
-          <RoleSelectionPage 
+          <RoleSelectionPage
             onRoleSelect={handleRoleSelection}
             isLoading={isLoading}
           />

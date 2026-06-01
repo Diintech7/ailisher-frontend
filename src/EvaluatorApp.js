@@ -22,31 +22,31 @@ const EvaluatorApp = () => {
     const initializeAuth = async () => {
       const evaluatorToken = Cookies.get('evaluatortoken');
       const evaluatorUser = Cookies.get('evaluatorUser');
-  
+
       if (!evaluatorToken || !evaluatorUser) {
         setIsAuthenticated(false);
         setIsLoading(false);
         return;
       }
-  
+
       try {
         const userData = JSON.parse(evaluatorUser);
         if (userData.role !== 'evaluator') {
           clearAuth();
           return;
         }
-  
+
         setIsAuthenticated(true)
         // Then validate latest data silently
-        const res = await fetch(`https://test.ailisher.com/api/evaluators/get`, {
+        const res = await fetch(`http://localhost:4000/api/evaluators/get`, {
           headers: {
             'Authorization': `Bearer ${evaluatorToken}`,
             'Content-Type': 'application/json'
           }
         });
-  
+
         if (res.ok) {
-          console.log("res",res)
+          console.log("res", res)
           const evaluator = await res.json();
           if (!evaluator.evaluator.enabled || evaluator.evaluator.status === "NOT_VERIFIED") {
             clearAuth();
@@ -62,11 +62,11 @@ const EvaluatorApp = () => {
         setIsLoading(false);
       }
     };
-  
+
     initializeAuth();
   }, []);
-  
-  
+
+
 
   const clearAuth = () => {
     Cookies.remove('evaluatortoken', { path: '/' });
@@ -107,32 +107,32 @@ const EvaluatorApp = () => {
   return (
     <div className="app-container">
       <Routes>
-        <Route 
-          path="/login" 
+        <Route
+          path="/login"
           element={
-            isAuthenticated ? 
-              <Navigate to="/evaluator/dashboard" replace /> : 
+            isAuthenticated ?
+              <Navigate to="/evaluator/dashboard" replace /> :
               <EvaluatorLoginPage onAuthSuccess={handleAuthSuccess} />
-          } 
+          }
         />
-        <Route 
-          path="/register" 
+        <Route
+          path="/register"
           element={
-            isAuthenticated ? 
-              <Navigate to="/evaluator/dashboard" replace /> : 
+            isAuthenticated ?
+              <Navigate to="/evaluator/dashboard" replace /> :
               <EvaluatorRegistrationPage onAuthSuccess={handleAuthSuccess} />
-          } 
+          }
         />
-        
+
         {isAuthenticated ? (
           <Route element={<SidebarLayout onLogout={handleLogout} userRole="evaluator" />}>
             <Route path="/dashboard" element={<EvaluatorDashboard />} />
-            <Route path="/review" element={<EvaluatorReview/>} />
-            <Route path="/profile" element={<EvaluatorProfile/>} />
-            <Route path="/pending" element={<PendingAnswers/>} />
-            <Route path="/accepted" element={<AcceptedAnswers/>} />
-            <Route path="/completed" element={<EvaluatedAnswers/>} />
-            <Route path="/credit" element={<CreditManagement/>} />
+            <Route path="/review" element={<EvaluatorReview />} />
+            <Route path="/profile" element={<EvaluatorProfile />} />
+            <Route path="/pending" element={<PendingAnswers />} />
+            <Route path="/accepted" element={<AcceptedAnswers />} />
+            <Route path="/completed" element={<EvaluatedAnswers />} />
+            <Route path="/credit" element={<CreditManagement />} />
           </Route>
         ) : (
           <Route path="*" element={<Navigate to="/evaluator/login" replace />} />

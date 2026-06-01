@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { 
-  Plus, Save, Trash2, Link, FileText, Image, Video, Globe, 
+import {
+  Plus, Save, Trash2, Link, FileText, Image, Video, Globe,
   Youtube, Upload, AlertCircle, Check, ExternalLink, Eye, X, Loader, File,
   MoreVertical, LayoutGrid, List, Calendar, Clock, Bookmark, Heart, Download
 } from 'lucide-react';
@@ -39,7 +39,7 @@ const DatastoreContent = () => {
     label: 'block text-sm font-medium mb-1 text-gray-700',
     error: 'bg-red-100 text-red-800',
   };
-  
+
   // Define colors object with common color classes
   const colors = {
     text: 'text-gray-900',
@@ -47,7 +47,7 @@ const DatastoreContent = () => {
     textMuted: 'text-gray-500',
     primary: 'text-purple-600',
   };
-  
+
   const cx = (...classes) => classes.filter(Boolean).join(' ');
 
   const [datastoreItems, setDatastoreItems] = useState([]);
@@ -86,14 +86,14 @@ const DatastoreContent = () => {
       }
     };
   }, []);
-  
+
   const loadCloudinaryScript = () => {
     if (document.getElementById('cloudinary-widget-script')) {
       setCloudinaryScriptLoaded(true);
       initializeCloudinaryWhenReady();
       return;
     }
-    
+
     const script = document.createElement('script');
     script.id = 'cloudinary-widget-script';
     script.src = "https://upload-widget.cloudinary.com/global/all.js";
@@ -106,11 +106,11 @@ const DatastoreContent = () => {
       setError('Failed to load Cloudinary script. File uploads may not work.');
       showNotification('Failed to load Cloudinary script. Please try refreshing the page.', 'error');
     };
-    
+
     cloudinaryScriptRef.current = script;
     document.body.appendChild(script);
   };
-  
+
   const initializeCloudinaryWhenReady = () => {
     setTimeout(() => {
       if (window.cloudinary) {
@@ -126,18 +126,18 @@ const DatastoreContent = () => {
     if (!window.cloudinary) {
       return;
     }
-    
+
     cloudinaryRef.current = window.cloudinary;
-    
+
     const cloudName = "dsbuzlxpw";
     const uploadPreset = "post_blog";
-    
+
     if (!cloudName || !uploadPreset) {
       setError('Cloudinary configuration is missing. Please check your environment variables.');
       showNotification('Cloudinary configuration error. File uploads may not work.', 'error');
       return;
     }
-    
+
     try {
       widgetRef.current = cloudinaryRef.current.createUploadWidget(
         {
@@ -152,7 +152,7 @@ const DatastoreContent = () => {
             showNotification('Failed to upload file: ' + error.message, 'error');
             return;
           }
-          
+
           if (result && result.event === 'success') {
             const fileUrl = result.info.secure_url;
             setNewItemData({
@@ -177,7 +177,7 @@ const DatastoreContent = () => {
       showNotification('Attempting to load Cloudinary script...', 'info');
       return;
     }
-    
+
     if (window.cloudinary) {
       cloudinaryRef.current = window.cloudinary;
       initCloudinaryWidget();
@@ -194,13 +194,13 @@ const DatastoreContent = () => {
       if (!token) {
         throw new Error('Authentication token not found');
       }
-  
-      const response = await axios.get('https://test.ailisher.com/api/datastore', {
+
+      const response = await axios.get('http://localhost:4000/api/datastore', {
         headers: {
           Authorization: `Bearer ${token}`,
         }
       });
-  
+
       setDatastoreItems(response.data.data);
       setLoading(false);
     } catch (err) {
@@ -212,16 +212,16 @@ const DatastoreContent = () => {
   const handleLocalFileSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     const previewUrl = URL.createObjectURL(file);
-    
+
     setNewItemData({
       ...newItemData,
       localFile: file,
       file: file,
       cloudinaryUrl: previewUrl
     });
-    
+
     showNotification(`File "${file.name}" selected. Click Save to upload to Cloudinary.`, 'info');
   };
 
@@ -237,7 +237,7 @@ const DatastoreContent = () => {
         uploadType = 'pdf';
       }
 
-      const presignedRes = await axios.post('https://test.ailisher.com/api/r2/presigned-upload', {
+      const presignedRes = await axios.post('http://localhost:4000/api/r2/presigned-upload', {
         folder: `datastore_${uploadType}s`,
         filename: file.name,
         contentType: file.type || 'application/octet-stream'
@@ -280,7 +280,7 @@ const DatastoreContent = () => {
     try {
       setIsUploading(true);
       const token = Cookies.get('usertoken');
-      
+
       if (!token) {
         throw new Error('Authentication token not found');
       }
@@ -294,26 +294,26 @@ const DatastoreContent = () => {
         const r2Key = await uploadToR2(newItemData.localFile);
         requestData.url = r2Key;
       } else {
-      switch (newItemType) {
-        case 'text':
+        switch (newItemType) {
+          case 'text':
             requestData.content = newItemData.content;
-          break;
-        case 'link':
-        case 'website':
-        case 'youtube':
+            break;
+          case 'link':
+          case 'website':
+          case 'youtube':
             requestData.url = newItemData.url;
-          break;
-        case 'image':
-        case 'video':
-        case 'pdf':
+            break;
+          case 'image':
+          case 'video':
+          case 'pdf':
             requestData.url = newItemData.cloudinaryUrl;
-          break;
-        default:
-          break;
+            break;
+          default:
+            break;
         }
       }
 
-      const response = await axios.post('https://test.ailisher.com/api/datastore', requestData, {
+      const response = await axios.post('http://localhost:4000/api/datastore', requestData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -329,7 +329,7 @@ const DatastoreContent = () => {
       setUploadProgress(0);
       setShowAddDialog(false);
       resetNewItemData();
-      
+
       showNotification('Item added successfully', 'success');
     } catch (err) {
       setIsUploading(false);
@@ -341,8 +341,8 @@ const DatastoreContent = () => {
   const handleDeleteItem = async (id) => {
     try {
       const token = Cookies.get('usertoken');
-      
-      await axios.delete(`https://test.ailisher.com/api/datastore/${id}`, {
+
+      await axios.delete(`http://localhost:4000/api/datastore/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -350,7 +350,7 @@ const DatastoreContent = () => {
 
       setDatastoreItems(datastoreItems.filter(item => item._id !== id));
       showNotification('Item deleted successfully', 'success');
-      
+
     } catch (err) {
       setError(err.message || 'Failed to delete datastore item');
       showNotification('Failed to delete item', 'error');
@@ -361,9 +361,9 @@ const DatastoreContent = () => {
     if (!cloudinaryScriptLoaded) {
       showNotification('Cloudinary is not loaded yet. Attempting to load...', 'info');
       loadCloudinaryScript();
-        return;
-      }
-      
+      return;
+    }
+
     if (widgetRef.current) {
       widgetRef.current.open();
     } else {
@@ -376,7 +376,7 @@ const DatastoreContent = () => {
     if (newItemData.cloudinaryUrl && newItemData.cloudinaryUrl.startsWith('blob:')) {
       URL.revokeObjectURL(newItemData.cloudinaryUrl);
     }
-    
+
     setNewItemData({
       title: '',
       content: '',
@@ -386,7 +386,7 @@ const DatastoreContent = () => {
       cloudinaryUrl: '',
     });
     setNewItemType('text');
-    
+
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -396,7 +396,7 @@ const DatastoreContent = () => {
     setNewItemType(type);
     resetNewItemData();
     setShowAddDialog(true);
-    
+
     if (!cloudinaryInitialized && (type === 'image' || type === 'video')) {
       if (window.cloudinary) {
         manualInitCloudinary();
@@ -415,18 +415,18 @@ const DatastoreContent = () => {
     if (filterType !== 'all' && item.type !== filterType) {
       return false;
     }
-    
+
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       return (
-        item.title.toLowerCase().includes(query) || 
+        item.title.toLowerCase().includes(query) ||
         (item.content && item.content.toLowerCase().includes(query))
       );
     }
-    
+
     return true;
   });
-  
+
   const renderItemIcon = (type) => {
     switch (type) {
       case 'text': return <FileText size={20} />;
@@ -495,23 +495,23 @@ const DatastoreContent = () => {
 
   const getBadgeClasses = (type) => {
     const base = "inline-flex items-center px-2 py-1 rounded-full text-xs font-medium";
-    
+
     switch (type) {
-      case 'text': 
+      case 'text':
         return `${base} bg-blue-100 text-blue-800`;
-      case 'image': 
+      case 'image':
         return `${base} bg-green-100 text-green-800`;
-      case 'video': 
+      case 'video':
         return `${base} bg-red-100 text-red-800`;
-      case 'youtube': 
+      case 'youtube':
         return `${base} bg-red-100 text-red-800`;
-      case 'link': 
+      case 'link':
         return `${base} bg-purple-100 text-purple-800`;
-      case 'website': 
+      case 'website':
         return `${base} bg-sky-100 text-sky-800`;
-      case 'pdf': 
+      case 'pdf':
         return `${base} bg-orange-100 text-orange-800`;
-      default: 
+      default:
         return `${base} bg-gray-100 text-gray-800`;
     }
   };
@@ -533,26 +533,26 @@ const DatastoreContent = () => {
       'bg-white border-gray-300 text-gray-900',
       'focus:ring-purple-500 focus:border-purple-500 transition-colors duration-300'
     );
-    
+
     return (
       <div className="space-y-4">
-          <div>
-            <label className={styles.label}>Title</label>
-            <input
-              type="text"
-              className={`${inputClasses} border`}
-              value={newItemData.title}
-              onChange={(e) => setNewItemData({...newItemData, title: e.target.value})}
-              placeholder="Enter a title"
-            />
-          </div>
+        <div>
+          <label className={styles.label}>Title</label>
+          <input
+            type="text"
+            className={`${inputClasses} border`}
+            value={newItemData.title}
+            onChange={(e) => setNewItemData({ ...newItemData, title: e.target.value })}
+            placeholder="Enter a title"
+          />
+        </div>
         {newItemType === 'text' && (
           <div>
             <label className={styles.label}>Content</label>
             <textarea
               className={`${inputClasses} border min-h-32`}
               value={newItemData.content}
-              onChange={(e) => setNewItemData({...newItemData, content: e.target.value})}
+              onChange={(e) => setNewItemData({ ...newItemData, content: e.target.value })}
               placeholder="Enter your text content"
               rows={6}
             />
@@ -565,7 +565,7 @@ const DatastoreContent = () => {
               type="url"
               className={`${inputClasses} border`}
               value={newItemData.url}
-              onChange={(e) => setNewItemData({...newItemData, url: e.target.value})}
+              onChange={(e) => setNewItemData({ ...newItemData, url: e.target.value })}
               placeholder={`Enter the ${newItemType === 'youtube' ? 'YouTube' : newItemType === 'website' ? 'website' : 'link'} URL`}
             />
           </div>
@@ -578,14 +578,14 @@ const DatastoreContent = () => {
                 <label className={`${styles.buttonSecondary} flex items-center justify-center cursor-pointer`}>
                   <Upload size={16} className="mr-2" />
                   Upload from your device
-              <input
-                ref={fileInputRef}
+                  <input
+                    ref={fileInputRef}
                     type="file"
-                className="hidden"
+                    className="hidden"
                     accept={
-                      newItemType === 'image' ? 'image/*' : 
-                      newItemType === 'video' ? 'video/*' : 
-                      'application/pdf'
+                      newItemType === 'image' ? 'image/*' :
+                        newItemType === 'video' ? 'video/*' :
+                          'application/pdf'
                     }
                     onChange={handleLocalFileSelect}
                   />
@@ -595,16 +595,15 @@ const DatastoreContent = () => {
                 <div className="p-4 rounded-lg flex items-center justify-between bg-gray-100">
                   <div className="flex items-center overflow-hidden">
                     {newItemType === 'image' && (
-                      <img 
-                        src={newItemData.cloudinaryUrl} 
-                        alt="Preview" 
+                      <img
+                        src={newItemData.cloudinaryUrl}
+                        alt="Preview"
                         className="h-10 w-10 rounded object-cover mr-3"
                       />
                     )}
                     {(newItemType === 'video' || newItemType === 'pdf') && (
-                      <div className={`h-10 w-10 rounded flex items-center justify-center mr-3 ${
-                        newItemType === 'video' ? 'bg-gray-700' : 'bg-orange-500'
-                      }`}>
+                      <div className={`h-10 w-10 rounded flex items-center justify-center mr-3 ${newItemType === 'video' ? 'bg-gray-700' : 'bg-orange-500'
+                        }`}>
                         {newItemType === 'video' ? (
                           <Video size={18} className="text-white" />
                         ) : (
@@ -616,19 +615,19 @@ const DatastoreContent = () => {
                       {newItemData.file ? newItemData.file.name : 'Uploaded file'}
                     </span>
                   </div>
-              <button
+                  <button
                     onClick={() => {
                       if (newItemData.cloudinaryUrl && newItemData.cloudinaryUrl.startsWith('blob:')) {
                         URL.revokeObjectURL(newItemData.cloudinaryUrl);
                       }
-                      setNewItemData({...newItemData, cloudinaryUrl: '', file: null, localFile: null});
+                      setNewItemData({ ...newItemData, cloudinaryUrl: '', file: null, localFile: null });
                     }}
                     className="text-red-500 hover:text-red-700"
                   >
                     <X size={18} />
-              </button>
-          </div>
-        )}
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -654,18 +653,18 @@ const DatastoreContent = () => {
         )}
         {item.type === 'image' && (
           <div className="mt-2 flex justify-center">
-            <img 
-              src={item.url} 
-              alt={item.title} 
+            <img
+              src={item.url}
+              alt={item.title}
               className="max-w-full rounded-lg object-contain mx-auto shadow-lg"
             />
           </div>
         )}
         {item.type === 'video' && (
           <div className="mt-2">
-            <video 
-              src={item.url} 
-              controls 
+            <video
+              src={item.url}
+              controls
               className="max-w-full rounded-lg mx-auto shadow-lg"
             >
               Your browser does not support the video tag.
@@ -683,9 +682,9 @@ const DatastoreContent = () => {
               ></iframe>
             </div>
             <div className="mt-4 flex justify-center">
-              <a 
-                href={item.url} 
-                target="_blank" 
+              <a
+                href={item.url}
+                target="_blank"
                 rel="noopener noreferrer"
                 className={styles.buttonPrimary}
               >
@@ -718,13 +717,13 @@ const DatastoreContent = () => {
           <div className="mt-2 p-4 rounded-lg border flex flex-col items-center space-y-3 bg-white border-gray-200">
             <Globe size={24} className={`${getItemIconColor(item.type)}`} />
             <p className={colors.textSecondary}>{item.url}</p>
-            <a 
-              href={item.url} 
-              target="_blank" 
+            <a
+              href={item.url}
+              target="_blank"
               rel="noopener noreferrer"
               className={`${styles.buttonPrimary} inline-flex items-center`}
             >
-              <ExternalLink size={16} className="mr-2" /> 
+              <ExternalLink size={16} className="mr-2" />
               Visit Link
             </a>
           </div>
@@ -738,18 +737,18 @@ const DatastoreContent = () => {
     const match = url ? url.match(regExp) : null;
     return (match && match[2].length === 11) ? match[2] : null;
   };
-  
+
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
     });
   };
-  
-   // Updated renderGridView with fixed card dimensions
-   const renderGridView = () => {
+
+  // Updated renderGridView with fixed card dimensions
+  const renderGridView = () => {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredItems.map((item) => (
@@ -761,7 +760,7 @@ const DatastoreContent = () => {
             whileHover={{ scale: 1.02 }}
             className="h-full"
           >
-            <Card 
+            <Card
               className={`h-full flex flex-col overflow-hidden transition-all duration-300 border 
                 border-gray-200 hover:border-gray-300
                 ${getItemBgColor(item.type)} ${getItemGlowColor(item.type)} hover:shadow-lg`}
@@ -769,9 +768,8 @@ const DatastoreContent = () => {
               <div className="flex flex-col h-full">
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start">
-                    <div className={`text-xs font-medium uppercase tracking-wider ${
-                      getItemIconColor(item.type)
-                    } flex items-center p-1 rounded-full bg-white bg-opacity-60`}>
+                    <div className={`text-xs font-medium uppercase tracking-wider ${getItemIconColor(item.type)
+                      } flex items-center p-1 rounded-full bg-white bg-opacity-60`}>
                       {renderItemIcon(item.type)}
                       <span className="ml-1">{item.type}</span>
                     </div>
@@ -796,30 +794,30 @@ const DatastoreContent = () => {
                     {item.title}
                   </CardTitle>
                 </CardHeader>
-                
+
                 <CardContent className="pt-1 flex-1 text-sm">
                   {item.type === 'text' && (
                     <p className={`${colors.textSecondary} line-clamp-2 text-xs bg-gray-50 p-2 rounded-lg`}>
                       {item.content}
                     </p>
                   )}
-                  
+
                   {item.type === 'image' && (
                     <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden shadow-inner">
-                      <img 
-                        src={item.url} 
-                        alt={item.title} 
+                      <img
+                        src={item.url}
+                        alt={item.title}
                         className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
                       />
                     </div>
                   )}
-                  
+
                   {item.type === 'video' && (
                     <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden flex items-center justify-center relative shadow-inner">
                       <Video size={30} className="text-gray-300 opacity-50" />
                       {item.url && (
                         <div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-center justify-center bg-black bg-opacity-60">
-                          <button 
+                          <button
                             onClick={() => setSelectedItem(item)}
                             className="bg-white text-black px-3 py-1 rounded-full font-medium transform transition-transform hover:scale-105 text-xs"
                           >
@@ -829,16 +827,16 @@ const DatastoreContent = () => {
                       )}
                     </div>
                   )}
-                  
+
                   {item.type === 'pdf' && (
                     <div className="aspect-video flex items-center justify-center p-3 bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg shadow-inner">
                       <File size={30} className="text-orange-500 drop-shadow-md" />
                     </div>
                   )}
-                  
+
                   {item.type === 'youtube' && (
                     <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden relative shadow-inner">
-                      <img 
+                      <img
                         src={`https://img.youtube.com/vi/${getYouTubeId(item.url)}/0.jpg`}
                         alt={item.title}
                         className="w-full h-full object-cover opacity-80 transition-transform duration-300 hover:scale-105"
@@ -850,13 +848,13 @@ const DatastoreContent = () => {
                       </div>
                     </div>
                   )}
-                  
+
                   {item.type === 'website' && (
                     <div className="aspect-video bg-gradient-to-br from-blue-50 to-sky-100 rounded-lg overflow-hidden flex items-center justify-center shadow-inner">
                       <Globe size={28} className="text-blue-500 drop-shadow-md" />
                     </div>
                   )}
-                  
+
                   {item.type === 'link' && (
                     <div className="aspect-video flex items-center justify-center p-3 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg shadow-inner">
                       <div className="text-center">
@@ -866,7 +864,7 @@ const DatastoreContent = () => {
                     </div>
                   )}
                 </CardContent>
-                
+
                 <CardFooter className="flex justify-between gap-2 pt-4 border-t border-gray-200">
                   <div className="flex items-center text-xs text-gray-500">
                     <Calendar size={12} className="mr-1" />
@@ -943,9 +941,9 @@ const DatastoreContent = () => {
                       <span className={colors.textSecondary}>{item.content}</span>
                     )}
                     {item.type === 'link' && (
-                      <a 
-                        href={item.url} 
-                        target="_blank" 
+                      <a
+                        href={item.url}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className={`${colors.primary} hover:underline`}
                       >
@@ -959,9 +957,9 @@ const DatastoreContent = () => {
                       <span className={colors.textSecondary}>YouTube video</span>
                     )}
                     {item.type === 'website' && (
-                      <a 
-                        href={item.url} 
-                        target="_blank" 
+                      <a
+                        href={item.url}
+                        target="_blank"
                         rel="noopener noreferrer"
                         className={`${colors.primary} hover:underline`}
                       >
@@ -1008,9 +1006,8 @@ const DatastoreContent = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          className={`fixed top-4 right-4 p-4 rounded-lg ${
-            getNotificationClasses(notification.type)
-          } shadow-lg z-50 flex items-center`}
+          className={`fixed top-4 right-4 p-4 rounded-lg ${getNotificationClasses(notification.type)
+            } shadow-lg z-50 flex items-center`}
         >
           {notification.type === 'success' ? (
             <Check size={20} className="mr-2" />
@@ -1020,7 +1017,7 @@ const DatastoreContent = () => {
           {notification.message}
         </motion.div>
       )}
-      
+
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-6">
         <div className="flex items-center">
           <h1 className={`text-2xl font-bold ${colors.text} mb-2`}>Datastore</h1>
@@ -1029,22 +1026,20 @@ const DatastoreContent = () => {
           <div className="flex space-x-2">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-lg ${
-                viewMode === 'grid' 
-                  ? 'bg-purple-100 text-purple-800' 
+              className={`p-2 rounded-lg ${viewMode === 'grid'
+                  ? 'bg-purple-100 text-purple-800'
                   : 'bg-gray-100'
-              }`}
+                }`}
               title="Grid View"
             >
               <LayoutGrid size={18} />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-2 rounded-lg ${
-                viewMode === 'list' 
-                  ? 'bg-purple-100 text-purple-800' 
+              className={`p-2 rounded-lg ${viewMode === 'list'
+                  ? 'bg-purple-100 text-purple-800'
                   : 'bg-gray-100'
-              }`}
+                }`}
               title="List View"
             >
               <List size={18} />
@@ -1058,7 +1053,7 @@ const DatastoreContent = () => {
           </button>
         </div>
       </div>
-      
+
       <div className="flex flex-col md:flex-row space-y-3 md:space-y-0 md:space-x-4 mb-6">
         <div className="flex-1">
           <div className="relative">
@@ -1090,7 +1085,7 @@ const DatastoreContent = () => {
           />
         </div>
       </div>
-      
+
       {loading && (
         <div className="col-span-full flex justify-center py-12">
           <div className="flex flex-col items-center">
@@ -1099,7 +1094,7 @@ const DatastoreContent = () => {
           </div>
         </div>
       )}
-      
+
       {error && !loading && (
         <div className={`col-span-full p-6 rounded-lg ${styles.error} mb-6`}>
           <div className="flex items-center">
@@ -1108,7 +1103,7 @@ const DatastoreContent = () => {
           </div>
         </div>
       )}
-      
+
       {!loading && !error && filteredItems.length === 0 && (
         <div className="col-span-full py-12 text-center">
           <div className={`text-xl ${colors.textSecondary} mb-6`}>
@@ -1122,11 +1117,11 @@ const DatastoreContent = () => {
           </button>
         </div>
       )}
-      
+
       {!loading && !error && filteredItems.length > 0 && (
         viewMode === 'grid' ? renderGridView() : renderListView()
       )}
-      
+
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="max-w-2xl w-full">
           <DialogHeader>
@@ -1137,7 +1132,7 @@ const DatastoreContent = () => {
               Add {newItemType.charAt(0).toUpperCase() + newItemType.slice(1)} Content
             </DialogTitle>
           </DialogHeader>
-          
+
           <Tabs defaultValue={newItemType} value={newItemType} className="mt-4">
             <TabsList className="w-full flex justify-center space-x-2 mb-6">
               {[
@@ -1149,25 +1144,24 @@ const DatastoreContent = () => {
                 { id: 'website', icon: Globe, label: 'Website', color: 'sky' },
                 { id: 'pdf', icon: File, label: 'PDF', color: 'orange' }
               ].map(tab => (
-                <TabsTrigger 
+                <TabsTrigger
                   key={tab.id}
-                  value={tab.id} 
+                  value={tab.id}
                   onClick={() => setNewItemType(tab.id)}
-                  className={`flex flex-col items-center p-2 transition-colors duration-200 ${
-                    newItemType === tab.id 
+                  className={`flex flex-col items-center p-2 transition-colors duration-200 ${newItemType === tab.id
                       ? `${getItemIconColor(tab.id)} ${getItemBgColor(tab.id)} border-b-2 border-${tab.color}-500`
                       : `${colors.textSecondary} hover:bg-gray-100`
-                  }`}
-                  style={{ 
-                    backgroundColor: 'transparent !important', 
+                    }`}
+                  style={{
+                    backgroundColor: 'transparent !important',
                     color: 'inherit',
                     '--tw-bg-opacity': newItemType === tab.id ? undefined : '0',
                     '--override-bg': newItemType === tab.id ? undefined : 'transparent'
                   }}
                 >
-                  <tab.icon 
-                    size={20} 
-                    className={`mb-1 ${newItemType === tab.id ? getItemIconColor(tab.id) : colors.textSecondary}`} 
+                  <tab.icon
+                    size={20}
+                    className={`mb-1 ${newItemType === tab.id ? getItemIconColor(tab.id) : colors.textSecondary}`}
                   />
                   <span className={`text-xs ${newItemType === tab.id ? getItemIconColor(tab.id) : colors.textSecondary}`}>
                     {tab.label}
@@ -1185,7 +1179,7 @@ const DatastoreContent = () => {
               <TabsContent value="pdf">{renderFormFields()}</TabsContent>
             </div>
           </Tabs>
-          
+
           {isUploading && (
             <div className="mt-4">
               <div className="flex justify-between mb-2">
@@ -1195,7 +1189,7 @@ const DatastoreContent = () => {
               <Progress value={uploadProgress} className="h-2" />
             </div>
           )}
-          
+
           <DialogFooter className="mt-6">
             <button
               type="button"
@@ -1205,12 +1199,12 @@ const DatastoreContent = () => {
             >
               <X size={18} className="mr-2" /> Cancel
             </button>
-            
+
             <button
               type="button"
               onClick={handleAddItem}
               className={`${styles.buttonPrimary} flex items-center`}
-              disabled={isUploading || !newItemData.title || 
+              disabled={isUploading || !newItemData.title ||
                 (newItemType === 'text' && !newItemData.content) ||
                 ((newItemType === 'link' || newItemType === 'website' || newItemType === 'youtube') && !newItemData.url) ||
                 ((newItemType === 'image' || newItemType === 'video') && !newItemData.file)}
@@ -1220,7 +1214,7 @@ const DatastoreContent = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       <Dialog open={!!selectedItem} onOpenChange={(open) => !open && setSelectedItem(null)}>
         <DialogContent className="max-w-4xl">
           <DialogHeader>
@@ -1235,9 +1229,9 @@ const DatastoreContent = () => {
               )}
             </DialogTitle>
           </DialogHeader>
-          
+
           {selectedItem && <ContentPreview item={selectedItem} />}
-          
+
           <DialogFooter>
             <div className="flex w-full justify-between">
               <button
@@ -1246,9 +1240,9 @@ const DatastoreContent = () => {
               >
                 Close
               </button>
-              
+
               {selectedItem?.type === 'link' || selectedItem?.type === 'website' || selectedItem?.type === 'youtube' ? (
-                <a 
+                <a
                   href={selectedItem.url}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -1257,7 +1251,7 @@ const DatastoreContent = () => {
                   <ExternalLink size={18} className="mr-2" /> Open in New Tab
                 </a>
               ) : null}
-              
+
               <button
                 onClick={() => {
                   handleDeleteItem(selectedItem?._id);

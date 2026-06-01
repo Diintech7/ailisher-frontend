@@ -31,7 +31,7 @@ const UniversalPrintModal = ({ isOpen, onClose, topicId }) => {
         try {
           const token = Cookies.get('usertoken');
           if (!token) return;
-          const res = await fetch(`https://test.ailisher.com/api/aiswb/topic/${topicId}/sets`, {
+          const res = await fetch(`http://localhost:4000/api/aiswb/topic/${topicId}/sets`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           const data = await res.json();
@@ -41,12 +41,12 @@ const UniversalPrintModal = ({ isOpen, onClose, topicId }) => {
               const questionIds = set.questions || [];
               const questions = await Promise.all(questionIds.map(async (qid) => {
                 try {
-                  const qres = await fetch(`https://test.ailisher.com/api/aiswb/questions/${qid}`, {
+                  const qres = await fetch(`http://localhost:4000/api/aiswb/questions/${qid}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                   });
                   const qdata = await qres.json();
                   if (qdata.success && qdata.data) return { ...qdata.data, id: qid };
-                } catch {}
+                } catch { }
                 return null;
               }));
               return { ...set, questions: questions.filter(Boolean) };
@@ -229,7 +229,7 @@ const UniversalPrintModal = ({ isOpen, onClose, topicId }) => {
               <div class="middle-column">
                 <div class="topic-section">
                   <div class="topic-value">
-                    ${isBlankPage ? '' : (isAnswerPage ? `<div class="answer-page-indicator">Answer Page ${answerPageNumber} of ${totalAnswerPages}</div>` : `<span class="question-preview"><pre style="margin: 0; font-family: inherit;"><span style="color: #00b0f0; margin-right: 5px;">Q${questionCounter}:</span>${question.question}</pre></span>`) }
+                    ${isBlankPage ? '' : (isAnswerPage ? `<div class="answer-page-indicator">Answer Page ${answerPageNumber} of ${totalAnswerPages}</div>` : `<span class="question-preview"><pre style="margin: 0; font-family: inherit;"><span style="color: #00b0f0; margin-right: 5px;">Q${questionCounter}:</span>${question.question}</pre></span>`)}
                   </div>
                 </div>
               </div>
@@ -299,7 +299,7 @@ const UniversalPrintModal = ({ isOpen, onClose, topicId }) => {
           const token = Cookies.get('usertoken');
           if (!token) return null;
           const queryParams = new URLSearchParams({ format: 'json', size: 300, includeAnswers: true }).toString();
-          const response = await fetch(`https://test.ailisher.com/api/aiswb/qr/questions/${questionId}/qrcode?${queryParams}`, {
+          const response = await fetch(`http://localhost:4000/api/aiswb/qr/questions/${questionId}/qrcode?${queryParams}`, {
             method: 'GET',
             headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json', 'Content-Type': 'application/json' }
           });
@@ -363,7 +363,7 @@ const UniversalPrintModal = ({ isOpen, onClose, topicId }) => {
               answerPageNumber: 1,
               totalAnswerPages: 1
             }));
-          currentPageNumber++;
+            currentPageNumber++;
           }
           questionCounter++;
           if (includeBlankPages) {
@@ -451,7 +451,7 @@ const UniversalPrintModal = ({ isOpen, onClose, topicId }) => {
       let pageNumber = currentPageNumber;
       let objQuestionCounter = 1;
       pages.forEach(pageQuestions => {
-          printWindow.document.write(`
+        printWindow.document.write(`
 <!DOCTYPE html>
 <html>
 <head>
@@ -632,98 +632,97 @@ const UniversalPrintModal = ({ isOpen, onClose, topicId }) => {
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-600"></div>
             </div>
           ) : (
-          <div className="space-y-4">
-            {subjectiveSets.map(set => (
-              <div key={set.id} className="border border-gray-200 rounded-lg">
-                <button
-                  onClick={() => setSubjectiveExpanded(subjectiveExpanded === set.id ? null : set.id)}
-                  className="w-full p-4 flex justify-between items-center hover:bg-gray-50 transition-colors"
-                >
-                  <h4 className="text-md font-semibold text-gray-800">{set.name}</h4>
-                  <span className="text-gray-500">{subjectiveExpanded === set.id ? '▼' : '▶'}</span>
-                </button>
-                {subjectiveExpanded === set.id && (
-                  <div className="p-4 border-t border-gray-200">
-                    {set.questions.length > 0 ? (
-                      <>
-                        <div className="flex justify-end mb-2 space-x-2">
-                          <button
-                            className="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 text-sm"
-                            onClick={() => selectAllSubjective(set.id, set.questions)}
-                            disabled={set.questions.length === 0}
-                          >
-                            Select All
-                          </button>
-                          <button
-                            className="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-sm"
-                              onClick={() => deselectAllSubjective(set.id, set.questions)}
-                            disabled={set.questions.length === 0}
-                          >
-                            Deselect All
-                          </button>
-                        </div>
-                        <div className="space-y-3">
-                          {set.questions.map((question, index) => (
-                            <div
-                              key={`${set.id}-${question.id}-${index}`}
-                              className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+            <div className="space-y-4">
+              {subjectiveSets.map(set => (
+                <div key={set.id} className="border border-gray-200 rounded-lg">
+                  <button
+                    onClick={() => setSubjectiveExpanded(subjectiveExpanded === set.id ? null : set.id)}
+                    className="w-full p-4 flex justify-between items-center hover:bg-gray-50 transition-colors"
+                  >
+                    <h4 className="text-md font-semibold text-gray-800">{set.name}</h4>
+                    <span className="text-gray-500">{subjectiveExpanded === set.id ? '▼' : '▶'}</span>
+                  </button>
+                  {subjectiveExpanded === set.id && (
+                    <div className="p-4 border-t border-gray-200">
+                      {set.questions.length > 0 ? (
+                        <>
+                          <div className="flex justify-end mb-2 space-x-2">
+                            <button
+                              className="px-3 py-1 bg-indigo-500 text-white rounded hover:bg-indigo-600 text-sm"
+                              onClick={() => selectAllSubjective(set.id, set.questions)}
+                              disabled={set.questions.length === 0}
                             >
-                              <button
-                                onClick={() => toggleSubjective(set.id, question.id)}
-                                className={`mt-1 p-1 rounded-full transition-colors ${
-                                  subjectiveSelected[set.id]?.includes(question.id)
-                                    ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                                    : 'bg-white border border-gray-300 text-gray-400 hover:bg-gray-50'
-                                }`}
+                              Select All
+                            </button>
+                            <button
+                              className="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-sm"
+                              onClick={() => deselectAllSubjective(set.id, set.questions)}
+                              disabled={set.questions.length === 0}
+                            >
+                              Deselect All
+                            </button>
+                          </div>
+                          <div className="space-y-3">
+                            {set.questions.map((question, index) => (
+                              <div
+                                key={`${set.id}-${question.id}-${index}`}
+                                className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                               >
-                                <Check size={16} />
-                              </button>
-                              <div className="flex-1">
-                                <div className="text-gray-800">
-                                  <pre className="whitespace-pre-wrap font-sans">{question.question}</pre>
-                                </div>
-                                <div className="mt-2 flex flex-wrap gap-2">
-                                  <span className="text-sm text-gray-600">
-                                    Marks: {question.metadata?.maximumMarks || 0}
-                                  </span>
-                                  <span className="text-sm text-gray-600">
-                                    Keywords: {Array.isArray(question.metadata?.keywords) ? question.metadata.keywords.join(', ') : question.metadata?.keywords || 'N/A'}
-                                  </span>
-                                </div>
-                                {subjectiveSelected[set.id]?.includes(question.id) && includeBlankPages && (
-                                  <div className="mt-2 flex items-center space-x-2">
-                                    <span className="text-sm text-gray-600">Blank pages:</span>
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      max="10"
-                                      value={questionBlankPages[question.id] ?? blankPagesCount}
-                                      onChange={(e) => {
-                                        const value = Math.min(10, Math.max(0, parseInt(e.target.value) || 0));
-                                        setQuestionBlankPages(prev => ({
-                                          ...prev,
-                                          [question.id]: value
-                                        }));
-                                      }}
-                                      className="form-input w-20 px-2 py-1 border rounded text-sm"
-                                    />
+                                <button
+                                  onClick={() => toggleSubjective(set.id, question.id)}
+                                  className={`mt-1 p-1 rounded-full transition-colors ${subjectiveSelected[set.id]?.includes(question.id)
+                                      ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                                      : 'bg-white border border-gray-300 text-gray-400 hover:bg-gray-50'
+                                    }`}
+                                >
+                                  <Check size={16} />
+                                </button>
+                                <div className="flex-1">
+                                  <div className="text-gray-800">
+                                    <pre className="whitespace-pre-wrap font-sans">{question.question}</pre>
                                   </div>
-                                )}
+                                  <div className="mt-2 flex flex-wrap gap-2">
+                                    <span className="text-sm text-gray-600">
+                                      Marks: {question.metadata?.maximumMarks || 0}
+                                    </span>
+                                    <span className="text-sm text-gray-600">
+                                      Keywords: {Array.isArray(question.metadata?.keywords) ? question.metadata.keywords.join(', ') : question.metadata?.keywords || 'N/A'}
+                                    </span>
+                                  </div>
+                                  {subjectiveSelected[set.id]?.includes(question.id) && includeBlankPages && (
+                                    <div className="mt-2 flex items-center space-x-2">
+                                      <span className="text-sm text-gray-600">Blank pages:</span>
+                                      <input
+                                        type="number"
+                                        min="0"
+                                        max="10"
+                                        value={questionBlankPages[question.id] ?? blankPagesCount}
+                                        onChange={(e) => {
+                                          const value = Math.min(10, Math.max(0, parseInt(e.target.value) || 0));
+                                          setQuestionBlankPages(prev => ({
+                                            ...prev,
+                                            [question.id]: value
+                                          }));
+                                        }}
+                                        className="form-input w-20 px-2 py-1 border rounded text-sm"
+                                      />
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-center py-4">
+                          <p className="text-gray-500">No questions available in this set</p>
                         </div>
-                      </>
-                    ) : (
-                      <div className="text-center py-4">
-                        <p className="text-gray-500">No questions available in this set</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </div>
         {/* Objective Section */}
@@ -734,78 +733,77 @@ const UniversalPrintModal = ({ isOpen, onClose, topicId }) => {
               <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-green-600"></div>
             </div>
           ) : (
-          <div className="space-y-4">
-            {objectiveSets.map(set => (
-              <div key={set.id} className="border border-gray-200 rounded-lg">
-                <button
-                  onClick={() => setObjectiveExpanded(objectiveExpanded === set.id ? null : set.id)}
-                  className="w-full p-4 flex justify-between items-center hover:bg-gray-50 transition-colors"
-                >
-                  <h4 className="text-md font-semibold text-gray-800">{set.name}</h4>
-                  <span className="text-gray-500">{objectiveExpanded === set.id ? '▼' : '▶'}</span>
-                </button>
-                {objectiveExpanded === set.id && (
-                  <div className="p-4 border-t border-gray-200">
-                    {set.questions.length > 0 ? (
-                      <>
-                        <div className="flex justify-end mb-2 space-x-2">
-                          <button
-                            className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
-                            onClick={() => selectAllObjective(set.id, set.questions)}
-                            disabled={set.questions.length === 0}
-                          >
-                            Select All
-                          </button>
-                          <button
-                            className="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-sm"
-                              onClick={() => deselectAllObjective(set.id, set.questions)}
-                            disabled={set.questions.length === 0}
-                          >
-                            Deselect All
-                          </button>
-                        </div>
-                        <div className="space-y-3">
-                          {set.questions.map((question, index) => (
-                            <div
-                              key={`${set.id}-${question.id}-${index}`}
-                              className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+            <div className="space-y-4">
+              {objectiveSets.map(set => (
+                <div key={set.id} className="border border-gray-200 rounded-lg">
+                  <button
+                    onClick={() => setObjectiveExpanded(objectiveExpanded === set.id ? null : set.id)}
+                    className="w-full p-4 flex justify-between items-center hover:bg-gray-50 transition-colors"
+                  >
+                    <h4 className="text-md font-semibold text-gray-800">{set.name}</h4>
+                    <span className="text-gray-500">{objectiveExpanded === set.id ? '▼' : '▶'}</span>
+                  </button>
+                  {objectiveExpanded === set.id && (
+                    <div className="p-4 border-t border-gray-200">
+                      {set.questions.length > 0 ? (
+                        <>
+                          <div className="flex justify-end mb-2 space-x-2">
+                            <button
+                              className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+                              onClick={() => selectAllObjective(set.id, set.questions)}
+                              disabled={set.questions.length === 0}
                             >
-                              <button
-                                onClick={() => toggleObjective(set.id, question.id)}
-                                className={`mt-1 p-1 rounded-full transition-colors ${
-                                  objectiveSelected[set.id]?.includes(question.id)
-                                    ? 'bg-green-600 text-white hover:bg-green-700'
-                                    : 'bg-white border border-gray-300 text-gray-400 hover:bg-gray-50'
-                                }`}
+                              Select All
+                            </button>
+                            <button
+                              className="px-3 py-1 bg-gray-300 text-gray-700 rounded hover:bg-gray-400 text-sm"
+                              onClick={() => deselectAllObjective(set.id, set.questions)}
+                              disabled={set.questions.length === 0}
+                            >
+                              Deselect All
+                            </button>
+                          </div>
+                          <div className="space-y-3">
+                            {set.questions.map((question, index) => (
+                              <div
+                                key={`${set.id}-${question.id}-${index}`}
+                                className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                               >
-                                <Check size={16} />
-                              </button>
-                              <div className="flex-1">
-                                <div className="text-gray-800">
-                                  <pre className="whitespace-pre-wrap font-sans">{question.question}</pre>
-                                </div>
-                                <div className="mt-2 flex flex-wrap gap-2">
-                                  <span className="text-sm text-gray-600">
-                                    Marks: {question.maxMarks || 0}
-                                  </span>
-                                  <span className="text-sm text-gray-600">
-                                    Tags: {question.tags || 'N/A'}
-                                  </span>
+                                <button
+                                  onClick={() => toggleObjective(set.id, question.id)}
+                                  className={`mt-1 p-1 rounded-full transition-colors ${objectiveSelected[set.id]?.includes(question.id)
+                                      ? 'bg-green-600 text-white hover:bg-green-700'
+                                      : 'bg-white border border-gray-300 text-gray-400 hover:bg-gray-50'
+                                    }`}
+                                >
+                                  <Check size={16} />
+                                </button>
+                                <div className="flex-1">
+                                  <div className="text-gray-800">
+                                    <pre className="whitespace-pre-wrap font-sans">{question.question}</pre>
+                                  </div>
+                                  <div className="mt-2 flex flex-wrap gap-2">
+                                    <span className="text-sm text-gray-600">
+                                      Marks: {question.maxMarks || 0}
+                                    </span>
+                                    <span className="text-sm text-gray-600">
+                                      Tags: {question.tags || 'N/A'}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-center py-4">
+                          <p className="text-gray-500">No questions available in this set</p>
                         </div>
-                      </>
-                    ) : (
-                      <div className="text-center py-4">
-                        <p className="text-gray-500">No questions available in this set</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>

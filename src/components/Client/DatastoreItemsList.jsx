@@ -6,9 +6,9 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const DatastoreItemCard = ({ item }) => {
-    
+
   const getIcon = () => {
-    switch(item.type) {
+    switch (item.type) {
       case 'pdf':
         return <File className="text-red-500" size={20} />;
       case 'image':
@@ -32,9 +32,9 @@ const DatastoreItemCard = ({ item }) => {
           <h3 className="font-medium text-gray-800">{item.title}</h3>
           <p className="text-sm text-gray-600 mt-1">{item.description || 'No description'}</p>
           <div className="mt-2">
-            <a 
-              href={item.url} 
-              target="_blank" 
+            <a
+              href={item.url}
+              target="_blank"
               rel="noopener noreferrer"
               className="text-sm text-indigo-600 hover:text-indigo-800"
             >
@@ -66,14 +66,14 @@ const DatastoreItemsList = () => {
 
       let endpoint = '';
       if (type === 'book') {
-        endpoint = `https://test.ailisher.com/api/datastores/book/${id}/items`;
+        endpoint = `http://localhost:4000/api/datastores/book/${id}/items`;
       } else if (type === 'chapter') {
-        endpoint = `https://test.ailisher.com/api/datastores/chapter/${id}/items`;
+        endpoint = `http://localhost:4000/api/datastores/chapter/${id}/items`;
       } else if (type === 'topic') {
-        endpoint = `https://test.ailisher.com/api/datastores/topic/${id}/items`;
+        endpoint = `http://localhost:4000/api/datastores/topic/${id}/items`;
       } else {
-        endpoint = `https://test.ailisher.com/api/datastores/book/${id}/items`;
-       
+        endpoint = `http://localhost:4000/api/datastores/book/${id}/items`;
+
       }
 
       const response = await fetch(endpoint, {
@@ -83,7 +83,7 @@ const DatastoreItemsList = () => {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         setItems(data.items);
       } else {
@@ -130,7 +130,7 @@ const DatastoreItemsList = () => {
           <div>
             <h3 className="font-medium text-red-800">Error</h3>
             <p className="text-red-700">{error}</p>
-            <button 
+            <button
               onClick={handleBackClick}
               className="mt-3 text-red-600 hover:text-red-800 flex items-center"
             >
@@ -146,9 +146,9 @@ const DatastoreItemsList = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <ToastContainer position="top-right" autoClose={3000} />
-      
+
       <div className="flex items-center justify-between mb-6">
-        <button 
+        <button
           onClick={handleBackClick}
           className="flex items-center text-indigo-600 hover:text-indigo-800 transition-colors"
         >
@@ -165,8 +165,8 @@ const DatastoreItemsList = () => {
       </div>
 
       <h1 className="text-2xl font-bold text-gray-800 mb-6">
-        {type === 'book' && 'Book'} 
-        {type === 'chapter' && 'Chapter'} 
+        {type === 'book' && 'Book'}
+        {type === 'chapter' && 'Chapter'}
         {type === 'topic' && 'Topic'} Datastore Items
       </h1>
 
@@ -175,7 +175,7 @@ const DatastoreItemsList = () => {
           <Database size={64} className="mx-auto text-gray-400 mb-4" />
           <h3 className="text-xl font-medium text-gray-800 mb-2">No items found</h3>
           <p className="text-gray-600 mb-6">Add items to this {type} datastore to see them here</p>
-          <button 
+          <button
             onClick={() => navigate('/datastores')}
             className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
           >

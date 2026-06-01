@@ -178,7 +178,7 @@ function CreateQuestionBankModal({ isOpen, onClose, onCreate, categoryMappings, 
       };
       if (coverImageKey) Data.coverImageKey = coverImageKey;
       // Send to backend
-      const response = await fetch("https://test.ailisher.com/api/questionbank", {
+      const response = await fetch("http://localhost:4000/api/questionbank", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -683,7 +683,7 @@ const QuestionBankCard = ({ bank, onClick, onEdit, onDelete }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
   return (
-    <div 
+    <div
       onClick={onClick}
       className="p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full border border-gray-100 bg-white"
     >
@@ -713,9 +713,9 @@ const QuestionBankCard = ({ bank, onClick, onEdit, onDelete }) => {
       </div>
       <div className="h-48 bg-gradient-to-br from-blue-50 to-indigo-100 mb-4 rounded-lg flex items-center justify-center overflow-hidden">
         {bank.coverImageUrl ? (
-          <img 
-            src={bank.coverImageUrl} 
-            alt={bank.title} 
+          <img
+            src={bank.coverImageUrl}
+            alt={bank.title}
             className="h-full w-full object-fill rounded-lg"
             onError={(e) => { e.target.onerror = null; e.target.src = ''; }}
           />
@@ -726,7 +726,7 @@ const QuestionBankCard = ({ bank, onClick, onEdit, onDelete }) => {
       <p className="text-gray-600 text-sm mb-2 flex-grow">{bank.description || 'No description available'}</p>
       <div className="flex items-center justify-between">
         <div className="flex flex-wrap gap-2 text-xs text-gray-600">
-          
+
           {bank.type && (
             <span className="px-2 py-0.5 bg-gray-100 rounded">{bank.type}</span>
           )}

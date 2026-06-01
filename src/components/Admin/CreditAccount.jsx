@@ -6,7 +6,7 @@ import Cookies from "js-cookie";
 const CreditAccount = () => {
   const [loading, setLoading] = useState(true);
   const [accounts, setAccounts] = useState([]);
-  
+
   // Search and filter states
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -20,7 +20,7 @@ const CreditAccount = () => {
     setLoading(true);
     try {
       const response = await axios.get(
-        "https://test.ailisher.com/api/admin/credit-account",
+        "http://localhost:4000/api/admin/credit-account",
         {
           headers: {
             Authorization: `Bearer ${Cookies.get("admintoken")}`,
@@ -34,9 +34,9 @@ const CreditAccount = () => {
     setLoading(false);
   };
 
-  useEffect(()=>{
+  useEffect(() => {
     fetchCreditAccount()
-  },[])
+  }, [])
   // Filter and search function
   useEffect(() => {
     let filtered = accounts;
@@ -44,7 +44,7 @@ const CreditAccount = () => {
     // Apply search filter
     if (searchTerm) {
       const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(account => 
+      filtered = filtered.filter(account =>
         account.userId?.name?.toLowerCase().includes(searchLower) ||
         account.mobile?.toLowerCase().includes(searchLower) ||
         account.client?.businessName?.toLowerCase().includes(searchLower) ||
@@ -60,7 +60,7 @@ const CreditAccount = () => {
     // Apply sorting
     filtered.sort((a, b) => {
       let aValue, bValue;
-      
+
       switch (sortBy) {
         case 'name':
           aValue = a.userId?.name || '';
@@ -97,7 +97,7 @@ const CreditAccount = () => {
     // Navigate to detail page
     navigate(`/admin/credit-account/${account._id}`);
   };
- 
+
 
   return (
     <div className="w-full mx-auto p-2 sm:p-4 md:p-6">
@@ -240,8 +240,8 @@ const CreditAccount = () => {
                             account.status === "active"
                               ? "text-green-600 font-semibold"
                               : account.status === "suspended"
-                              ? "text-yellow-600 font-semibold"
-                              : "text-red-600 font-semibold"
+                                ? "text-yellow-600 font-semibold"
+                                : "text-red-600 font-semibold"
                           }
                         >
                           {account.status}

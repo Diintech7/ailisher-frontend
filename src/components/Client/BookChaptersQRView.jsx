@@ -14,19 +14,19 @@ const BookChaptersQRView = () => {
       setLoading(true);
       try {
         // Fetch book details
-        const bookResponse = await fetch(`https://test.ailisher.com/api/books/${bookId}`);
+        const bookResponse = await fetch(`http://localhost:4000/api/books/${bookId}`);
         const bookData = await bookResponse.json();
-        
+
         // Fetch chapters
-        const chaptersResponse = await fetch(`https://test.ailisher.com/api/books/${bookId}/chapters`);
+        const chaptersResponse = await fetch(`http://localhost:4000/api/books/${bookId}/chapters`);
         const chaptersData = await chaptersResponse.json();
-        
+
         if (bookData.success) {
           setBook(bookData.book);
         } else {
           setError(bookData.message || 'Failed to fetch book details');
         }
-        
+
         if (chaptersData.success) {
           setChapters(chaptersData.chapters || []);
         } else {
@@ -46,14 +46,14 @@ const BookChaptersQRView = () => {
   // Function to get complete image URL
   const getCompleteImageUrl = (imageUrl) => {
     if (!imageUrl) return null;
-    
+
     // If the imageUrl is already an absolute URL (starts with http or https)
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl;
     }
-    
+
     // Otherwise, assume it's a relative path and prepend the backend URL
-    return `https://test.ailisher.com/${imageUrl}`;
+    return `http://localhost:4000/${imageUrl}`;
   };
 
   if (loading) {
@@ -85,9 +85,9 @@ const BookChaptersQRView = () => {
           <div className="md:w-1/4 lg:w-1/5">
             <div className="bg-gradient-to-br from-indigo-50 to-blue-100 rounded-lg h-48 flex items-center justify-center overflow-hidden">
               {book?.coverImage ? (
-                <img 
-                  src={getCompleteImageUrl(book.coverImage)} 
-                  alt={book.title} 
+                <img
+                  src={getCompleteImageUrl(book.coverImage)}
+                  alt={book.title}
                   className="h-full w-full object-cover rounded-lg"
                 />
               ) : (
@@ -120,7 +120,7 @@ const BookChaptersQRView = () => {
             {chapters
               .sort((a, b) => (a.order || 0) - (b.order || 0))
               .map((chapter) => (
-                <div 
+                <div
                   key={chapter._id}
                   className="bg-white p-5 rounded-lg shadow-sm border border-gray-100"
                 >
@@ -138,7 +138,7 @@ const BookChaptersQRView = () => {
           </div>
         )}
       </div>
-      
+
       <div className="text-center mt-8 text-gray-500 text-sm">
         <p>This information is provided via QR code scan.</p>
         <p className="mt-1">Scan date: {new Date().toLocaleDateString()}</p>

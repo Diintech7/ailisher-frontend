@@ -33,9 +33,9 @@ const AISWBPage = () => {
         }
 
         // Verify topic exists and user has access
-        const baseUrl = isWorkbook 
-          ? `https://test.ailisher.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}`
-          : `https://test.ailisher.com/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}`;
+        const baseUrl = isWorkbook
+          ? `http://localhost:4000/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}`
+          : `http://localhost:4000/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}`;
 
         const response = await fetch(baseUrl, {
           headers: {
@@ -87,7 +87,7 @@ const AISWBPage = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center mb-4">
-        <button 
+        <button
           onClick={handleBackClick}
           className="flex items-center text-indigo-600 hover:text-indigo-800 transition-colors"
         >
@@ -111,7 +111,7 @@ const AISWBPage = () => {
         <AISWBTab topicId={topicId} />
       </div>
 
-      <AISWBPrintModal 
+      <AISWBPrintModal
         isOpen={showPrintModal}
         onClose={() => setShowPrintModal(false)}
         topicId={topicId}

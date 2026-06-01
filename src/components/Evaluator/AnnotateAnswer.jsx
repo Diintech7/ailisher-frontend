@@ -4,7 +4,7 @@ import { toast } from "react-toastify"
 import axios from "axios"
 
 const api = axios.create({
-  baseURL: "https://test.ailisher.com/api",
+  baseURL: "http://localhost:4000/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -64,7 +64,7 @@ function ModalAnswerBox({ modalAnswer }) {
 }
 
 const AnnotateAnswer = ({ submission, onClose, onSave }) => {
-  
+
   const [activeTool, setActiveTool] = useState("pen")
   const [penColor, setPenColor] = useState("#FF0000")
   const [penSize, setPenSize] = useState(2)
@@ -187,7 +187,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
 
   // Component mount tracking
   useEffect(() => {
-    console.log("submission",submission)
+    console.log("submission", submission)
     setIsComponentMounted(true)
     console.log("[AnswerAnnotation] Component mounted")
     return () => {
@@ -1351,29 +1351,29 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
               const canvas = fabricCanvasRef.current
               const b = allowedRectRef.current || { left: 0, top: 0, width: canvas.width, height: canvas.height }
               const fontSize = Math.max(14, Math.floor(Math.min(b.width, b.height) * 0.028))
-            const text = new window.fabric.IText("Double click to edit", {
+              const text = new window.fabric.IText("Double click to edit", {
                 left: b.left + Math.max(20, Math.floor(b.width * 0.1)),
                 top: b.top + Math.max(20, Math.floor(b.height * 0.15)),
-              fontFamily: "Kalam, cursive",
-              fill: penColor,
+                fontFamily: "Kalam, cursive",
+                fill: penColor,
                 fontSize,
-              fontWeight: "400",
-              fontStyle: "normal",
-              underline: false,
-              linethrough: false,
-              textAlign: "left",
-              charSpacing: 1,
-              lineHeight: 1.2,
-              angle: Math.random() * 4 - 2,
-              shadow: {
-                color: "rgba(0,0,0,0.1)",
-                blur: 1,
-                offsetX: 1,
-                offsetY: 1,
-              },
-            })
-            fabricCanvasRef.current.add(text)
-            fabricCanvasRef.current.setActiveObject(text)
+                fontWeight: "400",
+                fontStyle: "normal",
+                underline: false,
+                linethrough: false,
+                textAlign: "left",
+                charSpacing: 1,
+                lineHeight: 1.2,
+                angle: Math.random() * 4 - 2,
+                shadow: {
+                  color: "rgba(0,0,0,0.1)",
+                  blur: 1,
+                  offsetX: 1,
+                  offsetY: 1,
+                },
+              })
+              fabricCanvasRef.current.add(text)
+              fabricCanvasRef.current.setActiveObject(text)
               saveToHistory()
             }
             break
@@ -1463,11 +1463,11 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
   // Helper function to add line breaks to text
   const addLineBreaks = (text, maxChars = 35) => {
     if (!text || text.length <= maxChars) return text
-    
+
     const words = text.split(' ')
     const lines = []
     let currentLine = ''
-    
+
     words.forEach(word => {
       if ((currentLine + word).length <= maxChars) {
         currentLine += (currentLine ? ' ' : '') + word
@@ -1476,7 +1476,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         currentLine = word
       }
     })
-    
+
     if (currentLine) lines.push(currentLine)
     return lines.join('\n')
   }
@@ -2226,7 +2226,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         return
       }
       try {
-        const url = `https://test.ailisher.com/api/clients/CLI677117YN7N/mobile/userAnswers/questions/${submission.questionId?._id || submission.question?._id}/answers/${submission._id}/evaluation-update`
+        const url = `http://localhost:4000/api/clients/CLI677117YN7N/mobile/userAnswers/questions/${submission.questionId?._id || submission.question?._id}/answers/${submission._id}/evaluation-update`
         const feedbackValue = (typeof stateEval.feedback === 'string' && stateEval.feedback.trim() !== '')
           ? stateEval.feedback
           : undefined
@@ -2249,7 +2249,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
           const Cookies = (await import('js-cookie')).default
           const token = Cookies.get('usertoken')
           if (token) authHeaders.Authorization = `Bearer ${token}`
-        } catch (_) {}
+        } catch (_) { }
         const saveRes = await axios.put(url, payload, { headers: authHeaders })
         if (!saveRes?.data?.success) {
           toast.error(saveRes?.data?.message || 'Failed to update evaluation before publish')
@@ -2303,7 +2303,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         const Cookies = (await import('js-cookie')).default
         const token = Cookies.get('usertoken')
         if (token) authConfig = { headers: { Authorization: `Bearer ${token}` } }
-      } catch (_) {}
+      } catch (_) { }
 
       // Publish sequentially to avoid optimistic concurrency conflicts on the same answer document
       for (const payload of publishPayloads) {
@@ -2597,10 +2597,10 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
     }
     try {
       // Use local or production endpoint as needed
-      const url = `https://test.ailisher.com/api/clients/CLI677117YN7N/mobile/userAnswers/questions/${submission.questionId?._id || submission.question?._id}/answers/${submission._id}/evaluation-update`;
+      const url = `http://localhost:4000/api/clients/CLI677117YN7N/mobile/userAnswers/questions/${submission.questionId?._id || submission.question?._id}/answers/${submission._id}/evaluation-update`;
       // Ensure feedback is a string or omitted if empty/null/undefined
-      const feedbackValue = (typeof editEvaluation.feedback === 'string' && editEvaluation.feedback.trim() !== '') 
-        ? editEvaluation.feedback 
+      const feedbackValue = (typeof editEvaluation.feedback === 'string' && editEvaluation.feedback.trim() !== '')
+        ? editEvaluation.feedback
         : undefined;
       const payload = {
         analysis: {
@@ -2616,12 +2616,11 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         accuracy: Number(editEvaluation.relevancy),
         remark: editEvaluation.remark
       };
-      const response  = await axios.put(url, payload);
-      if(response.data.success)
-      toast.success('Evaluation updated successfully!');
-      else
-      {
-      toast.error(response.data.message)
+      const response = await axios.put(url, payload);
+      if (response.data.success)
+        toast.success('Evaluation updated successfully!');
+      else {
+        toast.error(response.data.message)
       }
     } catch (error) {
       console.error('Error updating evaluation:', error);
@@ -2636,7 +2635,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
       if (!submission?.question?._id) return;
       try {
         const res = await axios.get(
-          `https://test.ailisher.com/api/aiswb/questions/${submission.question._id}`
+          `http://localhost:4000/api/aiswb/questions/${submission.question._id}`
         );
         if (res.data && res.data.data && res.data.data.modalAnswer) {
           setModalAnswer(res.data.data.modalAnswer);
@@ -2664,16 +2663,16 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
           </p>
         </div>
         <div className="flex space-x-4">
-         
-          <button 
-            onClick={handleOpenPublishModal} 
+
+          <button
+            onClick={handleOpenPublishModal}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             disabled={!isComponentMounted}
           >
             Submit
           </button>
-          <button 
-            onClick={handleClose} 
+          <button
+            onClick={handleClose}
             className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
           >
             Close
@@ -2683,8 +2682,8 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
 
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
-{/* Left Side - Analysis */}
-          <div className="w-1/3 border-r border-gray-200 overflow-y-auto p-6">
+        {/* Left Side - Analysis */}
+        <div className="w-1/3 border-r border-gray-200 overflow-y-auto p-6">
           <h1 className="text-2xl font-bold text-blue-700 mb-4 tracking-tight flex items-center gap-2">
             <svg className="w-7 h-7 text-blue-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -2712,21 +2711,19 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => setShowHindiEvaluation(false)}
-                      className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                        !showHindiEvaluation 
-                          ? 'bg-blue-600 text-white' 
+                      className={`px-3 py-1 text-xs rounded-md transition-colors ${!showHindiEvaluation
+                          ? 'bg-blue-600 text-white'
                           : 'bg-white text-blue-600 border border-blue-300 hover:bg-blue-50'
-                      }`}
+                        }`}
                     >
                       English
                     </button>
                     <button
                       onClick={() => setShowHindiEvaluation(true)}
-                      className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                        showHindiEvaluation 
-                          ? 'bg-blue-600 text-white' 
+                      className={`px-3 py-1 text-xs rounded-md transition-colors ${showHindiEvaluation
+                          ? 'bg-blue-600 text-white'
                           : 'bg-white text-blue-600 border border-blue-300 hover:bg-blue-50'
-                      }`}
+                        }`}
                     >
                       हिंदी
                     </button>
@@ -2739,7 +2736,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
             {/* Performance Metrics */}
             <div className="bg-green-50 p-4 rounded-lg border border-green-200">
               <div className="space-y-4">
-              <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-green-700">Score:</span>
                   <span className="text-lg font-bold text-green-900">
                     {typeof getCurrentEvaluation().score === 'number' ? `${getCurrentEvaluation().score}/${submission.question.metadata?.maximumMarks || 'N/A'}` : getCurrentEvaluation().score || 'Not evaluated'}
@@ -2753,26 +2750,26 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
+                    <div
                       className="bg-gradient-to-r from-green-400 to-green-600 h-3 rounded-full transition-all duration-500 ease-out"
-                      style={{ 
+                      style={{
                         width: typeof getCurrentEvaluation().relevancy === 'number' ? `${getCurrentEvaluation().relevancy}%` : '0%',
                         minWidth: '4px'
                       }}
                     ></div>
                   </div>
                 </div>
-               
+
               </div>
             </div>
             {/* Extracted Text Box */}
-                {submission.extractedTexts && submission.extractedTexts.length > 0 && (
-                  <ExtractedTextBox extractedTexts={submission.extractedTexts} />
-                )}
-                {/* Modal Answer Box */}
-                {modalAnswer && (
-                  <ModalAnswerBox modalAnswer={modalAnswer} />
-                )}
+            {submission.extractedTexts && submission.extractedTexts.length > 0 && (
+              <ExtractedTextBox extractedTexts={submission.extractedTexts} />
+            )}
+            {/* Modal Answer Box */}
+            {modalAnswer && (
+              <ModalAnswerBox modalAnswer={modalAnswer} />
+            )}
             {/* Evaluation Remark */}
             {getCurrentEvaluation().remark && getCurrentEvaluation().remark !== 'No remark provided' && (
               <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
@@ -2789,10 +2786,10 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   {getCurrentEvaluation().comments.map((comment, index) => (
                     <li key={index} className="flex items-start gap-2 justify-between">
                       <div className="flex items-start gap-2">
-                      <svg className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                      </svg>
-                      <span className="text-sm text-indigo-800">{comment}</span>
+                        <svg className="w-4 h-4 text-indigo-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                        <span className="text-sm text-indigo-800">{comment}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <button
@@ -2819,8 +2816,8 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
 
             {/* Analysis Details */}
             {getCurrentEvaluation().analysis && (
-              (getCurrentEvaluation().analysis.introduction|| 
-                getCurrentEvaluation().analysis.body|| 
+              (getCurrentEvaluation().analysis.introduction ||
+                getCurrentEvaluation().analysis.body ||
                 getCurrentEvaluation().analysis.conclusion) && (
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                   <h4 className="text-sm font-medium text-gray-700 mb-3">Analysis Details</h4>
@@ -2948,11 +2945,10 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
               <button
                 onClick={handleAutoAnnotate}
                 disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
-                className={`px-3 py-2 rounded border ${
-                  isFabricLoading || !isFabricLoaded || !canvasReady
+                className={`px-3 py-2 rounded border ${isFabricLoading || !isFabricLoaded || !canvasReady
                     ? "bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200"
                     : "bg-emerald-600 text-white hover:bg-emerald-700 border-emerald-600"
-                }`}
+                  }`}
                 title="Auto Annotate"
               >
                 Auto Annotate
@@ -2984,11 +2980,10 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                 <button
                   onClick={handleRemoveReferenceImage}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
-                  className={`px-3 py-2 rounded border ${
-                    isFabricLoading || !isFabricLoaded || !canvasReady
+                  className={`px-3 py-2 rounded border ${isFabricLoading || !isFabricLoaded || !canvasReady
                       ? "bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200"
                       : "bg-white text-red-600 hover:bg-red-50 border-red-300"
-                  }`}
+                    }`}
                   title="Remove Reference Image"
                 >
                   Remove
@@ -2998,13 +2993,12 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                 <button
                   onClick={() => handleToolSelect("pen")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
-                  className={`p-2 rounded ${
-                    isFabricLoading || !isFabricLoaded || !canvasReady
+                  className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
                       ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                       : activeTool === "pen"
                         ? "bg-blue-500 text-white"
                         : "bg-white text-gray-700 hover:bg-gray-100"
-                  }`}
+                    }`}
                   title="Pen"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3020,13 +3014,12 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                 <button
                   onClick={() => handleToolSelect("text")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
-                  className={`p-2 rounded ${
-                    isFabricLoading || !isFabricLoaded || !canvasReady
+                  className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
                       ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                       : activeTool === "text"
                         ? "bg-blue-500 text-white"
                         : "bg-white text-gray-700 hover:bg-gray-100"
-                  }`}
+                    }`}
                   title="Text"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3044,13 +3037,12 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   <button
                     onClick={() => handleToolSelect("comment")}
                     disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
-                    className={`p-2 rounded ${
-                      activeTool === "comment"
+                    className={`p-2 rounded ${activeTool === "comment"
                         ? "bg-blue-500 text-white"
                         : isFabricLoading || !isFabricLoaded || !canvasReady
                           ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                           : "bg-white text-gray-700 hover:bg-gray-100"
-                    }`}
+                      }`}
                     title="Comment"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3144,13 +3136,12 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                 <button
                   onClick={() => handleToolSelect("select")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
-                  className={`p-2 rounded ${
-                    isFabricLoading || !isFabricLoaded || !canvasReady
+                  className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
                       ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                       : activeTool === "select"
                         ? "bg-blue-500 text-white"
                         : "bg-white text-gray-700 hover:bg-gray-100"
-                  }`}
+                    }`}
                   title="Select"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3166,11 +3157,10 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                 <button
                   onClick={() => handleToolSelect("clear")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
-                  className={`p-2 rounded ${
-                    isFabricLoading || !isFabricLoaded || !canvasReady
+                  className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
                       ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                       : "bg-white text-red-600 hover:bg-red-50"
-                  }`}
+                    }`}
                   title="Clear All"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3189,11 +3179,10 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                 <button
                   onClick={handleUndo}
                   disabled={!canUndo || isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady}
-                  className={`p-2 rounded ${
-                    !canUndo || isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady
+                  className={`p-2 rounded ${!canUndo || isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady
                       ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                       : "bg-white text-gray-700 hover:bg-gray-100"
-                  }`}
+                    }`}
                   title="Undo"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3208,11 +3197,10 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                 <button
                   onClick={handleRedo}
                   disabled={!canRedo || isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady}
-                  className={`p-2 rounded ${
-                    !canRedo || isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady
+                  className={`p-2 rounded ${!canRedo || isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady
                       ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                       : "bg-white text-gray-700 hover:bg-gray-100"
-                  }`}
+                    }`}
                   title="Redo"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3231,11 +3219,10 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                 <button
                   onClick={() => handleZoom("out")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
-                  className={`p-2 rounded ${
-                    isFabricLoading || !isFabricLoaded || !canvasReady
+                  className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
                       ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                       : "bg-white text-gray-700 hover:bg-gray-100"
-                  }`}
+                    }`}
                   title="Zoom Out"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3246,11 +3233,10 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                 <button
                   onClick={() => handleZoom("in")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
-                  className={`p-2 rounded ${
-                    isFabricLoading || !isFabricLoaded || !canvasReady
+                  className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
                       ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                       : "bg-white text-gray-700 hover:bg-gray-100"
-                  }`}
+                    }`}
                   title="Zoom In"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3260,11 +3246,10 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                 <button
                   onClick={() => handleZoom("reset")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
-                  className={`p-2 rounded ${
-                    isFabricLoading || !isFabricLoaded || !canvasReady
+                  className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
                       ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                       : "bg-white text-gray-700 hover:bg-gray-100"
-                  }`}
+                    }`}
                   title="Reset Zoom"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -3285,11 +3270,10 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   value={penColor}
                   onChange={(e) => handleColorChange(e.target.value)}
                   disabled={isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady}
-                  className={`w-8 h-8 rounded ${
-                    isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady
+                  className={`w-8 h-8 rounded ${isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady
                       ? "cursor-not-allowed opacity-50"
                       : "cursor-pointer"
-                  }`}
+                    }`}
                   title="Color"
                 />
                 <div className="flex items-center space-x-1">
@@ -3300,11 +3284,10 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                     value={penSize}
                     onChange={(e) => handleBrushSizeChange(Number.parseInt(e.target.value))}
                     disabled={isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady}
-                    className={`w-24 ${
-                      isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady
+                    className={`w-24 ${isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady
                         ? "cursor-not-allowed opacity-50"
                         : ""
-                    }`}
+                      }`}
                     title="Brush Size"
                   />
                   <span className="text-xs text-gray-500 w-6 text-right">{penSize}px</span>
@@ -3369,9 +3352,8 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                     key={index}
                     onClick={() => handleImageChange(index)}
                     disabled={isImageLoading || imageLoadingRef.current}
-                    className={`flex-shrink-0 w-20 h-20 rounded border-2 ${
-                      currentImageIndex === index ? "border-blue-500" : "border-gray-300"
-                    } ${isImageLoading || imageLoadingRef.current ? "opacity-50 cursor-not-allowed" : ""}`}
+                    className={`flex-shrink-0 w-20 h-20 rounded border-2 ${currentImageIndex === index ? "border-blue-500" : "border-gray-300"
+                      } ${isImageLoading || imageLoadingRef.current ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     <img
                       src={image.imageUrl || "/placeholder.svg"}
@@ -3393,7 +3375,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
           <div className="bg-white rounded-lg p-6 w-[800px] max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-semibold">Publish with AI Evaluation</h3>
-              <button 
+              <button
                 onClick={handleCloseReviewModal}
                 className="text-gray-500 hover:text-gray-700"
               >
@@ -3412,21 +3394,19 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() => setShowHindiEvaluation(false)}
-                        className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                          !showHindiEvaluation 
-                            ? 'bg-blue-600 text-white' 
+                        className={`px-3 py-1 text-xs rounded-md transition-colors ${!showHindiEvaluation
+                            ? 'bg-blue-600 text-white'
                             : 'bg-white text-blue-600 border border-blue-300 hover:bg-blue-50'
-                        }`}
+                          }`}
                       >
                         English
                       </button>
                       <button
                         onClick={() => setShowHindiEvaluation(true)}
-                        className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                          showHindiEvaluation 
-                            ? 'bg-blue-600 text-white' 
+                        className={`px-3 py-1 text-xs rounded-md transition-colors ${showHindiEvaluation
+                            ? 'bg-blue-600 text-white'
                             : 'bg-white text-blue-600 border border-blue-300 hover:bg-blue-50'
-                        }`}
+                          }`}
                       >
                         हिंदी
                       </button>
@@ -3444,93 +3424,93 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Accuracy (%)</label>
-                      <input 
-                        type="number" 
-                        value={showHindiEvaluation ? editHindiEvaluation.relevancy : editEvaluation.relevancy} 
-                        onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('relevancy', e.target.value) : handleEvalFieldChange('relevancy', e.target.value)} 
-                        className="w-full border rounded px-3 py-2 text-base" 
+                      <input
+                        type="number"
+                        value={showHindiEvaluation ? editHindiEvaluation.relevancy : editEvaluation.relevancy}
+                        onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('relevancy', e.target.value) : handleEvalFieldChange('relevancy', e.target.value)}
+                        className="w-full border rounded px-3 py-2 text-base"
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Marks (out of {submission.question?.metadata?.maximumMarks || 10})</label>
-                      <input 
-                        type="number" 
-                        value={showHindiEvaluation ? editHindiEvaluation.score : editEvaluation.score} 
-                        onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('score', e.target.value) : handleEvalFieldChange('score', e.target.value)} 
-                        className="w-full border rounded px-3 py-2 text-base" 
+                      <input
+                        type="number"
+                        value={showHindiEvaluation ? editHindiEvaluation.score : editEvaluation.score}
+                        onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('score', e.target.value) : handleEvalFieldChange('score', e.target.value)}
+                        className="w-full border rounded px-3 py-2 text-base"
                       />
                     </div>
                   </div>
                   <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Remark</label>
-                  <textarea 
-                      value={showHindiEvaluation ? editHindiEvaluation.remark : editEvaluation.remark} 
-                      onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('remark', e.target.value) : handleEvalFieldChange('remark', e.target.value)} 
-                      className="w-full border rounded px-3 py-2 text-base" 
-                      rows={2} 
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Remark</label>
+                    <textarea
+                      value={showHindiEvaluation ? editHindiEvaluation.remark : editEvaluation.remark}
+                      onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('remark', e.target.value) : handleEvalFieldChange('remark', e.target.value)}
+                      className="w-full border rounded px-3 py-2 text-base"
+                      rows={2}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Introduction</label>
-                    <textarea 
-                      value={showHindiEvaluation ? editHindiEvaluation.introduction : editEvaluation.introduction} 
-                      onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('introduction', e.target.value) : handleEvalFieldChange('introduction', e.target.value)} 
-                      className="w-full border rounded px-3 py-2 text-base" 
-                      rows={4} 
+                    <textarea
+                      value={showHindiEvaluation ? editHindiEvaluation.introduction : editEvaluation.introduction}
+                      onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('introduction', e.target.value) : handleEvalFieldChange('introduction', e.target.value)}
+                      className="w-full border rounded px-3 py-2 text-base"
+                      rows={4}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Body</label>
-                    <textarea 
-                      value={showHindiEvaluation ? editHindiEvaluation.body : editEvaluation.body} 
-                      onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('body', e.target.value) : handleEvalFieldChange('body', e.target.value)} 
-                      className="w-full border rounded px-3 py-2 text-base" 
-                      rows={4} 
+                    <textarea
+                      value={showHindiEvaluation ? editHindiEvaluation.body : editEvaluation.body}
+                      onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('body', e.target.value) : handleEvalFieldChange('body', e.target.value)}
+                      className="w-full border rounded px-3 py-2 text-base"
+                      rows={4}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Conclusion</label>
-                    <textarea 
-                      value={showHindiEvaluation ? editHindiEvaluation.conclusion : editEvaluation.conclusion} 
-                      onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('conclusion', e.target.value) : handleEvalFieldChange('conclusion', e.target.value)} 
-                      className="w-full border rounded px-3 py-2 text-base" 
-                      rows={4} 
+                    <textarea
+                      value={showHindiEvaluation ? editHindiEvaluation.conclusion : editEvaluation.conclusion}
+                      onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('conclusion', e.target.value) : handleEvalFieldChange('conclusion', e.target.value)}
+                      className="w-full border rounded px-3 py-2 text-base"
+                      rows={4}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Strengths (one per line)</label>
-                    <textarea 
-                      value={showHindiEvaluation ? editHindiEvaluation.strengths : editEvaluation.strengths} 
-                      onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('strengths', e.target.value) : handleEvalFieldChange('strengths', e.target.value)} 
-                      className="w-full border rounded px-3 py-2 text-base" 
-                      rows={4} 
+                    <textarea
+                      value={showHindiEvaluation ? editHindiEvaluation.strengths : editEvaluation.strengths}
+                      onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('strengths', e.target.value) : handleEvalFieldChange('strengths', e.target.value)}
+                      className="w-full border rounded px-3 py-2 text-base"
+                      rows={4}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Weaknesses (one per line)</label>
-                    <textarea 
-                      value={showHindiEvaluation ? editHindiEvaluation.weaknesses : editEvaluation.weaknesses} 
-                      onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('weaknesses', e.target.value) : handleEvalFieldChange('weaknesses', e.target.value)} 
-                      className="w-full border rounded px-3 py-2 text-base" 
-                      rows={4} 
+                    <textarea
+                      value={showHindiEvaluation ? editHindiEvaluation.weaknesses : editEvaluation.weaknesses}
+                      onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('weaknesses', e.target.value) : handleEvalFieldChange('weaknesses', e.target.value)}
+                      className="w-full border rounded px-3 py-2 text-base"
+                      rows={4}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Suggestions (one per line)</label>
-                    <textarea 
-                      value={showHindiEvaluation ? editHindiEvaluation.suggestions : editEvaluation.suggestions} 
-                      onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('suggestions', e.target.value) : handleEvalFieldChange('suggestions', e.target.value)} 
-                      className="w-full border rounded px-3 py-2 text-base" 
-                      rows={4} 
+                    <textarea
+                      value={showHindiEvaluation ? editHindiEvaluation.suggestions : editEvaluation.suggestions}
+                      onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('suggestions', e.target.value) : handleEvalFieldChange('suggestions', e.target.value)}
+                      className="w-full border rounded px-3 py-2 text-base"
+                      rows={4}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Feedback</label>
-                    <textarea 
-                      value={showHindiEvaluation ? editHindiEvaluation.feedback : editEvaluation.feedback} 
-                      onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('feedback', e.target.value) : handleEvalFieldChange('feedback', e.target.value)} 
-                      className="w-full border rounded px-3 py-2 text-base" 
-                      rows={5} 
+                    <textarea
+                      value={showHindiEvaluation ? editHindiEvaluation.feedback : editEvaluation.feedback}
+                      onChange={e => showHindiEvaluation ? handleHindiEvalFieldChange('feedback', e.target.value) : handleEvalFieldChange('feedback', e.target.value)}
+                      className="w-full border rounded px-3 py-2 text-base"
+                      rows={5}
                     />
                   </div>
                 </div>
@@ -3572,9 +3552,8 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                 <button
                   onClick={handlePublish}
                   disabled={loading || uploadingImages}
-                  className={`px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 ${
-                    (loading || uploadingImages) ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
+                  className={`px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 ${(loading || uploadingImages) ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                 >
                   {loading ? 'Publishing...' : 'Publish'}
                 </button>

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'https://test.ailisher.com/api/clients/CLI677117YN7N/mobile';
+const BASE_URL = 'http://localhost:4000/api/clients/CLI677117YN7N/mobile';
 
 export const userAnswerService = {
   // Get all answers for a question
@@ -13,7 +13,7 @@ export const userAnswerService = {
 
       // Construct URL with proper encoding
       const url = new URL(`${BASE_URL}/userAnswers/crud/answers`);
-      
+
       // Add query parameters
       const queryParams = {
         questionId,
@@ -27,7 +27,7 @@ export const userAnswerService = {
       };
 
       // Remove undefined parameters
-      Object.keys(queryParams).forEach(key => 
+      Object.keys(queryParams).forEach(key =>
         queryParams[key] === undefined && delete queryParams[key]
       );
 
@@ -35,7 +35,7 @@ export const userAnswerService = {
       console.log('With params:', queryParams);
 
       const response = await axios.get(url.toString(), { params: queryParams });
-      
+
       // Log the response data structure
       console.log('API Response:', {
         status: response.status,
@@ -214,7 +214,7 @@ export const userAnswerService = {
   // New function to fetch pending reviews
   getPendingReviews: async () => {
     try {
-      const response = await axios.get('https://test.ailisher.com/api/review/pending');
+      const response = await axios.get('http://localhost:4000/api/review/pending');
       console.log('Pending Reviews Response:', response.data);
       return response.data;
     } catch (error) {

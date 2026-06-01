@@ -38,8 +38,8 @@ const VideosTab = ({ videos, setShowVideoModal, onDeleteVideo }) => {
 
   // Check if video is YouTube
   const isYouTubeVideo = (video) => {
-    return video.videoType === 'youtube' || video.youtubeVideoId || 
-           (video.url && (video.url.includes('youtube.com') || video.url.includes('youtu.be')))
+    return video.videoType === 'youtube' || video.youtubeVideoId ||
+      (video.url && (video.url.includes('youtube.com') || video.url.includes('youtu.be')))
   }
 
   // Get video thumbnail
@@ -47,11 +47,11 @@ const VideosTab = ({ videos, setShowVideoModal, onDeleteVideo }) => {
     if (video.thumbnailUrl) {
       return video.thumbnailUrl
     }
-    
+
     if (isYouTubeVideo(video) && video.youtubeVideoId) {
       return `https://img.youtube.com/vi/${video.youtubeVideoId}/maxresdefault.jpg`
     }
-    
+
     return null
   }
 
@@ -59,7 +59,7 @@ const VideosTab = ({ videos, setShowVideoModal, onDeleteVideo }) => {
   const handleVideoView = async (videoId) => {
     try {
       const token = Cookies.get("usertoken")
-      await axios.post(`https://test.ailisher.com/api/video-assets/videos/${videoId}/view`, {}, {
+      await axios.post(`http://localhost:4000/api/video-assets/videos/${videoId}/view`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       })
     } catch (error) {
@@ -114,14 +114,14 @@ const VideosTab = ({ videos, setShowVideoModal, onDeleteVideo }) => {
                 </span>
               )}
             </div>
-            <button 
-              onClick={onClose} 
+            <button
+              onClick={onClose}
               className="text-gray-500 hover:text-gray-700 text-2xl"
             >
               ×
             </button>
           </div>
-          
+
           <div className="aspect-video mb-4">
             {isYT ? (
               <iframe
@@ -134,9 +134,9 @@ const VideosTab = ({ videos, setShowVideoModal, onDeleteVideo }) => {
                 onLoad={() => handleVideoView(video._id)}
               />
             ) : (
-              <video 
-                src={video.url} 
-                controls 
+              <video
+                src={video.url}
+                controls
                 className="w-full h-full rounded-lg"
                 onPlay={() => handleVideoView(video._id)}
               >
@@ -144,14 +144,14 @@ const VideosTab = ({ videos, setShowVideoModal, onDeleteVideo }) => {
               </video>
             )}
           </div>
-          
+
           {video.description && (
             <div className="mb-4">
               <h3 className="font-medium text-gray-800 mb-2">Description</h3>
               <p className="text-gray-700 text-sm">{video.description}</p>
             </div>
           )}
-          
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
             {video.duration > 0 && (
               <div className="flex items-center">
@@ -194,7 +194,7 @@ const VideosTab = ({ videos, setShowVideoModal, onDeleteVideo }) => {
               Are you sure you want to delete "{videoToDelete?.title}"? This action cannot be undone.
             </p>
           </div>
-          
+
           <div className="flex justify-end space-x-3">
             <button
               onClick={() => {
@@ -250,14 +250,14 @@ const VideosTab = ({ videos, setShowVideoModal, onDeleteVideo }) => {
           {videos.map((video) => {
             const isYT = isYouTubeVideo(video)
             const thumbnailUrl = getVideoThumbnail(video)
-            
+
             return (
               <div key={video._id} className="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
                 {/* Video Thumbnail/Preview */}
                 <div className="aspect-video bg-gradient-to-br from-indigo-100 to-purple-100 relative group">
                   {thumbnailUrl ? (
-                    <img 
-                      src={thumbnailUrl} 
+                    <img
+                      src={thumbnailUrl}
                       alt={video.title}
                       className="w-full h-full object-cover"
                       onError={(e) => {
@@ -266,14 +266,14 @@ const VideosTab = ({ videos, setShowVideoModal, onDeleteVideo }) => {
                       }}
                     />
                   ) : !isYT ? (
-                    <video 
-                      src={video.url} 
+                    <video
+                      src={video.url}
                       className="w-full h-full object-cover"
                       muted
                       preload="metadata"
                     />
                   ) : null}
-                  
+
                   {/* Fallback display */}
                   <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center" style={{ display: thumbnailUrl ? 'none' : 'flex' }}>
                     {isYT ? (
@@ -282,7 +282,7 @@ const VideosTab = ({ videos, setShowVideoModal, onDeleteVideo }) => {
                       <Play size={48} className="text-indigo-500" />
                     )}
                   </div>
-                  
+
                   <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                       onClick={() => {
@@ -294,7 +294,7 @@ const VideosTab = ({ videos, setShowVideoModal, onDeleteVideo }) => {
                       <Play size={24} className="text-indigo-600 ml-1" />
                     </button>
                   </div>
-                  
+
                   {/* Video type indicator */}
                   <div className="absolute top-2 left-2">
                     {isYT ? (
@@ -309,7 +309,7 @@ const VideosTab = ({ videos, setShowVideoModal, onDeleteVideo }) => {
                       </span>
                     )}
                   </div>
-                  
+
                   {/* Duration overlay */}
                   {video.duration > 0 && (
                     <div className="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white text-xs px-2 py-1 rounded">
@@ -323,7 +323,7 @@ const VideosTab = ({ videos, setShowVideoModal, onDeleteVideo }) => {
                   <h4 className="font-medium text-gray-800 mb-2 line-clamp-2 leading-tight">
                     {video.title}
                   </h4>
-                  
+
                   {video.description && (
                     <p className="text-gray-600 text-sm mb-3 line-clamp-2">
                       {video.description}
@@ -361,7 +361,7 @@ const VideosTab = ({ videos, setShowVideoModal, onDeleteVideo }) => {
                       <Play size={14} className="mr-1" />
                       Watch
                     </button>
-                    
+
                     <button
                       onClick={() => handleDeleteClick(video)}
                       className="flex items-center px-3 py-1.5 bg-red-100 text-red-700 rounded-md hover:bg-red-200 transition-colors text-sm"
@@ -378,9 +378,9 @@ const VideosTab = ({ videos, setShowVideoModal, onDeleteVideo }) => {
       )}
 
       {/* Video Player Modal */}
-      <VideoPlayerModal 
-        video={selectedVideo} 
-        onClose={() => setSelectedVideo(null)} 
+      <VideoPlayerModal
+        video={selectedVideo}
+        onClose={() => setSelectedVideo(null)}
       />
 
       {/* Delete Confirmation Modal */}

@@ -34,7 +34,7 @@ const BulkUploadAISWBModal = ({ isOpen, onClose, topicId, existingSets = [], onU
   const createSet = async (setName) => {
     const token = Cookies.get('usertoken');
     const response = await fetch(
-      `https://test.ailisher.com/api/aiswb/topic/${topicId}/sets`,
+      `http://localhost:4000/api/aiswb/topic/${topicId}/sets`,
       {
         method: 'POST',
         headers: {
@@ -53,7 +53,7 @@ const BulkUploadAISWBModal = ({ isOpen, onClose, topicId, existingSets = [], onU
   const createQuestion = async (setId, questionObj) => {
     const token = Cookies.get('usertoken');
     const response = await fetch(
-      `https://test.ailisher.com/api/aiswb/topic/${topicId}/sets/${setId}/questions`,
+      `http://localhost:4000/api/aiswb/topic/${topicId}/sets/${setId}/questions`,
       {
         method: 'POST',
         headers: {
@@ -153,7 +153,7 @@ const BulkUploadAISWBModal = ({ isOpen, onClose, topicId, existingSets = [], onU
                     diagram: (q['Quality Parameters'] || '').toLowerCase().includes('diagram'),
                   },
                   conclusion: (q['Quality Parameters'] || '').toLowerCase().includes('conclusion'),
-                  customParams: (q['Quality Parameters'] || '').split(',').map(p => p.trim()).filter(p => !['intro','body','features','examples','facts','diagram','conclusion'].includes(p.toLowerCase()) && p)
+                  customParams: (q['Quality Parameters'] || '').split(',').map(p => p.trim()).filter(p => !['intro', 'body', 'features', 'examples', 'facts', 'diagram', 'conclusion'].includes(p.toLowerCase()) && p)
                 }
               },
               modalAnswer: q['Modal Answer'] || '',

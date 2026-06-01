@@ -42,9 +42,9 @@ const AiServiceManager = () => {
   const fetchServices = async () => {
     try {
       setLoading(true);
-      const response = await fetch('https://test.ailisher.com/api/ai');
+      const response = await fetch('http://localhost:4000/api/ai');
       const data = await response.json();
-      
+
       if (data.success) {
         setServices(data.data);
       } else {
@@ -60,9 +60,9 @@ const AiServiceManager = () => {
   const fetchApiKey = async (serviceName) => {
     try {
       setLoadingApiKeys(prev => ({ ...prev, [serviceName]: true }));
-      const response = await fetch(`https://test.ailisher.com/api/ai/${serviceName}/apikey`);
+      const response = await fetch(`http://localhost:4000/api/ai/${serviceName}/apikey`);
       const data = await response.json();
-      
+
       if (data.success) {
         setActualApiKeys(prev => ({ ...prev, [serviceName]: data.data.apiKey }));
       } else {
@@ -77,7 +77,7 @@ const AiServiceManager = () => {
 
   const handleCreateService = async () => {
     try {
-      const response = await fetch('https://test.ailisher.com/api/ai', {
+      const response = await fetch('http://localhost:4000/api/ai', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -120,7 +120,7 @@ const AiServiceManager = () => {
 
   const handleUpdateApiKey = async (serviceName, newApiKey) => {
     try {
-      const response = await fetch(`https://test.ailisher.com/api/ai/${serviceName}/apikey`, {
+      const response = await fetch(`http://localhost:4000/api/ai/${serviceName}/apikey`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -144,7 +144,7 @@ const AiServiceManager = () => {
 
   const handleUpdateTaskPreferences = async (serviceName, taskPreferences) => {
     try {
-      const response = await fetch(`https://test.ailisher.com/api/ai/${serviceName}/preferences`, {
+      const response = await fetch(`http://localhost:4000/api/ai/${serviceName}/preferences`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -167,7 +167,7 @@ const AiServiceManager = () => {
 
   const handleUpdateServiceConfig = async (serviceName, serviceConfig) => {
     try {
-      const response = await fetch(`https://test.ailisher.com/api/ai/${serviceName}/config`, {
+      const response = await fetch(`http://localhost:4000/api/ai/${serviceName}/config`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -190,7 +190,7 @@ const AiServiceManager = () => {
 
   const handleToggleService = async (serviceName) => {
     try {
-      const response = await fetch(`https://test.ailisher.com/api/ai/${serviceName}/toggle`, {
+      const response = await fetch(`http://localhost:4000/api/ai/${serviceName}/toggle`, {
         method: 'PUT',
       });
 
@@ -213,7 +213,7 @@ const AiServiceManager = () => {
     }
 
     try {
-      const response = await fetch(`https://test.ailisher.com/api/ai/${serviceName}`, {
+      const response = await fetch(`http://localhost:4000/api/ai/${serviceName}`, {
         method: 'DELETE',
       });
 
@@ -232,12 +232,12 @@ const AiServiceManager = () => {
 
   const toggleApiKeyVisibility = async (serviceName) => {
     const isCurrentlyVisible = showApiKeys[serviceName];
-    
+
     if (!isCurrentlyVisible && !actualApiKeys[serviceName]) {
       // Need to fetch the API key first
       await fetchApiKey(serviceName);
     }
-    
+
     setShowApiKeys(prev => ({
       ...prev,
       [serviceName]: !prev[serviceName]
@@ -311,11 +311,10 @@ const AiServiceManager = () => {
                   ...prev,
                   [task]: !prev[task]
                 }))}
-                className={`p-1 rounded transition-colors ${
-                  tempPreferences[task] 
-                    ? 'text-green-600 hover:text-green-700' 
+                className={`p-1 rounded transition-colors ${tempPreferences[task]
+                    ? 'text-green-600 hover:text-green-700'
                     : 'text-gray-400 hover:text-gray-500'
-                }`}
+                  }`}
               >
                 {tempPreferences[task] ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
               </button>
@@ -377,11 +376,10 @@ const AiServiceManager = () => {
             <span className="text-sm font-medium">Include Marginalia</span>
             <button
               onClick={() => setTempConfig(prev => ({ ...prev, includeMarginalia: !prev.includeMarginalia }))}
-              className={`p-1 rounded transition-colors ${
-                tempConfig.includeMarginalia 
-                  ? 'text-green-600 hover:text-green-700' 
+              className={`p-1 rounded transition-colors ${tempConfig.includeMarginalia
+                  ? 'text-green-600 hover:text-green-700'
                   : 'text-gray-400 hover:text-gray-500'
-              }`}
+                }`}
             >
               {tempConfig.includeMarginalia ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
             </button>
@@ -390,11 +388,10 @@ const AiServiceManager = () => {
             <span className="text-sm font-medium">Include Metadata</span>
             <button
               onClick={() => setTempConfig(prev => ({ ...prev, includeMetadataInMarkdown: !prev.includeMetadataInMarkdown }))}
-              className={`p-1 rounded transition-colors ${
-                tempConfig.includeMetadataInMarkdown 
-                  ? 'text-green-600 hover:text-green-700' 
+              className={`p-1 rounded transition-colors ${tempConfig.includeMetadataInMarkdown
+                  ? 'text-green-600 hover:text-green-700'
                   : 'text-gray-400 hover:text-gray-500'
-              }`}
+                }`}
             >
               {tempConfig.includeMetadataInMarkdown ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
             </button>
@@ -508,7 +505,7 @@ const AiServiceManager = () => {
               />
             </div>
           </div>
-          
+
           <div className="mt-4">
             <label className="block text-sm font-medium mb-2">Supported Tasks</label>
             <div className="flex gap-4">
@@ -567,20 +564,18 @@ const AiServiceManager = () => {
                   <h3 className="font-semibold text-lg">{service.displayName}</h3>
                   <p className="text-sm text-gray-600 capitalize">{service.serviceName}</p>
                 </div>
-                <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  service.isActive 
-                    ? 'bg-green-100 text-green-800' 
+                <div className={`px-2 py-1 rounded-full text-xs font-medium ${service.isActive
+                    ? 'bg-green-100 text-green-800'
                     : 'bg-red-100 text-red-800'
-                }`}>
+                  }`}>
                   {service.isActive ? 'Active' : 'Inactive'}
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleToggleService(service.serviceName)}
-                  className={`p-2 rounded hover:bg-gray-100 ${
-                    service.isActive ? 'text-green-600' : 'text-gray-400'
-                  }`}
+                  className={`p-2 rounded hover:bg-gray-100 ${service.isActive ? 'text-green-600' : 'text-gray-400'
+                    }`}
                   title={`${service.isActive ? 'Deactivate' : 'Activate'} service`}
                 >
                   {service.isActive ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
@@ -607,10 +602,10 @@ const AiServiceManager = () => {
                     <span className="text-gray-600">API Key:</span>
                     <div className="flex items-center gap-2">
                       <span className="font-mono text-xs">
-                        {showApiKeys[service.serviceName] 
-                          ? (loadingApiKeys[service.serviceName] 
-                              ? 'Loading...' 
-                              : actualApiKeys[service.serviceName] || 'No API key found')
+                        {showApiKeys[service.serviceName]
+                          ? (loadingApiKeys[service.serviceName]
+                            ? 'Loading...'
+                            : actualApiKeys[service.serviceName] || 'No API key found')
                           : '••••••••••••••••'}
                       </span>
                       <button
@@ -659,9 +654,8 @@ const AiServiceManager = () => {
                   {taskTypes.map(task => (
                     <div key={task} className="flex items-center justify-between text-sm">
                       <span className="capitalize text-gray-600">{task.replace('_', ' ')}</span>
-                      <div className={`w-3 h-3 rounded-full ${
-                        service.taskPreferences[task] ? 'bg-green-500' : 'bg-gray-300'
-                      }`} />
+                      <div className={`w-3 h-3 rounded-full ${service.taskPreferences[task] ? 'bg-green-500' : 'bg-gray-300'
+                        }`} />
                     </div>
                   ))}
                 </div>
@@ -708,20 +702,20 @@ const AiServiceManager = () => {
             {editingService?.service._id === service._id && (
               <>
                 {editingService.type === 'apikey' && (
-                  <ApiKeyEditor 
-                    service={service} 
+                  <ApiKeyEditor
+                    service={service}
                     onSave={handleUpdateApiKey}
                   />
                 )}
                 {editingService.type === 'preferences' && (
-                  <TaskPreferenceEditor 
-                    service={service} 
+                  <TaskPreferenceEditor
+                    service={service}
                     onSave={handleUpdateTaskPreferences}
                   />
                 )}
                 {editingService.type === 'config' && (
-                  <ServiceConfigEditor 
-                    service={service} 
+                  <ServiceConfigEditor
+                    service={service}
                     onSave={handleUpdateServiceConfig}
                   />
                 )}

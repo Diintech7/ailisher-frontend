@@ -33,7 +33,7 @@ export default function User() {
         return;
       }
 
-      const response = await fetch('https://test.ailisher.com/api/admin/userprofile', {
+      const response = await fetch('http://localhost:4000/api/admin/userprofile', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -70,7 +70,7 @@ export default function User() {
     if (sortConfig.key) {
       sortableUsers.sort((a, b) => {
         if (sortConfig.key === 'userId.mobile') {
-          return sortConfig.direction === 'asc' 
+          return sortConfig.direction === 'asc'
             ? a.userId.mobile.localeCompare(b.userId.mobile)
             : b.userId.mobile.localeCompare(a.userId.mobile);
         }
@@ -89,13 +89,13 @@ export default function User() {
   // Filter users based on search term and client ID
   const filteredUsers = React.useMemo(() => {
     return sortedUsers.filter(user => {
-      const matchesSearch = 
+      const matchesSearch =
         user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.userId?.mobile?.includes(searchTerm) ||
         user.exams?.some(exam => exam.toLowerCase().includes(searchTerm.toLowerCase()));
-      
+
       const matchesClientId = !selectedClientId || user.clientId === selectedClientId;
-      
+
       return matchesSearch && matchesClientId;
     });
   }, [sortedUsers, searchTerm, selectedClientId]);
@@ -121,8 +121,8 @@ export default function User() {
     if (sortConfig.key !== key) {
       return <ChevronDown size={16} className="text-gray-400" />;
     }
-    return sortConfig.direction === 'asc' ? 
-      <ChevronUp size={16} className="text-indigo-600" /> : 
+    return sortConfig.direction === 'asc' ?
+      <ChevronUp size={16} className="text-indigo-600" /> :
       <ChevronDown size={16} className="text-indigo-600" />;
   };
 
@@ -136,7 +136,7 @@ export default function User() {
   return (
     <div className="container mx-auto px-4 py-8">
       <ToastContainer position="top-right" autoClose={3000} />
-      
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">User Profiles</h1>
@@ -178,7 +178,7 @@ export default function User() {
                   className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
               </div>
-              
+
               {/* Client ID Filter */}
               <div className="relative flex-1">
                 <Filter size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -214,7 +214,7 @@ export default function User() {
             <table className="w-full">
               <thead className="bg-gray-50">
                 <tr>
-                  <th 
+                  <th
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                     onClick={() => requestSort('name')}
                   >
@@ -226,7 +226,7 @@ export default function User() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     ClientId
                   </th>
-                  <th 
+                  <th
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                     onClick={() => requestSort('userId.mobile')}
                   >
@@ -244,7 +244,7 @@ export default function User() {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Exams
                   </th>
-                  <th 
+                  <th
                     className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
                     onClick={() => requestSort('createdAt')}
                   >
@@ -288,7 +288,7 @@ export default function User() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex flex-wrap gap-1">
                         {user.exams?.map((exam, index) => (
-                          <span 
+                          <span
                             key={index}
                             className="px-2 py-1 text-xs font-medium bg-indigo-100 text-indigo-800 rounded-full"
                           >

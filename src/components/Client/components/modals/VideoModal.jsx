@@ -66,14 +66,14 @@ const VideoModal = ({
     try {
       const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`
       const response = await fetch(oembedUrl)
-      
+
       if (!response.ok) {
         throw new Error('Invalid YouTube URL')
       }
-      
+
       const data = await response.json()
       const videoId = extractYouTubeId(url)
-      
+
       return {
         title: data.title,
         thumbnailUrl: data.thumbnail_url,
@@ -157,7 +157,7 @@ const VideoModal = ({
       try {
         setIsUploading(true)
         videoInfo = await getYouTubeVideoInfo(localVideoData.youtubeUrl)
-        
+
         // If title is empty, use YouTube video title
         if (!localVideoData.title.trim()) {
           setLocalVideoData(prev => ({ ...prev, title: videoInfo.title }))
@@ -171,9 +171,9 @@ const VideoModal = ({
 
     try {
       const token = Cookies.get("usertoken")
-      
+
       // Use the new video assets endpoint
-      const endpoint = `https://test.ailisher.com/api/video-assets/${itemType}/${itemId}/videos?isWorkbook=${isWorkbook}`
+      const endpoint = `http://localhost:4000/api/video-assets/${itemType}/${itemId}/videos?isWorkbook=${isWorkbook}`
 
       const requestData = {
         title: localVideoData.title,
@@ -254,11 +254,10 @@ const VideoModal = ({
               <button
                 type="button"
                 onClick={() => setVideoType("file")}
-                className={`flex items-center px-4 py-2 rounded-md border ${
-                  videoType === "file"
+                className={`flex items-center px-4 py-2 rounded-md border ${videoType === "file"
                     ? "bg-indigo-100 border-indigo-300 text-indigo-700"
                     : "bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100"
-                }`}
+                  }`}
               >
                 <Upload size={16} className="mr-2" />
                 Upload File
@@ -266,11 +265,10 @@ const VideoModal = ({
               <button
                 type="button"
                 onClick={() => setVideoType("youtube")}
-                className={`flex items-center px-4 py-2 rounded-md border ${
-                  videoType === "youtube"
+                className={`flex items-center px-4 py-2 rounded-md border ${videoType === "youtube"
                     ? "bg-red-100 border-red-300 text-red-700"
                     : "bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100"
-                }`}
+                  }`}
               >
                 <Link size={16} className="mr-2" />
                 YouTube URL
@@ -359,8 +357,8 @@ const VideoModal = ({
               className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={isUploading}
             >
-              {isUploading ? 
-                (videoType === "file" ? `Uploading... ${uploadProgress}%` : "Processing...") : 
+              {isUploading ?
+                (videoType === "file" ? `Uploading... ${uploadProgress}%` : "Processing...") :
                 "Add Video"
               }
             </button>

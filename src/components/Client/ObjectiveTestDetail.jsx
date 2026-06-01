@@ -454,13 +454,13 @@ export default function ObjectiveTestDetail() {
 
   const questionsByLevel = testDetails
     ? testDetails.reduce((acc, question) => {
-        const level = question.difficulty || "L1";
-        if (!acc[level]) {
-          acc[level] = [];
-        }
-        acc[level].push(question);
-        return acc;
-      }, {})
+      const level = question.difficulty || "L1";
+      if (!acc[level]) {
+        acc[level] = [];
+      }
+      acc[level].push(question);
+      return acc;
+    }, {})
     : {};
 
   const getLevelQuestions = (level) => {
@@ -486,7 +486,7 @@ export default function ObjectiveTestDetail() {
         solution: formData.solution,
       };
       const res = await fetch(
-        `https://test.ailisher.com/api/objectivetest-questions/${testId}`,
+        `http://localhost:4000/api/objectivetest-questions/${testId}`,
         {
           method: "POST",
           headers: {
@@ -534,7 +534,7 @@ export default function ObjectiveTestDetail() {
         solution: formData.solution,
       };
       const res = await fetch(
-        `https://test.ailisher.com/api/objectivetest-questions/${questionId}`,
+        `http://localhost:4000/api/objectivetest-questions/${questionId}`,
         {
           method: "PUT",
           headers: {
@@ -794,17 +794,16 @@ export default function ObjectiveTestDetail() {
                     <button
                       key={level}
                       onClick={() => setActiveLevel(level)}
-                      className={`flex-1 py-4 px-6 text-sm font-medium border-b-2 transition-colors ${
-                        activeLevel === level
+                      className={`flex-1 py-4 px-6 text-sm font-medium border-b-2 transition-colors ${activeLevel === level
                           ? "border-blue-500 text-blue-600 bg-blue-50"
                           : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-                      }`}
+                        }`}
                     >
                       {level === "L1"
                         ? "Beginner"
                         : level === "L2"
-                        ? "Intermediate"
-                        : "Advanced"}
+                          ? "Intermediate"
+                          : "Advanced"}
                       <span className="ml-2 px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
                         {getLevelQuestions(level).length}
                       </span>
@@ -858,8 +857,8 @@ export default function ObjectiveTestDetail() {
                       {activeLevel === "L1"
                         ? "Beginner"
                         : activeLevel === "L2"
-                        ? "Intermediate"
-                        : "Advanced"}{" "}
+                          ? "Intermediate"
+                          : "Advanced"}{" "}
                       level yet.
                     </p>
                   </div>
@@ -960,34 +959,32 @@ export default function ObjectiveTestDetail() {
                                         >
                                           <div className="flex items-center space-x-3">
                                             <span
-                                              className={`text-sm font-bold px-2 py-1 rounded-full ${
-                                                optIndex ===
-                                                question.correctAnswer
+                                              className={`text-sm font-bold px-2 py-1 rounded-full ${optIndex ===
+                                                  question.correctAnswer
                                                   ? "bg-green-600 text-white"
                                                   : "bg-gray-100 text-gray-500"
-                                              }`}
+                                                }`}
                                             >
                                               {String.fromCharCode(
                                                 65 + optIndex
                                               )}
                                             </span>
                                             <span
-                                              className={`font-medium ${
-                                                optIndex ===
-                                                question.correctAnswer
+                                              className={`font-medium ${optIndex ===
+                                                  question.correctAnswer
                                                   ? "text-green-900"
                                                   : "text-gray-900"
-                                              }`}
+                                                }`}
                                             >
                                               {option}
                                             </span>
                                             {optIndex ===
                                               question.correctAnswer && (
-                                              <CheckCircle
-                                                size={20}
-                                                className="text-green-600 ml-auto"
-                                              />
-                                            )}
+                                                <CheckCircle
+                                                  size={20}
+                                                  className="text-green-600 ml-auto"
+                                                />
+                                              )}
                                           </div>
                                         </div>
                                       )
@@ -1068,10 +1065,10 @@ export default function ObjectiveTestDetail() {
               <div className="w-full">
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 p-4">
                   <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-semibold mb-4">
-                    Add Question From QB
-                  </h3>
-                  <div className="flex items-center gap-3 mb-3">
+                    <h3 className="text-xl font-semibold mb-4">
+                      Add Question From QB
+                    </h3>
+                    <div className="flex items-center gap-3 mb-3">
                       <select
                         value={bankToAdd}
                         onChange={(e) => setBankToAdd(e.target.value)}
@@ -1095,10 +1092,10 @@ export default function ObjectiveTestDetail() {
                         disabled={!bankToAdd}
                       >Add Question Bank</button>
                     </div>
-                    </div>
+                  </div>
                   {/* Full-width bank selector row */}
                   <div className="mb-5">
-                    
+
                     {questionBank?.length === 0 ? (
                       <div className="text-sm text-gray-500">
                         No question banks
@@ -1114,11 +1111,10 @@ export default function ObjectiveTestDetail() {
                               type="button"
                               key={bank._id}
                               onClick={() => setSelectedBankId(bank._id)}
-                              className={`min-w-[280px] text-left rounded-xl border ${
-                                isSelected
+                              className={`min-w-[280px] text-left rounded-xl border ${isSelected
                                   ? "border-indigo-500 ring-2 ring-indigo-200"
                                   : "border-gray-200"
-                              } hover:border-gray-300 transition overflow-hidden bg-white shadow-sm`}
+                                } hover:border-gray-300 transition overflow-hidden bg-white shadow-sm`}
                             >
                               <div className="flex">
                                 <div className="w-24 h-full bg-gray-100 flex-shrink-0 overflow-hidden">
@@ -1220,7 +1216,7 @@ export default function ObjectiveTestDetail() {
                                 {subjects.map((s) => {
                                   const current =
                                     qbRequestCounts?.[selectedBankId]?.[
-                                      s.subject
+                                    s.subject
                                     ] || {};
                                   const bySD =
                                     qbSummaries?.[selectedBankId]
@@ -1242,8 +1238,8 @@ export default function ObjectiveTestDetail() {
                                               checked={(() => {
                                                 const m = qbRequestCounts?.[selectedBankId]?.[s.subject] || {};
                                                 const avail = getAvailableLevelsMap(selectedBankId, s.subject);
-                                                const allOn = ["L1","L2","L3"].every(l => (m[l] || 0) >= (avail[l] || 0) && (avail[l] || 0) > 0);
-                                                const anyOn = ["L1","L2","L3"].some(l => (m[l] || 0) > 0);
+                                                const allOn = ["L1", "L2", "L3"].every(l => (m[l] || 0) >= (avail[l] || 0) && (avail[l] || 0) > 0);
+                                                const anyOn = ["L1", "L2", "L3"].some(l => (m[l] || 0) > 0);
                                                 // Visual checked state is allOn; we set indeterminate below via ref
                                                 return allOn && anyOn;
                                               })()}
@@ -1251,8 +1247,8 @@ export default function ObjectiveTestDetail() {
                                                 if (!el) return;
                                                 const m = qbRequestCounts?.[selectedBankId]?.[s.subject] || {};
                                                 const avail = getAvailableLevelsMap(selectedBankId, s.subject);
-                                                const allOn = ["L1","L2","L3"].every(l => (m[l] || 0) >= (avail[l] || 0) && (avail[l] || 0) > 0);
-                                                const anyOn = ["L1","L2","L3"].some(l => (m[l] || 0) > 0);
+                                                const allOn = ["L1", "L2", "L3"].every(l => (m[l] || 0) >= (avail[l] || 0) && (avail[l] || 0) > 0);
+                                                const anyOn = ["L1", "L2", "L3"].some(l => (m[l] || 0) > 0);
                                                 el.indeterminate = anyOn && !allOn;
                                               }}
                                               onChange={(e) => handleToggleSubjectAll(selectedBankId, s.subject, e.target.checked)}
@@ -1350,7 +1346,7 @@ export default function ObjectiveTestDetail() {
                                                     max={available}
                                                     value={
                                                       qbRequestCounts?.[
-                                                        selectedBankId
+                                                      selectedBankId
                                                       ]?.[s.subject]?.[lvl] || 0
                                                     }
                                                     onChange={(e) => setLevelCount(selectedBankId, s.subject, lvl, e.target.value)}
@@ -1531,8 +1527,8 @@ export default function ObjectiveTestDetail() {
                                   <td className="px-3 py-2 border">
                                     {row.submittedAt
                                       ? new Date(
-                                          row.submittedAt
-                                        ).toLocaleString()
+                                        row.submittedAt
+                                      ).toLocaleString()
                                       : "-"}
                                   </td>
                                 </tr>

@@ -130,7 +130,7 @@ const AnswerDetailsModal = ({ answer, open, onClose }) => {
                 #{answer.attemptNumber}
               </div>
             </div>
-            
+
             {/* <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
               <div className="text-sm font-medium text-yellow-600 mb-1">
                 Difficulty
@@ -484,7 +484,7 @@ export default function EvaluatedAnswers() {
     try {
       const token = Cookies.get("evaluatortoken");
       const response = await axios.get(
-        `https://test.ailisher.com/api/answerapis/answers/evaluator/evaluated`,
+        `http://localhost:4000/api/answerapis/answers/evaluator/evaluated`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -597,17 +597,15 @@ export default function EvaluatedAnswers() {
             <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
               Score
             </div>
-            <div className="text-sm font-semibold text-gray-900">{`${
-              evaluation.score || evaluation.marks || 0
-            }/${answer.question.metadata?.maximumMarks || "N/A"}`}</div>
+            <div className="text-sm font-semibold text-gray-900">{`${evaluation.score || evaluation.marks || 0
+              }/${answer.question.metadata?.maximumMarks || "N/A"}`}</div>
           </div>
           <div className="bg-gray-50 rounded-lg p-3">
             <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
               Relevancy
             </div>
-            <div className="text-sm font-semibold text-gray-900">{`${
-              evaluation.relevancy || evaluation.accuracy || 0
-            }%`}</div>
+            <div className="text-sm font-semibold text-gray-900">{`${evaluation.relevancy || evaluation.accuracy || 0
+              }%`}</div>
           </div>
         </div>
         <div className="bg-gray-50 rounded-lg p-3 mb-4">

@@ -58,9 +58,9 @@ const CreateObjectiveSetModal = ({
     try {
       const token = Cookies.get("usertoken")
       const itemId = getItemId()
-      
+
       // Use the new objective assets endpoint
-      const endpoint = `https://test.ailisher.com/api/objective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
+      const endpoint = `http://localhost:4000/api/objective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
 
       const response = await axios.post(
         endpoint,
@@ -80,7 +80,7 @@ const CreateObjectiveSetModal = ({
         // If objectiveSets is not an array, initialize it as one
         setObjectiveSets([response.data.questionSet])
       }
-      
+
       setShowCreateObjectiveSetModal(false)
       toast.success("Objective question set created successfully")
     } catch (error) {

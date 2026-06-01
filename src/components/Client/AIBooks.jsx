@@ -192,9 +192,8 @@ const BookItem = ({
       {/* Book Card */}
       <div
         onClick={onClick}
-        className={`p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full border border-gray-100 relative ${
-          book.isEnabled ? "bg-white" : "bg-gray-400 opacity-50"
-        }`}
+        className={`p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full border border-gray-100 relative ${book.isEnabled ? "bg-white" : "bg-gray-400 opacity-50"
+          }`}
       >
         {/* Status indicators */}
         <div className="absolute top-2 right-2 flex gap-1">
@@ -257,9 +256,8 @@ const BookItem = ({
                     e.stopPropagation();
                     toggleEnabled(book);
                   }}
-                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center ${
-                    book.isEnabled === true ? "text-red-800" : "text-green-800"
-                  }`}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center ${book.isEnabled === true ? "text-red-800" : "text-green-800"
+                    }`}
                 >
                   <ToggleRight size={14} className="mr-2" />
                   {book.isEnabled === true ? "Disable" : "Enable"}
@@ -309,11 +307,10 @@ const BookItem = ({
             {/* Highlight toggle button */}
             <button
               onClick={handleToggleHighlight}
-              className={`p-1 rounded transition-colors ${
-                book.isHighlighted
+              className={`p-1 rounded transition-colors ${book.isHighlighted
                   ? "text-yellow-600 bg-yellow-100 hover:bg-yellow-200"
                   : "text-gray-400 hover:text-yellow-600 hover:bg-yellow-50"
-              }`}
+                }`}
               title={
                 book.isHighlighted
                   ? "Remove from highlights"
@@ -326,11 +323,10 @@ const BookItem = ({
             {/* Trending toggle button */}
             <button
               onClick={handleToggleTrending}
-              className={`p-1 rounded transition-colors ${
-                book.isTrending
+              className={`p-1 rounded transition-colors ${book.isTrending
                   ? "text-red-600 bg-red-100 hover:bg-red-200"
                   : "text-gray-400 hover:text-red-600 hover:bg-red-50"
-              }`}
+                }`}
               title={
                 book.isTrending ? "Remove from trending" : "Add to trending"
               }
@@ -339,19 +335,19 @@ const BookItem = ({
             </button>
 
             {book.isForSale && (
-  <div className="flex items-center gap-2 text-sm text-gray-700">
-    <Lock size={20} className="text-gray-500" />
-    <span className="text-green-600 font-semibold">
-      ₹{book.offerPrice}
-    </span>
-    |
-    <span>
-      {book.validityDays === 0
-        ? "Lifetime access"
-        : `${book.validityDays} days`}
-    </span>
-  </div>
-)}
+              <div className="flex items-center gap-2 text-sm text-gray-700">
+                <Lock size={20} className="text-gray-500" />
+                <span className="text-green-600 font-semibold">
+                  ₹{book.offerPrice}
+                </span>
+                |
+                <span>
+                  {book.validityDays === 0
+                    ? "Lifetime access"
+                    : `${book.validityDays} days`}
+                </span>
+              </div>
+            )}
 
 
           </div>
@@ -529,9 +525,8 @@ const FiltersPanel = ({
             <button onClick={() => setIsOpen(!isOpen)} className="p-1">
               <ChevronDown
                 size={20}
-                className={`text-gray-400 transition-transform ${
-                  isOpen ? "rotate-180" : ""
-                }`}
+                className={`text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""
+                  }`}
               />
             </button>
           </div>
@@ -865,7 +860,7 @@ const AddBookModal = ({
       toast.error('Please enter a book title first to generate a prompt.');
       return;
     }
-    
+
     if (!aiPrompt && !showAiPrompt) {
       setAiPrompt(`A professional book cover for ${formData.title} - ${formData.description.substring(0, 80)}`);
       setShowAiPrompt(true);
@@ -884,13 +879,13 @@ const AddBookModal = ({
       if (res?.success && res?.image) {
         const dataUrl = `data:image/png;base64,${res.image}`;
         setImagePreview(dataUrl);
-        
+
         // Auto-save to R2 to get a key
         const saveRes = await saveAIImageToR2({
           url: dataUrl,
           prompt: aiPrompt,
         });
-        
+
         if (saveRes?.success) {
           setAiCoverImageKey(saveRes.data.key);
           setCoverImage(null); // Clear manual file if AI is used
@@ -1070,7 +1065,7 @@ const AddBookModal = ({
         try {
           // Get presigned URL
           const uploadUrlResponse = await fetch(
-            "https://test.ailisher.com/api/books/cover-upload-url",
+            "http://localhost:4000/api/books/cover-upload-url",
             {
               method: "POST",
               headers: {
@@ -1179,7 +1174,7 @@ const AddBookModal = ({
 
       console.log("Sending book data:", bookData);
 
-      const response = await fetch("https://test.ailisher.com/api/books", {
+      const response = await fetch("http://localhost:4000/api/books", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -1574,9 +1569,8 @@ const AddBookModal = ({
                   name="rating"
                   value={formData.rating}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border ${
-                    formErrors.rating ? "border-red-500" : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                  className={`w-full px-3 py-2 border ${formErrors.rating ? "border-red-500" : "border-gray-300"
+                    } rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                   min="0"
                   max="5"
                   step="0.1"
@@ -1600,11 +1594,10 @@ const AddBookModal = ({
                   name="ratingCount"
                   value={formData.ratingCount}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border ${
-                    formErrors.ratingCount
+                  className={`w-full px-3 py-2 border ${formErrors.ratingCount
                       ? "border-red-500"
                       : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                    } rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                   min="0"
                   placeholder="Enter number of ratings"
                 />
@@ -1630,9 +1623,8 @@ const AddBookModal = ({
                 name="summary"
                 value={formData.summary}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border ${
-                  formErrors.summary ? "border-red-500" : "border-gray-300"
-                } rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 h-24`}
+                className={`w-full px-3 py-2 border ${formErrors.summary ? "border-red-500" : "border-gray-300"
+                  } rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 h-24`}
                 maxLength={500}
                 placeholder="Enter a brief summary of the book..."
               />
@@ -1795,7 +1787,7 @@ const AddBookModal = ({
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-teal-500"
                     >
                       <option value="INR">INR</option>
-                  <option value="USD">USD</option>
+                      <option value="USD">USD</option>
                     </select>
                   </div>
                 </div>
@@ -1823,21 +1815,21 @@ const AddBookModal = ({
                 <span className="text-xs font-semibold text-purple-700 uppercase tracking-wider">AI Cover Lab</span>
                 {isGenerating && <Loader2 className="animate-spin h-4 w-4 text-purple-700" />}
               </div>
-              
-              <button 
-                type="button" 
+
+              <button
+                type="button"
                 onClick={handleAiGenerate}
                 disabled={isGenerating || isSubmitting}
                 className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-white text-purple-700 rounded-md hover:bg-purple-50 transition-all border border-purple-200 shadow-sm font-medium"
               >
                 {isGenerating ? (
-                   <Loader2 className="animate-spin h-4 w-4" />
+                  <Loader2 className="animate-spin h-4 w-4" />
                 ) : (
                   <Sparkles size={18} />
                 )}
                 {isGenerating ? 'Generating Magic...' : (showAiPrompt ? 'Generate Image' : 'Generate with AI')}
               </button>
-              
+
               {showAiPrompt && (
                 <div className="mt-3 animate-in fade-in slide-in-from-top-1 duration-300">
                   <textarea
@@ -2087,7 +2079,7 @@ const EditBookModal = ({
       toast.error('Please enter a book title first to generate a prompt.');
       return;
     }
-    
+
     if (!aiPrompt && !showAiPrompt) {
       setAiPrompt(`A professional book cover for ${formData.title} - ${formData.description.substring(0, 80)}`);
       setShowAiPrompt(true);
@@ -2106,13 +2098,13 @@ const EditBookModal = ({
       if (res?.success && res?.image) {
         const dataUrl = `data:image/png;base64,${res.image}`;
         setImagePreview(dataUrl);
-        
+
         // Auto-save to R2 to get a key
         const saveRes = await saveAIImageToR2({
           url: dataUrl,
           prompt: aiPrompt,
         });
-        
+
         if (saveRes?.success) {
           setAiCoverImageKey(saveRes.data.key);
           setCoverImage(null); // Clear manual file if AI is used
@@ -2302,7 +2294,7 @@ const EditBookModal = ({
       }
 
       const response = await fetch(
-        `https://test.ailisher.com/api/books/${book._id}`,
+        `http://localhost:4000/api/books/${book._id}`,
         {
           method: "PUT",
           headers: {
@@ -2590,9 +2582,8 @@ const EditBookModal = ({
                   name="rating"
                   value={formData.rating}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border ${
-                    formErrors.rating ? "border-red-500" : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                  className={`w-full px-3 py-2 border ${formErrors.rating ? "border-red-500" : "border-gray-300"
+                    } rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                   min="0"
                   max="5"
                   step="0.1"
@@ -2616,11 +2607,10 @@ const EditBookModal = ({
                   name="ratingCount"
                   value={formData.ratingCount}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 border ${
-                    formErrors.ratingCount
+                  className={`w-full px-3 py-2 border ${formErrors.ratingCount
                       ? "border-red-500"
                       : "border-gray-300"
-                  } rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500`}
+                    } rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                   min="0"
                   placeholder="Enter number of ratings"
                 />
@@ -2646,9 +2636,8 @@ const EditBookModal = ({
                 name="summary"
                 value={formData.summary}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 border ${
-                  formErrors.summary ? "border-red-500" : "border-gray-300"
-                } rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 h-24`}
+                className={`w-full px-3 py-2 border ${formErrors.summary ? "border-red-500" : "border-gray-300"
+                  } rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 h-24`}
                 maxLength={500}
                 placeholder="Enter a brief summary of the book..."
               />
@@ -2840,21 +2829,21 @@ const EditBookModal = ({
                 <span className="text-xs font-semibold text-purple-700 uppercase tracking-wider">AI Cover Lab</span>
                 {isGenerating && <Loader2 className="animate-spin h-4 w-4 text-purple-700" />}
               </div>
-              
-              <button 
-                type="button" 
+
+              <button
+                type="button"
                 onClick={handleAiGenerate}
                 disabled={isGenerating || isSubmitting}
                 className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-white text-purple-700 rounded-md hover:bg-purple-50 transition-all border border-purple-200 shadow-sm font-medium"
               >
                 {isGenerating ? (
-                   <Loader2 className="animate-spin h-4 w-4" />
+                  <Loader2 className="animate-spin h-4 w-4" />
                 ) : (
                   <Sparkles size={18} />
                 )}
                 {isGenerating ? 'Generating Magic...' : (showAiPrompt ? 'Generate Image' : 'Generate with AI')}
               </button>
-              
+
               {showAiPrompt && (
                 <div className="mt-3 animate-in fade-in slide-in-from-top-1 duration-300">
                   <textarea
@@ -2976,7 +2965,7 @@ const AIBooks = () => {
 
       // Fetch categories from backend
       const categoriesResponse = await fetch(
-        "https://test.ailisher.com/api/categories",
+        "http://localhost:4000/api/categories",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -3151,12 +3140,12 @@ const AIBooks = () => {
           prev.map((book) =>
             book._id === bookId
               ? {
-                  ...book,
-                  isHighlighted,
-                  highlightedAt: isHighlighted
-                    ? new Date().toISOString()
-                    : null,
-                }
+                ...book,
+                isHighlighted,
+                highlightedAt: isHighlighted
+                  ? new Date().toISOString()
+                  : null,
+              }
               : book
           )
         );
@@ -3195,10 +3184,10 @@ const AIBooks = () => {
           prev.map((book) =>
             book._id === bookId
               ? {
-                  ...book,
-                  isTrending,
-                  trendingAt: isTrending ? new Date().toISOString() : null,
-                }
+                ...book,
+                isTrending,
+                trendingAt: isTrending ? new Date().toISOString() : null,
+              }
               : book
           )
         );
@@ -3528,11 +3517,10 @@ const AIBooks = () => {
                   <div className="flex flex-wrap gap-2 mb-6">
                     <button
                       onClick={() => toggleSubCategory(mainCategory, null)}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                        !selectedSubCategories[mainCategory]
+                      className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${!selectedSubCategories[mainCategory]
                           ? "bg-indigo-600 text-white"
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      }`}
+                        }`}
                     >
                       All {mainCategory}
                     </button>
@@ -3542,11 +3530,10 @@ const AIBooks = () => {
                         onClick={() =>
                           toggleSubCategory(mainCategory, subCategory)
                         }
-                        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                          selectedSubCategories[mainCategory] === subCategory
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedSubCategories[mainCategory] === subCategory
                             ? "bg-indigo-600 text-white"
                             : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}
+                          }`}
                       >
                         {subCategory}
                       </button>

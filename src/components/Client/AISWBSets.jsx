@@ -45,14 +45,14 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
         return;
       }
 
-      const response = await fetch(`https://test.ailisher.com/api/aiswb/topic/${topicId}/sets`, {
+      const response = await fetch(`http://localhost:4000/api/aiswb/topic/${topicId}/sets`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         console.log(data.sets);
         setSets(data.sets || []);
@@ -93,13 +93,13 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
         return;
       }
 
-      const response = await fetch(`https://test.ailisher.com/api/aiswb/topic/${topicId}/sets`, {
+      const response = await fetch(`http://localhost:4000/api/aiswb/topic/${topicId}/sets`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           name: newSetName.trim(),
           startsAt: startsAt ? new Date(startsAt).toISOString() : null,
           endsAt: endsAt ? new Date(endsAt).toISOString() : null
@@ -107,7 +107,7 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         setSets(prevSets => [...prevSets, data.set]);
         setNewSetName('');
@@ -137,7 +137,7 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
         toast.error('Authentication required');
         return;
       }
-      const response = await fetch(`https://test.ailisher.com/api/aiswb/topic/${topicId}/sets/${setToDelete}`, {
+      const response = await fetch(`http://localhost:4000/api/aiswb/topic/${topicId}/sets/${setToDelete}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -196,13 +196,13 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
         return;
       }
 
-      const response = await fetch(`https://test.ailisher.com/api/aiswb/topic/${topicId}/sets/${editingSet.id}`, {
+      const response = await fetch(`http://localhost:4000/api/aiswb/topic/${topicId}/sets/${editingSet.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           name: newSetName.trim(),
           startsAt: startsAt ? new Date(startsAt).toISOString() : null,
           endsAt: endsAt ? new Date(endsAt).toISOString() : null
@@ -210,9 +210,9 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
-        setSets(prevSets => prevSets.map(set => 
+        setSets(prevSets => prevSets.map(set =>
           set.id === editingSet.id ? data.set : set
         ));
         setNewSetName('');

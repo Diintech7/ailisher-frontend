@@ -60,9 +60,9 @@ const GenerateAssetsModal = ({ isOpen, onClose, itemType, itemId, isWorkbook, bo
         return
       }
 
-      const baseUrl = process.env.REACT_APP_API_URL || 'https://test.ailisher.com/api'
+      const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:4000/api'
       let endpoint = ''
-      
+
       if (itemType === 'book') {
         endpoint = `${baseUrl}/datastores/book/${itemId}`
       } else if (itemType === 'chapter') {
@@ -83,7 +83,7 @@ const GenerateAssetsModal = ({ isOpen, onClose, itemType, itemId, isWorkbook, bo
           'Authorization': `Bearer ${token}`
         }
       })
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => null)
         throw new Error(errorData?.message || 'Failed to fetch data')
@@ -127,7 +127,7 @@ const GenerateAssetsModal = ({ isOpen, onClose, itemType, itemId, isWorkbook, bo
       if (field === 'sets') {
         const numSets = parseInt(value) || 0
         const currentSetNames = newConfig[type][level].setNames || []
-        const newSetNames = Array(numSets).fill('').map((_, index) => 
+        const newSetNames = Array(numSets).fill('').map((_, index) =>
           currentSetNames[index] || `Set ${index + 1}`
         )
         newConfig[type][level].setNames = newSetNames
@@ -144,7 +144,7 @@ const GenerateAssetsModal = ({ isOpen, onClose, itemType, itemId, isWorkbook, bo
         ...prev[type],
         [level]: {
           ...prev[type][level],
-          setNames: prev[type][level].setNames.map((name, i) => 
+          setNames: prev[type][level].setNames.map((name, i) =>
             i === index ? value : name
           )
         }
@@ -162,7 +162,7 @@ const GenerateAssetsModal = ({ isOpen, onClose, itemType, itemId, isWorkbook, bo
     try {
       // Get selected data details
       const selectedDataDetails = availableData.filter(data => selectedData.includes(data._id))
-      
+
       const content = await generateEducationalContent(
         itemType,
         item?.title || getItemTitle().toLowerCase(),
@@ -191,7 +191,7 @@ const GenerateAssetsModal = ({ isOpen, onClose, itemType, itemId, isWorkbook, bo
       }
 
       const content = generatedContent.raw
-      const baseUrl = process.env.REACT_APP_API_URL || 'https://test.ailisher.com/api'
+      const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:4000/api'
 
       // Calculate total items to save
       let totalItems = 0
@@ -472,21 +472,19 @@ const GenerateAssetsModal = ({ isOpen, onClose, itemType, itemId, isWorkbook, bo
           <h3 className="text-lg font-medium text-gray-700 mb-4">Data Source</h3>
           <div className="flex space-x-4">
             <button
-              className={`px-4 py-2 rounded-md ${
-                dataSourceType === 'with'
+              className={`px-4 py-2 rounded-md ${dataSourceType === 'with'
                   ? 'bg-indigo-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
               onClick={() => setDataSourceType('with')}
             >
               Generate with Data
             </button>
             <button
-              className={`px-4 py-2 rounded-md ${
-                dataSourceType === 'without'
+              className={`px-4 py-2 rounded-md ${dataSourceType === 'without'
                   ? 'bg-indigo-600 text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
               onClick={() => setDataSourceType('without')}
             >
               Generate without Data
@@ -500,19 +498,17 @@ const GenerateAssetsModal = ({ isOpen, onClose, itemType, itemId, isWorkbook, bo
                 {availableData.map((data) => (
                   <div
                     key={data._id}
-                    className={`p-4 border rounded-lg cursor-pointer ${
-                      selectedData.includes(data._id)
+                    className={`p-4 border rounded-lg cursor-pointer ${selectedData.includes(data._id)
                         ? 'border-indigo-500 bg-indigo-50'
                         : 'border-gray-200 hover:border-indigo-300'
-                    }`}
+                      }`}
                     onClick={() => handleDataSelect(data._id)}
                   >
                     <div className="flex items-start">
-                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center mr-3 mt-1 ${
-                        selectedData.includes(data._id)
+                      <div className={`w-5 h-5 rounded-full border flex items-center justify-center mr-3 mt-1 ${selectedData.includes(data._id)
                           ? 'border-indigo-500 bg-indigo-500'
                           : 'border-gray-300'
-                      }`}>
+                        }`}>
                         {selectedData.includes(data._id) && (
                           <Check size={14} className="text-white" />
                         )}
@@ -574,7 +570,7 @@ const GenerateAssetsModal = ({ isOpen, onClose, itemType, itemId, isWorkbook, bo
         {/* Configuration */}
         <div className="mb-8">
           <h3 className="text-lg font-medium text-gray-700 mb-4">Generation Configuration</h3>
-          
+
           {/* Summary Section */}
           <div className="mb-6">
             <h4 className="font-medium text-gray-800 mb-3">Summary</h4>

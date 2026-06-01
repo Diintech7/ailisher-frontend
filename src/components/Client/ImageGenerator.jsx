@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import axios from 'axios'
 import { useNavigate } from 'react-router-dom'
-import { toast } from 'react-toastify'  
+import { toast } from 'react-toastify'
 import Cookies from 'js-cookie';
 import { Download, GalleryThumbnailsIcon, Plus, Trash2 } from 'lucide-react';
 
@@ -18,12 +18,12 @@ export default function ImageGenerator() {
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
   const [modalPreviewUrl, setModalPreviewUrl] = useState('')
-  
+
   // New state variables for enhanced functionality
   const [savedImages, setSavedImages] = useState([])
   const [loadingSavedImages, setLoadingSavedImages] = useState(false)
   const [showSavedImages, setShowSavedImages] = useState(false)
-  
+
   // Text overlay states
   const [overlayText, setOverlayText] = useState('')
   const [overlayFontSize, setOverlayFontSize] = useState(52)
@@ -42,11 +42,11 @@ export default function ImageGenerator() {
   const [lightboxUrl, setLightboxUrl] = useState('')
 
   const axiosConfig = {
-    baseURL: 'https://test.ailisher.com',
+    baseURL: 'http://localhost:4000',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${Cookies.get('usertoken')}`
-    },  
+    },
   }
 
   // Load saved images on component mount
@@ -68,7 +68,7 @@ export default function ImageGenerator() {
         aspect_ratio: aspectRatio,
         seed
       }, axiosConfig)
-      
+
       if (data?.success && data?.image) {
         const dataUrl = `data:image/png;base64,${data.image}`
         setModalPreviewUrl(dataUrl)
@@ -102,7 +102,7 @@ export default function ImageGenerator() {
       const base64ToSave = lastOverlayBase64
         ? lastOverlayBase64
         : (imageData.url.includes(',') ? imageData.url.split(',')[1] : imageData.url)
-      
+
       const { data } = await axios.post('/api/image-generator/save-image', {
         imageBase64: base64ToSave,
         prompt: imageData.prompt,
@@ -113,7 +113,7 @@ export default function ImageGenerator() {
         isPublic: false, // optional public/private
         contentType: 'image/png'
       }, axiosConfig)
-      
+
       if (data?.success) {
         toast.success('Image saved successfully!')
         // Add to saved images list
@@ -259,7 +259,7 @@ export default function ImageGenerator() {
           <div className="w-32 border-l bg-white/80 backdrop-blur px-3 py-3 rounded-r flex-shrink-0">
             <p className="text-xs font-medium text-gray-700 mb-2">Aspect Ratio</p>
             <div className="space-y-2">
-              {['1:1','16:9','9:16','4:3'].map(r => (
+              {['1:1', '16:9', '9:16', '4:3'].map(r => (
                 <label key={r} className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="radio"
@@ -419,59 +419,59 @@ export default function ImageGenerator() {
         </div>
 
         {/* Saved Images Section */}
-          <div className="mb-8">
-            {loadingSavedImages ? (
-              <div className="text-center py-8">Loading saved images...</div>
-            ) : savedImages.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {savedImages.map((image) => (
-                  <div key={image._id} className="bg-white rounded-lg shadow-md overflow-hidden">
-                    <div className="relative">
-                      <img 
-                        src={image.generatedImageUrl} 
-                        alt={image.prompt}
-                        onClick={() => setLightboxUrl(image.generatedImageUrl)}
-                        className="w-full h-64 object-cover cursor-zoom-in"
-                      />
-                      <button
-                        onClick={() => toggleMenu(image._id)}
-                        className="absolute top-2 right-2 bg-white/90 hover:bg-white rounded-full p-2 shadow"
-                        aria-label="More options"
-                      >
-                        ⋯
-                      </button>
-                      {openMenuId === image._id && (
-                        <div className="absolute right-2 top-10 w-36 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
-                          <button
-                            onClick={() => { handleDownload(image.generatedImageUrl); setOpenMenuId(null) }}
-                            className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                          >
-                            <Download className="w-4 h-4" />
-                            <span>Download</span>
-                          </button>
-                          <button
-                            onClick={() => { if (window.confirm('Delete this image?')) { handleDeleteSavedImage(image._id) } setOpenMenuId(null) }}
-                            className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            <span>Delete</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <p className="font-semibold text-sm mb-1 truncate" title={image.prompt}>{image.prompt}</p>
-                      <p className="text-xs text-gray-500 mb-3">{image.style} • {image.aspectRatio} • seed {image.seed}</p>
-                    </div>
+        <div className="mb-8">
+          {loadingSavedImages ? (
+            <div className="text-center py-8">Loading saved images...</div>
+          ) : savedImages.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {savedImages.map((image) => (
+                <div key={image._id} className="bg-white rounded-lg shadow-md overflow-hidden">
+                  <div className="relative">
+                    <img
+                      src={image.generatedImageUrl}
+                      alt={image.prompt}
+                      onClick={() => setLightboxUrl(image.generatedImageUrl)}
+                      className="w-full h-64 object-cover cursor-zoom-in"
+                    />
+                    <button
+                      onClick={() => toggleMenu(image._id)}
+                      className="absolute top-2 right-2 bg-white/90 hover:bg-white rounded-full p-2 shadow"
+                      aria-label="More options"
+                    >
+                      ⋯
+                    </button>
+                    {openMenuId === image._id && (
+                      <div className="absolute right-2 top-10 w-36 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+                        <button
+                          onClick={() => { handleDownload(image.generatedImageUrl); setOpenMenuId(null) }}
+                          className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+                        >
+                          <Download className="w-4 h-4" />
+                          <span>Download</span>
+                        </button>
+                        <button
+                          onClick={() => { if (window.confirm('Delete this image?')) { handleDeleteSavedImage(image._id) } setOpenMenuId(null) }}
+                          className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8 bg-white rounded-lg border">
-                <p className="text-gray-500">No saved images yet. Generate and save some images!</p>
-              </div>
-            )}
-          </div>
+                  <div className="p-4">
+                    <p className="font-semibold text-sm mb-1 truncate" title={image.prompt}>{image.prompt}</p>
+                    <p className="text-xs text-gray-500 mb-3">{image.style} • {image.aspectRatio} • seed {image.seed}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 bg-white rounded-lg border">
+              <p className="text-gray-500">No saved images yet. Generate and save some images!</p>
+            </div>
+          )}
+        </div>
 
         {/* Generated Images Section */}
         <div>

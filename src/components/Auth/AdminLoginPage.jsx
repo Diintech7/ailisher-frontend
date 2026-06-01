@@ -12,19 +12,19 @@ const AdminLoginPage = ({ onAuthSuccess }) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-    
+
     try {
       // Make API call to your backend
-      const response = await fetch('https://test.ailisher.com/api/admin/login', {
+      const response = await fetch('http://localhost:4000/api/admin/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         // Store token and admin data in cookies
         Cookies.set('admintoken', data.token, { expires: 7 });
@@ -34,7 +34,7 @@ const AdminLoginPage = ({ onAuthSuccess }) => {
           email: data.user.email,
           role: 'admin'
         }), { expires: 7 });
-        
+
         // Notify parent component of success
         onAuthSuccess();
       } else {

@@ -12,17 +12,17 @@ const EvaluatorLoginPage = ({ onAuthSuccess }) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-    
+
     try {
       // Make API call to your backend
-      const response = await fetch('https://test.ailisher.com/api/evaluators/login', {
+      const response = await fetch('http://localhost:4000/api/evaluators/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
       });
-      
+
       const data = await response.json();
       console.log('Login response data:', data);
       if (data.success) {
@@ -36,7 +36,7 @@ const EvaluatorLoginPage = ({ onAuthSuccess }) => {
         console.log('Setting evaluator user data:', userData);
         Cookies.set('evaluatortoken', data.token, { expires: 7 });
         Cookies.set('evaluatorUser', JSON.stringify(userData), { expires: 7 });
-        
+
         // Notify parent component of success
         onAuthSuccess();
       } else {

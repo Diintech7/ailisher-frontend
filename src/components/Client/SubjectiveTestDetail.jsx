@@ -55,7 +55,7 @@ export default function SubjectiveTestDetail() {
     try {
       setLoading(true);
       const response = await axios.get(
-        `https://test.ailisher.com/api/subjectivetest-questions/${testId}`,
+        `http://localhost:4000/api/subjectivetest-questions/${testId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -64,7 +64,7 @@ export default function SubjectiveTestDetail() {
       setTestDetails(response.data.questions);
 
       const testResponse = await axios.get(
-        `https://test.ailisher.com/api/subjectivetests/${testId}`,
+        `http://localhost:4000/api/subjectivetests/${testId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -150,7 +150,7 @@ export default function SubjectiveTestDetail() {
         return false;
       }
       const res = await fetch(
-        `https://test.ailisher.com/api/subjectivetest-questions/${testId}`,
+        `http://localhost:4000/api/subjectivetest-questions/${testId}`,
         {
           method: "POST",
           headers: {
@@ -184,7 +184,7 @@ export default function SubjectiveTestDetail() {
       const questionId = editedQuestion.id || editedQuestion._id;
       const { id, _id, ...questionBody } = editedQuestion;
       const res = await fetch(
-        `https://test.ailisher.com/api/subjectivetest-questions/${questionId}`,
+        `http://localhost:4000/api/subjectivetest-questions/${questionId}`,
         {
           method: "PUT",
           headers: {
@@ -217,7 +217,7 @@ export default function SubjectiveTestDetail() {
         return;
       }
       const res = await fetch(
-        `https://test.ailisher.com/api/subjectivetest-questions/${questionId}`,
+        `http://localhost:4000/api/subjectivetest-questions/${questionId}`,
         {
           method: "DELETE",
           headers: {
@@ -252,13 +252,13 @@ export default function SubjectiveTestDetail() {
   return (
     <>
       <div className="p-2">
-      <button
+        <button
           onClick={() => navigate(-1)}
           className="p-2 hover:bg-gray-100 rounded-full transition-colors flex gap-4 justify-center items-center"
         >
           <ArrowLeft size={20} className="text-gray-600" />
           Back
-      </button>
+        </button>
       </div>
       <div className="min-h-screen bg-gray-50 px-4 sm:px-6 lg:px-8">
         {/* Header */}
@@ -332,7 +332,7 @@ export default function SubjectiveTestDetail() {
                             Questions
                           </p>
                           <p className="text-lg font-semibold text-gray-900">
-                             {testInfo?.questions?.length || 0}                            
+                            {testInfo?.questions?.length || 0}
                           </p>
                         </div>
                       </div>
@@ -356,7 +356,7 @@ export default function SubjectiveTestDetail() {
             </div>
           </div>
         </div>
-          {/* Filters and Search */}
+        {/* Filters and Search */}
         <div className="w-full mx-auto ">
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 p-4">
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -397,213 +397,213 @@ export default function SubjectiveTestDetail() {
 
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
-              onClick={() => {
-                setEditingQuestion(null);
-                setShowAddQuestionModal(true);
-              }}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center"
-            >
-              <Plus size={16} className="mr-2" />
-              Add Question
+                  onClick={() => {
+                    setEditingQuestion(null);
+                    setShowAddQuestionModal(true);
+                  }}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center"
+                >
+                  <Plus size={16} className="mr-2" />
+                  Add Question
                 </button>
               </div>
             </div>
           </div>
         </div>
-      {/* Questions List (modeled like AISWBQuestions) */}
-      {Array.isArray(testDetails) && testDetails.length > 0 && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="space-y-4">
-              {(testDetails
-                ?.filter((q) => {
-                  if (!searchTerm) return true;
-                  const t = searchTerm.toLowerCase();
-                  const text = String(q?.question || "").toLowerCase();
-                  return text.includes(t);
-                }) || [])
-                .map((question, index) => (
-                  <div
-                    key={question.id || question._id || index}
-                    className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    <div className="flex-grow">
-                      <h3 className="text-lg font-medium text-gray-800">{question.question}</h3>
-                      <div className="flex items-center mt-2 space-x-4 text-sm text-gray-600">
-                        <span>
-                          Difficulty: {question?.metadata?.difficultyLevel || question?.difficulty || "level1"}
-                        </span>
-                        {question?.metadata?.maximumMarks != null && (
-                          <span>Marks: {question.metadata.maximumMarks}</span>
-                        )}
-                        {question?.metadata?.estimatedTime != null && (
-                          <span>Time: {question.metadata.estimatedTime}m</span>
-                        )}
+        {/* Questions List (modeled like AISWBQuestions) */}
+        {Array.isArray(testDetails) && testDetails.length > 0 && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="bg-white rounded-lg shadow p-6">
+              <div className="space-y-4">
+                {(testDetails
+                  ?.filter((q) => {
+                    if (!searchTerm) return true;
+                    const t = searchTerm.toLowerCase();
+                    const text = String(q?.question || "").toLowerCase();
+                    return text.includes(t);
+                  }) || [])
+                  .map((question, index) => (
+                    <div
+                      key={question.id || question._id || index}
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <div className="flex-grow">
+                        <h3 className="text-lg font-medium text-gray-800">{question.question}</h3>
+                        <div className="flex items-center mt-2 space-x-4 text-sm text-gray-600">
+                          <span>
+                            Difficulty: {question?.metadata?.difficultyLevel || question?.difficulty || "level1"}
+                          </span>
+                          {question?.metadata?.maximumMarks != null && (
+                            <span>Marks: {question.metadata.maximumMarks}</span>
+                          )}
+                          {question?.metadata?.estimatedTime != null && (
+                            <span>Time: {question.metadata.estimatedTime}m</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleViewQuestion(question)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                          title="View Details"
+                        >
+                          <Eye size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleGenerateQR(question)}
+                          className="p-2 text-purple-600 hover:bg-purple-50 rounded-full transition-colors"
+                          title="Generate QR Code"
+                        >
+                          <QrCode size={18} />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingQuestion(question);
+                            setShowAddQuestionModal(true);
+                          }}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                          title="Edit Question"
+                        >
+                          <Edit2 size={18} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSubjectiveQuestion(question.id || question._id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                          title="Delete Question"
+                        >
+                          <Trash2 size={18} />
+                        </button>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleViewQuestion(question)}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
-                        title="View Details"
-                      >
-                        <Eye size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleGenerateQR(question)}
-                        className="p-2 text-purple-600 hover:bg-purple-50 rounded-full transition-colors"
-                        title="Generate QR Code"
-                      >
-                        <QrCode size={18} />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setEditingQuestion(question);
-                          setShowAddQuestionModal(true);
-                        }}
-                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
-                        title="Edit Question"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteSubjectiveQuestion(question.id || question._id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-full transition-colors"
-                        title="Delete Question"
-                      >
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Empty State */}
-      {(!testDetails || testDetails.length === 0) && !loading && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center">
-            <FileText size={48} className="mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Questions Found</h3>
-            <p className="text-gray-600 mb-6">This test doesn't have any questions yet.</p>
-            <button
-              onClick={() => navigate(-1)}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-            >
-              <ArrowLeft size={16} className="mr-2" />
-              Go Back
-            </button>
-          </div>
-        </div>
-      )}
-
-      {showAddQuestionModal && (
-        <AddAISWBModal
-          isOpen={showAddQuestionModal}
-          onClose={() => {
-            setShowAddQuestionModal(false);
-            setEditingQuestion(null);
-          }}
-          onAddQuestion={handleAddSubjectiveQuestion}
-          onEditQuestion={handleEditSubjectiveQuestion}
-          editingQuestion={editingQuestion}
-        />
-      )}
-
-      {showQuestionDetails && selectedQuestion && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-bold text-gray-800">Question Details</h3>
-              <button
-                onClick={() => setShowQuestionDetails(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="space-y-6">
-              <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                <h4 className="text-lg font-semibold text-blue-800 mb-2">Question</h4>
-                <p className="text-gray-800">{selectedQuestion.question}</p>
+                  ))}
               </div>
-              {selectedQuestion?.metadata && (
-                <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
-                  <h4 className="text-lg font-semibold text-purple-800 mb-3">Metadata</h4>
-                  <div className="grid grid-cols-2 gap-4 text-gray-800">
-                    <div>
-                      <p className="text-sm font-medium text-purple-700">Difficulty</p>
-                      <p>{selectedQuestion.metadata.difficultyLevel || selectedQuestion.difficulty || "level1"}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-purple-700">Estimated Time</p>
-                      <p>{selectedQuestion.metadata.estimatedTime ?? "-"} minutes</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-purple-700">Maximum Marks</p>
-                      <p>{selectedQuestion.metadata.maximumMarks ?? "-"}</p>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {showQRModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-semibold text-gray-800">QR Code</h3>
+        {/* Empty State */}
+        {(!testDetails || testDetails.length === 0) && !loading && (
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="text-center">
+              <FileText size={48} className="mx-auto text-gray-400 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Questions Found</h3>
+              <p className="text-gray-600 mb-6">This test doesn't have any questions yet.</p>
               <button
-                onClick={() => setShowQRModal(false)}
-                className="text-gray-500 hover:text-gray-700"
+                onClick={() => navigate(-1)}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               >
-                ✕
+                <ArrowLeft size={16} className="mr-2" />
+                Go Back
               </button>
             </div>
-            <div className="flex flex-col items-center">
-              {loadingQR ? (
-                <div className="bg-gray-100 rounded-lg h-64 w-64 flex flex-col items-center justify-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-indigo-600 mb-3"></div>
-                  <p className="text-gray-600">Generating QR code...</p>
-                </div>
-              ) : qrError ? (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-6 w-full text-center">
-                  <p className="text-red-600 font-medium mb-3">QR Code Generation Failed</p>
-                  <p className="text-red-600 mb-4 text-sm">{qrError}</p>
-                </div>
-              ) : qrCodeData?.qrCodeDataURL ? (
-                <div className="border border-gray-200 p-4 rounded-lg shadow-sm">
-                  <img
-                    src={qrCodeData.qrCodeDataURL}
-                    alt="Question QR Code"
-                    className="h-64 w-64 object-contain"
-                  />
-                </div>
-              ) : (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 w-full text-center">
-                  <p className="text-yellow-700 mb-4">No QR code data available. Please try generating again.</p>
-                </div>
-              )}
+          </div>
+        )}
 
-              {qrCodeData?.qrCodeDataURL && (
+        {showAddQuestionModal && (
+          <AddAISWBModal
+            isOpen={showAddQuestionModal}
+            onClose={() => {
+              setShowAddQuestionModal(false);
+              setEditingQuestion(null);
+            }}
+            onAddQuestion={handleAddSubjectiveQuestion}
+            onEditQuestion={handleEditSubjectiveQuestion}
+            editingQuestion={editingQuestion}
+          />
+        )}
+
+        {showQuestionDetails && selectedQuestion && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-bold text-gray-800">Question Details</h3>
                 <button
-                  onClick={handleDownloadQR}
-                  className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors flex items-center"
+                  onClick={() => setShowQuestionDetails(false)}
+                  className="text-gray-500 hover:text-gray-700"
                 >
-                  <Download size={16} className="mr-2" />
-                  Download QR Code
+                  ✕
                 </button>
-              )}
+              </div>
+              <div className="space-y-6">
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                  <h4 className="text-lg font-semibold text-blue-800 mb-2">Question</h4>
+                  <p className="text-gray-800">{selectedQuestion.question}</p>
+                </div>
+                {selectedQuestion?.metadata && (
+                  <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                    <h4 className="text-lg font-semibold text-purple-800 mb-3">Metadata</h4>
+                    <div className="grid grid-cols-2 gap-4 text-gray-800">
+                      <div>
+                        <p className="text-sm font-medium text-purple-700">Difficulty</p>
+                        <p>{selectedQuestion.metadata.difficultyLevel || selectedQuestion.difficulty || "level1"}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-purple-700">Estimated Time</p>
+                        <p>{selectedQuestion.metadata.estimatedTime ?? "-"} minutes</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-purple-700">Maximum Marks</p>
+                        <p>{selectedQuestion.metadata.maximumMarks ?? "-"}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        {showQRModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-semibold text-gray-800">QR Code</h3>
+                <button
+                  onClick={() => setShowQRModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="flex flex-col items-center">
+                {loadingQR ? (
+                  <div className="bg-gray-100 rounded-lg h-64 w-64 flex flex-col items-center justify-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-indigo-600 mb-3"></div>
+                    <p className="text-gray-600">Generating QR code...</p>
+                  </div>
+                ) : qrError ? (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-6 w-full text-center">
+                    <p className="text-red-600 font-medium mb-3">QR Code Generation Failed</p>
+                    <p className="text-red-600 mb-4 text-sm">{qrError}</p>
+                  </div>
+                ) : qrCodeData?.qrCodeDataURL ? (
+                  <div className="border border-gray-200 p-4 rounded-lg shadow-sm">
+                    <img
+                      src={qrCodeData.qrCodeDataURL}
+                      alt="Question QR Code"
+                      className="h-64 w-64 object-contain"
+                    />
+                  </div>
+                ) : (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 w-full text-center">
+                    <p className="text-yellow-700 mb-4">No QR code data available. Please try generating again.</p>
+                  </div>
+                )}
+
+                {qrCodeData?.qrCodeDataURL && (
+                  <button
+                    onClick={handleDownloadQR}
+                    className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors flex items-center"
+                  >
+                    <Download size={16} className="mr-2" />
+                    Download QR Code
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </>
   );
 }

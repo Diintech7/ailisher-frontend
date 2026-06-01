@@ -28,9 +28,9 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
       }
 
       console.log('🔍 Fetching sets for topic:', topicId);
-      console.log('📡 API URL:', `https://test.ailisher.com/api/aiswb/topic/${topicId}/sets`);
-      
-      const response = await fetch(`https://test.ailisher.com/api/aiswb/topic/${topicId}/sets`, {
+      console.log('📡 API URL:', `http://localhost:4000/api/aiswb/topic/${topicId}/sets`);
+
+      const response = await fetch(`http://localhost:4000/api/aiswb/topic/${topicId}/sets`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -42,7 +42,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
         setsCount: data.sets?.length || 0,
         sets: data.sets
       });
-      
+
       if (data.success) {
         // Store the original question IDs in a separate property
         const setsWithQuestionIds = data.sets.map(set => ({
@@ -89,9 +89,9 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
 
       if (questionIds.length === 0) {
         console.log('⚠️ No questions found in set:', setId);
-        setSets(prevSets => 
-          prevSets.map(s => 
-            s.id === setId 
+        setSets(prevSets =>
+          prevSets.map(s =>
+            s.id === setId
               ? { ...s, questions: [] }
               : s
           )
@@ -103,7 +103,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
       const questionsPromises = questionIds.map(async (questionId) => {
         try {
           console.log('📡 Fetching question:', questionId);
-          const response = await fetch(`https://test.ailisher.com/api/aiswb/questions/${questionId}`, {
+          const response = await fetch(`http://localhost:4000/api/aiswb/questions/${questionId}`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
@@ -116,7 +116,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
             question: data.data?.question,
             metadata: data.data?.metadata
           });
-          
+
           if (data.success && data.data) {
             const questionData = data.data;
             return {
@@ -156,10 +156,10 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
         validQuestions: validQuestions.length,
         questions: validQuestions
       });
-      
-      setSets(prevSets => 
-        prevSets.map(s => 
-          s.id === setId 
+
+      setSets(prevSets =>
+        prevSets.map(s =>
+          s.id === setId
             ? { ...s, questions: validQuestions }
             : s
         )
@@ -191,15 +191,15 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
   const toggleQuestionSelection = (setId, questionId) => {
     setSelectedQuestions(prev => {
       const newSelection = { ...prev };
-      
+
       // Initialize the set's array if it doesn't exist
       if (!newSelection[setId]) {
         newSelection[setId] = [];
       }
-      
+
       // Check if the question is already selected
       const questionIndex = newSelection[setId].indexOf(questionId);
-      
+
       if (questionIndex === -1) {
         // If not selected, add it to the selection
         newSelection[setId] = [...newSelection[setId], questionId];
@@ -218,12 +218,12 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
           return newState;
         });
       }
-      
+
       // Clean up empty sets
       if (newSelection[setId].length === 0) {
         delete newSelection[setId];
       }
-      
+
       console.log('Updated selection:', newSelection);
       return newSelection;
     });
@@ -243,9 +243,9 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
         size: 300, // Match the default size from QRCodeGenerator
         includeAnswers: true // Set to true to include answers like the standalone component
       }).toString();
-      
+
       // Use the same API endpoint as QRCodeGenerator
-      const response = await fetch(`https://test.ailisher.com/api/aiswb/qr/questions/${questionId}/qrcode?${queryParams}`, {
+      const response = await fetch(`http://localhost:4000/api/aiswb/qr/questions/${questionId}/qrcode?${queryParams}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -253,7 +253,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
           'Content-Type': 'application/json'
         }
       });
-      
+
       if (!response.ok) {
         const errorData = await response.text();
         console.error('Server response:', errorData);
@@ -299,11 +299,11 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
   // Function to calculate visual space for answer content (80-85 characters per line)
   const calculateVisualAnswerSpace = (text) => {
     if (!text) return 0;
-    
+
     const charsPerLine = 82; // Average of 80-85 characters per line
     const lines = text.split('\n'); // Split by manual line breaks
     let totalVisualSpace = 0;
-    
+
     for (const line of lines) {
       if (line.length <= charsPerLine) {
         totalVisualSpace += charsPerLine; // Full line space used
@@ -313,32 +313,32 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
         totalVisualSpace += wrappedLines * charsPerLine;
       }
     }
-    
+
     return totalVisualSpace;
   };
 
   // Function to split content with maximum 2000 characters for answer-only pages and dynamic 1500 max for question pages
   const splitContentWithMaxAnswerLimit = (questionText, answerText, maxAnswerChars = 2000) => {
     if (!answerText) return [];
-    
+
     const pages = [];
     const questionLength = questionText ? questionText.length : 0;
-    
+
     // For question pages: content area maximum 1500 characters, but dynamic based on question length
     // For answer-only pages: maximum 2000 characters
     const availableSpace = 2200 - questionLength;
     const firstPageAnswerSpace = Math.min(1500, availableSpace); // Dynamic with 1500 max
-    
+
     // Split answer into words
     const words = answerText.split(' ');
     let currentPage = '';
     let isFirstPage = true;
-    
+
     for (const word of words) {
       const testPage = currentPage + (currentPage ? ' ' : '') + word;
       // Use dynamic space for first page (question+answer), maxAnswerChars for subsequent pages (answer-only)
       const maxCharsForCurrentPage = isFirstPage ? firstPageAnswerSpace : maxAnswerChars;
-      
+
       if (testPage.length > maxCharsForCurrentPage && currentPage) {
         pages.push(currentPage.trim());
         currentPage = word;
@@ -347,39 +347,39 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
         currentPage = testPage;
       }
     }
-    
+
     if (currentPage.trim()) {
       pages.push(currentPage.trim());
     }
-    
+
     return pages;
   };
 
   // Function to split content using visual space calculation (80-85 chars per line)
   const splitContentWithVisualSpace = (questionText, answerText, maxAnswerChars = 2000) => {
     if (!answerText) return [];
-    
+
     const pages = [];
     const questionLength = questionText ? questionText.length : 0;
-    
+
     // Calculate visual space for question
     const questionVisualSpace = calculateVisualAnswerSpace(questionText);
-    
+
     // For question pages: use visual space calculation
     // For answer-only pages: maximum 2000 characters
     const availableSpace = 2200 - questionVisualSpace;
     const firstPageAnswerSpace = Math.min(1500, availableSpace); // Dynamic with 1500 max
-    
+
     // Split answer into words
     const words = answerText.split(' ');
     let currentPage = '';
     let isFirstPage = true;
-    
+
     for (const word of words) {
       const testPage = currentPage + (currentPage ? ' ' : '') + word;
       // Use visual space calculation for first page, maxAnswerChars for subsequent pages
       const maxCharsForCurrentPage = isFirstPage ? firstPageAnswerSpace : maxAnswerChars;
-      
+
       if (testPage.length > maxCharsForCurrentPage && currentPage) {
         pages.push(currentPage.trim());
         currentPage = word;
@@ -388,11 +388,11 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
         currentPage = testPage;
       }
     }
-    
+
     if (currentPage.trim()) {
       pages.push(currentPage.trim());
     }
-    
+
     return pages;
   };
 
@@ -560,7 +560,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
 
       // Add test details page if uploaded
       if (testDetailsPage) {
-              printWindow.document.write(`
+        printWindow.document.write(`
                 <!DOCTYPE html>
                 <html>
                 <head>
@@ -578,8 +578,8 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                 </body>
                 </html>
               `);
-              currentPageNumber++;
-            }
+        currentPageNumber++;
+      }
 
       // Process each selected question
       for (const [setId, questionIds] of Object.entries(selectedQuestions)) {
@@ -593,14 +593,14 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
           // Limit keywords to 10
           const keywords = (question.metadata?.keywords || []).slice(0, 10);
           const qrCode = qrCodes[questionId];
-          
+
           // Get last 10 digits of question ID
           const shortQuestionId = question.id ? question.id.slice(-10) : '';
 
           // Handle answer pagination if printing with answers
           if (printWithAnswers && question.modalAnswer) {
             const answerPages = splitContentWithVisualSpace(question.question, question.modalAnswer, 2000);
-            
+
             // Print first page with question and first part of answer
             printWindow.document.write(generatePageHTML({
               pageNumber: currentPageNumber,
@@ -648,7 +648,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
             }));
             currentPageNumber++;
           }
-          
+
           questionCounter++;
 
           // Add blank pages if option is enabled
@@ -839,7 +839,7 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                     {expandedSet === set.id ? '▼' : '▶'}
                   </span>
                 </button>
-                
+
                 {expandedSet === set.id && (
                   <div className="p-4 border-t border-gray-200">
                     {loadingQuestions ? (
@@ -872,11 +872,10 @@ const AISWBPrintModal = ({ isOpen, onClose, topicId }) => {
                             >
                               <button
                                 onClick={() => toggleQuestionSelection(set.id, question.id)}
-                                className={`mt-1 p-1 rounded-full transition-colors ${
-                                  selectedQuestions[set.id]?.includes(question.id)
+                                className={`mt-1 p-1 rounded-full transition-colors ${selectedQuestions[set.id]?.includes(question.id)
                                     ? 'bg-indigo-600 text-white hover:bg-indigo-700'
                                     : 'bg-white border border-gray-300 text-gray-400 hover:bg-gray-50'
-                                }`}
+                                  }`}
                               >
                                 <Check size={16} />
                               </button>

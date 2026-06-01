@@ -3,11 +3,11 @@ import axios from 'axios';
 import { Card, CardContent, CardHeader, CardTitle } from '../UI/Card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../UI/Tabs';
 import { Badge } from '../UI/Badge';
-import { 
-  Clock, 
-  CheckCircle, 
-  FileCheck, 
-  User, 
+import {
+  Clock,
+  CheckCircle,
+  FileCheck,
+  User,
   Calendar,
   Eye,
   MessageSquare,
@@ -51,7 +51,7 @@ export default function EvaluatorReview() {
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [activeImage, setActiveImage] = useState(null);
 
-  const API_BASE_URL = 'https://test.ailisher.com';
+  const API_BASE_URL = 'http://localhost:4000';
 
   const fetchReviews = async (type, page = 1) => {
     setLoading(prev => ({ ...prev, [type]: true }));
@@ -62,7 +62,7 @@ export default function EvaluatorReview() {
       const token = Cookies.get('evaluatortoken');
       console.log(`Fetching ${type} reviews with token:`, token);
       console.log(`API URL: ${API_BASE_URL}/api/evaluator-reviews/${type}-reviews`);
-      
+
       const response = await axios.get(`${API_BASE_URL}/api/evaluator-reviews/${type}-reviews`, {
         headers: {
           Authorization: `Bearer ${token}`
@@ -79,7 +79,7 @@ export default function EvaluatorReview() {
         const { reviews, pagination: paginationData } = response.data.data;
         console.log(`${type} reviews data:`, reviews);
         console.log(`${type} pagination data:`, paginationData);
-        
+
         switch (type) {
           case 'pending':
             setPendingReviews(reviews);
@@ -206,7 +206,7 @@ export default function EvaluatorReview() {
 
   const ReviewCard = ({ review, type }) => {
     const hasExpertReview = review.feedback?.expertReview;
-    
+
     return (
       <Card className="mb-4 hover:shadow-md transition-shadow">
         <CardHeader className="pb-3">
@@ -233,7 +233,7 @@ export default function EvaluatorReview() {
             </div>
           </div>
         </CardHeader>
-        
+
         <CardContent className="pt-0">
           <div className="space-y-3">
             <div>
@@ -247,22 +247,22 @@ export default function EvaluatorReview() {
             </div>
 
             <div className="flex items-center gap-4 text-xs text-gray-500">
-               {/* Show review timing info based on type */}
-          {type === 'pending' && review.reviewRequestedAt && (
-            <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-              <Clock size={12} />  {formatDate(review.reviewRequestedAt)}
-            </div>
-          )}
-          {type === 'accepted' && review.reviewAssignedAt && (
-            <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-              <Clock size={12} /> {formatDate(review.reviewAssignedAt)}
-            </div>
-          )}
-          {type === 'completed' && review.reviewCompletedAt && (
-            <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
-              <Clock size={12} /> {formatDate(review.reviewCompletedAt)}
-            </div>
-          )}
+              {/* Show review timing info based on type */}
+              {type === 'pending' && review.reviewRequestedAt && (
+                <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                  <Clock size={12} />  {formatDate(review.reviewRequestedAt)}
+                </div>
+              )}
+              {type === 'accepted' && review.reviewAssignedAt && (
+                <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                  <Clock size={12} /> {formatDate(review.reviewAssignedAt)}
+                </div>
+              )}
+              {type === 'completed' && review.reviewCompletedAt && (
+                <div className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                  <Clock size={12} /> {formatDate(review.reviewCompletedAt)}
+                </div>
+              )}
               {/* <div className="flex items-center gap-1">
                 <Calendar size={12} />
                 {formatDate(review.submittedAt)}
@@ -300,7 +300,7 @@ export default function EvaluatorReview() {
             )}
 
             <div className="flex gap-2">
-              <button 
+              <button
                 className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 flex items-center gap-1"
                 onClick={() => handleViewDetails(review)}
               >
@@ -309,14 +309,14 @@ export default function EvaluatorReview() {
               </button>
               {type === 'pending' && (
                 <button className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center gap-1"
-                onClick={()=>acceptReview(review.requestId)}>
+                  onClick={() => acceptReview(review.requestId)}>
                   <CheckCircle size={14} />
                   Accept Review
                 </button>
               )}
               {type === 'accepted' && (
                 <button className="px-3 py-1 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center gap-1"
-                onClick={()=>setSelectedAnswer(review)}>
+                  onClick={() => setSelectedAnswer(review)}>
                   <MessageSquare size={14} />
                   Annotate Answer
                 </button>
@@ -332,13 +332,13 @@ export default function EvaluatorReview() {
   const ReviewDetailsModal = ({ review, isOpen, onClose }) => {
     if (!isOpen) return null;
     console.log(review)
-    
+
 
     const handleImageClick = (imgUrl) => {
       setActiveImage(imgUrl);
       setImageModalOpen(true);
     };
-  
+
     const closeImageModal = () => {
       setImageModalOpen(false);
       setActiveImage(null);
@@ -486,7 +486,7 @@ export default function EvaluatorReview() {
                             <p className="text-xs text-gray-500">
                               {formatDate(img.uploadedAt)}
                             </p>
-                           
+
                           </div>
                         </div>
                       ))}
@@ -496,43 +496,43 @@ export default function EvaluatorReview() {
 
                 {/* Expert Review Section */}
                 {review.feedback && review.feedback.expertReview && (
-  <div className="bg-yellow-50 p-4 rounded-lg">
-    <h3 className="font-semibold mb-3 flex items-center gap-2">
-      <Star size={16} />
-      Expert Review
-    </h3>
-    <div className="space-y-2">
-      {review.feedback.expertReview.result && (
-        <div><strong>Result:</strong> {review.feedback.expertReview.result}</div>
-      )}
-      {review.feedback.expertReview.score !== undefined && (
-        <div><strong>Score:</strong> {review.feedback.expertReview.score}</div>
-      )}
-      {review.feedback.expertReview.remarks && (
-        <div><strong>Remarks:</strong> {review.feedback.expertReview.remarks}</div>
-      )}
-    </div>
-    {/* Expert Annotated Images */}
-    {review.feedback.expertReview.annotatedImages && review.feedback.expertReview.annotatedImages.length > 0 && (
-      <div className="mt-4">
-        <h4 className="font-semibold mb-2">Expert Annotated Images ({review.feedback.expertReview.annotatedImages.length})</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {review.feedback.expertReview.annotatedImages.map((img, idx) => (
-            <div key={idx} className="border rounded-lg overflow-hidden">
-              <img
-                src={img.downloadUrl}
-                alt={`Expert Annotated Image ${idx + 1}`}
-                className="w-full h-48 object-cover"
-                onClick={() => handleImageClick(img.downloadUrl)}
-                style={{ cursor: "zoom-in" }}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-    )}
-  </div>
-)}
+                  <div className="bg-yellow-50 p-4 rounded-lg">
+                    <h3 className="font-semibold mb-3 flex items-center gap-2">
+                      <Star size={16} />
+                      Expert Review
+                    </h3>
+                    <div className="space-y-2">
+                      {review.feedback.expertReview.result && (
+                        <div><strong>Result:</strong> {review.feedback.expertReview.result}</div>
+                      )}
+                      {review.feedback.expertReview.score !== undefined && (
+                        <div><strong>Score:</strong> {review.feedback.expertReview.score}</div>
+                      )}
+                      {review.feedback.expertReview.remarks && (
+                        <div><strong>Remarks:</strong> {review.feedback.expertReview.remarks}</div>
+                      )}
+                    </div>
+                    {/* Expert Annotated Images */}
+                    {review.feedback.expertReview.annotatedImages && review.feedback.expertReview.annotatedImages.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="font-semibold mb-2">Expert Annotated Images ({review.feedback.expertReview.annotatedImages.length})</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {review.feedback.expertReview.annotatedImages.map((img, idx) => (
+                            <div key={idx} className="border rounded-lg overflow-hidden">
+                              <img
+                                src={img.downloadUrl}
+                                alt={`Expert Annotated Image ${idx + 1}`}
+                                className="w-full h-48 object-cover"
+                                onClick={() => handleImageClick(img.downloadUrl)}
+                                style={{ cursor: "zoom-in" }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Evaluation Analysis */}
                 {review.evaluation && review.evaluation.analysis && (
@@ -631,30 +631,30 @@ export default function EvaluatorReview() {
                     <p><strong>Submitted At:</strong> {review.feedback.userFeedbackReview.submittedAt ? formatDate(review.feedback.userFeedbackReview.submittedAt) : 'N/A'}</p>
                   </div>
                 )} */}
-                
-                
-                 {/* Image Lightbox */}
-      {imageModalOpen && activeImage && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90"
-          onClick={closeImageModal}
-        >
-          <img
-            src={activeImage}
-            alt="Large Answer"
-            className="max-w-4xl max-h-[90vh] rounded-lg border-4 border-white shadow-2xl"
-            style={{ objectFit: "contain" }}
-          />
-          <button
-            className="absolute top-8 right-8 text-white text-3xl font-bold bg-black bg-opacity-40 rounded-full w-12 h-12 flex items-center justify-center hover:bg-opacity-70 transition-all"
-            onClick={closeImageModal}
-            aria-label="Close"
-          >
-            ×
-          </button>
-        </div>
-      )}
-               
+
+
+                {/* Image Lightbox */}
+                {imageModalOpen && activeImage && (
+                  <div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90"
+                    onClick={closeImageModal}
+                  >
+                    <img
+                      src={activeImage}
+                      alt="Large Answer"
+                      className="max-w-4xl max-h-[90vh] rounded-lg border-4 border-white shadow-2xl"
+                      style={{ objectFit: "contain" }}
+                    />
+                    <button
+                      className="absolute top-8 right-8 text-white text-3xl font-bold bg-black bg-opacity-40 rounded-full w-12 h-12 flex items-center justify-center hover:bg-opacity-70 transition-all"
+                      onClick={closeImageModal}
+                      aria-label="Close"
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+
               </div>
             )}
           </div>
@@ -675,7 +675,7 @@ export default function EvaluatorReview() {
 
   const Pagination = ({ type, paginationData }) => {
     const { currentPage, totalPages, totalReviews } = paginationData;
-    
+
     if (totalPages <= 1) return null;
 
     return (
@@ -719,7 +719,7 @@ export default function EvaluatorReview() {
       return (
         <div className="text-center py-8">
           <p className="text-red-600 mb-2">{errorMessage}</p>
-          <button 
+          <button
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             onClick={() => fetchReviews(type)}
           >
@@ -759,33 +759,30 @@ export default function EvaluatorReview() {
         <div className="flex space-x-2 p-1 rounded-lg bg-gray-100 mb-6">
           <button
             onClick={() => handleTabChange('pending')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
-              activeTab === 'pending' 
-                ? 'bg-purple-600 text-white' 
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'pending'
+                ? 'bg-purple-600 text-white'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
-            }`}
+              }`}
           >
             <Clock size={16} />
             Pending ({pagination.pending.totalReviews})
           </button>
           <button
             onClick={() => handleTabChange('accepted')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
-              activeTab === 'accepted' 
-                ? 'bg-purple-600 text-white' 
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'accepted'
+                ? 'bg-purple-600 text-white'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
-            }`}
+              }`}
           >
             <CheckCircle size={16} />
             Accepted ({pagination.accepted.totalReviews})
           </button>
           <button
             onClick={() => handleTabChange('completed')}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${
-              activeTab === 'completed' 
-                ? 'bg-purple-600 text-white' 
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'completed'
+                ? 'bg-purple-600 text-white'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
-            }`}
+              }`}
           >
             <FileCheck size={16} />
             Completed ({pagination.completed.totalReviews})
@@ -838,10 +835,10 @@ export default function EvaluatorReview() {
 
       {
         SelectedAnswer && (
-        <AnswerAnnotation
-        submission={SelectedAnswer}
-        onClose={()=>setSelectedAnswer(null)}
-        />
+          <AnswerAnnotation
+            submission={SelectedAnswer}
+            onClose={() => setSelectedAnswer(null)}
+          />
         )
       }
     </div>

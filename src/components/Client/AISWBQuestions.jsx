@@ -45,7 +45,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
       }
 
       console.log('Fetching questions for set:', selectedSet.id);
-      
+
       // First, get the question IDs from the set
       const questionIds = selectedSet.questions || [];
       console.log('Question IDs in set:', questionIds);
@@ -59,14 +59,14 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
       // Fetch each question's details
       const questionsPromises = questionIds.map(async (questionId) => {
         try {
-          const response = await fetch(`https://test.ailisher.com/api/aiswb/questions/${questionId}`, {
+          const response = await fetch(`http://localhost:4000/api/aiswb/questions/${questionId}`, {
             headers: {
               'Authorization': `Bearer ${token}`
             }
           });
           const data = await response.json();
           console.log(`Question ${questionId} response:`, data);
-          
+
           // Check if we have valid question data
           if (data.success && data.data && typeof data.data === 'object') {
             return data.data;
@@ -80,17 +80,17 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
 
       const questionsData = await Promise.all(questionsPromises);
       console.log('Raw questions data:', questionsData);
-      
+
       // Filter out null values and ensure we have valid question objects
-      const validQuestions = questionsData.filter(q => 
-        q !== null && 
-        typeof q === 'object' && 
-        q.metadata && 
+      const validQuestions = questionsData.filter(q =>
+        q !== null &&
+        typeof q === 'object' &&
+        q.metadata &&
         typeof q.metadata === 'object'
       );
-      
+
       console.log('Valid questions:', validQuestions);
-      
+
       if (validQuestions.length > 0) {
         // Format the questions data before setting state
         const formattedQuestions = validQuestions.map(q => {
@@ -112,9 +112,9 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
           return {
             ...q,
             metadata: {
-              keywords: Array.isArray(metadata.keywords) 
-                ? metadata.keywords 
-                : (typeof metadata.keywords === 'string' 
+              keywords: Array.isArray(metadata.keywords)
+                ? metadata.keywords
+                : (typeof metadata.keywords === 'string'
                   ? metadata.keywords.split(',').map(k => k.trim()).filter(k => k)
                   : []),
               difficultyLevel: metadata.difficultyLevel || 'level1',
@@ -136,7 +136,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
             }
           };
         });
-        
+
         console.log('Formatted questions:', formattedQuestions);
         setQuestions(formattedQuestions);
       } else {
@@ -162,9 +162,9 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
       }
 
       console.log('Adding question with data:', newQuestion);
-      console.log('API endpoint:', `https://test.ailisher.com/api/aiswb/topic/${topicId}/sets/${selectedSet.id}/questions`);
+      console.log('API endpoint:', `http://localhost:4000/api/aiswb/topic/${topicId}/sets/${selectedSet.id}/questions`);
 
-      const response = await fetch(`https://test.ailisher.com/api/aiswb/topic/${topicId}/sets/${selectedSet.id}/questions`, {
+      const response = await fetch(`http://localhost:4000/api/aiswb/topic/${topicId}/sets/${selectedSet.id}/questions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -176,7 +176,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
       console.log('API Response status:', response.status);
       const data = await response.json();
       console.log('API Response data:', data);
-      
+
       if (data.success) {
         // Refresh questions after successful addition
         await refreshQuestions();
@@ -184,10 +184,10 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
         return data.question?.id || data.data?.id || true;
       } else {
         console.error('API Error:', data.message || 'Failed to add question');
-        
+
         // Handle specific error messages
         let errorMessage = data.message || 'Failed to add question';
-        
+
         if (data.message && data.message.includes('YouTube')) {
           errorMessage = 'Invalid YouTube URL format. Please check your video URLs.';
         } else if (data.message && data.message.includes('validation')) {
@@ -205,13 +205,13 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
         } else if (response.status === 500) {
           errorMessage = 'Server error occurred. Please try again later.';
         }
-        
+
         toast.error(errorMessage);
         return false;
       }
     } catch (error) {
       console.error('Error adding question:', error);
-      
+
       // Handle network errors
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
         toast.error('Network error. Please check your internet connection.');
@@ -235,7 +235,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
       console.log('Sending update request for question:', editedQuestion.id);
       console.log('Update request data:', editedQuestion);
 
-      const response = await fetch(`https://test.ailisher.com/api/aiswb/questions/${editedQuestion.id}`, {
+      const response = await fetch(`http://localhost:4000/api/aiswb/questions/${editedQuestion.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -251,7 +251,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
       console.log('Update API Response data:', data);
       console.log('Update API Response success:', data.success);
       console.log('Update API Response message:', data.message);
-      
+
       if (data.success) {
         console.log('Question updated successfully!');
         // Refresh questions after successful edit
@@ -284,7 +284,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
           return;
         }
 
-        const response = await fetch(`https://test.ailisher.com/api/aiswb/topic/${topicId}/sets/${selectedSet.id}/questions/${questionId}`, {
+        const response = await fetch(`http://localhost:4000/api/aiswb/topic/${topicId}/sets/${selectedSet.id}/questions/${questionId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -292,7 +292,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
         });
 
         const data = await response.json();
-        
+
         if (data.success) {
           // Refresh questions after successful deletion
           await refreshQuestions();
@@ -337,33 +337,33 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
         type: 'aiswb-question',
         timestamp: new Date().toISOString()
       };
-      
+
       // If includeAnswers is true, add answer data
       if (includeAns && question.detailedAnswer) {
         questionData.answer = question.detailedAnswer.substring(0, 100) + '...';
       }
-      
+
       // Create content based on format
       let qrContent;
       let qrText;
-      
+
       if (format === 'text') {
         qrText = `AISWB Question: ${question.question.substring(0, 50)}... (ID: ${question.id})`;
         qrContent = qrText;
       } else if (format === 'url') {
-        qrText = `https://test.ailisher.com/view/questions/${question.id}`;
+        qrText = `http://localhost:4000/view/questions/${question.id}`;
         qrContent = qrText;
       } else {
         // Default to JSON
         qrText = JSON.stringify(questionData);
         qrContent = qrText;
       }
-      
+
       // Use QRServer API as a fallback to generate QR code
       const qrCodeURL = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(qrContent)}`;
-      
+
       console.log(`Generated fallback QR code (${format}) with size ${size}px`);
-      
+
       // Set QR code data with the fallback URL
       setQrCodeData({
         qrCodeDataURL: qrCodeURL,
@@ -379,10 +379,10 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
           languageMode: question.languageMode || 'english'
         }
       });
-      
+
       // Show warning that this is a fallback QR code
       toast.warning('Using fallback QR code generator. Some features may be limited.');
-      
+
       return true;
     } catch (error) {
       console.error('Error generating fallback QR code:', error);
@@ -399,39 +399,39 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
         setError('Authentication required');
         return;
       }
-      
+
       // Use the correct API endpoint with query parameters
       const queryParams = new URLSearchParams({
         format,
         size,
         includeAnswers: includeAns
       }).toString();
-      
+
       // Correct API endpoint based on documentation
-      const response = await fetch(`https://test.ailisher.com/api/aiswb/qr/questions/${question.id}/qrcode?${queryParams}`, {
+      const response = await fetch(`http://localhost:4000/api/aiswb/qr/questions/${question.id}/qrcode?${queryParams}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Accept': 'application/json'
         }
       });
-      
+
       // Check if response is OK before trying to parse JSON
       if (!response.ok) {
         const errorText = await response.text();
         console.error('QR Code API error response:', errorText);
-        
+
         // Try fallback if server fails
         if (generateFallbackQRCode(question, format, size, includeAns)) {
           setLoading(false);
           return;
         }
-        
+
         throw new Error(`Server returned ${response.status}: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         // Check the structure of the response and adapt accordingly
         if (data.data && data.data.qrCode) {
@@ -459,7 +459,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
       }
     } catch (error) {
       console.error('Error fetching QR code:', error);
-      
+
       // If all else fails, try the fallback
       if (!generateFallbackQRCode(question, format, size, includeAns)) {
         setError('Failed to generate QR code. Please try again later.');
@@ -471,7 +471,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
 
   const handleDownload = () => {
     if (!qrCodeData?.qrCodeDataURL) return;
-    
+
     try {
       // For fallback QR codes or direct image URLs
       const downloadQRCode = async () => {
@@ -479,10 +479,10 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
           // Fetch the image as a blob
           const response = await fetch(qrCodeData.qrCodeDataURL);
           const blob = await response.blob();
-          
+
           // Create object URL from blob
           const blobUrl = URL.createObjectURL(blob);
-          
+
           // Create download link
           const link = document.createElement('a');
           link.href = blobUrl;
@@ -490,17 +490,17 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
-          
+
           // Clean up the blob URL
           setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
-          
+
           toast.success('QR code downloaded successfully!');
         } catch (error) {
           console.error('Error downloading QR code:', error);
           toast.error('Failed to download QR code. Please try again.');
         }
       };
-      
+
       downloadQRCode();
     } catch (error) {
       console.error('Error downloading QR code:', error);
@@ -546,7 +546,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
       }
 
       const newMode = currentMode === 'manual' ? 'auto' : 'manual';
-      
+
       // Find the question in the current state
       const question = questions.find(q => q.id === questionId);
       if (!question) {
@@ -581,7 +581,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
         requestBody
       });
 
-      const response = await fetch(`https://test.ailisher.com/api/aiswb/questions/${questionId}`, {
+      const response = await fetch(`http://localhost:4000/api/aiswb/questions/${questionId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -595,12 +595,12 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
 
       const data = await response.json();
       console.log('Response data:', data);
-      
+
       if (data.success) {
         // Update the local state
-        setQuestions(prevQuestions => 
-          prevQuestions.map(q => 
-            q.id === questionId 
+        setQuestions(prevQuestions =>
+          prevQuestions.map(q =>
+            q.id === questionId
               ? { ...q, evaluationMode: newMode }
               : q
           )
@@ -629,7 +629,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
         <h3 className="text-red-800 font-medium">Error</h3>
         <p className="text-red-700">{error}</p>
-        <button 
+        <button
           onClick={refreshQuestions}
           className="mt-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
         >
@@ -703,19 +703,17 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
                         console.log('Question data:', question); // Log the question data
                         handleEvaluationModeChange(question._id || question.id, question.evaluationMode);
                       }}
-                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
-                        question.evaluationMode === 'auto' ? 'bg-indigo-600' : 'bg-gray-200'
-                      }`}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${question.evaluationMode === 'auto' ? 'bg-indigo-600' : 'bg-gray-200'
+                        }`}
                     >
                       <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          question.evaluationMode === 'auto' ? 'translate-x-6' : 'translate-x-1'
-                        }`}
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${question.evaluationMode === 'auto' ? 'translate-x-6' : 'translate-x-1'
+                          }`}
                       />
                     </button>
                     <span className="text-sm font-medium text-gray-700">
                       {question.evaluationMode === 'auto' ? 'Auto' : 'Manual'}
-                  </span>
+                    </span>
                   </div>
                 </div>
               </div>
@@ -828,9 +826,9 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
                   <div>
                     <p className="text-sm font-medium text-purple-700">Language Mode</p>
                     <p className="text-gray-800">
-                      {selectedQuestion.languageMode === 'english' ? 'English' : 
-                       selectedQuestion.languageMode === 'hindi' ? 'Hindi' : 
-                       'Both (English & Hindi)'}
+                      {selectedQuestion.languageMode === 'english' ? 'English' :
+                        selectedQuestion.languageMode === 'hindi' ? 'Hindi' :
+                          'Both (English & Hindi)'}
                     </p>
                   </div>
                   <div>
@@ -838,7 +836,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
                     <div className="flex flex-wrap gap-2 mt-1">
                       {Array.isArray(selectedQuestion.metadata.keywords) ? (
                         selectedQuestion.metadata.keywords.map((keyword, index) => (
-                          <span 
+                          <span
                             key={index}
                             className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-sm"
                           >
@@ -895,11 +893,11 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
               {/* Detailed Answer Section */}
               <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
                 <h4 className="text-lg font-semibold text-indigo-800 mb-2">Detailed Answer</h4>
-                <div 
+                <div
                   className="prose max-w-none bg-white p-4 rounded-lg"
-                  dangerouslySetInnerHTML={{ 
-                    __html: selectedQuestion.detailedAnswer.includes('<') 
-                      ? selectedQuestion.detailedAnswer 
+                  dangerouslySetInnerHTML={{
+                    __html: selectedQuestion.detailedAnswer.includes('<')
+                      ? selectedQuestion.detailedAnswer
                       : selectedQuestion.detailedAnswer.replace(/\n/g, '<br/>')
                   }}
                 />
@@ -914,7 +912,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
                       <div key={index} className="bg-white p-4 rounded-lg">
                         <div className="flex items-center gap-2">
                           <span className="text-gray-600 font-medium">Video {index + 1}:</span>
-                          <a 
+                          <a
                             href={url}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -961,11 +959,10 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
               <div className="bg-green-50 p-4 rounded-lg border border-green-100">
                 <h4 className="text-lg font-semibold text-green-800 mb-2">Evaluation Mode</h4>
                 <div className="bg-white p-4 rounded-lg">
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    selectedQuestion.evaluationMode === 'auto' 
-                      ? 'bg-green-100 text-green-800' 
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${selectedQuestion.evaluationMode === 'auto'
+                      ? 'bg-green-100 text-green-800'
                       : 'bg-yellow-100 text-yellow-800'
-                  }`}>
+                    }`}>
                     {selectedQuestion.evaluationMode === 'auto' ? 'Automatic' : 'Manual'}
                   </span>
                 </div>
@@ -975,11 +972,11 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
               <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
                 <h4 className="text-lg font-semibold text-purple-800 mb-2">Evaluation Guideline</h4>
                 <div className="bg-white p-4 rounded-lg">
-                  <div 
+                  <div
                     className="prose max-w-none"
-                    dangerouslySetInnerHTML={{ 
-                      __html: selectedQuestion.evaluationGuideline.includes('<') 
-                        ? selectedQuestion.evaluationGuideline 
+                    dangerouslySetInnerHTML={{
+                      __html: selectedQuestion.evaluationGuideline.includes('<')
+                        ? selectedQuestion.evaluationGuideline
                         : selectedQuestion.evaluationGuideline.replace(/\n/g, '<br/>')
                     }}
                   />
@@ -990,11 +987,11 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
               {selectedQuestion.modalAnswer && (
                 <div className="bg-green-50 p-4 rounded-lg border border-green-100">
                   <h4 className="text-lg font-semibold text-green-800 mb-2">Modal Answer</h4>
-                  <div 
+                  <div
                     className="prose max-w-none bg-white p-4 rounded-lg"
-                    dangerouslySetInnerHTML={{ 
-                      __html: selectedQuestion.modalAnswer.includes('<') 
-                        ? selectedQuestion.modalAnswer 
+                    dangerouslySetInnerHTML={{
+                      __html: selectedQuestion.modalAnswer.includes('<')
+                        ? selectedQuestion.modalAnswer
                         : selectedQuestion.modalAnswer.replace(/\n/g, '<br/>')
                     }}
                   />
@@ -1034,7 +1031,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
                   <p className="text-red-600 font-medium mb-3">QR Code Generation Failed</p>
                   <p className="text-red-600 mb-4 text-sm">{error}</p>
                   <p className="text-gray-600 text-sm mb-4">This might be due to server issues or network connectivity problems.</p>
-                  <button 
+                  <button
                     onClick={() => fetchQRCode(selectedQuestion, qrFormat, qrSize, includeAnswers)}
                     className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
                   >
@@ -1043,16 +1040,16 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
                 </div>
               ) : qrCodeData?.qrCodeDataURL ? (
                 <div className="border border-gray-200 p-4 rounded-lg shadow-sm">
-                  <img 
-                    src={qrCodeData.qrCodeDataURL} 
-                    alt="Question QR Code" 
+                  <img
+                    src={qrCodeData.qrCodeDataURL}
+                    alt="Question QR Code"
                     className="h-64 w-64 object-contain"
                   />
                 </div>
               ) : (
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 w-full text-center">
                   <p className="text-yellow-700 mb-4">No QR code data available. Please try generating again.</p>
-                  <button 
+                  <button
                     onClick={() => fetchQRCode(selectedQuestion, qrFormat, qrSize, includeAnswers)}
                     className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors"
                   >
@@ -1060,7 +1057,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
                   </button>
                 </div>
               )}
-              
+
               {qrCodeData?.qrCodeDataURL && (
                 <button
                   onClick={handleDownload}
@@ -1088,7 +1085,7 @@ const AISWBQuestions = ({ topicId, selectedSet, onBack }) => {
         />
       )}
 
-      
+
     </div>
   );
 };

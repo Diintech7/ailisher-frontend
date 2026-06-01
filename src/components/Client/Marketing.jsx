@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   Plus,
   Edit,
   Trash2,
@@ -23,7 +23,7 @@ export default function Marketing() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingItem, setDeletingItem] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [newImageFile,setNewImageFile] = useState(null)
+  const [newImageFile, setNewImageFile] = useState(null)
   const [filters, setFilters] = useState({
     category: '',
     isActive: '',
@@ -68,8 +68,8 @@ export default function Marketing() {
   const [genSeed, setGenSeed] = useState('5');
   const [genLoading, setGenLoading] = useState(false);
   const [genImage, setGenImage] = useState('');
-  const [createImageMode, setCreateImageMode] = useState('upload'); 
-  const [editImageMode, setEditImageMode] = useState('upload'); 
+  const [createImageMode, setCreateImageMode] = useState('upload');
+  const [editImageMode, setEditImageMode] = useState('upload');
 
   // AI Library (saved images from Image Generator)
   const [aiImages, setAiImages] = useState([]);
@@ -110,7 +110,7 @@ export default function Marketing() {
   ];
 
   const axiosConfig = {
-    baseURL: 'https://test.ailisher.com',
+    baseURL: 'http://localhost:4000',
     headers: {
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
@@ -477,7 +477,7 @@ export default function Marketing() {
           imageWidth: dimensions.width,
           imageHeight: dimensions.height,
         };
-        }
+      }
 
       const res = await axios.put(`/api/marketing/${editingItem._id}`, payload, axiosConfig);
       if (res?.data?.success) {
@@ -536,14 +536,14 @@ export default function Marketing() {
             <X className="w-6 h-6" />
           </button>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Name *</label>
             <input
               type="text"
               value={newItem.name}
-              onChange={(e) => setNewItem({...newItem, name: e.target.value})}
+              onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="Marketing item name"
             />
@@ -553,7 +553,7 @@ export default function Marketing() {
             <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
             <select
               value={newItem.category}
-              onChange={(e) => setNewItem({...newItem, category: e.target.value})}
+              onChange={(e) => setNewItem({ ...newItem, category: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               {categories.map(cat => (
@@ -567,7 +567,7 @@ export default function Marketing() {
             <input
               type="text"
               value={newItem.subcategory}
-              onChange={(e) => setNewItem({...newItem, subcategory: e.target.value})}
+              onChange={(e) => setNewItem({ ...newItem, subcategory: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
               placeholder="Optional subcategory"
             />
@@ -577,7 +577,7 @@ export default function Marketing() {
             <label className="block text-sm font-medium text-gray-700 mb-2">Image Size</label>
             <select
               value={newItem.imageSize}
-              onChange={(e) => setNewItem({...newItem, imageSize: e.target.value})}
+              onChange={(e) => setNewItem({ ...newItem, imageSize: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               {imageSizes.map(size => (
@@ -590,7 +590,7 @@ export default function Marketing() {
             <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
             <select
               value={newItem.location}
-              onChange={(e) => setNewItem({...newItem, location: e.target.value})}
+              onChange={(e) => setNewItem({ ...newItem, location: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               {locations.map(loc => (
@@ -604,7 +604,7 @@ export default function Marketing() {
             <select
               value={newItem.route.type}
               onChange={(e) => setNewItem({
-                ...newItem, 
+                ...newItem,
                 route: {
                   ...newItem.route,
                   type: e.target.value,
@@ -627,7 +627,7 @@ export default function Marketing() {
                 type="url"
                 value={newItem.route.config.url}
                 onChange={(e) => setNewItem({
-                  ...newItem, 
+                  ...newItem,
                   route: {
                     ...newItem.route,
                     config: { ...newItem.route.config, url: e.target.value }
@@ -643,11 +643,11 @@ export default function Marketing() {
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
-            <input
+                <input
                   type="tel"
                   value={newItem.route.config.phone}
                   onChange={(e) => setNewItem({
-                    ...newItem, 
+                    ...newItem,
                     route: {
                       ...newItem.route,
                       config: { ...newItem.route.config, phone: e.target.value }
@@ -662,17 +662,17 @@ export default function Marketing() {
                 <textarea
                   value={newItem.route.config.message}
                   onChange={(e) => setNewItem({
-                    ...newItem, 
+                    ...newItem,
                     route: {
                       ...newItem.route,
                       config: { ...newItem.route.config, message: e.target.value }
                     }
                   })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="Enter your WhatsApp message..."
                   rows="3"
-            />
-          </div>
+                />
+              </div>
               {newItem.route.config.phone && (
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Generated WhatsApp URL</label>
@@ -691,7 +691,7 @@ export default function Marketing() {
               type="checkbox"
               id="isActive"
               checked={newItem.isActive}
-              onChange={(e) => setNewItem({...newItem, isActive: e.target.checked})}
+              onChange={(e) => setNewItem({ ...newItem, isActive: e.target.checked })}
               className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
             />
             <label htmlFor="isActive" className="text-sm font-medium text-gray-700">Active</label>
@@ -830,7 +830,7 @@ export default function Marketing() {
             </div>
           )}
 
-          
+
           {newItem.imageUrl && (
             <div className="mt-2">
               <img
@@ -875,14 +875,14 @@ export default function Marketing() {
             <X className="w-6 h-6" />
           </button>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Name *</label>
             <input
               type="text"
               value={editingItem?.name || ''}
-              onChange={(e) => setEditingItem({...editingItem, name: e.target.value})}
+              onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
@@ -891,7 +891,7 @@ export default function Marketing() {
             <label className="block text-sm font-medium text-gray-700 mb-2">Category *</label>
             <select
               value={editingItem?.category || 'banner'}
-              onChange={(e) => setEditingItem({...editingItem, category: e.target.value})}
+              onChange={(e) => setEditingItem({ ...editingItem, category: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               {categories.map(cat => (
@@ -905,7 +905,7 @@ export default function Marketing() {
             <input
               type="text"
               value={editingItem?.subcategory || ''}
-              onChange={(e) => setEditingItem({...editingItem, subcategory: e.target.value})}
+              onChange={(e) => setEditingItem({ ...editingItem, subcategory: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             />
           </div>
@@ -914,7 +914,7 @@ export default function Marketing() {
             <label className="block text-sm font-medium text-gray-700 mb-2">Image Size</label>
             <select
               value={editingItem?.imageSize || '16:9'}
-              onChange={(e) => setEditingItem({...editingItem, imageSize: e.target.value})}
+              onChange={(e) => setEditingItem({ ...editingItem, imageSize: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               {imageSizes.map(size => (
@@ -927,7 +927,7 @@ export default function Marketing() {
             <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
             <select
               value={editingItem?.location || 'top'}
-              onChange={(e) => setEditingItem({...editingItem, location: e.target.value})}
+              onChange={(e) => setEditingItem({ ...editingItem, location: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               {locations.map(loc => (
@@ -941,7 +941,7 @@ export default function Marketing() {
             <select
               value={editingItem?.route?.type || 'weblink'}
               onChange={(e) => setEditingItem({
-                ...editingItem, 
+                ...editingItem,
                 route: {
                   ...editingItem?.route,
                   type: e.target.value,
@@ -963,7 +963,7 @@ export default function Marketing() {
                 type="url"
                 value={editingItem?.route?.config?.url || ''}
                 onChange={(e) => setEditingItem({
-                  ...editingItem, 
+                  ...editingItem,
                   route: {
                     ...editingItem.route,
                     config: { ...editingItem.route?.config, url: e.target.value }
@@ -979,11 +979,11 @@ export default function Marketing() {
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
-            <input
+                <input
                   type="tel"
                   value={editingItem?.route?.config?.phone || ''}
                   onChange={(e) => setEditingItem({
-                    ...editingItem, 
+                    ...editingItem,
                     route: {
                       ...editingItem.route,
                       config: { ...editingItem.route?.config, phone: e.target.value }
@@ -998,17 +998,17 @@ export default function Marketing() {
                 <textarea
                   value={editingItem?.route?.config?.message || ''}
                   onChange={(e) => setEditingItem({
-                    ...editingItem, 
+                    ...editingItem,
                     route: {
                       ...editingItem.route,
                       config: { ...editingItem.route?.config, message: e.target.value }
                     }
                   })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="Enter your WhatsApp message..."
                   rows="3"
-            />
-          </div>
+                />
+              </div>
               {editingItem?.route?.config?.phone && (
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Generated WhatsApp URL</label>
@@ -1027,7 +1027,7 @@ export default function Marketing() {
               type="checkbox"
               id="editIsActive"
               checked={editingItem?.isActive || false}
-              onChange={(e) => setEditingItem({...editingItem, isActive: e.target.checked})}
+              onChange={(e) => setEditingItem({ ...editingItem, isActive: e.target.checked })}
               className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
             />
             <label htmlFor="editIsActive" className="text-sm font-medium text-gray-700">Active</label>
@@ -1192,7 +1192,7 @@ export default function Marketing() {
               )}
             </div>
           )}
-          
+
           {editingItem?.imageUrl && (
             <div className="mt-2">
               <img
@@ -1300,7 +1300,7 @@ export default function Marketing() {
                 <input
                   type="text"
                   value={filters.search}
-                  onChange={(e) => setFilters({...filters, search: e.target.value})}
+                  onChange={(e) => setFilters({ ...filters, search: e.target.value })}
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                   placeholder="Search by name..."
                 />
@@ -1311,7 +1311,7 @@ export default function Marketing() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
               <select
                 value={filters.category}
-                onChange={(e) => setFilters({...filters, category: e.target.value})}
+                onChange={(e) => setFilters({ ...filters, category: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
                 <option value="">All Categories</option>
@@ -1325,7 +1325,7 @@ export default function Marketing() {
               <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
               <select
                 value={filters.isActive}
-                onChange={(e) => setFilters({...filters, isActive: e.target.value})}
+                onChange={(e) => setFilters({ ...filters, isActive: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
                 <option value="">All Status</option>
@@ -1356,17 +1356,16 @@ export default function Marketing() {
             {marketing.map((item) => (
               <div key={item._id} className="bg-white rounded-lg shadow-md overflow-hidden">
                 <div className="relative">
-                  <img 
-                    src={item.imageUrl} 
+                  <img
+                    src={item.imageUrl}
                     alt={item.name}
                     className="w-full h-48 object-cover cursor-zoom-in"
                     onClick={() => setLightboxUrl(item.imageUrl)}
                     onError={(e) => { e.currentTarget.src = 'https://via.placeholder.com/300x200?text=No+Image'; }}
                   />
                   <div className="absolute top-2 left-2">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      item.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${item.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
                       {item.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </div>
@@ -1376,14 +1375,14 @@ export default function Marketing() {
                     </span>
                   </div>
                 </div>
-                
+
                 <div className="p-4">
                   <h3 className="font-semibold text-lg mb-2">{item.name}</h3>
                   {item.subcategory && (
                     <p className="text-gray-600 text-sm mb-2">{item.subcategory}</p>
                   )}
                   <p className="text-gray-500 text-xs mb-3">
-                    Size: {item.imageWidth} x {item.imageHeight}px 
+                    Size: {item.imageWidth} x {item.imageHeight}px
                   </p>
                   <p className="text-gray-500 text-xs mb-3">
                     Aspect: {item.imageSize} | Location: {item.location}
@@ -1397,9 +1396,9 @@ export default function Marketing() {
                         <div>
                           <p className="text-gray-600 text-xs">Phone: {item.route.config.phone}</p>
                           {item.route.config?.url && (
-                            <a 
-                              href={item.route.config.url} 
-                              target="_blank" 
+                            <a
+                              href={item.route.config.url}
+                              target="_blank"
                               rel="noopener noreferrer"
                               className="text-green-600 text-xs hover:text-green-800 underline"
                             >
@@ -1411,11 +1410,11 @@ export default function Marketing() {
                       {(item.route.type === 'weblink' || item.route.type === 'other') && item.route.config?.url && (
                         <div>
                           <p className="text-gray-600 text-xs truncate">URL: {item.route.config.url}</p>
-                          <a 
-                            href={item.route.config.url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="text-blue-600 text-xs hover:text-blue-800 underline"
+                          <a
+                            href={item.route.config.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 text-xs hover:text-blue-800 underline"
                           >
                             Test Link
                           </a>
@@ -1423,7 +1422,7 @@ export default function Marketing() {
                       )}
                     </div>
                   )}
-                  
+
                   <div className="flex space-x-2">
                     <button
                       onClick={() => setEditingItem(item)}

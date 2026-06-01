@@ -37,7 +37,7 @@ const AITests = () => {
     try {
       // Fetch categories from backend
       const categoriesResponse = await fetch(
-        "https://test.ailisher.com/api/categories",
+        "http://localhost:4000/api/categories",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -58,10 +58,10 @@ const AITests = () => {
 
       setCategoryMappings(transformedCategories);
       const [objectiveResponse, subjectiveResponse] = await Promise.all([
-        axios.get('https://test.ailisher.com/api/objectivetests', {
+        axios.get('http://localhost:4000/api/objectivetests', {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        axios.get('https://test.ailisher.com/api/subjectivetests', {
+        axios.get('http://localhost:4000/api/subjectivetests', {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -80,9 +80,9 @@ const AITests = () => {
 
   const handleCreateTest = async (testData) => {
     try {
-      const endpoint = activeTab === 'objective' 
-        ? 'https://test.ailisher.com/api/objectivetests'
-        : 'https://test.ailisher.com/api/subjectivetests';
+      const endpoint = activeTab === 'objective'
+        ? 'http://localhost:4000/api/objectivetests'
+        : 'http://localhost:4000/api/subjectivetests';
 
       const response = await axios.post(endpoint, testData, {
         headers: { Authorization: `Bearer ${token}` }
@@ -100,9 +100,9 @@ const AITests = () => {
   const handleUpdateTest = async (testData) => {
     try {
       console.log(testData)
-      const endpoint = activeTab === 'objective' 
-        ? `https://test.ailisher.com/api/objectivetests/${editingTest._id}`
-        : `https://test.ailisher.com/api/subjectivetests/${editingTest._id}`;
+      const endpoint = activeTab === 'objective'
+        ? `http://localhost:4000/api/objectivetests/${editingTest._id}`
+        : `http://localhost:4000/api/subjectivetests/${editingTest._id}`;
 
       const response = await axios.put(endpoint, testData, {
         headers: { Authorization: `Bearer ${token}` }
@@ -122,9 +122,9 @@ const AITests = () => {
     if (!deletingTest) return;
 
     try {
-      const endpoint = activeTab === 'objective' 
-        ? `https://test.ailisher.com/api/objectivetests/${deletingTest._id}`
-        : `https://test.ailisher.com/api/subjectivetests/${deletingTest._id}`;
+      const endpoint = activeTab === 'objective'
+        ? `http://localhost:4000/api/objectivetests/${deletingTest._id}`
+        : `http://localhost:4000/api/subjectivetests/${deletingTest._id}`;
 
       await axios.delete(endpoint, {
         headers: { Authorization: `Bearer ${token}` }
@@ -169,7 +169,7 @@ const AITests = () => {
 
   const handleCopyTest = async () => {
     try {
-      const endpoint = activeTab === 'objective' 
+      const endpoint = activeTab === 'objective'
         ? `${API_BASE_URL}/api/objectivetests/${testToCopy._id}/copy`
         : `${API_BASE_URL}/api/subjectivetests/${testToCopy._id}/copy`;
 
@@ -192,13 +192,11 @@ const AITests = () => {
     }
   };
 
-  const showTestModal = (test,type) => {
-    if(test.isEnabled)
-    {
+  const showTestModal = (test, type) => {
+    if (test.isEnabled) {
       navigate(`/ai-tests/${type}/${test._id}`);
     }
-    else
-    {
+    else {
       toast.error("This Test Is Disabled")
     }
   };
@@ -207,12 +205,12 @@ const AITests = () => {
     <div key={test._id} className="flex flex-col">
       <div
         onClick={() => showTestModal(test, type)}
-          className={`p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full border border-gray-100 relative ${test.isEnabled === true ? 'bg-white' : 'bg-gray-400 opacity-50'}`}
+        className={`p-6 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer flex flex-col h-full border border-gray-100 relative ${test.isEnabled === true ? 'bg-white' : 'bg-gray-400 opacity-50'}`}
       >
         <div className='absolute top-1 left-3 items-center'>
-        <span
+          <span
             className={`px-2 py-1 rounded text-xs font-medium 
-              ${test.isActive ? (test.isEnabled ? 'bg-green-100 text-green-800' : 'bg-gray-600 text-white' ): 'bg-red-100 text-red-800'}
+              ${test.isActive ? (test.isEnabled ? 'bg-green-100 text-green-800' : 'bg-gray-600 text-white') : 'bg-red-100 text-red-800'}
             `}
           >
             {test.isActive ? 'Active' : 'Inactive'}
@@ -278,7 +276,7 @@ const AITests = () => {
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); toggleEnabled(test, type); }}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center ${test.isEnabled === true ? 'text-red-800' : 'text-green-800'}`}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-50 flex items-center ${test.isEnabled === true ? 'text-red-800' : 'text-green-800'}`}
                 >
                   <ToggleRight size={14} className="mr-2" />
                   {test.isEnabled === true ? 'Disable' : 'Enable'}
@@ -295,9 +293,9 @@ const AITests = () => {
               src={test.imageUrl}
               alt={test.name}
               className="h-full w-full object-fill rounded-lg"
-              // onError={(e) => {
-              //   e.target.src = 'https://via.placeholder.com/400x200?text=No+Image';
-              // }}
+            // onError={(e) => {
+            //   e.target.src = 'https://via.placeholder.com/400x200?text=No+Image';
+            // }}
             />
           ) : (
             <FileText size={64} className="text-indigo-400" />
@@ -346,7 +344,7 @@ const AITests = () => {
             );
           })()}
         </div>
-        
+
       </div>
     </div>
   );
@@ -379,8 +377,8 @@ const AITests = () => {
   const toggleEnabled = async (test, type) => {
     try {
       const endpoint = type === 'objective'
-        ? `https://test.ailisher.com/api/objectivetests/${test._id}`
-        : `https://test.ailisher.com/api/subjectivetests/${test._id}`;
+        ? `http://localhost:4000/api/objectivetests/${test._id}`
+        : `http://localhost:4000/api/subjectivetests/${test._id}`;
       const response = await axios.patch(endpoint, { isEnabled: !test.isEnabled }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -450,21 +448,19 @@ const AITests = () => {
             <nav className="-mb-px flex space-x-8">
               <button
                 onClick={() => setActiveTab('objective')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'objective'
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'objective'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+                  }`}
               >
                 Objective Tests
               </button>
               <button
                 onClick={() => setActiveTab('subjective')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'subjective'
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'subjective'
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
+                  }`}
               >
                 Subjective Tests
               </button>
@@ -491,7 +487,7 @@ const AITests = () => {
           </button>
         </div>
 
-      
+
 
         {/* Loading State */}
         {loading && (
@@ -519,11 +515,10 @@ const AITests = () => {
                       {/* All chip */}
                       <button
                         onClick={() => setSelectedSubCategories((prev) => ({ ...prev, [mainCategory]: null }))}
-                        className={`px-3 py-1 rounded-full text-sm border transition-colors ${
-                          !selectedSubCategories[mainCategory]
+                        className={`px-3 py-1 rounded-full text-sm border transition-colors ${!selectedSubCategories[mainCategory]
                             ? 'bg-blue-600 text-white border-blue-600'
                             : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                        }`}
+                          }`}
                       >
                         All
                       </button>
@@ -533,9 +528,8 @@ const AITests = () => {
                           <button
                             key={sub}
                             onClick={() => toggleSubCategory(mainCategory, sub)}
-                            className={`px-3 py-1 rounded-full text-sm border transition-colors ${
-                              isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                            }`}
+                            className={`px-3 py-1 rounded-full text-sm border transition-colors ${isActive ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                              }`}
                           >
                             {sub}
                           </button>
@@ -702,14 +696,14 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
       setImageKey('');
       setImagePreview('');
     }
-    
+
     // Reset drag state
     setIsDragOver(false);
   }, [test]);
 
   const refreshCategories = async () => {
     try {
-      const res = await fetch("https://test.ailisher.com/api/categories", {
+      const res = await fetch("http://localhost:4000/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await res.json();
@@ -732,7 +726,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
     }
     try {
       setCreatingCategory(true);
-      const res = await fetch("https://test.ailisher.com/api/categories", {
+      const res = await fetch("http://localhost:4000/api/categories", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -763,7 +757,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
     }
     try {
       setCreatingSubcategory(true);
-      const listRes = await fetch("https://test.ailisher.com/api/categories", {
+      const listRes = await fetch("http://localhost:4000/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await listRes.json();
@@ -772,7 +766,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
         toast.error('Select a valid category first');
         return;
       }
-      const res = await fetch(`https://test.ailisher.com/api/categories/${currentCat._id}/subcategories`, {
+      const res = await fetch(`http://localhost:4000/api/categories/${currentCat._id}/subcategories`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -803,17 +797,17 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
 
   const handleFileSelection = (file) => {
     if (!file) return;
-    
+
     if (!file.type.match('image.*')) {
       toast.error('Please select an image file');
       return;
     }
-    
+
     if (file.size > 5 * 1024 * 1024) {
       toast.error('Image size should be less than 5MB');
       return;
     }
-    
+
     setSelectedImage(file);
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -838,7 +832,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
       handleFileSelection(file);
@@ -855,10 +849,10 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
   const uploadImage = async (file) => {
     try {
       setUploadingImage(true);
-      
+
       // Get presigned URL for upload
       const response = await axios.post(
-        `https://test.ailisher.com/api/${type === 'objective' ? 'objectivetests' : 'subjectivetests'}/upload-image`,
+        `http://localhost:4000/api/${type === 'objective' ? 'objectivetests' : 'subjectivetests'}/upload-image`,
         {
           fileName: file.name,
           contentType: file.type
@@ -922,7 +916,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
 
     try {
       let finalImageKey = imageKey;
-      
+
       // Upload new image if selected
       if (selectedImage) {
         finalImageKey = await uploadImage(selectedImage);
@@ -965,7 +959,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
               <input
                 type="text"
                 value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter test name"
                 required
@@ -976,7 +970,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
               <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
               <textarea
                 value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows={3}
                 placeholder="Enter test description"
@@ -1066,7 +1060,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
               <input
                 type="text"
                 value={formData.Estimated_time}
-                onChange={(e) => setFormData({...formData, Estimated_time: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, Estimated_time: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="e.g., 30 minutes"
               />
@@ -1076,7 +1070,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
               <label className="block text-sm font-medium text-gray-700 mb-2">Instructions</label>
               <textarea
                 value={formData.instructions}
-                onChange={(e) => setFormData({...formData, instructions: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, instructions: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 rows={3}
                 placeholder="Enter test instructions"
@@ -1088,7 +1082,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
               <input
                 type="url"
                 value={formData.videoUrl}
-                onChange={(e) => setFormData({...formData, videoUrl: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="https://..."
               />
@@ -1097,18 +1091,18 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
             {/* Image Upload Section */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Test Image (Optional)</label>
-              
+
               {/* Image Preview */}
               {imagePreview && (
                 <div className="relative mb-4">
                   <div className="h-48 w-full rounded-md overflow-hidden">
-                    <img 
-                      src={imagePreview} 
-                      alt="Test preview" 
+                    <img
+                      src={imagePreview}
+                      alt="Test preview"
                       className="h-full w-full object-cover"
                     />
                   </div>
-                  <button 
+                  <button
                     type="button"
                     onClick={handleRemoveImage}
                     className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
@@ -1122,12 +1116,11 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
 
               {/* Upload Area */}
               <div className="flex items-center justify-center w-full">
-                <label 
-                  className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${
-                    isDragOver 
-                      ? 'border-blue-500 bg-blue-50' 
+                <label
+                  className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${isDragOver
+                      ? 'border-blue-500 bg-blue-50'
                       : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
-                  }`}
+                    }`}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
@@ -1141,17 +1134,17 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
                     </p>
                     <p className="text-xs text-gray-500">PNG, JPG, GIF (Max: 5MB)</p>
                   </div>
-                  <input 
+                  <input
                     ref={fileInputRef}
-                    type="file" 
-                    className="hidden" 
-                    accept="image/*" 
+                    type="file"
+                    className="hidden"
+                    accept="image/*"
                     onChange={handleImageChange}
                     disabled={uploadingImage}
                   />
                 </label>
               </div>
-              
+
               {uploadingImage && (
                 <div className="mt-2 text-sm text-blue-600">
                   <div className="flex items-center">
@@ -1190,7 +1183,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
                   type="checkbox"
                   id="isTrending"
                   checked={formData.isTrending}
-                  onChange={(e) => setFormData({...formData, isTrending: e.target.checked})}
+                  onChange={(e) => setFormData({ ...formData, isTrending: e.target.checked })}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="isTrending" className="ml-2 text-sm text-gray-700">
@@ -1202,7 +1195,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
                   type="checkbox"
                   id="isHighlighted"
                   checked={formData.isHighlighted}
-                  onChange={(e) => setFormData({...formData, isHighlighted: e.target.checked})}
+                  onChange={(e) => setFormData({ ...formData, isHighlighted: e.target.checked })}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="isHighlighted" className="ml-2 text-sm text-gray-700">
@@ -1214,7 +1207,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
                   type="checkbox"
                   id="isActive"
                   checked={formData.isActive}
-                  onChange={(e) => setFormData({...formData, isActive: e.target.checked})}
+                  onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
                 <label htmlFor="isActive" className="ml-2 text-sm text-gray-700">
@@ -1306,7 +1299,7 @@ const CopyModal = ({ isOpen, onClose, onConfirm, test, type, formData, setFormDa
               <h3 className="text-lg font-medium text-gray-900">Copy {type === 'objective' ? 'Objective' : 'Subjective'} Test</h3>
             </div>
           </div>
-          
+
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -1320,7 +1313,7 @@ const CopyModal = ({ isOpen, onClose, onConfirm, test, type, formData, setFormDa
                 placeholder="Enter test name"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Description
@@ -1333,7 +1326,7 @@ const CopyModal = ({ isOpen, onClose, onConfirm, test, type, formData, setFormDa
                 placeholder="Enter description"
               />
             </div>
-            
+
             <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
               <p className="font-medium mb-2">This will copy:</p>
               <ul className="list-disc list-inside space-y-1">
@@ -1347,7 +1340,7 @@ const CopyModal = ({ isOpen, onClose, onConfirm, test, type, formData, setFormDa
               </p>
             </div>
           </div>
-          
+
           <div className="flex justify-end space-x-3 mt-6">
             <button
               onClick={onClose}

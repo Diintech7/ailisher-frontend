@@ -11,7 +11,7 @@ import {
   Book,
 } from "lucide-react";
 
-const API_BASE_URL = "https://test.ailisher.com";
+const API_BASE_URL = "http://localhost:4000";
 
 const emptyTopic = () => ({
   topicName: "",
@@ -68,7 +68,7 @@ const CourseDetail = () => {
       });
       const data = await res.json();
       if (res.ok && data.success) setCourse(data.course);
-    } catch (_) {}
+    } catch (_) { }
   };
 
   const fetchLectures = async () => {
@@ -354,13 +354,13 @@ const CourseDetail = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-2">
-          <button
-            onClick={() => navigate(-1)}
-            className="text-orange-600 hover:text-orange-700 flex items-center"
-          >
-            <ArrowLeft size={16} className="mr-1" />
-            <span>Back to Courses</span>
-          </button>
+        <button
+          onClick={() => navigate(-1)}
+          className="text-orange-600 hover:text-orange-700 flex items-center"
+        >
+          <ArrowLeft size={16} className="mr-1" />
+          <span>Back to Courses</span>
+        </button>
       </div>
       <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6 mb-8">
         <div className="flex flex-col md:flex-row gap-8">
@@ -504,7 +504,7 @@ const CourseDetail = () => {
                     ) : (
                       <div className="px-2 pb-3 space-y-1">
                         {(lec.topics || []).map((t, tIdx) => {
-                          console.log("t",t)
+                          console.log("t", t)
                           const isActive = lecIdx === selectedLectureIndex && tIdx === selectedTopicIndex;
                           const yt = getYouTubeEmbed(t.VideoUrl);
                           return (
@@ -516,14 +516,14 @@ const CourseDetail = () => {
                               <div className="w-16 h-10 bg-gray-200 rounded overflow-hidden flex-shrink-0">
                                 {t.VideoUrl ? (
                                   yt ? (
-                                    <img alt="thumb" className="w-full h-full object-cover" src={`https://img.youtube.com/vi/${(t.VideoUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i)||[])[1]}/mqdefault.jpg`} />
+                                    <img alt="thumb" className="w-full h-full object-cover" src={`https://img.youtube.com/vi/${(t.VideoUrl.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i) || [])[1]}/mqdefault.jpg`} />
                                   ) : (
                                     <video
                                       className="w-full h-full object-cover"
                                       muted
                                       preload="metadata"
-                                      // onMouseEnter={(e) => { try { e.currentTarget.play(); } catch (_) {} }}
-                                      // onMouseLeave={(e) => { try { e.currentTarget.pause(); e.currentTarget.currentTime = 0; } catch (_) {} }}
+                                    // onMouseEnter={(e) => { try { e.currentTarget.play(); } catch (_) {} }}
+                                    // onMouseLeave={(e) => { try { e.currentTarget.pause(); e.currentTarget.currentTime = 0; } catch (_) {} }}
                                     >
                                       <source src={t.VideoUrl} />
                                     </video>

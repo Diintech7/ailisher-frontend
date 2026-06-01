@@ -13,9 +13,9 @@ const BookViewer = () => {
     const fetchBookData = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`https://test.ailisher.com/api/qrcode/book-data/${bookId}`);
+        const response = await fetch(`http://localhost:4000/api/qrcode/book-data/${bookId}`);
         const data = await response.json();
-        
+
         if (data.success) {
           setBookData(data);
         } else {
@@ -37,22 +37,22 @@ const BookViewer = () => {
   // Function to get complete image URL
   const getCompleteImageUrl = (imageUrl) => {
     if (!imageUrl) return null;
-    
+
     // If the imageUrl is already an absolute URL (starts with http or https)
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl;
     }
-    
+
     // Otherwise, assume it's a relative path and prepend the backend URL
-    return `https://test.ailisher.com/${imageUrl}`;
+    return `http://localhost:4000/${imageUrl}`;
   };
 
   // Get file icon based on file type
   const getFileIcon = (fileType) => {
     if (!fileType) return <File className="text-gray-600" />;
-    
+
     const type = fileType.toLowerCase();
-    
+
     if (type.includes('image/')) {
       return <Image className="text-green-600" />;
     } else if (type.includes('audio/') || type.includes('music')) {
@@ -75,9 +75,9 @@ const BookViewer = () => {
   // Get color class based on file type
   const getColorClass = (fileType) => {
     if (!fileType) return 'bg-gray-100';
-    
+
     const type = fileType.toLowerCase();
-    
+
     if (type.includes('image/')) {
       return 'bg-green-100';
     } else if (type.includes('audio/') || type.includes('music')) {
@@ -100,7 +100,7 @@ const BookViewer = () => {
   // Function to format file type
   const formatFileType = (fileType) => {
     if (!fileType) return 'Unknown type';
-    
+
     // Make file types more readable
     return fileType
       .replace('application/', '')
@@ -131,7 +131,7 @@ const BookViewer = () => {
           <div>
             <h3 className="font-medium text-red-800">Error</h3>
             <p className="text-red-700">{error}</p>
-            <button 
+            <button
               onClick={handleBackClick}
               className="mt-3 text-red-600 hover:text-red-800 flex items-center"
             >
@@ -152,7 +152,7 @@ const BookViewer = () => {
           <div>
             <h3 className="font-medium text-yellow-800">Not Found</h3>
             <p className="text-yellow-700">Book data could not be found</p>
-            <button 
+            <button
               onClick={handleBackClick}
               className="mt-3 text-yellow-600 hover:text-yellow-800 flex items-center"
             >
@@ -167,15 +167,15 @@ const BookViewer = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      
+
       <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6 mb-8">
         <div className="flex flex-col md:flex-row gap-8">
           <div className="md:w-1/4 lg:w-1/5">
             <div className="bg-gradient-to-br from-indigo-50 to-blue-100 rounded-lg h-48 flex items-center justify-center overflow-hidden">
               {bookData.book.coverImage ? (
-                <img 
-                  src={getCompleteImageUrl(bookData.book.coverImage)} 
-                  alt={bookData.book.title} 
+                <img
+                  src={getCompleteImageUrl(bookData.book.coverImage)}
+                  alt={bookData.book.title}
                   className="h-full w-full object-cover rounded-lg"
                   onError={(e) => {
                     e.target.style.display = 'none';
@@ -193,16 +193,16 @@ const BookViewer = () => {
             <h1 className="text-3xl font-bold text-gray-800 mb-2">{bookData.book.title}</h1>
             <p className="text-gray-700 mb-6">{bookData.book.description || 'No description available'}</p>
             <div className="flex flex-wrap gap-3">
-              <button 
+              <button
                 onClick={() => navigate(`/ai-books/${bookId}`)}
                 className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors shadow-sm"
               >
                 <Book size={16} className="mr-2" />
                 <span>View Full Book</span>
               </button>
-              
+
               <button
-                onClick={() => navigate(`/ai-books/${bookId}/datastore`)} 
+                onClick={() => navigate(`/ai-books/${bookId}/datastore`)}
                 className="flex items-center px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-900 transition-colors shadow-sm"
               >
                 <Database size={16} className="mr-2" />
@@ -212,7 +212,7 @@ const BookViewer = () => {
           </div>
         </div>
       </div>
-      
+
       <div className="mb-8">
         <h2 className="text-2xl font-semibold text-gray-800 mb-4">Chapters ({bookData.chapters.length})</h2>
         {bookData.chapters.length === 0 ? (
@@ -224,7 +224,7 @@ const BookViewer = () => {
             {bookData.chapters
               .sort((a, b) => (a.order || 0) - (b.order || 0))
               .map((chapter) => (
-                <div 
+                <div
                   key={chapter._id}
                   className="bg-white p-5 rounded-lg shadow-sm border border-gray-100 flex items-center"
                 >
@@ -234,8 +234,8 @@ const BookViewer = () => {
                   <div className="flex-grow">
                     <h3 className="font-medium text-gray-800">{chapter.title}</h3>
                     <p className="text-sm text-gray-600 mt-1">
-                      {chapter.description ? 
-                        (chapter.description.length > 100 ? chapter.description.substring(0, 100) + '...' : chapter.description) 
+                      {chapter.description ?
+                        (chapter.description.length > 100 ? chapter.description.substring(0, 100) + '...' : chapter.description)
                         : 'No description'}
                     </p>
                   </div>
@@ -250,7 +250,7 @@ const BookViewer = () => {
           </div>
         )}
       </div>
-      
+
       <div>
         <h2 className="text-2xl font-semibold text-gray-800 mb-4">Datastore Items ({bookData.datastoreItems.length})</h2>
         {bookData.datastoreItems.length === 0 ? (
@@ -262,14 +262,14 @@ const BookViewer = () => {
             {bookData.datastoreItems.map((item) => {
               const isImage = item.fileType && item.fileType.toLowerCase().includes('image/');
               return (
-                <div 
+                <div
                   key={item._id}
                   className="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
                 >
                   {isImage && item.url && (
                     <div className="h-40 overflow-hidden bg-gray-100">
-                      <img 
-                        src={getCompleteImageUrl(item.url)} 
+                      <img
+                        src={getCompleteImageUrl(item.url)}
                         alt={item.name}
                         className="w-full h-full object-cover"
                         onError={(e) => {
@@ -289,9 +289,9 @@ const BookViewer = () => {
                         <p className="text-xs text-gray-500">{formatFileType(item.fileType)}</p>
                       </div>
                     </div>
-                    <a 
-                      href={getCompleteImageUrl(item.url)} 
-                      target="_blank" 
+                    <a
+                      href={getCompleteImageUrl(item.url)}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs text-indigo-600 hover:text-indigo-800 flex items-center mt-2"
                     >

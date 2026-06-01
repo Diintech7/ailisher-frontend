@@ -107,7 +107,7 @@ const Reels = React.memo(function Reels() {
   };
 
   const axiosConfig = {
-    baseURL: "https://test.ailisher.com",
+    baseURL: "http://localhost:4000",
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
@@ -432,22 +432,20 @@ const Reels = React.memo(function Reels() {
             <button
               type="button"
               onClick={() => setNewReel({ ...newReel, mode: "youtube" })}
-              className={`flex-1 px-3 py-2 rounded-lg border ${
-                newReel.mode === "youtube"
+              className={`flex-1 px-3 py-2 rounded-lg border ${newReel.mode === "youtube"
                   ? "bg-purple-600 text-white border-purple-600"
                   : "bg-white text-gray-700 border-gray-300"
-              }`}
+                }`}
             >
               YouTube Link
             </button>
             <button
               type="button"
               onClick={() => setNewReel({ ...newReel, mode: "upload" })}
-              className={`flex-1 px-3 py-2 rounded-lg border ${
-                newReel.mode === "upload"
+              className={`flex-1 px-3 py-2 rounded-lg border ${newReel.mode === "upload"
                   ? "bg-purple-600 text-white border-purple-600"
                   : "bg-white text-gray-700 border-gray-300"
-              }`}
+                }`}
             >
               Upload Video
             </button>
@@ -721,201 +719,197 @@ const Reels = React.memo(function Reels() {
                             handleDrop(e, globalIndex, dateGroup.dateKey)
                           }
                           onDragEnd={handleDragEnd}
-                          className={`${
-                            reel.isEnabled === true ? "bg-white" : "bg-gray-300"
-                          } rounded-lg shadow-md overflow-hidden cursor-grab hover:shadow-lg transition-all duration-200 ${
-                            draggedIndex === globalIndex
+                          className={`${reel.isEnabled === true ? "bg-white" : "bg-gray-300"
+                            } rounded-lg shadow-md overflow-hidden cursor-grab hover:shadow-lg transition-all duration-200 ${draggedIndex === globalIndex
                               ? "shadow-xl scale-105 rotate-2"
                               : ""
-                          } ${isReordering ? "opacity-75" : ""}`}
+                            } ${isReordering ? "opacity-75" : ""}`}
                         >
                           {/* --- Your Reel Card --- */}
-                          <div clasName = "flex">
-                          <div className="relative">
-                            {/* Drag Indicator */}
-                            <div className="absolute top-2 left-2 z-10 bg-black/60 text-white px-2 py-1 rounded text-xs font-medium">
-                              ⋮⋮ Drag
-                            </div>
-                            <div className="absolute top-2 right-2 z-10 menu-container text-xs">
-                              <button
-                                onClick={(e) => handleMenuToggle(reel._id, e)}
-                                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                              >
-                                <MoreVertical className="w-5 h-5 text-gray-300 hover:text-gray-500" />
-                              </button>
+                          <div clasName="flex">
+                            <div className="relative">
+                              {/* Drag Indicator */}
+                              <div className="absolute top-2 left-2 z-10 bg-black/60 text-white px-2 py-1 rounded text-xs font-medium">
+                                ⋮⋮ Drag
+                              </div>
+                              <div className="absolute top-2 right-2 z-10 menu-container text-xs">
+                                <button
+                                  onClick={(e) => handleMenuToggle(reel._id, e)}
+                                  className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+                                >
+                                  <MoreVertical className="w-5 h-5 text-gray-300 hover:text-gray-500" />
+                                </button>
 
-                              {/* Dropdown Menu */}
-                              {openMenuId === reel._id && (
-                                <div className="absolute right-0 top-full mt-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
-                                  <button
-                                    onClick={(e) => handleEditClick(reel, e)}
-                                    className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
-                                  >
-                                    <Edit className="w-4 h-4" />
-                                    <span>Edit</span>
-                                  </button>
-                                  <button
-                                    onClick={(e) => openDeleteModal(reel, e)}
-                                    className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                    <span>Delete</span>
-                                  </button>
-                                  {/* Only show enable/disable option if user created this reel */}
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      toggleEnabled(reel);
-                                    }}
-                                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center space-x-2 ${
-                                      reel.isEnabled === true
-                                        ? "text-red-800 hover:bg-red-50"
-                                        : "text-green-800 hover:bg-green-50"
-                                    }`}
-                                  >
-                                    <ToggleRight className="w-4 h-4" />
-                                    <span>
-                                      {reel.isEnabled === true
-                                        ? "Disable"
-                                        : "Enable"}
-                                    </span>
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      togglePopular(reel);
-                                    }}
-                                    className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center space-x-2 ${
-                                      reel.isPopular === true
-                                        ? "text-pink-800 hover:bg-pink-50"
-                                        : "text-purple-800 hover:bg-purple-50"
-                                    }`}
-                                  >
-                                    <Heart className="w-4 h-4" />
-                                    <span>
-                                      {reel.isPopular === true
-                                        ? "Unpopular"
-                                        : "Popular"}
-                                    </span>
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Determine content type (YouTube or uploaded video) */}
-                            {(() => {
-                              const youtubeId = extractYoutubeId(
-                                reel.youtubeLink
-                              );
-                              if (youtubeId) {
-                                return playingReelId === reel._id ? (
-                                  <div className="aspect-video w-full">
-                                    <iframe
-                                      className="w-full h-full"
-                                      src={getEmbedUrl(youtubeId)}
-                                      title={reel.title}
-                                      frameBorder="0"
-                                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                      allowFullScreen
-                                    />
+                                {/* Dropdown Menu */}
+                                {openMenuId === reel._id && (
+                                  <div className="absolute right-0 top-full mt-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
                                     <button
-                                      className="absolute top-2 right-2 bg-black/60 text-white px-2 py-1 rounded"
-                                      onClick={() => setPlayingReelId(null)}
+                                      onClick={(e) => handleEditClick(reel, e)}
+                                      className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
                                     >
-                                      Close
+                                      <Edit className="w-4 h-4" />
+                                      <span>Edit</span>
+                                    </button>
+                                    <button
+                                      onClick={(e) => openDeleteModal(reel, e)}
+                                      className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                      <span>Delete</span>
+                                    </button>
+                                    {/* Only show enable/disable option if user created this reel */}
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleEnabled(reel);
+                                      }}
+                                      className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center space-x-2 ${reel.isEnabled === true
+                                          ? "text-red-800 hover:bg-red-50"
+                                          : "text-green-800 hover:bg-green-50"
+                                        }`}
+                                    >
+                                      <ToggleRight className="w-4 h-4" />
+                                      <span>
+                                        {reel.isEnabled === true
+                                          ? "Disable"
+                                          : "Enable"}
+                                      </span>
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        togglePopular(reel);
+                                      }}
+                                      className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center space-x-2 ${reel.isPopular === true
+                                          ? "text-pink-800 hover:bg-pink-50"
+                                          : "text-purple-800 hover:bg-purple-50"
+                                        }`}
+                                    >
+                                      <Heart className="w-4 h-4" />
+                                      <span>
+                                        {reel.isPopular === true
+                                          ? "Unpopular"
+                                          : "Popular"}
+                                      </span>
                                     </button>
                                   </div>
-                                ) : (
-                                  <>
-                                    <img
-                                      src={getThumbnailFromYouTube(youtubeId)}
-                                      alt={reel.title}
-                                      className="w-full h-48 object-cover"
-                                      onError={(e) => {
-                                        e.currentTarget.src =
-                                          "https://via.placeholder.com/300x200?text=No+Thumbnail";
-                                      }}
-                                    />
-                                    <button
-                                      className="absolute inset-0 flex items-center justify-center"
-                                      onClick={() => setPlayingReelId(reel._id)}
-                                      aria-label="Play video"
-                                    >
-                                      <div className="bg-black/50 rounded-full p-3">
-                                        <Play className="w-6 h-6 text-white" />
-                                      </div>
-                                    </button>
-                                  </>
-                                );
-                              }
+                                )}
+                              </div>
 
-                              if (reel.videoUrl) {
+                              {/* Determine content type (YouTube or uploaded video) */}
+                              {(() => {
+                                const youtubeId = extractYoutubeId(
+                                  reel.youtubeLink
+                                );
+                                if (youtubeId) {
+                                  return playingReelId === reel._id ? (
+                                    <div className="aspect-video w-full">
+                                      <iframe
+                                        className="w-full h-full"
+                                        src={getEmbedUrl(youtubeId)}
+                                        title={reel.title}
+                                        frameBorder="0"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                        allowFullScreen
+                                      />
+                                      <button
+                                        className="absolute top-2 right-2 bg-black/60 text-white px-2 py-1 rounded"
+                                        onClick={() => setPlayingReelId(null)}
+                                      >
+                                        Close
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <img
+                                        src={getThumbnailFromYouTube(youtubeId)}
+                                        alt={reel.title}
+                                        className="w-full h-48 object-cover"
+                                        onError={(e) => {
+                                          e.currentTarget.src =
+                                            "https://via.placeholder.com/300x200?text=No+Thumbnail";
+                                        }}
+                                      />
+                                      <button
+                                        className="absolute inset-0 flex items-center justify-center"
+                                        onClick={() => setPlayingReelId(reel._id)}
+                                        aria-label="Play video"
+                                      >
+                                        <div className="bg-black/50 rounded-full p-3">
+                                          <Play className="w-6 h-6 text-white" />
+                                        </div>
+                                      </button>
+                                    </>
+                                  );
+                                }
+
+                                if (reel.videoUrl) {
+                                  return (
+                                    <video
+                                      className="w-full h-48 object-cover"
+                                      src={reel.videoUrl}
+                                      controls
+                                    />
+                                  );
+                                }
+
                                 return (
-                                  <video
+                                  <img
+                                    src="https://via.placeholder.com/300x200?text=No+Preview"
+                                    alt={reel.title}
                                     className="w-full h-48 object-cover"
-                                    src={reel.videoUrl}
-                                    controls
                                   />
                                 );
-                              }
-
-                              return (
-                                <img
-                                  src="https://via.placeholder.com/300x200?text=No+Preview"
-                                  alt={reel.title}
-                                  className="w-full h-48 object-cover"
-                                />
-                              );
-                            })()}
-                          </div>
-
-                          <div className="p-4">
-                            <h3 className="font-semibold text-lg mb-2">
-                              {reel.title}
-                            </h3>
-                            {reel.description && (
-                              <p className="text-gray-600 text-sm mb-3">
-                                {reel.description}
-                              </p>
-                            )}
-                            <div className="flex justify-between text-sm text-gray-500 mb-2">
-                              <span>👁️ {reel.metrics?.views ?? 0} views</span>
-                              <span>❤️ {reel.metrics?.likes ?? 0} likes</span>
+                              })()}
                             </div>
-                            <div className="flex items-center justify-between text-sm text-gray-700 mb-4">
-                              <div>
-                                <span className="font-medium">Order:</span>
-                                <span className="ml-1">{reel.order ?? 0}</span>
+
+                            <div className="p-4">
+                              <h3 className="font-semibold text-lg mb-2">
+                                {reel.title}
+                              </h3>
+                              {reel.description && (
+                                <p className="text-gray-600 text-sm mb-3">
+                                  {reel.description}
+                                </p>
+                              )}
+                              <div className="flex justify-between text-sm text-gray-500 mb-2">
+                                <span>👁️ {reel.metrics?.views ?? 0} views</span>
+                                <span>❤️ {reel.metrics?.likes ?? 0} likes</span>
                               </div>
-                              <div className="flex items-center space-x-2">
-                                <input
-                                  type="number"
-                                  min={1}
-                                  value={orderInputs[reel._id] ?? (reel.order ?? 1)}
-                                  onChange={(e) => {
-                                    const val = e.target.value;
-                                    setOrderInputs((prev) => ({ ...prev, [reel._id]: val }));
-                                  }}
-                                  className="w-20 px-2 py-1 border border-gray-300 rounded"
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                      const val = orderInputs[reel._id] ?? e.currentTarget.value;
+                              <div className="flex items-center justify-between text-sm text-gray-700 mb-4">
+                                <div>
+                                  <span className="font-medium">Order:</span>
+                                  <span className="ml-1">{reel.order ?? 0}</span>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <input
+                                    type="number"
+                                    min={1}
+                                    value={orderInputs[reel._id] ?? (reel.order ?? 1)}
+                                    onChange={(e) => {
+                                      const val = e.target.value;
+                                      setOrderInputs((prev) => ({ ...prev, [reel._id]: val }));
+                                    }}
+                                    className="w-20 px-2 py-1 border border-gray-300 rounded"
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') {
+                                        const val = orderInputs[reel._id] ?? e.currentTarget.value;
+                                        updateReelOrder(reel, val);
+                                      }
+                                    }}
+                                  />
+                                  <button
+                                    className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded"
+                                    onClick={() => {
+                                      const val = orderInputs[reel._id] ?? (reel.order ?? 1);
                                       updateReelOrder(reel, val);
-                                    }
-                                  }}
-                                />
-                                <button
-                                  className="px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded"
-                                  onClick={() => {
-                                    const val = orderInputs[reel._id] ?? (reel.order ?? 1);
-                                    updateReelOrder(reel, val);
-                                  }}
-                                >
-                                  Save
-                                </button>
+                                    }}
+                                  >
+                                    Save
+                                  </button>
+                                </div>
                               </div>
                             </div>
-                          </div>
                           </div>
                         </div>
                       );

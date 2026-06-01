@@ -95,13 +95,13 @@ const DataStore = ({ type }) => {
 
   const getApiEndpoint = () => {
     if (type === "book" && bookId) {
-      return `https://test.ailisher.com/api/datastores/book/${bookId}`
+      return `http://localhost:4000/api/datastores/book/${bookId}`
     } else if (type === "chapter" && bookId && chapterId) {
-      return `https://test.ailisher.com/api/datastores/chapter/${chapterId}`
+      return `http://localhost:4000/api/datastores/chapter/${chapterId}`
     } else if (type === "topic" && bookId && chapterId && topicId) {
-      return `https://test.ailisher.com/api/datastores/topic/${topicId}`
+      return `http://localhost:4000/api/datastores/topic/${topicId}`
     } else if (type === "subtopic" && bookId && chapterId && topicId && subtopicId) {
-      return `https://test.ailisher.com/api/datastores/subtopic/${subtopicId}`
+      return `http://localhost:4000/api/datastores/subtopic/${subtopicId}`
     }
     return null
   }
@@ -111,7 +111,7 @@ const DataStore = ({ type }) => {
       const token = Cookies.get("usertoken")
       if (!token) return
 
-      const response = await fetch(`https://test.ailisher.com/api/datastores/update-embedding-status/${itemId}`, {
+      const response = await fetch(`http://localhost:4000/api/datastores/update-embedding-status/${itemId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -140,12 +140,12 @@ const DataStore = ({ type }) => {
 
       // Find items that have S3 keys and might need URL refresh
       const s3Items = items.filter(item => item.s3Key)
-      
+
       if (s3Items.length === 0) return items
 
       const itemIds = s3Items.map(item => item._id)
-      
-      const response = await fetch(`https://test.ailisher.com/api/datastores/refresh-s3-urls`, {
+
+      const response = await fetch(`http://localhost:4000/api/datastores/refresh-s3-urls`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -155,7 +155,7 @@ const DataStore = ({ type }) => {
       })
 
       const data = await response.json()
-      
+
       if (data.success && data.updatedItems) {
         // Update items with new URLs
         const updatedItems = items.map(item => {
@@ -167,7 +167,7 @@ const DataStore = ({ type }) => {
         })
         return updatedItems
       }
-      
+
       return items
     } catch (error) {
       console.error("Error refreshing S3 URLs:", error)
@@ -254,7 +254,7 @@ const DataStore = ({ type }) => {
 
     const statusPromises = pdfItems.map(async (item) => {
       try {
-        const response = await fetch(`https://test.ailisher.com/api/enhanced-pdf-embedding/check-embeddings/${item._id}`, {
+        const response = await fetch(`http://localhost:4000/api/enhanced-pdf-embedding/check-embeddings/${item._id}`, {
           headers: {
             ...(token && { Authorization: `Bearer ${token}` }),
           },
@@ -263,7 +263,7 @@ const DataStore = ({ type }) => {
 
         let healthData = { success: false, status: { chatAvailable: false } }
         try {
-          const healthResponse = await fetch(`https://test.ailisher.com/api/enhanced-pdf-chat/chat-health/${item._id}`, {
+          const healthResponse = await fetch(`http://localhost:4000/api/enhanced-pdf-chat/chat-health/${item._id}`, {
             headers: {
               ...(token && { Authorization: `Bearer ${token}` }),
             },
@@ -311,7 +311,7 @@ const DataStore = ({ type }) => {
     const token = Cookies.get("usertoken")
 
     try {
-      const response = await fetch(`https://test.ailisher.com/api/enhanced-pdf-embedding/check-embeddings/${itemId}`, {
+      const response = await fetch(`http://localhost:4000/api/enhanced-pdf-embedding/check-embeddings/${itemId}`, {
         headers: {
           ...(token && { Authorization: `Bearer ${token}` }),
         },
@@ -320,7 +320,7 @@ const DataStore = ({ type }) => {
 
       let healthData = { success: false, status: { chatAvailable: false } }
       try {
-        const healthResponse = await fetch(`https://test.ailisher.com/api/enhanced-pdf-chat/chat-health/${itemId}`, {
+        const healthResponse = await fetch(`http://localhost:4000/api/enhanced-pdf-chat/chat-health/${itemId}`, {
           headers: {
             ...(token && { Authorization: `Bearer ${token}` }),
           },
@@ -356,7 +356,7 @@ const DataStore = ({ type }) => {
     setAIGuidelinesLoading(true)
     try {
       const token = Cookies.get('usertoken')
-      const response = await fetch(`https://test.ailisher.com/api/aiguidelines/${bookId}`, {
+      const response = await fetch(`http://localhost:4000/api/aiguidelines/${bookId}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
       if (response.ok) {
@@ -378,7 +378,7 @@ const DataStore = ({ type }) => {
     try {
       const token = Cookies.get('usertoken')
       console.log(aiGuidelinesForm)
-      const response = await fetch(`https://test.ailisher.com/api/aiguidelines/${bookId}`, {
+      const response = await fetch(`http://localhost:4000/api/aiguidelines/${bookId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -408,11 +408,11 @@ const DataStore = ({ type }) => {
     }
   }
 
-useEffect(() => {
-  if (type === 'book' && bookId) {
-    fetchAIGuidelines()
-  }
-}, [bookId, type]) // Only depend on bookId and type
+  useEffect(() => {
+    if (type === 'book' && bookId) {
+      fetchAIGuidelines()
+    }
+  }, [bookId, type]) // Only depend on bookId and type
 
   useEffect(() => {
     fetchItems()
@@ -533,7 +533,7 @@ useEffect(() => {
       if (uploadType === "file") {
         const uploadPromises = selectedFiles.map(async (file) => {
           // Get S3 upload URL
-          const uploadUrlResponse = await fetch(`https://test.ailisher.com/api/datastores/upload-s3`, {
+          const uploadUrlResponse = await fetch(`http://localhost:4000/api/datastores/upload-s3`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -688,7 +688,7 @@ useEffect(() => {
     }
 
     try {
-      const response = await fetch(`https://test.ailisher.com/api/enhanced-pdf-embedding/create-embeddings/${itemId}`, {
+      const response = await fetch(`http://localhost:4000/api/enhanced-pdf-embedding/create-embeddings/${itemId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -816,7 +816,7 @@ useEffect(() => {
     try {
       let response
       if (currentChatItem._id === "knowledge-base") {
-        response = await fetch(`https://test.ailisher.com/api/enhanced-pdf-chat/chat-book-knowledge-base/${bookId}`, {
+        response = await fetch(`http://localhost:4000/api/enhanced-pdf-chat/chat-book-knowledge-base/${bookId}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -826,8 +826,8 @@ useEffect(() => {
             question: messageToSend,
           }),
         })
-      } else{
-        response = await fetch(`https://test.ailisher.com/api/enhanced-pdf-chat/chat/${currentChatItem._id}`, {
+      } else {
+        response = await fetch(`http://localhost:4000/api/enhanced-pdf-chat/chat/${currentChatItem._id}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -997,13 +997,12 @@ useEffect(() => {
             chatMessages.map((message) => (
               <div key={message.id} className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}>
                 <div
-                  className={`max-w-3xl p-3 rounded-lg ${
-                    message.type === "user"
+                  className={`max-w-3xl p-3 rounded-lg ${message.type === "user"
                       ? "bg-indigo-600 text-white"
                       : message.type === "error"
                         ? "bg-red-100 text-red-800 border border-red-200"
                         : "bg-gray-100 text-gray-800"
-                  }`}
+                    }`}
                 >
                   <div className="whitespace-pre-wrap">{message.content}</div>
                   {message.confidence && (
@@ -1262,11 +1261,10 @@ useEffect(() => {
                   <button
                     onClick={() => handleCreateEmbeddings(item._id)}
                     disabled={isEmbeddingLoading}
-                    className={`flex items-center px-3 py-1 text-xs rounded-md transition-colors ${
-                      embeddingInfo?.hasEmbeddings
+                    className={`flex items-center px-3 py-1 text-xs rounded-md transition-colors ${embeddingInfo?.hasEmbeddings
                         ? "bg-green-100 text-green-700 border border-green-200"
                         : "bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200"
-                    }`}
+                      }`}
                   >
                     {isEmbeddingLoading ? (
                       <Loader2 className="animate-spin mr-1" size={12} />
@@ -1294,11 +1292,10 @@ useEffect(() => {
                   <button
                     onClick={() => handleChatWithPDF(item)}
                     disabled={!chatAvailable}
-                    className={`flex items-center px-3 py-1 text-xs rounded-md transition-colors ${
-                      chatAvailable
+                    className={`flex items-center px-3 py-1 text-xs rounded-md transition-colors ${chatAvailable
                         ? "bg-indigo-100 text-indigo-700 border border-indigo-200 hover:bg-indigo-200"
                         : "bg-gray-100 text-gray-400 border border-gray-200"
-                    }`}
+                      }`}
                   >
                     <MessageCircle size={12} className="mr-1" />
                     <span>Chat</span>
@@ -1369,27 +1366,27 @@ useEffect(() => {
       </div>
     )
   }
-// Add a new function to handle opening the AI Guidelines modal
-const handleOpenAIGuidelinesModal = () => {
-  // Set form data when opening the modal
-  if (aiGuidelines) {
-    setAIGuidelinesForm({
-      message: aiGuidelines.message || '',
-      prompt: aiGuidelines.prompt || '',
-      FAQs: aiGuidelines.FAQs && aiGuidelines.FAQs.length > 0 
-        ? aiGuidelines.FAQs.map(faq => ({ question: faq.question || '', _id: faq._id }))
-        : [{ question: '', _id: Math.random().toString(36).substr(2, 9) }]
-    })
-  } else {
-    // Reset to default for new guidelines
-    setAIGuidelinesForm({
-      message: '',
-      prompt: '',
-      FAQs: [{ question: '', _id: Math.random().toString(36).substr(2, 9) }]
-    })
+  // Add a new function to handle opening the AI Guidelines modal
+  const handleOpenAIGuidelinesModal = () => {
+    // Set form data when opening the modal
+    if (aiGuidelines) {
+      setAIGuidelinesForm({
+        message: aiGuidelines.message || '',
+        prompt: aiGuidelines.prompt || '',
+        FAQs: aiGuidelines.FAQs && aiGuidelines.FAQs.length > 0
+          ? aiGuidelines.FAQs.map(faq => ({ question: faq.question || '', _id: faq._id }))
+          : [{ question: '', _id: Math.random().toString(36).substr(2, 9) }]
+      })
+    } else {
+      // Reset to default for new guidelines
+      setAIGuidelinesForm({
+        message: '',
+        prompt: '',
+        FAQs: [{ question: '', _id: Math.random().toString(36).substr(2, 9) }]
+      })
+    }
+    setShowAIGuidelinesModal(true)
   }
-  setShowAIGuidelinesModal(true)
-}
   // --- AI Guidelines Modal ---
   const AIGuidelinesView = () => (
     <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6 mb-8">
@@ -1539,7 +1536,7 @@ const handleOpenAIGuidelinesModal = () => {
                 <span>Chat with Knowledge Base</span>
               </button>
               <button
-               onClick={handleOpenAIGuidelinesModal}
+                onClick={handleOpenAIGuidelinesModal}
                 className="bg-orange-600 text-white px-4 py-2 rounded-md hover:bg-orange-700 transition-colors flex items-center"
               >
                 <RulerIcon size={18} className="mr-2" />
@@ -1555,11 +1552,10 @@ const handleOpenAIGuidelinesModal = () => {
                   <button
                     key={filter.id}
                     onClick={() => setActiveFilter(filter.id)}
-                    className={`flex items-center px-3 py-2 rounded-md text-sm whitespace-nowrap ${
-                      activeFilter === filter.id
+                    className={`flex items-center px-3 py-2 rounded-md text-sm whitespace-nowrap ${activeFilter === filter.id
                         ? "bg-indigo-100 text-indigo-700 font-medium"
                         : "bg-gray-50 text-gray-700 hover:bg-gray-100"
-                    }`}
+                      }`}
                   >
                     <filter.icon size={16} className="mr-2" />
                     <span>{filter.label}</span>
@@ -1679,11 +1675,10 @@ const handleOpenAIGuidelinesModal = () => {
                             <button
                               onClick={() => handleCreateEmbeddings(item._id)}
                               disabled={isEmbeddingLoading}
-                              className={`flex-1 flex items-center justify-center px-3 py-2 text-sm rounded-md transition-colors ${
-                                embeddingInfo?.hasEmbeddings
+                              className={`flex-1 flex items-center justify-center px-3 py-2 text-sm rounded-md transition-colors ${embeddingInfo?.hasEmbeddings
                                   ? "bg-green-100 text-green-700 border border-green-200"
                                   : "bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200"
-                              }`}
+                                }`}
                             >
                               {isEmbeddingLoading ? (
                                 <Loader2 className="animate-spin mr-1" size={14} />
@@ -1695,11 +1690,10 @@ const handleOpenAIGuidelinesModal = () => {
 
                             <button
                               onClick={() => handleChatWithPDF(item)}
-                              className={`flex-1 flex items-center justify-center px-3 py-2 text-sm rounded-md transition-colors ${
-                                chatAvailable
+                              className={`flex-1 flex items-center justify-center px-3 py-2 text-sm rounded-md transition-colors ${chatAvailable
                                   ? "bg-indigo-100 text-indigo-700 border border-indigo-200 hover:bg-indigo-200"
                                   : "bg-gray-100 text-gray-400 border border-gray-200"
-                              }`}
+                                }`}
                             >
                               <MessageCircle size={14} className="mr-1" />
                               <span>Chat</span>

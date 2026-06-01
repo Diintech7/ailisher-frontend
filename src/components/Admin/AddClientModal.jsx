@@ -98,14 +98,14 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded }) => {
           contentType: file.type
         })
       });
-      
+
       const presignedData = await presignedResponse.json();
       if (!presignedData.success) {
         throw new Error(presignedData.message || 'Failed to get upload URL');
       }
-      
+
       const { uploadUrl, publicUrl } = presignedData.data;
-      
+
       // Upload file directly to R2
       const uploadResponse = await fetch(uploadUrl, {
         method: 'PUT',
@@ -114,7 +114,7 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded }) => {
         },
         body: file
       });
-      
+
       if (!uploadResponse.ok) {
         throw new Error('Failed to upload file to R2');
       }
@@ -231,9 +231,9 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     console.log('Form submitted with data:', formData); // Debug log
-    
+
     if (!validateForm()) return;
 
     setLoading(true);
@@ -242,8 +242,8 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded }) => {
     try {
       const token = Cookies.get('admintoken');
       console.log('Admin token:', token); // Debug log
-      
-      const response = await fetch('https://test.ailisher.com/api/admin/clients', {
+
+      const response = await fetch('http://localhost:4000/api/admin/clients', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -258,7 +258,7 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded }) => {
       if (result.success) {
         setSuccess(result);
         setShowCredentials(true);
-        
+
         // Call parent function to refresh client list
         if (onClientAdded) {
           onClientAdded();
@@ -287,11 +287,11 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded }) => {
             <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
               <Check className="h-8 w-8 text-green-600" />
             </div>
-            
+
             <h3 className="text-2xl font-bold text-gray-900 mb-4">
               Client Created Successfully!
             </h3>
-            
+
             <div className="space-y-4 mb-6">
               {/* Client User ID */}
               <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">

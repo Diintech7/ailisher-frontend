@@ -60,7 +60,7 @@ const BookCourses = () => {
           navigate('/login');
           return;
         }
-        const response = await fetch(`https://test.ailisher.com/api/books/${bookId}`, {
+        const response = await fetch(`http://localhost:4000/api/books/${bookId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -128,26 +128,26 @@ const BookCourses = () => {
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl;
     }
-    return `https://test.ailisher.com/${imageUrl}`;
+    return `http://localhost:4000/${imageUrl}`;
   };
 
   const getVideoThumbnail = (videoUrl) => {
     if (!videoUrl) return null;
-    
+
     // YouTube thumbnail extraction
     const youtubeRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
     const youtubeMatch = videoUrl.match(youtubeRegex);
     if (youtubeMatch) {
       return `https://img.youtube.com/vi/${youtubeMatch[1]}/maxresdefault.jpg`;
     }
-    
+
     // Vimeo thumbnail extraction (basic)
     const vimeoRegex = /vimeo\.com\/(\d+)/;
     const vimeoMatch = videoUrl.match(vimeoRegex);
     if (vimeoMatch) {
       return `https://vumbnail.com/${vimeoMatch[1]}.jpg`;
     }
-    
+
     // Default thumbnail for other platforms
     return null;
   };
@@ -405,7 +405,7 @@ const BookCourses = () => {
           <div>
             <h3 className="font-medium text-red-800">Error</h3>
             <p className="text-red-700">{error}</p>
-            <button 
+            <button
               onClick={() => navigate(-1)}
               className="mt-3 text-red-600 hover:text-red-800 flex items-center"
             >
@@ -446,9 +446,9 @@ const BookCourses = () => {
             <div className="md:w-1/4 lg:w-1/5">
               <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg h-48 flex items-center justify-center overflow-hidden">
                 {book?.cover_imageUrl && !imageError ? (
-                  <img 
-                    src={getCompleteImageUrl(book.cover_imageUrl)} 
-                    alt={book.title} 
+                  <img
+                    src={getCompleteImageUrl(book.cover_imageUrl)}
+                    alt={book.title}
                     className="h-full w-full object-cover rounded-lg"
                     onError={() => setImageError(true)}
                   />
@@ -575,7 +575,7 @@ const BookCourses = () => {
                     {videosToShow.map((lecture, videoIdx) => {
                       const isExpanded = expandedLectureIdx === videoIdx;
                       return (
-                        <div key={videoIdx} className={`transition-all ${isExpanded ? 'bg-orange-50' : 'bg-orange-100'} rounded-xl mb-2 shadow-sm`}> 
+                        <div key={videoIdx} className={`transition-all ${isExpanded ? 'bg-orange-50' : 'bg-orange-100'} rounded-xl mb-2 shadow-sm`}>
                           <div
                             className={`flex items-center justify-between px-6 py-4 cursor-pointer rounded-xl ${isExpanded ? 'bg-orange-200' : 'hover:bg-orange-200'} transition-colors`}
                             onClick={() => setExpandedLectureIdx(isExpanded ? null : videoIdx)}
@@ -810,19 +810,19 @@ const BookCourses = () => {
           onAdd={handleAddLecture}
           initialData={editingLectureData || (editingTopic
             ? {
-                chapterName: courses[selectedCourseIdx]?.videos[editingTopic.videoIdx]?.chapterName,
-                topics: [courses[selectedCourseIdx]?.videos[editingTopic.videoIdx]?.topics[editingTopic.topicIdx]]
-              }
+              chapterName: courses[selectedCourseIdx]?.videos[editingTopic.videoIdx]?.chapterName,
+              topics: [courses[selectedCourseIdx]?.videos[editingTopic.videoIdx]?.topics[editingTopic.topicIdx]]
+            }
             : editingChapterIdx !== null
               ? chapterActionType === 'add'
                 ? {
-                    chapterName: courses[selectedCourseIdx]?.videos[editingChapterIdx]?.chapterName,
-                    topics: [ { topicName: '', VideoUrl: '', topicDescription: '', pdf: null } ]
-                  }
+                  chapterName: courses[selectedCourseIdx]?.videos[editingChapterIdx]?.chapterName,
+                  topics: [{ topicName: '', VideoUrl: '', topicDescription: '', pdf: null }]
+                }
                 : {
-                    chapterName: courses[selectedCourseIdx]?.videos[editingChapterIdx]?.chapterName,
-                    topics: courses[selectedCourseIdx]?.videos[editingChapterIdx]?.topics
-                  }
+                  chapterName: courses[selectedCourseIdx]?.videos[editingChapterIdx]?.chapterName,
+                  topics: courses[selectedCourseIdx]?.videos[editingChapterIdx]?.topics
+                }
               : addVideosModalInitial)
           }
           courseId={selectedCourseIdx !== null ? courses[selectedCourseIdx]._id : undefined}

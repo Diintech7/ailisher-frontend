@@ -73,7 +73,7 @@ export default function PendingAnswers() {
       const token = Cookies.get('evaluatortoken'); // Assuming you store evaluator token
       console.log(token)
       const response = await axios.put(
-        `https://test.ailisher.com/api/answerapis/answers/${answerId}/accept`,
+        `http://localhost:4000/api/answerapis/answers/${answerId}/accept`,
         {},
         {
           headers: {
@@ -142,9 +142,9 @@ export default function PendingAnswers() {
                     {answer.question?.question || 'N/A'}
                   </h3>
                   <div className='flex grid-cols-2 gap-6'>
-                  <p className="text-xs text-gray-400 mt-1">QID: {answer.question?._id}</p>
-                  <p className="text-xs text-gray-400 mt-1">UID: {answer.userId}</p>
-                  <p className="text-xs text-gray-400 mt-1">Difficulty level: {answer.question.metadata.difficultyLevel}</p>
+                    <p className="text-xs text-gray-400 mt-1">QID: {answer.question?._id}</p>
+                    <p className="text-xs text-gray-400 mt-1">UID: {answer.userId}</p>
+                    <p className="text-xs text-gray-400 mt-1">Difficulty level: {answer.question.metadata.difficultyLevel}</p>
                   </div>
                 </div>
               </div>
@@ -155,29 +155,29 @@ export default function PendingAnswers() {
           </div>
           {/* Info Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-            
-            
+
+
             <div className="bg-gray-50 rounded-lg p-3">
               <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Submitted</div>
               <div className="text-sm font-semibold text-gray-900">
                 {answer.submittedAt ? new Date(answer.submittedAt).toLocaleString() : 'N/A'}
               </div>
             </div>
-            
+
             <div className="bg-gray-50 rounded-lg p-3">
               <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Score</div>
               <div className="text-sm font-semibold text-gray-900">{`${answer.evaluation.score}/${answer.question.metadata?.maximumMarks}` || 'N/A'}</div>
             </div>
             <div className="bg-gray-50 rounded-lg p-3">
               <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Relevancy</div>
-              <div className="text-sm font-semibold text-gray-900">{`${answer.evaluation.relevancy}%`|| 'N/A'}</div>
+              <div className="text-sm font-semibold text-gray-900">{`${answer.evaluation.relevancy}%` || 'N/A'}</div>
             </div>
-            
+
           </div>
           <div className="bg-gray-50 rounded-lg p-3 mb-4">
-              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Remark</div>
-              <div className="text-sm font-semibold text-gray-900">{answer.evaluation.remark|| 'N/A'}</div>
-            </div>
+            <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">Remark</div>
+            <div className="text-sm font-semibold text-gray-900">{answer.evaluation.remark || 'N/A'}</div>
+          </div>
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3">
             <button
@@ -240,10 +240,10 @@ export default function PendingAnswers() {
               <h2 className="text-2xl font-bold text-gray-900">Pending Evaluations</h2>
               <p className="text-gray-600">Answers waiting for manual review</p>
             </div>
-              <div className="text-right">
-                <div className="text-3xl font-bold text-blue-600">{pagination.totalCount || 0}</div>
-                <div className="text-sm text-gray-500">Total Pending</div>
-              </div>
+            <div className="text-right">
+              <div className="text-3xl font-bold text-blue-600">{pagination.totalCount || 0}</div>
+              <div className="text-sm text-gray-500">Total Pending</div>
+            </div>
           </div>
         </div>
 
@@ -320,10 +320,10 @@ export default function PendingAnswers() {
 
         {/* Modals */}
         {evalModalOpen && selectedAnswer && (
-          <ManualEvaluationModal 
-            submission={selectedAnswer} 
+          <ManualEvaluationModal
+            submission={selectedAnswer}
             onClose={() => {
-              setSelectedAnswer(null); 
+              setSelectedAnswer(null);
               setEvalModalOpen(false);
             }}
             onEvaluationComplete={handleEvaluationComplete}
@@ -348,15 +348,15 @@ export default function PendingAnswers() {
 const AnswerDetailsModal = ({ answer, open, onClose }) => {
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [activeImage, setActiveImage] = useState(null);
-  
+
   if (!open || !answer) return null;
-  
+
   const evaluation = answer.evaluation || {};
   const feedback = answer.feedback || {};
   const metadata = answer.metadata || {};
   const question = answer.question || {};
   const user = answer.user || {};
-  
+
   // Get evaluation details
   const relevancy = evaluation.relevancy || 'Not evaluated';
   const score = evaluation.score || 'Not evaluated';
@@ -367,17 +367,17 @@ const AnswerDetailsModal = ({ answer, open, onClose }) => {
   const weaknesses = analysis.weaknesses || [];
   const suggestions = analysis.suggestions || [];
   const evaluationFeedback = analysis.feedback || 'No feedback provided';
-  
+
   const handleImageClick = (imgUrl) => {
     setActiveImage(imgUrl);
     setImageModalOpen(true);
   };
-  
+
   const closeImageModal = () => {
     setImageModalOpen(false);
     setActiveImage(null);
   };
-  
+
   const renderFeedback = (text) => {
     if (!text) return 'N/A';
     return text.split('\n').map((line, lineIndex) => {
@@ -398,7 +398,7 @@ const AnswerDetailsModal = ({ answer, open, onClose }) => {
       );
     });
   };
-  
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full overflow-y-auto max-h-[90vh] relative">
@@ -509,7 +509,7 @@ const AnswerDetailsModal = ({ answer, open, onClose }) => {
                   <pre className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
                     {answer.extractedTexts[0].split('\n').map((line, lineIndex) => {
                       const cleanedLine = line.replace(/^\*\s+|^-\s+/, '');
-                      return <span key={lineIndex}>{cleanedLine}<br/></span>;
+                      return <span key={lineIndex}>{cleanedLine}<br /></span>;
                     })}
                   </pre>
                 </div>
@@ -521,23 +521,23 @@ const AnswerDetailsModal = ({ answer, open, onClose }) => {
           <div className="mb-8">
             <h3 className="text-xl font-bold text-gray-900 mb-4">Evaluation Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <div className="bg-green-50 rounded-lg p-6 border border-green-200">
-                  <div className="text-sm font-medium text-green-600 mb-2">Accuracy</div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
-                    <div 
-                      className="bg-gradient-to-r from-green-400 to-green-600 h-3 rounded-full transition-all duration-500" 
-                      style={{ width: `${evaluation.relevancy || 0}%` }}
-                    ></div>
-                  </div>
-                  <div className="text-2xl font-bold text-green-600">{evaluation.relevancy || 0}%</div>
+              <div className="bg-green-50 rounded-lg p-6 border border-green-200">
+                <div className="text-sm font-medium text-green-600 mb-2">Accuracy</div>
+                <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
+                  <div
+                    className="bg-gradient-to-r from-green-400 to-green-600 h-3 rounded-full transition-all duration-500"
+                    style={{ width: `${evaluation.relevancy || 0}%` }}
+                  ></div>
                 </div>
-                <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
-                  <div className="text-sm font-medium text-blue-600 mb-2">Score</div>
-                  <div className="text-2xl font-bold text-blue-600">
-                    {evaluation.score || 0} / {question.metadata?.maximumMarks || 10}
-                  </div>
+                <div className="text-2xl font-bold text-green-600">{evaluation.relevancy || 0}%</div>
+              </div>
+              <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
+                <div className="text-sm font-medium text-blue-600 mb-2">Score</div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {evaluation.score || 0} / {question.metadata?.maximumMarks || 10}
                 </div>
               </div>
+            </div>
           </div>
 
           {/* Evaluation Remark */}
@@ -570,7 +570,7 @@ const AnswerDetailsModal = ({ answer, open, onClose }) => {
           )}
 
           {/* Analysis Details */}
-          { analysis.introduction && (
+          {analysis.introduction && (
             <div className="mb-6">
               <h4 className="text-lg font-semibold text-pink-800 mb-3">Introduction</h4>
               <div className="bg-pink-50 rounded-lg p-4 border border-pink-200">
@@ -600,7 +600,7 @@ const AnswerDetailsModal = ({ answer, open, onClose }) => {
               </div>
             </div>
           )}
-          {analysis.conclusion  && (
+          {analysis.conclusion && (
             <div className="mb-6">
               <h4 className="text-lg font-semibold text-purple-800 mb-3">Conclusion</h4>
               <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">

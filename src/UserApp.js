@@ -51,6 +51,13 @@ import UserDetail from './components/Client/UserDetail';
 import MyQuestion from './components/Client/MyQuestion';
 import SubmissionsPage from './components/Client/SubmissionsDrawer';
 
+// Classroom Sync imports
+import ClassroomList from './components/Classroom/ClassroomList';
+import ClassroomDetail from './components/Classroom/ClassroomDetail';
+import ClassroomSubjectDetail from './components/Classroom/ClassroomSubjectDetail';
+import ClassroomChapterDetail from './components/Classroom/ClassroomChapterDetail';
+import ClassroomSubtopicDetail from './components/Classroom/ClassroomSubtopicDetail';
+
 const UserApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState(null);
@@ -233,6 +240,13 @@ const UserApp = () => {
                 <Route path="/question-bank/:type/:id" element={<QuestionBankDetail/>}/>
                 <Route path="/my-question" element={<MyQuestion/>}/>
                 <Route path="/my-question/:questionId/submissions" element={<SubmissionsPage/>}/>
+                
+                {/* Classroom Feature Routes */}
+                <Route path="/classroom" element={<ClassroomList />} />
+                <Route path="/classroom/:examId" element={<ClassroomDetail />} />
+                <Route path="/classroom/:examId/papers/:paperId/subjects/:subjectId" element={<ClassroomSubjectDetail />} />
+                <Route path="/classroom/:examId/papers/:paperId/subjects/:subjectId/chapters/:chapterId" element={<ClassroomChapterDetail />} />
+                <Route path="/classroom/:examId/papers/:paperId/subjects/:subjectId/chapters/:chapterId/topics/:topicId" element={<ClassroomSubtopicDetail />} />
               </>
             )}
             {userRole === 'user' && (

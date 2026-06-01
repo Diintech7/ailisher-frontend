@@ -12,7 +12,7 @@ import PrintBookModal from './PrintBookModal';
 const ChapterItem = ({ chapter, onClick, onQRCodeClick }) => (
   <div className="bg-white p-5 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100">
     <div className="flex items-center">
-      <div 
+      <div
         onClick={onClick}
         className="flex-grow flex items-center cursor-pointer"
       >
@@ -28,7 +28,7 @@ const ChapterItem = ({ chapter, onClick, onQRCodeClick }) => (
           <ChevronRight size={18} />
         </div>
       </div>
-      <button 
+      <button
         onClick={(e) => {
           e.stopPropagation();
           onQRCodeClick(chapter._id);
@@ -66,15 +66,15 @@ const AddChapterModal = ({ isOpen, onClose, bookId, onAdd }) => {
         onClose();
         return;
       }
-      const response = await fetch(`https://test.ailisher.com/api/books/${bookId}/chapters`, {
+      const response = await fetch(`http://localhost:4000/api/books/${bookId}/chapters`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ 
-          title, 
-          description, 
+        body: JSON.stringify({
+          title,
+          description,
           order: order ? parseInt(order) : undefined,
           parentType: 'book'
         })
@@ -189,7 +189,7 @@ const EditBookModal = ({ isOpen, onClose, book, onUpdate }) => {
         onClose();
         return;
       }
-      const response = await fetch(`https://test.ailisher.com/api/books/${book._id}`, {
+      const response = await fetch(`http://localhost:4000/api/books/${book._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -199,7 +199,7 @@ const EditBookModal = ({ isOpen, onClose, book, onUpdate }) => {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         toast.success('Book updated successfully!');
         onUpdate(data.book);
@@ -326,12 +326,12 @@ const BookDetail = () => {
         navigate('/login');
         return;
       }
-      const bookPromise = fetch(`https://test.ailisher.com/api/books/${bookId}`, {
+      const bookPromise = fetch(`http://localhost:4000/api/books/${bookId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      const chaptersPromise = fetch(`https://test.ailisher.com/api/books/${bookId}/chapters`, {
+      const chaptersPromise = fetch(`http://localhost:4000/api/books/${bookId}/chapters`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -384,7 +384,7 @@ const BookDetail = () => {
   const handleDataStoreClick = () => {
     navigate(`/ai-books/${bookId}/datastore`);
   };
-  
+
   const confirmDeleteBook = async () => {
     try {
       const token = Cookies.get('usertoken');
@@ -393,7 +393,7 @@ const BookDetail = () => {
         setShowDeleteModal(false);
         return;
       }
-      const response = await fetch(`https://test.ailisher.com/api/books/${bookId}`, {
+      const response = await fetch(`http://localhost:4000/api/books/${bookId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -446,14 +446,14 @@ const BookDetail = () => {
   // Function to get complete image URL
   const getCompleteImageUrl = (imageUrl) => {
     if (!imageUrl) return null;
-    
+
     // If the imageUrl is already an absolute URL (starts with http or https)
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl;
     }
-    
+
     // Otherwise, assume it's a relative path and prepend the backend URL
-    return `https://test.ailisher.com/${imageUrl}`;
+    return `http://localhost:4000/${imageUrl}`;
   };
 
   if (loading) {
@@ -472,7 +472,7 @@ const BookDetail = () => {
           <div>
             <h3 className="font-medium text-red-800">Error</h3>
             <p className="text-red-700">{error}</p>
-            <button 
+            <button
               onClick={handleBackClick}
               className="mt-3 text-red-600 hover:text-red-800 flex items-center"
             >
@@ -490,7 +490,7 @@ const BookDetail = () => {
       <ToastContainer position="top-right" autoClose={3000} />
       {!showPDFSplitter && (
         <div className="flex items-center mb-4">
-          <button 
+          <button
             onClick={handleBackClick}
             className="flex items-center text-indigo-600 hover:text-indigo-800 transition-colors"
           >
@@ -499,12 +499,12 @@ const BookDetail = () => {
           </button>
         </div>
       )}
-      
+
       {showPDFSplitter ? (
         <div>
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-bold text-gray-800">PDF Splitter</h2>
-            <button 
+            <button
               onClick={() => setShowPDFSplitter(false)}
               className="flex items-center text-indigo-600 hover:text-indigo-800 transition-colors"
             >
@@ -525,16 +525,16 @@ const BookDetail = () => {
               <div className="md:w-1/4 lg:w-1/5">
                 <div className="bg-gradient-to-br from-indigo-50 to-blue-100 rounded-lg h-48 flex items-center justify-center overflow-hidden">
                   {book?.coverImageUrl ? (
-                    <img 
-                      src={book.coverImageUrl} 
-                      alt={book.title} 
+                    <img
+                      src={book.coverImageUrl}
+                      alt={book.title}
                       className="h-full w-full object-cover rounded-lg"
                       onError={handleImageError}
                     />
                   ) : book?.coverImage && !imageError ? (
-                    <img 
-                      src={getCompleteImageUrl(book.coverImage)} 
-                      alt={book.title} 
+                    <img
+                      src={getCompleteImageUrl(book.coverImage)}
+                      alt={book.title}
                       className="h-full w-full object-cover rounded-lg"
                       onError={handleImageError}
                     />
@@ -549,14 +549,14 @@ const BookDetail = () => {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
                   <h1 className="text-3xl font-bold text-gray-800">{book?.title}</h1>
                   <div className="flex space-x-2 mt-2 sm:mt-0">
-                    <button 
+                    <button
                       onClick={handleEditBook}
                       className="flex items-center px-3 py-1.5 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
                     >
                       <Edit size={16} className="mr-1" />
                       <span>Edit</span>
                     </button>
-                    <button 
+                    <button
                       onClick={handleDeleteBook}
                       className="flex items-center px-3 py-1.5 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
                     >
@@ -567,7 +567,7 @@ const BookDetail = () => {
                 </div>
                 <p className="text-gray-700 mb-6">{book?.description || 'No description available'}</p>
                 <div className="flex flex-wrap gap-3">
-                  <button 
+                  <button
                     onClick={handleDataStoreClick}
                     className="flex items-center px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-900 transition-colors shadow-sm"
                   >
@@ -575,39 +575,39 @@ const BookDetail = () => {
                     <span>Book Datastore</span>
                   </button>
 
-                  <button 
+                  <button
                     onClick={handleAddChapter}
                     className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors shadow-sm"
                   >
                     <Plus size={16} className="mr-2" />
                     <span>Add Chapter</span>
                   </button>
-                  
-                  <button 
+
+                  <button
                     onClick={() => navigate(`/chat/${bookId}?type=book&title=${encodeURIComponent(book?.title || '')}`)}
                     className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors shadow-sm"
                   >
                     <MessageSquare size={16} className="mr-2" />
                     <span>Chat with Book</span>
                   </button>
-                  
-                  <button 
+
+                  <button
                     onClick={handleConfigureClick}
                     className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors shadow-sm"
                   >
                     <Settings size={16} className="mr-2" />
                     <span>Configure</span>
                   </button>
-                  
-                  <button 
+
+                  <button
                     onClick={handleShowQRCode}
                     className="flex items-center px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 transition-colors shadow-sm"
                   >
                     <QrCode size={16} className="mr-2" />
                     <span>Book QR</span>
                   </button>
-                  
-                  <button 
+
+                  <button
                     className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors shadow-sm"
                     onClick={handleBookAssetsClick}
                   >
@@ -624,7 +624,7 @@ const BookDetail = () => {
                     <span>Courses</span>
                   </button>
 
-                  <button 
+                  <button
                     className="flex items-center px-4 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700 transition-colors shadow-sm"
                     onClick={() => setShowPrintBookModal(true)}
                   >
@@ -642,7 +642,7 @@ const BookDetail = () => {
                 <FileText size={64} className="mx-auto text-gray-400 mb-4" />
                 <h3 className="text-xl font-medium text-gray-800 mb-2">No chapters yet</h3>
                 <p className="text-gray-600 mb-6">Add your first chapter to start building your book</p>
-                <button 
+                <button
                   onClick={handleAddChapter}
                   className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors"
                 >
@@ -655,9 +655,9 @@ const BookDetail = () => {
                 {chapters
                   .sort((a, b) => (a.order || 0) - (b.order || 0))
                   .map((chapter) => (
-                    <ChapterItem 
-                      key={chapter._id} 
-                      chapter={chapter} 
+                    <ChapterItem
+                      key={chapter._id}
+                      chapter={chapter}
                       onClick={() => handleChapterClick(chapter._id)}
                       onQRCodeClick={handleChapterQRCodeClick}
                     />
@@ -668,21 +668,21 @@ const BookDetail = () => {
         </>
       )}
 
-      <AddChapterModal 
-        isOpen={showAddModal} 
-        onClose={() => setShowAddModal(false)} 
+      <AddChapterModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
         bookId={bookId}
         onAdd={handleChapterAdded}
       />
-      <EditBookModal 
-        isOpen={showEditModal} 
-        onClose={() => setShowEditModal(false)} 
+      <EditBookModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
         book={book}
         onUpdate={handleBookUpdated}
       />
-      <DeleteConfirmModal 
-        isOpen={showDeleteModal} 
-        onClose={() => setShowDeleteModal(false)} 
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
         onConfirm={confirmDeleteBook}
         title="Delete Book"
         message="Are you sure you want to delete this book? All chapters and content will be permanently removed."

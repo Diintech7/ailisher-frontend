@@ -5,7 +5,7 @@ import axios from "axios"
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: "https://test.ailisher.com/api",
+  baseURL: "http://localhost:4000/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -1652,7 +1652,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
       if (!submission?.question?._id) return;
       try {
         const res = await axios.get(
-          `https://test.ailisher.com/api/aiswb/questions/${submission.question._id}`
+          `http://localhost:4000/api/aiswb/questions/${submission.question._id}`
         );
         if (res.data && res.data.data && res.data.data.modalAnswer) {
           setModalAnswer(res.data.data.modalAnswer);
@@ -1666,7 +1666,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
     fetchModalAnswer();
   }, [submission?.question?._id]);
 
-  useEffect(()=>{
+  useEffect(() => {
     console.log(submission)
   })
 
@@ -1712,7 +1712,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
       <div className="flex-1 flex overflow-hidden">
         {/* Left Side - Analysis */}
         <div className="w-1/3 border-r border-gray-200 overflow-y-auto p-6">
-        <h1 className="text-2xl font-bold text-blue-700 mb-4 tracking-tight flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-blue-700 mb-4 tracking-tight flex items-center gap-2">
             <svg className="w-7 h-7 text-blue-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -1734,7 +1734,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
             {/* Performance Metrics */}
             <div className="bg-green-50 p-4 rounded-lg border border-green-200">
               <div className="space-y-4">
-              <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center">
                   <span className="text-sm font-medium text-green-700">Score:</span>
                   <span className="text-lg font-bold text-green-900">
                     {typeof submission.evaluation.score === 'number' ? `${submission.evaluation.score}/${submission.questionId.metadata?.maximumMarks || 'N/A'}` : submission.evaluation.score || 'Not evaluated'}
@@ -1748,26 +1748,26 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
+                    <div
                       className="bg-gradient-to-r from-green-400 to-green-600 h-3 rounded-full transition-all duration-500 ease-out"
-                      style={{ 
+                      style={{
                         width: typeof submission.evaluation.relevancy === 'number' ? `${submission.evaluation.relevancy}%` : '0%',
                         minWidth: '4px'
                       }}
                     ></div>
                   </div>
                 </div>
-               
+
               </div>
             </div>
             {/* Extracted Text Box */}
-                {submission.extractedTexts && submission.extractedTexts.length > 0 && (
-                  <ExtractedTextBox extractedTexts={submission.extractedTexts} />
-                )}
-                {/* Modal Answer Box */}
-                {modalAnswer && (
-                  <ModalAnswerBox modalAnswer={modalAnswer} />
-                )}
+            {submission.extractedTexts && submission.extractedTexts.length > 0 && (
+              <ExtractedTextBox extractedTexts={submission.extractedTexts} />
+            )}
+            {/* Modal Answer Box */}
+            {modalAnswer && (
+              <ModalAnswerBox modalAnswer={modalAnswer} />
+            )}
             {/* Evaluation Remark */}
             {submission.evaluation.remark && submission.evaluation.remark !== 'No remark provided' && (
               <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
@@ -1795,8 +1795,8 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
 
             {/* Analysis Details */}
             {submission.evaluation.analysis && (
-              (submission.evaluation.analysis.introduction|| 
-                submission.evaluation.analysis.body|| 
+              (submission.evaluation.analysis.introduction ||
+                submission.evaluation.analysis.body ||
                 submission.evaluation.analysis.conclusio) && (
                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
                   <h4 className="text-sm font-medium text-gray-700 mb-3">Analysis Details</h4>
@@ -1925,13 +1925,12 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                 <button
                   onClick={() => handleToolSelect("pen")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
-                  className={`p-2 rounded ${
-                    isFabricLoading || !isFabricLoaded || !canvasReady
+                  className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
                       ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                       : activeTool === "pen"
                         ? "bg-blue-500 text-white"
                         : "bg-white text-gray-700 hover:bg-gray-100"
-                  }`}
+                    }`}
                   title="Pen"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1947,13 +1946,12 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                 <button
                   onClick={() => handleToolSelect("text")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
-                  className={`p-2 rounded ${
-                    isFabricLoading || !isFabricLoaded || !canvasReady
+                  className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
                       ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                       : activeTool === "text"
                         ? "bg-blue-500 text-white"
                         : "bg-white text-gray-700 hover:bg-gray-100"
-                  }`}
+                    }`}
                   title="Text"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1971,13 +1969,12 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   <button
                     onClick={() => handleToolSelect("comment")}
                     disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
-                    className={`p-2 rounded ${
-                      activeTool === "comment"
+                    className={`p-2 rounded ${activeTool === "comment"
                         ? "bg-blue-500 text-white"
                         : isFabricLoading || !isFabricLoaded || !canvasReady
                           ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                           : "bg-white text-gray-700 hover:bg-gray-100"
-                    }`}
+                      }`}
                     title="Comment"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2023,13 +2020,12 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                 <button
                   onClick={() => handleToolSelect("circle")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
-                  className={`p-2 rounded ${
-                    isFabricLoading || !isFabricLoaded || !canvasReady
+                  className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
                       ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                       : activeTool === "circle"
                         ? "bg-blue-500 text-white"
                         : "bg-white text-gray-700 hover:bg-gray-100"
-                  }`}
+                    }`}
                   title="Circle"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2045,13 +2041,12 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                 <button
                   onClick={() => handleToolSelect("rectangle")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
-                  className={`p-2 rounded ${
-                    isFabricLoading || !isFabricLoaded || !canvasReady
+                  className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
                       ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                       : activeTool === "rectangle"
                         ? "bg-blue-500 text-white"
                         : "bg-white text-gray-700 hover:bg-gray-100"
-                  }`}
+                    }`}
                   title="Rectangle"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2067,13 +2062,12 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                 <button
                   onClick={() => handleToolSelect("select")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
-                  className={`p-2 rounded ${
-                    isFabricLoading || !isFabricLoaded || !canvasReady
+                  className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
                       ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                       : activeTool === "select"
                         ? "bg-blue-500 text-white"
                         : "bg-white text-gray-700 hover:bg-gray-100"
-                  }`}
+                    }`}
                   title="Select"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2089,11 +2083,10 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                 <button
                   onClick={() => handleToolSelect("clear")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
-                  className={`p-2 rounded ${
-                    isFabricLoading || !isFabricLoaded || !canvasReady
+                  className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
                       ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                       : "bg-white text-red-600 hover:bg-red-50"
-                  }`}
+                    }`}
                   title="Clear All"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2112,11 +2105,10 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                 <button
                   onClick={handleUndo}
                   disabled={!canUndo || isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady}
-                  className={`p-2 rounded ${
-                    !canUndo || isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady
+                  className={`p-2 rounded ${!canUndo || isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady
                       ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                       : "bg-white text-gray-700 hover:bg-gray-100"
-                  }`}
+                    }`}
                   title="Undo"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2131,11 +2123,10 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                 <button
                   onClick={handleRedo}
                   disabled={!canRedo || isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady}
-                  className={`p-2 rounded ${
-                    !canRedo || isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady
+                  className={`p-2 rounded ${!canRedo || isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady
                       ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                       : "bg-white text-gray-700 hover:bg-gray-100"
-                  }`}
+                    }`}
                   title="Redo"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2148,18 +2139,17 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   </svg>
                 </button>
               </div>
-              
+
 
               {/* Zoom Controls */}
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => handleZoom("out")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
-                  className={`p-2 rounded ${
-                    isFabricLoading || !isFabricLoaded || !canvasReady
+                  className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
                       ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                       : "bg-white text-gray-700 hover:bg-gray-100"
-                  }`}
+                    }`}
                   title="Zoom Out"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2170,11 +2160,10 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                 <button
                   onClick={() => handleZoom("in")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
-                  className={`p-2 rounded ${
-                    isFabricLoading || !isFabricLoaded || !canvasReady
+                  className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
                       ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                       : "bg-white text-gray-700 hover:bg-gray-100"
-                  }`}
+                    }`}
                   title="Reset Zoom"
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -2195,11 +2184,10 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   value={penColor}
                   onChange={(e) => handleColorChange(e.target.value)}
                   disabled={isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady}
-                  className={`w-8 h-8 rounded ${
-                    isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady
+                  className={`w-8 h-8 rounded ${isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady
                       ? "cursor-not-allowed opacity-50"
                       : "cursor-pointer"
-                  }`}
+                    }`}
                   title="Color"
                 />
                 <div className="flex items-center space-x-1">
@@ -2210,11 +2198,10 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                     value={penSize}
                     onChange={(e) => handleBrushSizeChange(Number.parseInt(e.target.value))}
                     disabled={isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady}
-                    className={`w-24 ${
-                      isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady
+                    className={`w-24 ${isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady
                         ? "cursor-not-allowed opacity-50"
                         : ""
-                    }`}
+                      }`}
                     title="Brush Size"
                   />
                   <span className="text-xs text-gray-500 w-6 text-right">{penSize}px</span>
@@ -2279,9 +2266,8 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                     key={index}
                     onClick={() => handleImageChange(index)}
                     disabled={isImageLoading || imageLoadingRef.current}
-                    className={`flex-shrink-0 w-20 h-20 rounded border-2 ${
-                      currentImageIndex === index ? "border-blue-500" : "border-gray-300"
-                    } ${isImageLoading || imageLoadingRef.current ? "opacity-50 cursor-not-allowed" : ""}`}
+                    className={`flex-shrink-0 w-20 h-20 rounded border-2 ${currentImageIndex === index ? "border-blue-500" : "border-gray-300"
+                      } ${isImageLoading || imageLoadingRef.current ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     <img
                       src={image.imageUrl || "/placeholder.svg"}
@@ -2370,11 +2356,10 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                     />
                     <label
                       htmlFor="image-upload"
-                      className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
-                        uploadingImages
+                      className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${uploadingImages
                           ? "bg-gray-400 cursor-not-allowed"
                           : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
-                      }`}
+                        }`}
                     >
                       {uploadingImages ? "Uploading..." : "Upload Image"}
                     </label>
@@ -2437,9 +2422,8 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                 <button
                   type="submit"
                   disabled={loading || uploadingImages}
-                  className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 ${
-                    loading || uploadingImages ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
+                  className={`px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 ${loading || uploadingImages ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
                 >
                   {loading ? "Submitting..." : "Submit Review"}
                 </button>

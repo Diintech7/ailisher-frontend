@@ -31,7 +31,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
     languageMode: 'english',
     answerVideoUrls: [],
     evaluationMode: 'auto',
-    evaluationType:'',
+    evaluationType: '',
     evaluationGuideline: '',
     // local-only: selected modal answer PDFs
     modalAnswerPdfFiles: []
@@ -48,12 +48,12 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
   const [existingPdfs, setExistingPdfs] = useState([]); // Track existing PDFs for editing
   const pdfSectionRef = React.useRef(null);
 
-  
+
   // Fetch default evaluation framework from backend
   const fetchDefaultFramework = async () => {
     try {
       const token = Cookies.get('token');
-      const response = await fetch('https://test.ailisher.com/api/aiswb/default-evaluation-framework', {
+      const response = await fetch('http://localhost:4000/api/aiswb/default-evaluation-framework', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -68,7 +68,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
           console.log(data.data.defaultFramework)
           // Only set the default framework if we're not editing
           if (!editingQuestion) {
-            setQuestions(prevQuestions => 
+            setQuestions(prevQuestions =>
               prevQuestions.map(q => ({
                 ...q,
                 evaluationGuideline: data.data.defaultFramework
@@ -92,7 +92,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
           ...editingQuestion,
           metadata: {
             ...editingQuestion.metadata,
-            keywords: Array.isArray(editingQuestion.metadata.keywords) 
+            keywords: Array.isArray(editingQuestion.metadata.keywords)
               ? editingQuestion.metadata.keywords.join(', ')
               : editingQuestion.metadata.keywords,
             qualityParameters: {
@@ -101,17 +101,17 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
             }
           },
           // Keep answerVideoUrls as array, convert to comma-separated string for display
-          answerVideoUrls: Array.isArray(editingQuestion.answerVideoUrls) 
+          answerVideoUrls: Array.isArray(editingQuestion.answerVideoUrls)
             ? editingQuestion.answerVideoUrls.join(', ')
             : editingQuestion.answerVideoUrls || '',
-            
+
           evaluationType: editingQuestion.evaluationType || '',
           evaluationGuideline: editingQuestion.evaluationGuideline || '',
         };
         console.log('Editing question:', editingQuestion);
         // Populate the form with the editing question
         setQuestions([formattedQuestion]);
-        
+
         // Set existing PDFs for editing mode
         if (editingQuestion.modalAnswerPdfs && Array.isArray(editingQuestion.modalAnswerPdfs)) {
           setExistingPdfs(editingQuestion.modalAnswerPdfs.map(pdf => pdf.key));
@@ -196,7 +196,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
   const handleDeleteExistingPdf = async (pdfKey) => {
     try {
       const token = Cookies.get('usertoken');
-      const response = await fetch(`https://test.ailisher.com/api/aiswb/questions/${editingQuestion.id}/pdf/delete`, {
+      const response = await fetch(`http://localhost:4000/api/aiswb/questions/${editingQuestion.id}/pdf/delete`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -278,7 +278,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
   const handleGeminiResponse = (response) => {
     if (currentQuestionIndex !== null && currentGenerationType) {
       const newQuestions = [...questions];
-      
+
       // Clean and format the response
       let cleanResponse = response
         .replace(/^Here's the (detailed|modal) answer:\s*/i, '')
@@ -309,7 +309,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
           .join(', ');
         newQuestions[currentQuestionIndex].metadata.keywords = cleanKeywords;
       }
-      
+
       setQuestions(newQuestions);
       toast.success(`${currentGenerationType === 'detailedAnswer' ? 'Detailed' : currentGenerationType === 'modalAnswer' ? 'Modal' : 'Keywords'} generated successfully!`);
     }
@@ -376,7 +376,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
         if (q.evaluationMode === 'manual' && evaluationType && evaluationType.trim()) {
           processedData.evaluationType = evaluationType;
         }
-        
+
         console.log('Processed question data:', processedData);
         return processedData;
       });
@@ -401,7 +401,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
             for (const file of pdfFiles) {
               try {
                 // 1) Get presigned URL
-                const presignRes = await fetch(`https://test.ailisher.com/api/aiswb/questions/${editingQuestion.id}/pdf/presign`, {
+                const presignRes = await fetch(`http://localhost:4000/api/aiswb/questions/${editingQuestion.id}/pdf/presign`, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
@@ -431,7 +431,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
                 }
 
                 // 3) Attach key to question
-                const attachRes = await fetch(`https://test.ailisher.com/api/aiswb/questions/${editingQuestion.id}/pdf/attach`, {
+                const attachRes = await fetch(`http://localhost:4000/api/aiswb/questions/${editingQuestion.id}/pdf/attach`, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
@@ -449,7 +449,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
               }
             }
           }
-          
+
           console.log('Modal: Question update successful!');
           toast.success('Question updated successfully!');
           onClose();
@@ -477,7 +477,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
             for (const file of pdfFiles) {
               try {
                 // 1) Get presigned URL
-                const presignRes = await fetch(`https://test.ailisher.com/api/aiswb/questions/${createdId}/pdf/presign`, {
+                const presignRes = await fetch(`http://localhost:4000/api/aiswb/questions/${createdId}/pdf/presign`, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
@@ -507,7 +507,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
                 }
 
                 // 3) Attach key to question
-                const attachRes = await fetch(`https://test.ailisher.com/api/aiswb/questions/${createdId}/pdf/attach`, {
+                const attachRes = await fetch(`http://localhost:4000/api/aiswb/questions/${createdId}/pdf/attach`, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
@@ -529,7 +529,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
             if (!allSuccess) break;
           }
         }
-        
+
         if (allSuccess) {
           toast.success('Questions added successfully!');
           onClose();
@@ -538,7 +538,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
       }
     } catch (error) {
       console.error('Error saving questions:', error);
-      
+
       // Handle specific error types
       if (error.message.includes('500') || error.message.includes('Internal Server Error')) {
         setError('Server error occurred. Please try again later.');
@@ -639,7 +639,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
               {/* Metadata Section */}
               <div className="mb-4">
                 <h3 className="text-lg font-medium text-gray-800 mb-3">Metadata</h3>
-                
+
                 {/* Keywords */}
                 <div className="mb-4">
                   <div className="flex justify-between items-center mb-2">
@@ -843,7 +843,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
                       />
                       <label className="ml-2 text-sm text-gray-700">Body</label>
                     </div>
-                    
+
                     <div className="ml-6 space-y-2">
                       <div className="flex items-center">
                         <input
@@ -962,7 +962,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Modal Answer PDFs
                 </label>
-                
+
                 {/* Existing PDFs (only show in editing mode) */}
                 {editingQuestion && existingPdfs.length > 0 && (
                   <div className="mb-4">
@@ -992,7 +992,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
                     </div>
                   </div>
                 )}
-                
+
                 {/* New PDF Upload Area */}
                 <div
                   onDrop={(e) => handleDrop(e, index)}
@@ -1015,7 +1015,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
                     </label>
                   </div>
                 </div>
-                
+
                 {/* New PDF Files */}
                 {Array.isArray(question.modalAnswerPdfFiles) && question.modalAnswerPdfFiles.length > 0 && (
                   <div className="mt-3">
@@ -1098,9 +1098,9 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
           detailedAnswer={questions[currentQuestionIndex]?.detailedAnswer}
           metadata={questions[currentQuestionIndex]?.metadata}
           qualityParams={questions[currentQuestionIndex]?.metadata?.qualityParameters}
-          title={currentGenerationType === 'detailedAnswer' ? 'Generate Detailed Answer' : 
-                 currentGenerationType === 'modalAnswer' ? 'Generate Modal Answer' : 
-                 'Generate Keywords'}
+          title={currentGenerationType === 'detailedAnswer' ? 'Generate Detailed Answer' :
+            currentGenerationType === 'modalAnswer' ? 'Generate Modal Answer' :
+              'Generate Keywords'}
         />
       )}
     </div>

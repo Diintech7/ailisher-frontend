@@ -4,8 +4,8 @@ import { Plus, Trash2, Edit, Image as ImageIcon, Loader2, AlertTriangle, Book, S
 import { ToastContainer, toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 
-// const API_BASE_URL = 'https://test.ailisher.com';
-const API_BASE_URL = 'https://test.ailisher.com';
+// const API_BASE_URL = 'http://localhost:4000';
+const API_BASE_URL = 'http://localhost:4000';
 
 
 const initialForm = {
@@ -109,18 +109,18 @@ const AIcourses = () => {
       const res = await fetch(`${API_BASE_URL}/api/aicourses/${course._id}`, { headers: { Authorization: `Bearer ${token}` } });
       const data = await res.json();
       if (res.ok && data?.success && data.course) src = data.course;
-    } catch (_) {}
+    } catch (_) { }
 
     const normalizedFaculty = Array.isArray(src?.faculty)
       ? src.faculty
-          .filter((f) => f && typeof f === 'object')
-          .map((f) => ({
-            name: f.name || '',
-            about: f.about || '',
-            facultyImageFile: null,
-            facultyImageKey: f.facultyImageKey || '',
-            facultyImageUrl: f.facultyImageUrl || ''
-          }))
+        .filter((f) => f && typeof f === 'object')
+        .map((f) => ({
+          name: f.name || '',
+          about: f.about || '',
+          facultyImageFile: null,
+          facultyImageKey: f.facultyImageKey || '',
+          facultyImageUrl: f.facultyImageUrl || ''
+        }))
       : [];
 
     setForm({
@@ -399,7 +399,7 @@ const AIcourses = () => {
             <span>Add Course</span>
           </button>
         </div>
-      )  : (
+      ) : (
         <>
           {Object.entries(
             courses.reduce((acc, c) => {
@@ -415,15 +415,14 @@ const AIcourses = () => {
               <div className="border-b border-gray-200 pb-2 mb-4">
                 <h2 className="text-xl font-bold text-gray-800">{main}</h2>
               </div>
-                {/* Subcategories List */}
-                <div className="flex flex-wrap gap-2 mb-6">
+              {/* Subcategories List */}
+              <div className="flex flex-wrap gap-2 mb-6">
                 <button
                   onClick={() => toggleSubCategory(main, null)}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                    !selectedSubCategories[main]
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${!selectedSubCategories[main]
                       ? "bg-indigo-600 text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
+                    }`}
                 >
                   All {main}
                 </button>
@@ -433,21 +432,20 @@ const AIcourses = () => {
                     onClick={() =>
                       toggleSubCategory(main, subCategory)
                     }
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                      selectedSubCategories[main] === subCategory
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedSubCategories[main] === subCategory
                         ? "bg-indigo-600 text-white"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
+                      }`}
                   >
                     {subCategory}
                   </button>
                 ))}
               </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {getItemsForMain(main, subMap).map((c) => (
-                      <div key={c._id} className="relative bg-white rounded-lg border border-gray-200 shadow-sm p-4 flex flex-col cursor-pointer" onClick={() => navigate(`/ai-courses/${c._id}`)}>
-                        <div className="absolute top-2 right-2" data-menu="aicourse-menu">
-                          {/* <div className="absolute -top-1 -right-1 flex gap-1 pointer-events-none">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {getItemsForMain(main, subMap).map((c) => (
+                  <div key={c._id} className="relative bg-white rounded-lg border border-gray-200 shadow-sm p-4 flex flex-col cursor-pointer" onClick={() => navigate(`/ai-courses/${c._id}`)}>
+                    <div className="absolute top-2 right-2" data-menu="aicourse-menu">
+                      {/* <div className="absolute -top-1 -right-1 flex gap-1 pointer-events-none">
                             {c.isHighlighted && (
                               <div className="bg-yellow-100 text-yellow-800 p-1 rounded-full">
                                 <Star size={12} />
@@ -459,57 +457,57 @@ const AIcourses = () => {
                               </div>
                             )}
                           </div> */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setMenuOpenIdx(menuOpenIdx === c._id ? null : c._id); }}
+                        className="p-1 rounded-full hover:bg-gray-100"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" viewBox="0 0 20 20" fill="currentColor"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM18 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                      </button>
+                      {menuOpenIdx === c._id && (
+                        <div className="absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded shadow-md z-20">
                           <button
-                            onClick={(e) => { e.stopPropagation(); setMenuOpenIdx(menuOpenIdx === c._id ? null : c._id); }}
-                            className="p-1 rounded-full hover:bg-gray-100"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" viewBox="0 0 20 20" fill="currentColor"><path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM18 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                          </button>
-                          {menuOpenIdx === c._id && (
-                            <div className="absolute right-0 mt-2 w-36 bg-white border border-gray-200 rounded shadow-md z-20">
-                              <button
-                                className="w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-50"
-                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); openEdit(c); setMenuOpenIdx(null); }}
-                              >Edit</button>
-                              <button
-                                className="w-full text-left px-3 py-2 text-red-600 hover:bg-red-50"
-                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpenIdx(null); handleDelete(c._id); }}
-                              >Delete</button>
-                            </div>
-                          )}
-                        </div>
-                        <div className="w-full h-40 rounded-md bg-gray-100 flex items-center justify-center overflow-hidden mb-3">
-                          {c.coverImageUrl ? (
-                            <img src={c.coverImageUrl} alt={c.title} className="w-full h-full object-cover" />
-                          ) : (
-                            <ImageIcon className="text-gray-300" size={40} />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="text-lg font-semibold text-gray-800 mb-1">{c.title}</h3>
-                          <p className="text-sm text-gray-600 line-clamp-2">{c.overview}</p>
-                        </div>
-                        <div className="flex items-center gap-2 mt-3">
+                            className="w-full text-left px-3 py-2 text-gray-700 hover:bg-gray-50"
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); openEdit(c); setMenuOpenIdx(null); }}
+                          >Edit</button>
                           <button
-                            onClick={(e) => { e.stopPropagation(); handleToggleHighlight(c._id, !c.isHighlighted); }}
-                            className={`p-1 rounded transition-colors ${c.isHighlighted ? 'text-yellow-600 bg-yellow-100 hover:bg-yellow-200' : 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'}`}
-                            title={c.isHighlighted ? 'Remove from highlights' : 'Add to highlights'}
-                          >
-                            <Star size={16} />
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleToggleTrending(c._id, !c.isTrending); }}
-                            className={`p-1 rounded transition-colors ${c.isTrending ? 'text-red-600 bg-red-100 hover:bg-red-200' : 'text-gray-400 hover:text-red-600 hover:bg-red-50'}`}
-                            title={c.isTrending ? 'Remove from trending' : 'Add to trending'}
-                          >
-                            <TrendingUp size={16} />
-                          </button>
+                            className="w-full text-left px-3 py-2 text-red-600 hover:bg-red-50"
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpenIdx(null); handleDelete(c._id); }}
+                          >Delete</button>
                         </div>
-                      </div>
-                    ))}
+                      )}
+                    </div>
+                    <div className="w-full h-40 rounded-md bg-gray-100 flex items-center justify-center overflow-hidden mb-3">
+                      {c.coverImageUrl ? (
+                        <img src={c.coverImageUrl} alt={c.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <ImageIcon className="text-gray-300" size={40} />
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-800 mb-1">{c.title}</h3>
+                      <p className="text-sm text-gray-600 line-clamp-2">{c.overview}</p>
+                    </div>
+                    <div className="flex items-center gap-2 mt-3">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleToggleHighlight(c._id, !c.isHighlighted); }}
+                        className={`p-1 rounded transition-colors ${c.isHighlighted ? 'text-yellow-600 bg-yellow-100 hover:bg-yellow-200' : 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'}`}
+                        title={c.isHighlighted ? 'Remove from highlights' : 'Add to highlights'}
+                      >
+                        <Star size={16} />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleToggleTrending(c._id, !c.isTrending); }}
+                        className={`p-1 rounded transition-colors ${c.isTrending ? 'text-red-600 bg-red-100 hover:bg-red-200' : 'text-gray-400 hover:text-red-600 hover:bg-red-50'}`}
+                        title={c.isTrending ? 'Remove from trending' : 'Add to trending'}
+                      >
+                        <TrendingUp size={16} />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+            </div>
+          ))}
         </>
       )}
 

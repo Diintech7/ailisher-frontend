@@ -11,7 +11,7 @@ const RichTextEditor = ({ initialContent, onSave, readOnly }) => {
   const editorRef = useRef(null);
   const [content, setContent] = useState(initialContent || '');
   const [isEditing, setIsEditing] = useState(!readOnly);
-  
+
   useEffect(() => {
     setContent(initialContent || '');
   }, [initialContent]);
@@ -20,16 +20,16 @@ const RichTextEditor = ({ initialContent, onSave, readOnly }) => {
     onSave(content);
     setIsEditing(false);
   };
-  
+
   if (readOnly && !isEditing) {
     return (
-      <div 
+      <div
         className="prose max-w-none"
         dangerouslySetInnerHTML={{ __html: content }}
       />
     );
   }
-  
+
   return (
     <div className="border rounded-md overflow-hidden">
       <div className="bg-gray-100 p-2 border-b flex justify-between items-center">
@@ -62,11 +62,11 @@ const EditSubTopicModal = ({ isOpen, onClose, bookId, workbookId, chapterId, top
   const [order, setOrder] = useState(subtopic?.order !== undefined ? subtopic.order.toString() : '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
-  
+
   // Determine if we're in workbook context
   const location = window.location.pathname;
   const isWorkbook = location.includes('/ai-workbook/');
-  
+
   // Use the appropriate ID based on context
   const effectiveBookId = isWorkbook ? workbookId : bookId;
 
@@ -84,7 +84,7 @@ const EditSubTopicModal = ({ isOpen, onClose, bookId, workbookId, chapterId, top
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
-    
+
     try {
       const token = Cookies.get('usertoken');
       if (!token) {
@@ -95,19 +95,19 @@ const EditSubTopicModal = ({ isOpen, onClose, bookId, workbookId, chapterId, top
 
       // Determine endpoint based on context
       const updateUrl = isWorkbook
-        ? `https://test.ailisher.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopic._id}`
-        : `https://test.ailisher.com/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopic._id}`;
-      
+        ? `http://localhost:4000/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopic._id}`
+        : `http://localhost:4000/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopic._id}`;
+
       const response = await fetch(updateUrl, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ 
-          title, 
-          description, 
-          order: order ? parseInt(order) : undefined 
+        body: JSON.stringify({
+          title,
+          description,
+          order: order ? parseInt(order) : undefined
         })
       });
 
@@ -117,7 +117,7 @@ const EditSubTopicModal = ({ isOpen, onClose, bookId, workbookId, chapterId, top
       }
 
       const data = await response.json();
-      
+
       if (data.success) {
         toast.success('Sub-topic updated successfully!');
         onUpdate(data.subtopic);
@@ -139,13 +139,13 @@ const EditSubTopicModal = ({ isOpen, onClose, bookId, workbookId, chapterId, top
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
         <h2 className="text-2xl font-bold mb-6 text-gray-800">Edit Sub-Topic</h2>
-        
+
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700">
             {error}
           </div>
         )}
-        
+
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-gray-700 text-sm font-medium mb-2">Title</label>
@@ -240,11 +240,11 @@ const SubTopicDetail = () => {
   const { bookId, workbookId, chapterId, topicId, subtopicId } = useParams();
   const navigate = useNavigate();
   const [showQRCodeModal, setShowQRCodeModal] = useState(false);
-  
+
   // Determine if we're in workbook context
   const location = window.location.pathname;
   const isWorkbook = location.includes('/ai-workbook/');
-  
+
   // Use the appropriate ID based on context
   const effectiveBookId = isWorkbook ? workbookId : bookId;
 
@@ -260,8 +260,8 @@ const SubTopicDetail = () => {
 
       // Determine endpoint based on context
       const subtopicUrl = isWorkbook
-        ? `https://test.ailisher.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
-        : `https://test.ailisher.com/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`;
+        ? `http://localhost:4000/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
+        : `http://localhost:4000/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`;
 
       const response = await fetch(subtopicUrl, {
         headers: {
@@ -275,7 +275,7 @@ const SubTopicDetail = () => {
       }
 
       const data = await response.json();
-      
+
       if (data.success) {
         setSubtopic(data.subtopic);
       } else {
@@ -316,8 +316,8 @@ const SubTopicDetail = () => {
 
       // Determine endpoint based on context
       const deleteUrl = isWorkbook
-        ? `https://test.ailisher.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
-        : `https://test.ailisher.com/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`;
+        ? `http://localhost:4000/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
+        : `http://localhost:4000/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`;
 
       const response = await fetch(deleteUrl, {
         method: 'DELETE',
@@ -327,10 +327,10 @@ const SubTopicDetail = () => {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         toast.success('Sub-topic deleted successfully!');
-        
+
         // Navigate back to the appropriate topic page based on context
         if (isWorkbook) {
           navigate(`/ai-workbook/${workbookId}/chapters/${chapterId}/topics/${topicId}`);
@@ -358,8 +358,8 @@ const SubTopicDetail = () => {
 
       // Determine endpoint based on context
       const updateUrl = isWorkbook
-        ? `https://test.ailisher.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
-        : `https://test.ailisher.com/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`;
+        ? `http://localhost:4000/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
+        : `http://localhost:4000/api/books/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`;
 
       const response = await fetch(updateUrl, {
         method: 'PUT',
@@ -371,7 +371,7 @@ const SubTopicDetail = () => {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         toast.success('Content saved successfully!');
         setSubtopic(data.subtopic);
@@ -407,7 +407,7 @@ const SubTopicDetail = () => {
       toast.error('Invalid IDs. Cannot access assets.');
       return;
     }
-    
+
     if (isWorkbook) {
       navigate(`/ai-workbook/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}/assets`);
     } else {
@@ -420,10 +420,10 @@ const SubTopicDetail = () => {
       toast.error('Invalid IDs. Cannot start chat.');
       return;
     }
-    
+
     const chatId = effectiveBookId;
     const chatType = isWorkbook ? 'workbook-subtopic' : 'subtopic';
-    
+
     navigate(`/chat/${chatId}?type=${chatType}&chapterId=${chapterId}&topicId=${topicId}&subtopicId=${subtopicId}&title=${encodeURIComponent(subtopic?.title || '')}`);
   };
 
@@ -443,7 +443,7 @@ const SubTopicDetail = () => {
           <div>
             <h3 className="font-medium text-red-800">Error</h3>
             <p className="text-red-700">{error}</p>
-            <button 
+            <button
               onClick={handleBackClick}
               className="mt-3 text-red-600 hover:text-red-800 flex items-center"
             >
@@ -459,9 +459,9 @@ const SubTopicDetail = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <ToastContainer position="top-right" autoClose={3000} />
-      
+
       <div className="flex items-center mb-4">
-        <button 
+        <button
           onClick={handleBackClick}
           className="flex items-center text-indigo-600 hover:text-indigo-800 transition-colors"
         >
@@ -475,14 +475,14 @@ const SubTopicDetail = () => {
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
             <h1 className="text-3xl font-bold text-gray-800">{subtopic?.title}</h1>
             <div className="flex space-x-2 mt-2 sm:mt-0">
-              <button 
+              <button
                 onClick={handleEditSubTopic}
                 className="flex items-center px-3 py-1.5 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition-colors"
               >
                 <Edit size={16} className="mr-1" />
                 <span>Edit</span>
               </button>
-              <button 
+              <button
                 onClick={handleDeleteSubTopic}
                 className="flex items-center px-3 py-1.5 bg-red-100 text-red-700 rounded hover:bg-red-200 transition-colors"
               >
@@ -491,33 +491,33 @@ const SubTopicDetail = () => {
               </button>
             </div>
           </div>
-          
+
           <p className="text-gray-700 mb-6">{subtopic?.description || 'No description available'}</p>
-          
+
           <div className="flex flex-wrap gap-3">
-            <button 
+            <button
               onClick={handleSubTopicDataStore}
               className="flex items-center px-4 py-2 bg-gray-800 text-white rounded-md hover:bg-gray-900 transition-colors shadow-sm"
             >
               <Database size={16} className="mr-2" />
               <span>Sub-Topic Datastore</span>
             </button>
-            <button 
+            <button
               onClick={() => setIsEditingContent(!isEditingContent)}
               className="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors shadow-sm"
             >
               <Edit size={16} className="mr-2" />
               <span>{isEditingContent ? 'Cancel Edit' : 'Edit Content'}</span>
             </button>
-            <button 
+            <button
               onClick={handleChatWithSubTopic}
               className="flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors shadow-sm"
             >
               <MessageSquare size={16} className="mr-2" />
               <span>Chat with Sub-Topic</span>
             </button>
-            
-            <button 
+
+            <button
               onClick={() => setShowQRCodeModal(true)}
               className="flex items-center px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 transition-colors shadow-sm"
             >
@@ -531,17 +531,17 @@ const SubTopicDetail = () => {
       <div className="mb-6">
         <h2 className="text-2xl font-semibold text-gray-800 mb-4">Content</h2>
         <div className="bg-white p-6 rounded-lg shadow border border-gray-100">
-          <RichTextEditor 
-            initialContent={subtopic?.content} 
+          <RichTextEditor
+            initialContent={subtopic?.content}
             onSave={handleSaveContent}
             readOnly={!isEditingContent}
           />
         </div>
       </div>
 
-      <EditSubTopicModal 
-        isOpen={showEditModal} 
-        onClose={() => setShowEditModal(false)} 
+      <EditSubTopicModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
         bookId={bookId}
         workbookId={workbookId}
         chapterId={chapterId}
@@ -550,9 +550,9 @@ const SubTopicDetail = () => {
         onUpdate={handleSubTopicUpdated}
       />
 
-      <DeleteConfirmModal 
-        isOpen={showDeleteModal} 
-        onClose={() => setShowDeleteModal(false)} 
+      <DeleteConfirmModal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
         onConfirm={confirmDeleteSubTopic}
         title="Delete Sub-Topic"
         message="Are you sure you want to delete this sub-topic? All content will be permanently removed."

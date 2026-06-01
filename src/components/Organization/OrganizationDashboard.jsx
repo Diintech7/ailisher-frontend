@@ -27,7 +27,7 @@ export default function OrganizationDashboard() {
           setClientStats({ total: 0, active: 0, inactive: 0, pending: 0, recent: 0 });
           return;
         }
-        const response = await axios.get('https://test.ailisher.com/api/organizations/clients', {
+        const response = await axios.get('http://localhost:4000/api/organizations/clients', {
           headers: { Authorization: `Bearer ${token}` },
         });
         const clients = Array.isArray(response.data?.data) ? response.data.data : [];
@@ -93,7 +93,7 @@ export default function OrganizationDashboard() {
               <div className="text-xs/5 uppercase tracking-wide opacity-90">Organization</div>
               <div className="mt-1 text-lg font-semibold">{org.name}</div>
               <div className="mt-3 h-px"></div>
-              <hr/>
+              <hr />
               <div className="mt-3 text-xs">{org.slug}</div>
             </div>
             <div className="rounded-lg border border-slate-200 p-5 bg-slate-50">

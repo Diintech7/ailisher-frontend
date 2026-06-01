@@ -4,7 +4,7 @@ const QRQuestionPage = () => {
   const [questionId, setQuestionId] = useState('');
   const [clientName, setClientName] = useState('');
   const [clientId, setClientId] = useState('');
-  
+
   const [step, setStep] = useState('loading'); // loading, auth, question, submit
   const [question, setQuestion] = useState(null);
   const [clientInfo, setClientInfo] = useState(null);
@@ -26,7 +26,7 @@ const QRQuestionPage = () => {
   const [submissionResult, setSubmissionResult] = useState(null);
   const fileInputRef = useRef(null);
 
-  const API_BASE = 'https://test.ailisher.com/api';
+  const API_BASE = 'http://localhost:4000/api';
 
   // Simple cookie utility
   const setCookie = (name, value, days) => {
@@ -55,12 +55,12 @@ const QRQuestionPage = () => {
       });
 
       const data = await response.json();
-      
+
       if (data.success && data.data.clientInfo) {
         setClientInfo(data.data.clientInfo);
         return data.data.clientInfo;
       }
-      
+
       // Option 2: If you have a dedicated client info endpoint, use this instead:
       // const response = await fetch(`${API_BASE}/clients/${clientId}/info`);
       // const data = await response.json();
@@ -68,7 +68,7 @@ const QRQuestionPage = () => {
       //   setClientInfo(data.data);
       //   return data.data;
       // }
-      
+
       return null;
     } catch (error) {
       console.error('Error fetching client info:', error);
@@ -83,11 +83,11 @@ const QRQuestionPage = () => {
       const urlQuestionId = window.location.pathname.split('/').pop();
       const urlClientName = urlParams.get('client');
       const urlClientId = urlParams.get('clientId');
-      
+
       // Set the state values and get the actual values to use
       let currentQuestionId = '';
       let currentClientId = '';
-      
+
       if (urlQuestionId) {
         setQuestionId(urlQuestionId);
         currentQuestionId = urlQuestionId;
@@ -96,11 +96,11 @@ const QRQuestionPage = () => {
       if (urlClientId) {
         setClientId(urlClientId);
         currentClientId = urlClientId;
-        
+
         // Fetch client info immediately when we have clientId
         await fetchClientInfo(urlClientId);
       }
-      
+
       // Now check auth and load question with the actual values
       if (currentQuestionId) {
         await checkAuthAndLoadQuestion(currentQuestionId);
@@ -112,21 +112,21 @@ const QRQuestionPage = () => {
 
     initializePage();
   }, []);
-  
+
 
   const checkAuthAndLoadQuestion = async (qId) => {
     try {
       const token = getCookie('qr_auth_token');
       console.log('Question ID:', qId);
-      
+
       if (token && qId) {
         // Check if already authenticated
         const response = await fetch(`${API_BASE}/aiswb/qr/questions/${qId}/view`, {
-            headers: {
+          headers: {
             'Authorization': `Bearer ${token}`
           }
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           setQuestion(data.data);
@@ -135,7 +135,7 @@ const QRQuestionPage = () => {
           return;
         }
       }
-      
+
       // Need authentication
       setStep('auth');
     } catch (error) {
@@ -155,23 +155,23 @@ const QRQuestionPage = () => {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         // Update client info if not already set
         if (data.data.clientInfo && !clientInfo) {
           setClientInfo(data.data.clientInfo);
         }
-        
+
         setIsRegisteredUser(data.data.isRegistered);
-        
+
         if (data.data.isRegistered && data.data.userProfile) {
           setUserInfo(data.data.userProfile);
           setName(data.data.userProfile.name || '');
         }
-        
+
         return data.data;
       }
-      
+
       return null;
     } catch (error) {
       console.error('User check error:', error);
@@ -201,16 +201,16 @@ const QRQuestionPage = () => {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         setOtpSent(true);
         setError('');
-        
+
         // Update client and user info from response
         if (data.data.clientInfo) {
           setClientInfo(data.data.clientInfo);
         }
-        
+
         if (data.data.userInfo) {
           setIsRegisteredUser(data.data.userInfo.isRegistered);
           if (data.data.userInfo.isRegistered) {
@@ -250,8 +250,8 @@ const QRQuestionPage = () => {
     setError('');
 
     try {
-      const requestBody = { 
-        mobile, 
+      const requestBody = {
+        mobile,
         otp
       };
 
@@ -269,22 +269,22 @@ const QRQuestionPage = () => {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         // Save token in cookies
         setCookie('qr_auth_token', data.data.authToken, 30);
-        
+
         // Update user and client info
         setUserInfo({
           name: data.data.user.name,
           profilePicture: data.data.user.profilePicture,
           mobile: data.data.user.mobile
         });
-        
+
         if (data.data.clientInfo) {
           setClientInfo(data.data.clientInfo);
         }
-        
+
         // Load question with the current questionId
         await loadQuestion(data.data.authToken, questionId);
       } else {
@@ -313,7 +313,7 @@ const QRQuestionPage = () => {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         setQuestion(data.data);
         if (data.data.clientInfo) {
@@ -452,8 +452,8 @@ const QRQuestionPage = () => {
           {/* Client Info - Now shows logo immediately when available */}
           <div className="text-center mb-8">
             {clientInfo?.clientLogo && (
-              <img 
-                src={clientInfo.clientLogo} 
+              <img
+                src={clientInfo.clientLogo}
                 alt={clientInfo.clientName || clientName}
                 className="w-16 h-16 mx-auto mb-4 rounded-full object-cover border-2 border-gray-200"
               />
@@ -487,7 +487,7 @@ const QRQuestionPage = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              
+
               <button
                 onClick={sendOTP}
                 disabled={loading || mobile.length !== 10}
@@ -503,8 +503,8 @@ const QRQuestionPage = () => {
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
                   <div className="flex items-center space-x-3">
                     {userInfo.profilePicture ? (
-                      <img 
-                        src={userInfo.profilePicture} 
+                      <img
+                        src={userInfo.profilePicture}
                         alt={userInfo.name}
                         className="w-12 h-12 rounded-full object-cover"
                       />
@@ -539,7 +539,7 @@ const QRQuestionPage = () => {
                   />
                 </div>
               )}
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   OTP sent to {mobile}
@@ -552,7 +552,7 @@ const QRQuestionPage = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              
+
               <button
                 onClick={verifyOTP}
                 disabled={loading || otp.length !== 6 || (!isRegisteredUser && !name)}
@@ -560,7 +560,7 @@ const QRQuestionPage = () => {
               >
                 {loading ? 'Verifying...' : 'Verify & Continue'}
               </button>
-              
+
               <button
                 onClick={() => {
                   setOtpSent(false);
@@ -600,7 +600,7 @@ const QRQuestionPage = () => {
                   ? 'Your answer has been submitted and will be evaluated manually.'
                   : 'Your answer has been submitted and evaluated successfully.'}
               </p>
-              
+
               {submissionResult && (
                 <div className="bg-gray-50 rounded-lg p-6 text-left">
                   <h3 className="font-semibold text-gray-800 mb-4">Submission Details:</h3>
@@ -640,7 +640,7 @@ const QRQuestionPage = () => {
                   </div>
                 </div>
               )}
-              
+
               <div className="mt-6 space-y-3">
                 {!submissionResult?.isFinalAttempt && submissionResult?.remainingAttempts > 0 && (
                   <button
@@ -673,8 +673,8 @@ const QRQuestionPage = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 {clientInfo?.clientLogo && (
-                  <img 
-                    src={clientInfo.clientLogo} 
+                  <img
+                    src={clientInfo.clientLogo}
                     alt={clientInfo.clientName || clientName}
                     className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
                   />
@@ -684,13 +684,13 @@ const QRQuestionPage = () => {
                   <p className="text-gray-600 text-sm">Question ID: {questionId}</p>
                 </div>
               </div>
-              
+
               {/* User Info */}
               {userInfo && (
                 <div className="flex items-center space-x-3">
                   {userInfo.profilePicture ? (
-                    <img 
-                      src={userInfo.profilePicture} 
+                    <img
+                      src={userInfo.profilePicture}
                       alt={userInfo.name}
                       className="w-10 h-10 rounded-full object-cover border-2 border-blue-200"
                     />
@@ -708,7 +708,7 @@ const QRQuestionPage = () => {
                 </div>
               )}
             </div>
-            
+
             <div className="mt-4 flex justify-between items-center">
               <div className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
                 Difficulty: {question.metadata?.difficultyLevel}
@@ -723,7 +723,7 @@ const QRQuestionPage = () => {
           <div className="bg-white rounded-lg shadow-sm p-8 mb-6">
             <div className="prose max-w-none">
               <h2 className="text-2xl font-bold text-gray-800 mb-6">Question</h2>
-              <div 
+              <div
                 className="text-gray-700 leading-relaxed text-lg"
                 dangerouslySetInnerHTML={{ __html: question.question }}
               />
@@ -757,7 +757,7 @@ const QRQuestionPage = () => {
           {/* Answer Submission */}
           <div className="bg-white rounded-lg shadow-sm p-8">
             <h3 className="text-xl font-bold text-gray-800 mb-6">Submit Your Answer</h3>
-            
+
             {submitError && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
                 {submitError}

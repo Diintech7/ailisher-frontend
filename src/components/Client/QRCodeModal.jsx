@@ -23,15 +23,15 @@ const QRCodeModal = ({ isOpen, onClose, bookId, bookTitle }) => {
         setError('Authentication required');
         return;
       }
-      
-      const response = await fetch(`https://test.ailisher.com/api/qrcode/books/${bookId}`, {
+
+      const response = await fetch(`http://localhost:4000/api/qrcode/books/${bookId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         setQrCodeData(data);
       } else {
@@ -47,7 +47,7 @@ const QRCodeModal = ({ isOpen, onClose, bookId, bookTitle }) => {
 
   const handleDownload = () => {
     if (!qrCodeData?.qrCodeDataURL) return;
-    
+
     // Create a link element
     const link = document.createElement('a');
     link.href = qrCodeData.qrCodeDataURL;
@@ -55,28 +55,28 @@ const QRCodeModal = ({ isOpen, onClose, bookId, bookTitle }) => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     toast.success('QR code downloaded successfully!');
   };
 
   const handleShare = async () => {
     if (!qrCodeData?.qrCodeDataURL) return;
-    
+
     try {
       if (navigator.share) {
         // Convert data URL to blob
         const fetchResponse = await fetch(qrCodeData.qrCodeDataURL);
         const blob = await fetchResponse.blob();
-        
+
         // Create file from blob
         const file = new File([blob], `${bookTitle || 'book'}-qrcode.png`, { type: 'image/png' });
-        
+
         await navigator.share({
           title: `QR Code for ${bookTitle || 'Book'}`,
           text: `Scan this QR code to access ${bookTitle || 'the book'} content.`,
           files: [file]
         });
-        
+
         toast.success('QR code shared successfully!');
       } else {
         // Fallback for browsers that don't support the Web Share API
@@ -95,23 +95,23 @@ const QRCodeModal = ({ isOpen, onClose, bookId, bookTitle }) => {
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-gray-800">Book QR Code</h2>
-          <button 
+          <button
             onClick={onClose}
             className="p-1 rounded-full hover:bg-gray-100"
           >
             <X size={20} className="text-gray-500" />
           </button>
         </div>
-        
+
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-3">
-            <div 
-              className="w-4 h-4 rounded-full" 
+            <div
+              className="w-4 h-4 rounded-full"
               style={{ backgroundColor: qrCodeData?.qrCodeColor || '#0047AB' }}
             ></div>
             <p className="text-gray-700 font-medium">Book QR Code</p>
           </div>
-          
+
           <p className="text-gray-700 mb-2">
             Scan this QR code to access the book content. It includes:
           </p>
@@ -123,7 +123,7 @@ const QRCodeModal = ({ isOpen, onClose, bookId, bookTitle }) => {
             </ul>
           )}
         </div>
-        
+
         <div className="flex justify-center mb-6">
           {loading ? (
             <div className="bg-gray-100 rounded-lg h-64 w-64 flex items-center justify-center">
@@ -132,7 +132,7 @@ const QRCodeModal = ({ isOpen, onClose, bookId, bookTitle }) => {
           ) : error ? (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 w-full">
               <p className="text-red-600 text-center">{error}</p>
-              <button 
+              <button
                 onClick={fetchQRCode}
                 className="mt-3 text-indigo-600 hover:text-indigo-800 mx-auto block"
               >
@@ -141,15 +141,15 @@ const QRCodeModal = ({ isOpen, onClose, bookId, bookTitle }) => {
             </div>
           ) : qrCodeData?.qrCodeDataURL ? (
             <div className="border border-gray-200 p-4 rounded-lg shadow-sm">
-              <img 
-                src={qrCodeData.qrCodeDataURL} 
-                alt="Book QR Code" 
+              <img
+                src={qrCodeData.qrCodeDataURL}
+                alt="Book QR Code"
                 className="h-64 w-64 object-contain"
               />
             </div>
           ) : null}
         </div>
-        
+
         <div className="flex justify-center space-x-4">
           <button
             onClick={handleDownload}
@@ -159,7 +159,7 @@ const QRCodeModal = ({ isOpen, onClose, bookId, bookTitle }) => {
             <Download size={16} className="mr-2" />
             Download
           </button>
-          
+
           <button
             onClick={handleShare}
             disabled={!qrCodeData?.qrCodeDataURL || loading || !navigator.canShare}

@@ -19,7 +19,7 @@ export default function CreditAccountDetail() {
   const fetchAccountDetails = async () => {
     setLoadingDetails(true);
     try {
-      const response = await axios.get(`https://test.ailisher.com/api/admin/credit-account/${accountId}`,
+      const response = await axios.get(`http://localhost:4000/api/admin/credit-account/${accountId}`,
         { headers: { Authorization: `Bearer ${Cookies.get('admintoken')}` } }
       );
       setAccountDetails(response.data.data);
@@ -29,11 +29,11 @@ export default function CreditAccountDetail() {
     }
     setLoadingDetails(false);
   };
-console.log(clientId);
+  console.log(clientId);
 
   const fetchRechargePlans = async () => {
     try {
-      const response = await axios.get(`https://test.ailisher.com/api/admin/${clientId}/get-recharge-plan`,
+      const response = await axios.get(`http://localhost:4000/api/admin/${clientId}/get-recharge-plan`,
         { headers: { Authorization: `Bearer ${Cookies.get('admintoken')}` } }
       );
       setRechargePlans(response.data.data || []);
@@ -46,31 +46,31 @@ console.log(clientId);
     fetchAccountDetails();
   }, [accountId]);
 
-  useEffect(()=>{
+  useEffect(() => {
     fetchRechargePlans()
-  },[clientId])
+  }, [clientId])
 
   const initiatePayment = async () => {
     if (!selectedPlan) { alert('Select a plan'); return; }
     try {
-    const token  = Cookies.get('admintoken')
-    const adminUser = Cookies.get('adminUser')
-    let adminId = null;
-    
-    if (adminUser) {
-      try {
-        const adminData = JSON.parse(adminUser);
-        adminId = adminData._id;
-      } catch (e) {
-        console.error('Error parsing admin user data:', e);
+      const token = Cookies.get('admintoken')
+      const adminUser = Cookies.get('adminUser')
+      let adminId = null;
+
+      if (adminUser) {
+        try {
+          const adminData = JSON.parse(adminUser);
+          adminId = adminData._id;
+        } catch (e) {
+          console.error('Error parsing admin user data:', e);
+        }
       }
-    }
-    console.log(adminId);
-    console.log(adminUser);
-    
-      const response = await fetch('https://test.ailisher.com/api/admin/paytm/initiate', {
+      console.log(adminId);
+      console.log(adminUser);
+
+      const response = await fetch('http://localhost:4000/api/admin/paytm/initiate', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
@@ -109,7 +109,7 @@ console.log(clientId);
     }
   };
 
-  
+
 
   if (loadingDetails || !accountDetails) {
     return (
@@ -175,7 +175,7 @@ console.log(clientId);
                     return (
                       <tr key={tx._id} className={`border-b hover:bg-gray-50 ${rowClass}`}>
                         <td className="py-2 px-3 text-gray-600">
-                          {new Date(tx.createdAt).toLocaleDateString()}<br/>
+                          {new Date(tx.createdAt).toLocaleDateString()}<br />
                           <span className="text-xs text-gray-400">{new Date(tx.createdAt).toLocaleTimeString()}</span>
                         </td>
                         <td className="py-2 px-3">

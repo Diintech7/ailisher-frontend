@@ -17,38 +17,38 @@ const AdminRegistrationPage = ({ onAuthSuccess }) => {
       setPasswordError('Passwords do not match');
       return false;
     }
-    
+
     if (password.length < 8) {
       setPasswordError('Password must be at least 8 characters long');
       return false;
     }
-    
+
     setPasswordError('');
     return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validatePasswords()) {
       return;
     }
-    
+
     setIsLoading(true);
     setError('');
-    
+
     try {
       // Make API call to your backend
-      const response = await fetch('https://test.ailisher.com/api/admin/register', {
+      const response = await fetch('http://localhost:4000/api/admin/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ name, email, password, adminCode }),
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         // Store token and admin data in cookies
         Cookies.set('admintoken', data.token, { expires: 7 });
@@ -58,7 +58,7 @@ const AdminRegistrationPage = ({ onAuthSuccess }) => {
           email: data.user.email,
           role: 'admin'
         }), { expires: 7 });
-        
+
         // Notify parent component of success
         onAuthSuccess();
       } else {

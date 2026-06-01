@@ -10,22 +10,22 @@ const ImageUploadModal = ({ isOpen, onClose, questionId, onSubmissionComplete })
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
-    
+
     // Validate file types
-    const validFiles = selectedFiles.filter(file => 
+    const validFiles = selectedFiles.filter(file =>
       file.type.startsWith('image/')
     );
-    
+
     if (validFiles.length !== selectedFiles.length) {
       toast.error('Only image files are allowed');
     }
-    
+
     // Create preview URLs and add to state
     const newPreviewImages = validFiles.map(file => ({
       file,
       preview: URL.createObjectURL(file)
     }));
-    
+
     setImages([...images, ...validFiles]);
     setPreviewImages([...previewImages, ...newPreviewImages]);
   };
@@ -33,13 +33,13 @@ const ImageUploadModal = ({ isOpen, onClose, questionId, onSubmissionComplete })
   const removeImage = (index) => {
     // Revoke the object URL to avoid memory leaks
     URL.revokeObjectURL(previewImages[index].preview);
-    
+
     const updatedImages = [...images];
     updatedImages.splice(index, 1);
-    
+
     const updatedPreviews = [...previewImages];
     updatedPreviews.splice(index, 1);
-    
+
     setImages(updatedImages);
     setPreviewImages(updatedPreviews);
   };
@@ -49,13 +49,13 @@ const ImageUploadModal = ({ isOpen, onClose, questionId, onSubmissionComplete })
       toast.error('Please select at least one image');
       return;
     }
-    
+
     setUploading(true);
-    
+
     try {
       // Get user token
       const token = Cookies.get('usertoken');
-      
+
       // Try to upload to server if token exists
       if (token) {
         try {
@@ -65,17 +65,17 @@ const ImageUploadModal = ({ isOpen, onClose, questionId, onSubmissionComplete })
             formData.append('answerImages', image);
           });
           formData.append('questionId', questionId);
-          
-          const response = await fetch('https://test.ailisher.com/api/aiswb/submissions', {
+
+          const response = await fetch('http://localhost:4000/api/aiswb/submissions', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`
             },
             body: formData
           });
-          
+
           const data = await response.json();
-          
+
           if (data.success) {
             toast.success('Answer submitted successfully');
             // Clean up preview URLs
@@ -92,7 +92,7 @@ const ImageUploadModal = ({ isOpen, onClose, questionId, onSubmissionComplete })
           // Continue to local storage fallback
         }
       }
-      
+
       // Fallback to local storage if server submission fails or no token
       // Convert images to data URLs for local storage
       const imagePromises = images.map(image => {
@@ -102,22 +102,22 @@ const ImageUploadModal = ({ isOpen, onClose, questionId, onSubmissionComplete })
           reader.readAsDataURL(image);
         });
       });
-      
+
       const imageDataUrls = await Promise.all(imagePromises);
-      
+
       // Create submission object
       const submission = {
         answerImages: imageDataUrls
       };
-      
+
       // Clean up preview URLs
       previewImages.forEach(img => URL.revokeObjectURL(img.preview));
-      
+
       // Call the completion handler with the local submission data
       onSubmissionComplete(submission);
       onClose();
       toast.success('Answer saved locally');
-      
+
     } catch (error) {
       console.error('Error handling submission:', error);
       toast.error('Failed to save answer');
@@ -131,29 +131,29 @@ const ImageUploadModal = ({ isOpen, onClose, questionId, onSubmissionComplete })
     e.preventDefault();
     e.stopPropagation();
   };
-  
+
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const droppedFiles = Array.from(e.dataTransfer.files);
-      
+
       // Validate file types
-      const validFiles = droppedFiles.filter(file => 
+      const validFiles = droppedFiles.filter(file =>
         file.type.startsWith('image/')
       );
-      
+
       if (validFiles.length !== droppedFiles.length) {
         toast.error('Only image files are allowed');
       }
-      
+
       // Create preview URLs and add to state
       const newPreviewImages = validFiles.map(file => ({
         file,
         preview: URL.createObjectURL(file)
       }));
-      
+
       setImages([...images, ...validFiles]);
       setPreviewImages([...previewImages, ...newPreviewImages]);
     }
@@ -187,8 +187,8 @@ const ImageUploadModal = ({ isOpen, onClose, questionId, onSubmissionComplete })
             <p className="text-gray-600 mb-4">
               Upload images of your handwritten or typed answer. You can upload multiple images.
             </p>
-            
-            <div 
+
+            <div
               className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center"
               onDragOver={handleDragOver}
               onDrop={handleDrop}
