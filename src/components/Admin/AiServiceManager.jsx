@@ -42,7 +42,7 @@ const AiServiceManager = () => {
   const fetchServices = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:4000/api/ai');
+      const response = await fetch('https://ailisher.diintech.com/api/ai');
       const data = await response.json();
 
       if (data.success) {
@@ -60,7 +60,7 @@ const AiServiceManager = () => {
   const fetchApiKey = async (serviceName) => {
     try {
       setLoadingApiKeys(prev => ({ ...prev, [serviceName]: true }));
-      const response = await fetch(`http://localhost:4000/api/ai/${serviceName}/apikey`);
+      const response = await fetch(`https://ailisher.diintech.com/api/ai/${serviceName}/apikey`);
       const data = await response.json();
 
       if (data.success) {
@@ -77,7 +77,7 @@ const AiServiceManager = () => {
 
   const handleCreateService = async () => {
     try {
-      const response = await fetch('http://localhost:4000/api/ai', {
+      const response = await fetch('https://ailisher.diintech.com/api/ai', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -120,7 +120,7 @@ const AiServiceManager = () => {
 
   const handleUpdateApiKey = async (serviceName, newApiKey) => {
     try {
-      const response = await fetch(`http://localhost:4000/api/ai/${serviceName}/apikey`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/ai/${serviceName}/apikey`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -144,7 +144,7 @@ const AiServiceManager = () => {
 
   const handleUpdateTaskPreferences = async (serviceName, taskPreferences) => {
     try {
-      const response = await fetch(`http://localhost:4000/api/ai/${serviceName}/preferences`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/ai/${serviceName}/preferences`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -167,7 +167,7 @@ const AiServiceManager = () => {
 
   const handleUpdateServiceConfig = async (serviceName, serviceConfig) => {
     try {
-      const response = await fetch(`http://localhost:4000/api/ai/${serviceName}/config`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/ai/${serviceName}/config`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -190,7 +190,7 @@ const AiServiceManager = () => {
 
   const handleToggleService = async (serviceName) => {
     try {
-      const response = await fetch(`http://localhost:4000/api/ai/${serviceName}/toggle`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/ai/${serviceName}/toggle`, {
         method: 'PUT',
       });
 
@@ -213,7 +213,7 @@ const AiServiceManager = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:4000/api/ai/${serviceName}`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/ai/${serviceName}`, {
         method: 'DELETE',
       });
 
@@ -312,8 +312,8 @@ const AiServiceManager = () => {
                   [task]: !prev[task]
                 }))}
                 className={`p-1 rounded transition-colors ${tempPreferences[task]
-                    ? 'text-green-600 hover:text-green-700'
-                    : 'text-gray-400 hover:text-gray-500'
+                  ? 'text-green-600 hover:text-green-700'
+                  : 'text-gray-400 hover:text-gray-500'
                   }`}
               >
                 {tempPreferences[task] ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
@@ -377,8 +377,8 @@ const AiServiceManager = () => {
             <button
               onClick={() => setTempConfig(prev => ({ ...prev, includeMarginalia: !prev.includeMarginalia }))}
               className={`p-1 rounded transition-colors ${tempConfig.includeMarginalia
-                  ? 'text-green-600 hover:text-green-700'
-                  : 'text-gray-400 hover:text-gray-500'
+                ? 'text-green-600 hover:text-green-700'
+                : 'text-gray-400 hover:text-gray-500'
                 }`}
             >
               {tempConfig.includeMarginalia ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
@@ -389,8 +389,8 @@ const AiServiceManager = () => {
             <button
               onClick={() => setTempConfig(prev => ({ ...prev, includeMetadataInMarkdown: !prev.includeMetadataInMarkdown }))}
               className={`p-1 rounded transition-colors ${tempConfig.includeMetadataInMarkdown
-                  ? 'text-green-600 hover:text-green-700'
-                  : 'text-gray-400 hover:text-gray-500'
+                ? 'text-green-600 hover:text-green-700'
+                : 'text-gray-400 hover:text-gray-500'
                 }`}
             >
               {tempConfig.includeMetadataInMarkdown ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
@@ -565,8 +565,8 @@ const AiServiceManager = () => {
                   <p className="text-sm text-gray-600 capitalize">{service.serviceName}</p>
                 </div>
                 <div className={`px-2 py-1 rounded-full text-xs font-medium ${service.isActive
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-red-100 text-red-800'
                   }`}>
                   {service.isActive ? 'Active' : 'Inactive'}
                 </div>

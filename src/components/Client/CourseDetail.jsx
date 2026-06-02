@@ -11,7 +11,7 @@ import {
   Book,
 } from "lucide-react";
 
-const API_BASE_URL = "http://localhost:4000";
+const API_BASE_URL = "https://ailisher.diintech.com";
 
 const emptyTopic = () => ({
   topicName: "",

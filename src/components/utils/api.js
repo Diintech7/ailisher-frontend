@@ -150,7 +150,7 @@ export const deleteLecture = async (bookId, courseId, topicId) => {
 };
 
 export async function fetchYouTubeTranscript(url) {
-  const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'http://localhost:4000'}/api/youtube/transcribe-audio`, {
+  const response = await fetch(`${process.env.REACT_APP_BACKEND_URL || 'https://ailisher.diintech.com'}/api/youtube/transcribe-audio`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ url }),

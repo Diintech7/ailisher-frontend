@@ -15,7 +15,7 @@ const EvaluatorLoginPage = ({ onAuthSuccess }) => {
 
     try {
       // Make API call to your backend
-      const response = await fetch('http://localhost:4000/api/evaluators/login', {
+      const response = await fetch('https://ailisher.diintech.com/api/evaluators/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

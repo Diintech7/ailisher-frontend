@@ -37,7 +37,7 @@ const AITests = () => {
     try {
       // Fetch categories from backend
       const categoriesResponse = await fetch(
-        "http://localhost:4000/api/categories",
+        "https://ailisher.diintech.com/api/categories",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -58,10 +58,10 @@ const AITests = () => {
 
       setCategoryMappings(transformedCategories);
       const [objectiveResponse, subjectiveResponse] = await Promise.all([
-        axios.get('http://localhost:4000/api/objectivetests', {
+        axios.get('https://ailisher.diintech.com/api/objectivetests', {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        axios.get('http://localhost:4000/api/subjectivetests', {
+        axios.get('https://ailisher.diintech.com/api/subjectivetests', {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -81,8 +81,8 @@ const AITests = () => {
   const handleCreateTest = async (testData) => {
     try {
       const endpoint = activeTab === 'objective'
-        ? 'http://localhost:4000/api/objectivetests'
-        : 'http://localhost:4000/api/subjectivetests';
+        ? 'https://ailisher.diintech.com/api/objectivetests'
+        : 'https://ailisher.diintech.com/api/subjectivetests';
 
       const response = await axios.post(endpoint, testData, {
         headers: { Authorization: `Bearer ${token}` }
@@ -101,8 +101,8 @@ const AITests = () => {
     try {
       console.log(testData)
       const endpoint = activeTab === 'objective'
-        ? `http://localhost:4000/api/objectivetests/${editingTest._id}`
-        : `http://localhost:4000/api/subjectivetests/${editingTest._id}`;
+        ? `https://ailisher.diintech.com/api/objectivetests/${editingTest._id}`
+        : `https://ailisher.diintech.com/api/subjectivetests/${editingTest._id}`;
 
       const response = await axios.put(endpoint, testData, {
         headers: { Authorization: `Bearer ${token}` }
@@ -123,8 +123,8 @@ const AITests = () => {
 
     try {
       const endpoint = activeTab === 'objective'
-        ? `http://localhost:4000/api/objectivetests/${deletingTest._id}`
-        : `http://localhost:4000/api/subjectivetests/${deletingTest._id}`;
+        ? `https://ailisher.diintech.com/api/objectivetests/${deletingTest._id}`
+        : `https://ailisher.diintech.com/api/subjectivetests/${deletingTest._id}`;
 
       await axios.delete(endpoint, {
         headers: { Authorization: `Bearer ${token}` }
@@ -377,8 +377,8 @@ const AITests = () => {
   const toggleEnabled = async (test, type) => {
     try {
       const endpoint = type === 'objective'
-        ? `http://localhost:4000/api/objectivetests/${test._id}`
-        : `http://localhost:4000/api/subjectivetests/${test._id}`;
+        ? `https://ailisher.diintech.com/api/objectivetests/${test._id}`
+        : `https://ailisher.diintech.com/api/subjectivetests/${test._id}`;
       const response = await axios.patch(endpoint, { isEnabled: !test.isEnabled }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -449,8 +449,8 @@ const AITests = () => {
               <button
                 onClick={() => setActiveTab('objective')}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'objective'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
               >
                 Objective Tests
@@ -458,8 +458,8 @@ const AITests = () => {
               <button
                 onClick={() => setActiveTab('subjective')}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'subjective'
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
               >
                 Subjective Tests
@@ -516,8 +516,8 @@ const AITests = () => {
                       <button
                         onClick={() => setSelectedSubCategories((prev) => ({ ...prev, [mainCategory]: null }))}
                         className={`px-3 py-1 rounded-full text-sm border transition-colors ${!selectedSubCategories[mainCategory]
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                           }`}
                       >
                         All
@@ -703,7 +703,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
 
   const refreshCategories = async () => {
     try {
-      const res = await fetch("http://localhost:4000/api/categories", {
+      const res = await fetch("https://ailisher.diintech.com/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await res.json();
@@ -726,7 +726,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
     }
     try {
       setCreatingCategory(true);
-      const res = await fetch("http://localhost:4000/api/categories", {
+      const res = await fetch("https://ailisher.diintech.com/api/categories", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -757,7 +757,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
     }
     try {
       setCreatingSubcategory(true);
-      const listRes = await fetch("http://localhost:4000/api/categories", {
+      const listRes = await fetch("https://ailisher.diintech.com/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await listRes.json();
@@ -766,7 +766,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
         toast.error('Select a valid category first');
         return;
       }
-      const res = await fetch(`http://localhost:4000/api/categories/${currentCat._id}/subcategories`, {
+      const res = await fetch(`https://ailisher.diintech.com/api/categories/${currentCat._id}/subcategories`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -852,7 +852,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
 
       // Get presigned URL for upload
       const response = await axios.post(
-        `http://localhost:4000/api/${type === 'objective' ? 'objectivetests' : 'subjectivetests'}/upload-image`,
+        `https://ailisher.diintech.com/api/${type === 'objective' ? 'objectivetests' : 'subjectivetests'}/upload-image`,
         {
           fileName: file.name,
           contentType: file.type
@@ -1118,8 +1118,8 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
               <div className="flex items-center justify-center w-full">
                 <label
                   className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${isDragOver
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
+                    ? 'border-blue-500 bg-blue-50'
+                    : 'border-gray-300 bg-gray-50 hover:bg-gray-100'
                     }`}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}

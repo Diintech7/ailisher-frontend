@@ -5,7 +5,7 @@ import axios from "axios"
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: "http://localhost:4000/api",
+  baseURL: "https://ailisher.diintech.com/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -1652,7 +1652,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
       if (!submission?.question?._id) return;
       try {
         const res = await axios.get(
-          `http://localhost:4000/api/aiswb/questions/${submission.question._id}`
+          `https://ailisher.diintech.com/api/aiswb/questions/${submission.question._id}`
         );
         if (res.data && res.data.data && res.data.data.modalAnswer) {
           setModalAnswer(res.data.data.modalAnswer);
@@ -1926,10 +1926,10 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   onClick={() => handleToolSelect("pen")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
                   className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : activeTool === "pen"
-                        ? "bg-blue-500 text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-100"
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : activeTool === "pen"
+                      ? "bg-blue-500 text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-100"
                     }`}
                   title="Pen"
                 >
@@ -1947,10 +1947,10 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   onClick={() => handleToolSelect("text")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
                   className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : activeTool === "text"
-                        ? "bg-blue-500 text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-100"
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : activeTool === "text"
+                      ? "bg-blue-500 text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-100"
                     }`}
                   title="Text"
                 >
@@ -1970,10 +1970,10 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                     onClick={() => handleToolSelect("comment")}
                     disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
                     className={`p-2 rounded ${activeTool === "comment"
-                        ? "bg-blue-500 text-white"
-                        : isFabricLoading || !isFabricLoaded || !canvasReady
-                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                          : "bg-white text-gray-700 hover:bg-gray-100"
+                      ? "bg-blue-500 text-white"
+                      : isFabricLoading || !isFabricLoaded || !canvasReady
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        : "bg-white text-gray-700 hover:bg-gray-100"
                       }`}
                     title="Comment"
                   >
@@ -2021,10 +2021,10 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   onClick={() => handleToolSelect("circle")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
                   className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : activeTool === "circle"
-                        ? "bg-blue-500 text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-100"
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : activeTool === "circle"
+                      ? "bg-blue-500 text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-100"
                     }`}
                   title="Circle"
                 >
@@ -2042,10 +2042,10 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   onClick={() => handleToolSelect("rectangle")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
                   className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : activeTool === "rectangle"
-                        ? "bg-blue-500 text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-100"
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : activeTool === "rectangle"
+                      ? "bg-blue-500 text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-100"
                     }`}
                   title="Rectangle"
                 >
@@ -2063,10 +2063,10 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   onClick={() => handleToolSelect("select")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
                   className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : activeTool === "select"
-                        ? "bg-blue-500 text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-100"
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : activeTool === "select"
+                      ? "bg-blue-500 text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-100"
                     }`}
                   title="Select"
                 >
@@ -2084,8 +2084,8 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   onClick={() => handleToolSelect("clear")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
                   className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : "bg-white text-red-600 hover:bg-red-50"
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-white text-red-600 hover:bg-red-50"
                     }`}
                   title="Clear All"
                 >
@@ -2106,8 +2106,8 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   onClick={handleUndo}
                   disabled={!canUndo || isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady}
                   className={`p-2 rounded ${!canUndo || isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : "bg-white text-gray-700 hover:bg-gray-100"
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-white text-gray-700 hover:bg-gray-100"
                     }`}
                   title="Undo"
                 >
@@ -2124,8 +2124,8 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   onClick={handleRedo}
                   disabled={!canRedo || isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady}
                   className={`p-2 rounded ${!canRedo || isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : "bg-white text-gray-700 hover:bg-gray-100"
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-white text-gray-700 hover:bg-gray-100"
                     }`}
                   title="Redo"
                 >
@@ -2147,8 +2147,8 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   onClick={() => handleZoom("out")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
                   className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : "bg-white text-gray-700 hover:bg-gray-100"
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-white text-gray-700 hover:bg-gray-100"
                     }`}
                   title="Zoom Out"
                 >
@@ -2161,8 +2161,8 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   onClick={() => handleZoom("in")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
                   className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : "bg-white text-gray-700 hover:bg-gray-100"
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-white text-gray-700 hover:bg-gray-100"
                     }`}
                   title="Reset Zoom"
                 >
@@ -2185,8 +2185,8 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                   onChange={(e) => handleColorChange(e.target.value)}
                   disabled={isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady}
                   className={`w-8 h-8 rounded ${isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady
-                      ? "cursor-not-allowed opacity-50"
-                      : "cursor-pointer"
+                    ? "cursor-not-allowed opacity-50"
+                    : "cursor-pointer"
                     }`}
                   title="Color"
                 />
@@ -2199,8 +2199,8 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                     onChange={(e) => handleBrushSizeChange(Number.parseInt(e.target.value))}
                     disabled={isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady}
                     className={`w-24 ${isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady
-                        ? "cursor-not-allowed opacity-50"
-                        : ""
+                      ? "cursor-not-allowed opacity-50"
+                      : ""
                       }`}
                     title="Brush Size"
                   />
@@ -2357,8 +2357,8 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
                     <label
                       htmlFor="image-upload"
                       className={`inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${uploadingImages
-                          ? "bg-gray-400 cursor-not-allowed"
-                          : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                        ? "bg-gray-400 cursor-not-allowed"
+                        : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
                         }`}
                     >
                       {uploadingImages ? "Uploading..." : "Upload Image"}

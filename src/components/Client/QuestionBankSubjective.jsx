@@ -58,7 +58,7 @@ export default function QuestionBankSubjective() {
     try {
       setLoading(true);
       const response = await axios.get(
-        `http://localhost:4000/api/questionbank/${questionBankId}`,
+        `https://ailisher.diintech.com/api/questionbank/${questionBankId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -76,7 +76,7 @@ export default function QuestionBankSubjective() {
     try {
       setLoading(true);
       const response = await axios.get(
-        `http://localhost:4000/api/questionbank/${questionBankId}/questions`,
+        `https://ailisher.diintech.com/api/questionbank/${questionBankId}/questions`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -119,7 +119,7 @@ export default function QuestionBankSubjective() {
       };
 
       const res = await axios.post(
-        `http://localhost:4000/api/questionbank/${questionBankId}/questions`,
+        `https://ailisher.diintech.com/api/questionbank/${questionBankId}/questions`,
         payload,
         {
           headers: {
@@ -257,8 +257,8 @@ export default function QuestionBankSubjective() {
                   <button
                     onClick={() => setActiveView("questions")}
                     className={`px-4 py-2 text-sm ${activeView === "questions"
-                        ? "bg-gray-800 text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-50"
+                      ? "bg-gray-800 text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-50"
                       }`}
                   >
                     Questions
@@ -266,8 +266,8 @@ export default function QuestionBankSubjective() {
                   <button
                     onClick={() => setActiveView("uploadPdf")}
                     className={`px-4 py-2 text-sm ${activeView === "uploadPdf"
-                        ? "bg-gray-800 text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-50"
+                      ? "bg-gray-800 text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-50"
                       }`}
                   >
                     Upload PDF

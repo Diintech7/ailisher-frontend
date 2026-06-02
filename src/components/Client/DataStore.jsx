@@ -95,13 +95,13 @@ const DataStore = ({ type }) => {
 
   const getApiEndpoint = () => {
     if (type === "book" && bookId) {
-      return `http://localhost:4000/api/datastores/book/${bookId}`
+      return `https://ailisher.diintech.com/api/datastores/book/${bookId}`
     } else if (type === "chapter" && bookId && chapterId) {
-      return `http://localhost:4000/api/datastores/chapter/${chapterId}`
+      return `https://ailisher.diintech.com/api/datastores/chapter/${chapterId}`
     } else if (type === "topic" && bookId && chapterId && topicId) {
-      return `http://localhost:4000/api/datastores/topic/${topicId}`
+      return `https://ailisher.diintech.com/api/datastores/topic/${topicId}`
     } else if (type === "subtopic" && bookId && chapterId && topicId && subtopicId) {
-      return `http://localhost:4000/api/datastores/subtopic/${subtopicId}`
+      return `https://ailisher.diintech.com/api/datastores/subtopic/${subtopicId}`
     }
     return null
   }
@@ -111,7 +111,7 @@ const DataStore = ({ type }) => {
       const token = Cookies.get("usertoken")
       if (!token) return
 
-      const response = await fetch(`http://localhost:4000/api/datastores/update-embedding-status/${itemId}`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/datastores/update-embedding-status/${itemId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -145,7 +145,7 @@ const DataStore = ({ type }) => {
 
       const itemIds = s3Items.map(item => item._id)
 
-      const response = await fetch(`http://localhost:4000/api/datastores/refresh-s3-urls`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/datastores/refresh-s3-urls`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -254,7 +254,7 @@ const DataStore = ({ type }) => {
 
     const statusPromises = pdfItems.map(async (item) => {
       try {
-        const response = await fetch(`http://localhost:4000/api/enhanced-pdf-embedding/check-embeddings/${item._id}`, {
+        const response = await fetch(`https://ailisher.diintech.com/api/enhanced-pdf-embedding/check-embeddings/${item._id}`, {
           headers: {
             ...(token && { Authorization: `Bearer ${token}` }),
           },
@@ -263,7 +263,7 @@ const DataStore = ({ type }) => {
 
         let healthData = { success: false, status: { chatAvailable: false } }
         try {
-          const healthResponse = await fetch(`http://localhost:4000/api/enhanced-pdf-chat/chat-health/${item._id}`, {
+          const healthResponse = await fetch(`https://ailisher.diintech.com/api/enhanced-pdf-chat/chat-health/${item._id}`, {
             headers: {
               ...(token && { Authorization: `Bearer ${token}` }),
             },
@@ -311,7 +311,7 @@ const DataStore = ({ type }) => {
     const token = Cookies.get("usertoken")
 
     try {
-      const response = await fetch(`http://localhost:4000/api/enhanced-pdf-embedding/check-embeddings/${itemId}`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/enhanced-pdf-embedding/check-embeddings/${itemId}`, {
         headers: {
           ...(token && { Authorization: `Bearer ${token}` }),
         },
@@ -320,7 +320,7 @@ const DataStore = ({ type }) => {
 
       let healthData = { success: false, status: { chatAvailable: false } }
       try {
-        const healthResponse = await fetch(`http://localhost:4000/api/enhanced-pdf-chat/chat-health/${itemId}`, {
+        const healthResponse = await fetch(`https://ailisher.diintech.com/api/enhanced-pdf-chat/chat-health/${itemId}`, {
           headers: {
             ...(token && { Authorization: `Bearer ${token}` }),
           },
@@ -356,7 +356,7 @@ const DataStore = ({ type }) => {
     setAIGuidelinesLoading(true)
     try {
       const token = Cookies.get('usertoken')
-      const response = await fetch(`http://localhost:4000/api/aiguidelines/${bookId}`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/aiguidelines/${bookId}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
       if (response.ok) {
@@ -378,7 +378,7 @@ const DataStore = ({ type }) => {
     try {
       const token = Cookies.get('usertoken')
       console.log(aiGuidelinesForm)
-      const response = await fetch(`http://localhost:4000/api/aiguidelines/${bookId}`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/aiguidelines/${bookId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -533,7 +533,7 @@ const DataStore = ({ type }) => {
       if (uploadType === "file") {
         const uploadPromises = selectedFiles.map(async (file) => {
           // Get S3 upload URL
-          const uploadUrlResponse = await fetch(`http://localhost:4000/api/datastores/upload-s3`, {
+          const uploadUrlResponse = await fetch(`https://ailisher.diintech.com/api/datastores/upload-s3`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -688,7 +688,7 @@ const DataStore = ({ type }) => {
     }
 
     try {
-      const response = await fetch(`http://localhost:4000/api/enhanced-pdf-embedding/create-embeddings/${itemId}`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/enhanced-pdf-embedding/create-embeddings/${itemId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -816,7 +816,7 @@ const DataStore = ({ type }) => {
     try {
       let response
       if (currentChatItem._id === "knowledge-base") {
-        response = await fetch(`http://localhost:4000/api/enhanced-pdf-chat/chat-book-knowledge-base/${bookId}`, {
+        response = await fetch(`https://ailisher.diintech.com/api/enhanced-pdf-chat/chat-book-knowledge-base/${bookId}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -827,7 +827,7 @@ const DataStore = ({ type }) => {
           }),
         })
       } else {
-        response = await fetch(`http://localhost:4000/api/enhanced-pdf-chat/chat/${currentChatItem._id}`, {
+        response = await fetch(`https://ailisher.diintech.com/api/enhanced-pdf-chat/chat/${currentChatItem._id}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -998,10 +998,10 @@ const DataStore = ({ type }) => {
               <div key={message.id} className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}>
                 <div
                   className={`max-w-3xl p-3 rounded-lg ${message.type === "user"
-                      ? "bg-indigo-600 text-white"
-                      : message.type === "error"
-                        ? "bg-red-100 text-red-800 border border-red-200"
-                        : "bg-gray-100 text-gray-800"
+                    ? "bg-indigo-600 text-white"
+                    : message.type === "error"
+                      ? "bg-red-100 text-red-800 border border-red-200"
+                      : "bg-gray-100 text-gray-800"
                     }`}
                 >
                   <div className="whitespace-pre-wrap">{message.content}</div>
@@ -1262,8 +1262,8 @@ const DataStore = ({ type }) => {
                     onClick={() => handleCreateEmbeddings(item._id)}
                     disabled={isEmbeddingLoading}
                     className={`flex items-center px-3 py-1 text-xs rounded-md transition-colors ${embeddingInfo?.hasEmbeddings
-                        ? "bg-green-100 text-green-700 border border-green-200"
-                        : "bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200"
+                      ? "bg-green-100 text-green-700 border border-green-200"
+                      : "bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200"
                       }`}
                   >
                     {isEmbeddingLoading ? (
@@ -1293,8 +1293,8 @@ const DataStore = ({ type }) => {
                     onClick={() => handleChatWithPDF(item)}
                     disabled={!chatAvailable}
                     className={`flex items-center px-3 py-1 text-xs rounded-md transition-colors ${chatAvailable
-                        ? "bg-indigo-100 text-indigo-700 border border-indigo-200 hover:bg-indigo-200"
-                        : "bg-gray-100 text-gray-400 border border-gray-200"
+                      ? "bg-indigo-100 text-indigo-700 border border-indigo-200 hover:bg-indigo-200"
+                      : "bg-gray-100 text-gray-400 border border-gray-200"
                       }`}
                   >
                     <MessageCircle size={12} className="mr-1" />
@@ -1553,8 +1553,8 @@ const DataStore = ({ type }) => {
                     key={filter.id}
                     onClick={() => setActiveFilter(filter.id)}
                     className={`flex items-center px-3 py-2 rounded-md text-sm whitespace-nowrap ${activeFilter === filter.id
-                        ? "bg-indigo-100 text-indigo-700 font-medium"
-                        : "bg-gray-50 text-gray-700 hover:bg-gray-100"
+                      ? "bg-indigo-100 text-indigo-700 font-medium"
+                      : "bg-gray-50 text-gray-700 hover:bg-gray-100"
                       }`}
                   >
                     <filter.icon size={16} className="mr-2" />
@@ -1676,8 +1676,8 @@ const DataStore = ({ type }) => {
                               onClick={() => handleCreateEmbeddings(item._id)}
                               disabled={isEmbeddingLoading}
                               className={`flex-1 flex items-center justify-center px-3 py-2 text-sm rounded-md transition-colors ${embeddingInfo?.hasEmbeddings
-                                  ? "bg-green-100 text-green-700 border border-green-200"
-                                  : "bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200"
+                                ? "bg-green-100 text-green-700 border border-green-200"
+                                : "bg-blue-100 text-blue-700 border border-blue-200 hover:bg-blue-200"
                                 }`}
                             >
                               {isEmbeddingLoading ? (
@@ -1691,8 +1691,8 @@ const DataStore = ({ type }) => {
                             <button
                               onClick={() => handleChatWithPDF(item)}
                               className={`flex-1 flex items-center justify-center px-3 py-2 text-sm rounded-md transition-colors ${chatAvailable
-                                  ? "bg-indigo-100 text-indigo-700 border border-indigo-200 hover:bg-indigo-200"
-                                  : "bg-gray-100 text-gray-400 border border-gray-200"
+                                ? "bg-indigo-100 text-indigo-700 border border-indigo-200 hover:bg-indigo-200"
+                                : "bg-gray-100 text-gray-400 border border-gray-200"
                                 }`}
                             >
                               <MessageCircle size={14} className="mr-1" />

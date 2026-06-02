@@ -125,7 +125,7 @@ const ChatApplication = () => {
 
       // In a real implementation, you would use fetch like this:
       /*
-      const response = await fetch(`http://localhost:4000/api/chat`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -361,8 +361,8 @@ const ChatApplication = () => {
               >
                 <div
                   className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center mr-2 ${message.sender === 'user'
-                      ? 'bg-indigo-100 ml-2'
-                      : 'bg-green-100'
+                    ? 'bg-indigo-100 ml-2'
+                    : 'bg-green-100'
                     }`}
                 >
                   {message.sender === 'user'
@@ -372,8 +372,8 @@ const ChatApplication = () => {
                 </div>
                 <div
                   className={`relative group rounded-lg py-2 px-4 ${message.sender === 'user'
-                      ? 'bg-indigo-600 text-white'
-                      : 'bg-white border border-gray-200 text-gray-800'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-white border border-gray-200 text-gray-800'
                     }`}
                 >
                   <p className="whitespace-pre-wrap">{message.text}</p>
@@ -385,8 +385,8 @@ const ChatApplication = () => {
                   <button
                     onClick={() => copyMessageToClipboard(message.text)}
                     className={`absolute top-2 right-2 p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity ${message.sender === 'user'
-                        ? 'hover:bg-indigo-700 text-indigo-100'
-                        : 'hover:bg-gray-100 text-gray-500'
+                      ? 'hover:bg-indigo-700 text-indigo-100'
+                      : 'hover:bg-gray-100 text-gray-500'
                       }`}
                     title="Copy to clipboard"
                   >
@@ -442,8 +442,8 @@ const ChatApplication = () => {
                 type="submit"
                 disabled={isLoading || !inputMessage.trim()}
                 className={`ml-2 px-4 py-2 rounded-lg flex items-center justify-center ${isLoading || !inputMessage.trim()
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-indigo-600 text-white hover:bg-indigo-700'
                   }`}
               >
                 {isLoading ? (

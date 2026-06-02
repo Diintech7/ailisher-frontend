@@ -4,8 +4,8 @@ import { Plus, Trash2, Edit, Image as ImageIcon, Loader2, AlertTriangle, Book, S
 import { ToastContainer, toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 
-// const API_BASE_URL = 'http://localhost:4000';
-const API_BASE_URL = 'http://localhost:4000';
+// const API_BASE_URL = 'https://ailisher.diintech.com';
+const API_BASE_URL = 'https://ailisher.diintech.com';
 
 
 const initialForm = {
@@ -420,8 +420,8 @@ const AIcourses = () => {
                 <button
                   onClick={() => toggleSubCategory(main, null)}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${!selectedSubCategories[main]
-                      ? "bg-indigo-600 text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "bg-indigo-600 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     }`}
                 >
                   All {main}
@@ -433,8 +433,8 @@ const AIcourses = () => {
                       toggleSubCategory(main, subCategory)
                     }
                     className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedSubCategories[main] === subCategory
-                        ? "bg-indigo-600 text-white"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      ? "bg-indigo-600 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                       }`}
                   >
                     {subCategory}

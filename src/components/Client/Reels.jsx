@@ -107,7 +107,7 @@ const Reels = React.memo(function Reels() {
   };
 
   const axiosConfig = {
-    baseURL: "http://localhost:4000",
+    baseURL: "https://ailisher.diintech.com",
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
@@ -433,8 +433,8 @@ const Reels = React.memo(function Reels() {
               type="button"
               onClick={() => setNewReel({ ...newReel, mode: "youtube" })}
               className={`flex-1 px-3 py-2 rounded-lg border ${newReel.mode === "youtube"
-                  ? "bg-purple-600 text-white border-purple-600"
-                  : "bg-white text-gray-700 border-gray-300"
+                ? "bg-purple-600 text-white border-purple-600"
+                : "bg-white text-gray-700 border-gray-300"
                 }`}
             >
               YouTube Link
@@ -443,8 +443,8 @@ const Reels = React.memo(function Reels() {
               type="button"
               onClick={() => setNewReel({ ...newReel, mode: "upload" })}
               className={`flex-1 px-3 py-2 rounded-lg border ${newReel.mode === "upload"
-                  ? "bg-purple-600 text-white border-purple-600"
-                  : "bg-white text-gray-700 border-gray-300"
+                ? "bg-purple-600 text-white border-purple-600"
+                : "bg-white text-gray-700 border-gray-300"
                 }`}
             >
               Upload Video
@@ -764,8 +764,8 @@ const Reels = React.memo(function Reels() {
                                         toggleEnabled(reel);
                                       }}
                                       className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center space-x-2 ${reel.isEnabled === true
-                                          ? "text-red-800 hover:bg-red-50"
-                                          : "text-green-800 hover:bg-green-50"
+                                        ? "text-red-800 hover:bg-red-50"
+                                        : "text-green-800 hover:bg-green-50"
                                         }`}
                                     >
                                       <ToggleRight className="w-4 h-4" />
@@ -781,8 +781,8 @@ const Reels = React.memo(function Reels() {
                                         togglePopular(reel);
                                       }}
                                       className={`w-full px-3 py-2 text-left text-sm hover:bg-gray-100 flex items-center space-x-2 ${reel.isPopular === true
-                                          ? "text-pink-800 hover:bg-pink-50"
-                                          : "text-purple-800 hover:bg-purple-50"
+                                        ? "text-pink-800 hover:bg-pink-50"
+                                        : "text-purple-800 hover:bg-purple-50"
                                         }`}
                                     >
                                       <Heart className="w-4 h-4" />

@@ -30,7 +30,7 @@ export default function KycDetail() {
       const token = Cookies.get('admintoken');
       if (!token) throw new Error('Not authenticated');
 
-      const res = await fetch(`http://localhost:4000/api/admin/${endpointForTab(tab)}`, {
+      const res = await fetch(`https://ailisher.diintech.com/api/admin/${endpointForTab(tab)}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Failed to fetch KYC list');
@@ -61,7 +61,7 @@ export default function KycDetail() {
       setDetailOpen(true);
       const token = Cookies.get('admintoken');
       if (!token) throw new Error('Not authenticated');
-      const res = await fetch(`http://localhost:4000/api/evaluators/${id}`, {
+      const res = await fetch(`https://ailisher.diintech.com/api/evaluators/${id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Failed to fetch evaluator');
@@ -99,8 +99,8 @@ export default function KycDetail() {
                 key={tab.key}
                 onClick={() => { setActiveTab(tab.key); }}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === tab.key
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
               >
                 {tab.label}
@@ -113,8 +113,8 @@ export default function KycDetail() {
             onClick={() => fetchKycLists(activeTab)}
             disabled={kycLoading}
             className={`inline-flex items-center px-3 py-2 border text-sm rounded-md shadow-sm ${kycLoading
-                ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
-                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+              ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
               }`}
           >
             {kycLoading ? 'Refreshing…' : 'Refresh'}
@@ -166,8 +166,8 @@ export default function KycDetail() {
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">{mobile}</td>
                     <td className="px-4 py-3 whitespace-nowrap text-xs">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full font-medium ${status.toLowerCase() === 'verified' ? 'bg-green-100 text-green-800' :
-                          status.toLowerCase() === 'rejected' ? 'bg-red-100 text-red-800' :
-                            'bg-yellow-100 text-yellow-800'
+                        status.toLowerCase() === 'rejected' ? 'bg-red-100 text-red-800' :
+                          'bg-yellow-100 text-yellow-800'
                         }`}>
                         {status.charAt(0).toUpperCase() + status.slice(1)}
                       </span>

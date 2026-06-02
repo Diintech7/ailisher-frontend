@@ -51,7 +51,7 @@ export default function EvaluatorReview() {
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [activeImage, setActiveImage] = useState(null);
 
-  const API_BASE_URL = 'http://localhost:4000';
+  const API_BASE_URL = 'https://ailisher.diintech.com';
 
   const fetchReviews = async (type, page = 1) => {
     setLoading(prev => ({ ...prev, [type]: true }));
@@ -760,8 +760,8 @@ export default function EvaluatorReview() {
           <button
             onClick={() => handleTabChange('pending')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'pending'
-                ? 'bg-purple-600 text-white'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+              ? 'bg-purple-600 text-white'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
               }`}
           >
             <Clock size={16} />
@@ -770,8 +770,8 @@ export default function EvaluatorReview() {
           <button
             onClick={() => handleTabChange('accepted')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'accepted'
-                ? 'bg-purple-600 text-white'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+              ? 'bg-purple-600 text-white'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
               }`}
           >
             <CheckCircle size={16} />
@@ -780,8 +780,8 @@ export default function EvaluatorReview() {
           <button
             onClick={() => handleTabChange('completed')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center gap-2 ${activeTab === 'completed'
-                ? 'bg-purple-600 text-white'
-                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+              ? 'bg-purple-600 text-white'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
               }`}
           >
             <FileCheck size={16} />

@@ -55,7 +55,7 @@ export default function User() {
         return;
       }
 
-      const response = await fetch('http://localhost:4000/api/client/userprofile', {
+      const response = await fetch('https://ailisher.diintech.com/api/client/userprofile', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

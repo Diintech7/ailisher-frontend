@@ -173,7 +173,7 @@ const VideoModal = ({
       const token = Cookies.get("usertoken")
 
       // Use the new video assets endpoint
-      const endpoint = `http://localhost:4000/api/video-assets/${itemType}/${itemId}/videos?isWorkbook=${isWorkbook}`
+      const endpoint = `https://ailisher.diintech.com/api/video-assets/${itemType}/${itemId}/videos?isWorkbook=${isWorkbook}`
 
       const requestData = {
         title: localVideoData.title,
@@ -255,8 +255,8 @@ const VideoModal = ({
                 type="button"
                 onClick={() => setVideoType("file")}
                 className={`flex items-center px-4 py-2 rounded-md border ${videoType === "file"
-                    ? "bg-indigo-100 border-indigo-300 text-indigo-700"
-                    : "bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100"
+                  ? "bg-indigo-100 border-indigo-300 text-indigo-700"
+                  : "bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100"
                   }`}
               >
                 <Upload size={16} className="mr-2" />
@@ -266,8 +266,8 @@ const VideoModal = ({
                 type="button"
                 onClick={() => setVideoType("youtube")}
                 className={`flex items-center px-4 py-2 rounded-md border ${videoType === "youtube"
-                    ? "bg-red-100 border-red-300 text-red-700"
-                    : "bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100"
+                  ? "bg-red-100 border-red-300 text-red-700"
+                  : "bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100"
                   }`}
               >
                 <Link size={16} className="mr-2" />

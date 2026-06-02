@@ -43,7 +43,7 @@ const AISWBTab = ({ topicId }) => {
         }
 
         // Verify topic access (This is a generic check, might need adjustment if endpoints differ)
-        const response = await fetch(`http://localhost:4000/api/aiswb/topic/${topicId}/sets`, {
+        const response = await fetch(`https://ailisher.diintech.com/api/aiswb/topic/${topicId}/sets`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -147,8 +147,8 @@ const AISWBTab = ({ topicId }) => {
         <button
           onClick={() => setActiveTab('subjective')}
           className={`px-6 py-3 text-lg font-medium transition-colors ${activeTab === 'subjective'
-              ? 'border-b-2 border-indigo-600 text-indigo-600'
-              : 'text-gray-500 hover:text-gray-700'
+            ? 'border-b-2 border-indigo-600 text-indigo-600'
+            : 'text-gray-500 hover:text-gray-700'
             }`}
         >
           Subjective
@@ -156,8 +156,8 @@ const AISWBTab = ({ topicId }) => {
         <button
           onClick={() => setActiveTab('objective')}
           className={`px-6 py-3 text-lg font-medium transition-colors ${activeTab === 'objective'
-              ? 'border-b-2 border-indigo-600 text-indigo-600'
-              : 'text-gray-500 hover:text-gray-700'
+            ? 'border-b-2 border-indigo-600 text-indigo-600'
+            : 'text-gray-500 hover:text-gray-700'
             }`}
         >
           Objective

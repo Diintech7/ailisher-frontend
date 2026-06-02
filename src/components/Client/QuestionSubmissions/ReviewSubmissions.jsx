@@ -103,7 +103,7 @@ const ReviewSubmissions = ({ questionId }) => {
     try {
       if (activeTab === 'review_pending') {
         // Make API call with POST method and log response
-        const response = await axios.post(`http://localhost:4000/api/review/${answerId}/accept`);
+        const response = await axios.post(`https://ailisher.diintech.com/api/review/${answerId}/accept`);
         console.log('Review accept response:', response.data);
 
         if (response.data.success) {
@@ -225,8 +225,8 @@ const ReviewSubmissions = ({ questionId }) => {
           <button
             onClick={() => setActiveTab('review_pending')}
             className={`${activeTab === 'review_pending'
-                ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              ? 'border-indigo-500 text-indigo-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
           >
             Pending Review
@@ -234,8 +234,8 @@ const ReviewSubmissions = ({ questionId }) => {
           <button
             onClick={() => setActiveTab('review_accepted')}
             className={`${activeTab === 'review_accepted'
-                ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              ? 'border-indigo-500 text-indigo-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
           >
             Accepted
@@ -243,8 +243,8 @@ const ReviewSubmissions = ({ questionId }) => {
           <button
             onClick={() => setActiveTab('review_completed')}
             className={`${activeTab === 'review_completed'
-                ? 'border-indigo-500 text-indigo-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              ? 'border-indigo-500 text-indigo-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
               } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
           >
             Completed

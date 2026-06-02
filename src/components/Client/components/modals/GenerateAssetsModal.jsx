@@ -60,7 +60,7 @@ const GenerateAssetsModal = ({ isOpen, onClose, itemType, itemId, isWorkbook, bo
         return
       }
 
-      const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:4000/api'
+      const baseUrl = process.env.REACT_APP_API_URL || 'https://ailisher.diintech.com/api'
       let endpoint = ''
 
       if (itemType === 'book') {
@@ -191,7 +191,7 @@ const GenerateAssetsModal = ({ isOpen, onClose, itemType, itemId, isWorkbook, bo
       }
 
       const content = generatedContent.raw
-      const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:4000/api'
+      const baseUrl = process.env.REACT_APP_API_URL || 'https://ailisher.diintech.com/api'
 
       // Calculate total items to save
       let totalItems = 0
@@ -473,8 +473,8 @@ const GenerateAssetsModal = ({ isOpen, onClose, itemType, itemId, isWorkbook, bo
           <div className="flex space-x-4">
             <button
               className={`px-4 py-2 rounded-md ${dataSourceType === 'with'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               onClick={() => setDataSourceType('with')}
             >
@@ -482,8 +482,8 @@ const GenerateAssetsModal = ({ isOpen, onClose, itemType, itemId, isWorkbook, bo
             </button>
             <button
               className={`px-4 py-2 rounded-md ${dataSourceType === 'without'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               onClick={() => setDataSourceType('without')}
             >
@@ -499,15 +499,15 @@ const GenerateAssetsModal = ({ isOpen, onClose, itemType, itemId, isWorkbook, bo
                   <div
                     key={data._id}
                     className={`p-4 border rounded-lg cursor-pointer ${selectedData.includes(data._id)
-                        ? 'border-indigo-500 bg-indigo-50'
-                        : 'border-gray-200 hover:border-indigo-300'
+                      ? 'border-indigo-500 bg-indigo-50'
+                      : 'border-gray-200 hover:border-indigo-300'
                       }`}
                     onClick={() => handleDataSelect(data._id)}
                   >
                     <div className="flex items-start">
                       <div className={`w-5 h-5 rounded-full border flex items-center justify-center mr-3 mt-1 ${selectedData.includes(data._id)
-                          ? 'border-indigo-500 bg-indigo-500'
-                          : 'border-gray-300'
+                        ? 'border-indigo-500 bg-indigo-500'
+                        : 'border-gray-300'
                         }`}>
                         {selectedData.includes(data._id) && (
                           <Check size={14} className="text-white" />

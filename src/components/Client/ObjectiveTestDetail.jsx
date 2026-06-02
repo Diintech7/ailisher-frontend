@@ -486,7 +486,7 @@ export default function ObjectiveTestDetail() {
         solution: formData.solution,
       };
       const res = await fetch(
-        `http://localhost:4000/api/objectivetest-questions/${testId}`,
+        `https://ailisher.diintech.com/api/objectivetest-questions/${testId}`,
         {
           method: "POST",
           headers: {
@@ -534,7 +534,7 @@ export default function ObjectiveTestDetail() {
         solution: formData.solution,
       };
       const res = await fetch(
-        `http://localhost:4000/api/objectivetest-questions/${questionId}`,
+        `https://ailisher.diintech.com/api/objectivetest-questions/${questionId}`,
         {
           method: "PUT",
           headers: {
@@ -795,8 +795,8 @@ export default function ObjectiveTestDetail() {
                       key={level}
                       onClick={() => setActiveLevel(level)}
                       className={`flex-1 py-4 px-6 text-sm font-medium border-b-2 transition-colors ${activeLevel === level
-                          ? "border-blue-500 text-blue-600 bg-blue-50"
-                          : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                        ? "border-blue-500 text-blue-600 bg-blue-50"
+                        : "border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50"
                         }`}
                     >
                       {level === "L1"
@@ -960,9 +960,9 @@ export default function ObjectiveTestDetail() {
                                           <div className="flex items-center space-x-3">
                                             <span
                                               className={`text-sm font-bold px-2 py-1 rounded-full ${optIndex ===
-                                                  question.correctAnswer
-                                                  ? "bg-green-600 text-white"
-                                                  : "bg-gray-100 text-gray-500"
+                                                question.correctAnswer
+                                                ? "bg-green-600 text-white"
+                                                : "bg-gray-100 text-gray-500"
                                                 }`}
                                             >
                                               {String.fromCharCode(
@@ -971,9 +971,9 @@ export default function ObjectiveTestDetail() {
                                             </span>
                                             <span
                                               className={`font-medium ${optIndex ===
-                                                  question.correctAnswer
-                                                  ? "text-green-900"
-                                                  : "text-gray-900"
+                                                question.correctAnswer
+                                                ? "text-green-900"
+                                                : "text-gray-900"
                                                 }`}
                                             >
                                               {option}
@@ -1112,8 +1112,8 @@ export default function ObjectiveTestDetail() {
                               key={bank._id}
                               onClick={() => setSelectedBankId(bank._id)}
                               className={`min-w-[280px] text-left rounded-xl border ${isSelected
-                                  ? "border-indigo-500 ring-2 ring-indigo-200"
-                                  : "border-gray-200"
+                                ? "border-indigo-500 ring-2 ring-indigo-200"
+                                : "border-gray-200"
                                 } hover:border-gray-300 transition overflow-hidden bg-white shadow-sm`}
                             >
                               <div className="flex">

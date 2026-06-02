@@ -4,7 +4,7 @@ import { toast } from "react-toastify"
 import axios from "axios"
 
 const api = axios.create({
-  baseURL: "http://localhost:4000/api",
+  baseURL: "https://ailisher.diintech.com/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -2226,7 +2226,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
         return
       }
       try {
-        const url = `http://localhost:4000/api/clients/CLI677117YN7N/mobile/userAnswers/questions/${submission.questionId?._id || submission.question?._id}/answers/${submission._id}/evaluation-update`
+        const url = `https://ailisher.diintech.com/api/clients/CLI677117YN7N/mobile/userAnswers/questions/${submission.questionId?._id || submission.question?._id}/answers/${submission._id}/evaluation-update`
         const feedbackValue = (typeof stateEval.feedback === 'string' && stateEval.feedback.trim() !== '')
           ? stateEval.feedback
           : undefined
@@ -2597,7 +2597,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
     }
     try {
       // Use local or production endpoint as needed
-      const url = `http://localhost:4000/api/clients/CLI677117YN7N/mobile/userAnswers/questions/${submission.questionId?._id || submission.question?._id}/answers/${submission._id}/evaluation-update`;
+      const url = `https://ailisher.diintech.com/api/clients/CLI677117YN7N/mobile/userAnswers/questions/${submission.questionId?._id || submission.question?._id}/answers/${submission._id}/evaluation-update`;
       // Ensure feedback is a string or omitted if empty/null/undefined
       const feedbackValue = (typeof editEvaluation.feedback === 'string' && editEvaluation.feedback.trim() !== '')
         ? editEvaluation.feedback
@@ -2635,7 +2635,7 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
       if (!submission?.question?._id) return;
       try {
         const res = await axios.get(
-          `http://localhost:4000/api/aiswb/questions/${submission.question._id}`
+          `https://ailisher.diintech.com/api/aiswb/questions/${submission.question._id}`
         );
         if (res.data && res.data.data && res.data.data.modalAnswer) {
           setModalAnswer(res.data.data.modalAnswer);
@@ -2712,8 +2712,8 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                     <button
                       onClick={() => setShowHindiEvaluation(false)}
                       className={`px-3 py-1 text-xs rounded-md transition-colors ${!showHindiEvaluation
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-white text-blue-600 border border-blue-300 hover:bg-blue-50'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-blue-600 border border-blue-300 hover:bg-blue-50'
                         }`}
                     >
                       English
@@ -2721,8 +2721,8 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                     <button
                       onClick={() => setShowHindiEvaluation(true)}
                       className={`px-3 py-1 text-xs rounded-md transition-colors ${showHindiEvaluation
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-white text-blue-600 border border-blue-300 hover:bg-blue-50'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white text-blue-600 border border-blue-300 hover:bg-blue-50'
                         }`}
                     >
                       हिंदी
@@ -2946,8 +2946,8 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                 onClick={handleAutoAnnotate}
                 disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
                 className={`px-3 py-2 rounded border ${isFabricLoading || !isFabricLoaded || !canvasReady
-                    ? "bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200"
-                    : "bg-emerald-600 text-white hover:bg-emerald-700 border-emerald-600"
+                  ? "bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200"
+                  : "bg-emerald-600 text-white hover:bg-emerald-700 border-emerald-600"
                   }`}
                 title="Auto Annotate"
               >
@@ -2981,8 +2981,8 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   onClick={handleRemoveReferenceImage}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
                   className={`px-3 py-2 rounded border ${isFabricLoading || !isFabricLoaded || !canvasReady
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200"
-                      : "bg-white text-red-600 hover:bg-red-50 border-red-300"
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed border-gray-200"
+                    : "bg-white text-red-600 hover:bg-red-50 border-red-300"
                     }`}
                   title="Remove Reference Image"
                 >
@@ -2994,10 +2994,10 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   onClick={() => handleToolSelect("pen")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
                   className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : activeTool === "pen"
-                        ? "bg-blue-500 text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-100"
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : activeTool === "pen"
+                      ? "bg-blue-500 text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-100"
                     }`}
                   title="Pen"
                 >
@@ -3015,10 +3015,10 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   onClick={() => handleToolSelect("text")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
                   className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : activeTool === "text"
-                        ? "bg-blue-500 text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-100"
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : activeTool === "text"
+                      ? "bg-blue-500 text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-100"
                     }`}
                   title="Text"
                 >
@@ -3038,10 +3038,10 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                     onClick={() => handleToolSelect("comment")}
                     disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
                     className={`p-2 rounded ${activeTool === "comment"
-                        ? "bg-blue-500 text-white"
-                        : isFabricLoading || !isFabricLoaded || !canvasReady
-                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                          : "bg-white text-gray-700 hover:bg-gray-100"
+                      ? "bg-blue-500 text-white"
+                      : isFabricLoading || !isFabricLoaded || !canvasReady
+                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                        : "bg-white text-gray-700 hover:bg-gray-100"
                       }`}
                     title="Comment"
                   >
@@ -3137,10 +3137,10 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   onClick={() => handleToolSelect("select")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
                   className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : activeTool === "select"
-                        ? "bg-blue-500 text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-100"
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : activeTool === "select"
+                      ? "bg-blue-500 text-white"
+                      : "bg-white text-gray-700 hover:bg-gray-100"
                     }`}
                   title="Select"
                 >
@@ -3158,8 +3158,8 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   onClick={() => handleToolSelect("clear")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
                   className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : "bg-white text-red-600 hover:bg-red-50"
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-white text-red-600 hover:bg-red-50"
                     }`}
                   title="Clear All"
                 >
@@ -3180,8 +3180,8 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   onClick={handleUndo}
                   disabled={!canUndo || isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady}
                   className={`p-2 rounded ${!canUndo || isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : "bg-white text-gray-700 hover:bg-gray-100"
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-white text-gray-700 hover:bg-gray-100"
                     }`}
                   title="Undo"
                 >
@@ -3198,8 +3198,8 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   onClick={handleRedo}
                   disabled={!canRedo || isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady}
                   className={`p-2 rounded ${!canRedo || isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : "bg-white text-gray-700 hover:bg-gray-100"
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-white text-gray-700 hover:bg-gray-100"
                     }`}
                   title="Redo"
                 >
@@ -3220,8 +3220,8 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   onClick={() => handleZoom("out")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
                   className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : "bg-white text-gray-700 hover:bg-gray-100"
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-white text-gray-700 hover:bg-gray-100"
                     }`}
                   title="Zoom Out"
                 >
@@ -3234,8 +3234,8 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   onClick={() => handleZoom("in")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
                   className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : "bg-white text-gray-700 hover:bg-gray-100"
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-white text-gray-700 hover:bg-gray-100"
                     }`}
                   title="Zoom In"
                 >
@@ -3247,8 +3247,8 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   onClick={() => handleZoom("reset")}
                   disabled={isFabricLoading || !isFabricLoaded || !canvasReady}
                   className={`p-2 rounded ${isFabricLoading || !isFabricLoaded || !canvasReady
-                      ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      : "bg-white text-gray-700 hover:bg-gray-100"
+                    ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    : "bg-white text-gray-700 hover:bg-gray-100"
                     }`}
                   title="Reset Zoom"
                 >
@@ -3271,8 +3271,8 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                   onChange={(e) => handleColorChange(e.target.value)}
                   disabled={isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady}
                   className={`w-8 h-8 rounded ${isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady
-                      ? "cursor-not-allowed opacity-50"
-                      : "cursor-pointer"
+                    ? "cursor-not-allowed opacity-50"
+                    : "cursor-pointer"
                     }`}
                   title="Color"
                 />
@@ -3285,8 +3285,8 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                     onChange={(e) => handleBrushSizeChange(Number.parseInt(e.target.value))}
                     disabled={isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady}
                     className={`w-24 ${isFabricLoading || !isFabricLoaded || !isComponentMounted || !canvasReady
-                        ? "cursor-not-allowed opacity-50"
-                        : ""
+                      ? "cursor-not-allowed opacity-50"
+                      : ""
                       }`}
                     title="Brush Size"
                   />
@@ -3395,8 +3395,8 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                       <button
                         onClick={() => setShowHindiEvaluation(false)}
                         className={`px-3 py-1 text-xs rounded-md transition-colors ${!showHindiEvaluation
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-white text-blue-600 border border-blue-300 hover:bg-blue-50'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-white text-blue-600 border border-blue-300 hover:bg-blue-50'
                           }`}
                       >
                         English
@@ -3404,8 +3404,8 @@ const AnnotateAnswer = ({ submission, onClose, onSave }) => {
                       <button
                         onClick={() => setShowHindiEvaluation(true)}
                         className={`px-3 py-1 text-xs rounded-md transition-colors ${showHindiEvaluation
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-white text-blue-600 border border-blue-300 hover:bg-blue-50'
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-white text-blue-600 border border-blue-300 hover:bg-blue-50'
                           }`}
                       >
                         हिंदी

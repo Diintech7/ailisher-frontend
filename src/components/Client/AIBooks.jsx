@@ -308,8 +308,8 @@ const BookItem = ({
             <button
               onClick={handleToggleHighlight}
               className={`p-1 rounded transition-colors ${book.isHighlighted
-                  ? "text-yellow-600 bg-yellow-100 hover:bg-yellow-200"
-                  : "text-gray-400 hover:text-yellow-600 hover:bg-yellow-50"
+                ? "text-yellow-600 bg-yellow-100 hover:bg-yellow-200"
+                : "text-gray-400 hover:text-yellow-600 hover:bg-yellow-50"
                 }`}
               title={
                 book.isHighlighted
@@ -324,8 +324,8 @@ const BookItem = ({
             <button
               onClick={handleToggleTrending}
               className={`p-1 rounded transition-colors ${book.isTrending
-                  ? "text-red-600 bg-red-100 hover:bg-red-200"
-                  : "text-gray-400 hover:text-red-600 hover:bg-red-50"
+                ? "text-red-600 bg-red-100 hover:bg-red-200"
+                : "text-gray-400 hover:text-red-600 hover:bg-red-50"
                 }`}
               title={
                 book.isTrending ? "Remove from trending" : "Add to trending"
@@ -1065,7 +1065,7 @@ const AddBookModal = ({
         try {
           // Get presigned URL
           const uploadUrlResponse = await fetch(
-            "http://localhost:4000/api/books/cover-upload-url",
+            "https://ailisher.diintech.com/api/books/cover-upload-url",
             {
               method: "POST",
               headers: {
@@ -1174,7 +1174,7 @@ const AddBookModal = ({
 
       console.log("Sending book data:", bookData);
 
-      const response = await fetch("http://localhost:4000/api/books", {
+      const response = await fetch("https://ailisher.diintech.com/api/books", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -1595,8 +1595,8 @@ const AddBookModal = ({
                   value={formData.ratingCount}
                   onChange={handleInputChange}
                   className={`w-full px-3 py-2 border ${formErrors.ratingCount
-                      ? "border-red-500"
-                      : "border-gray-300"
+                    ? "border-red-500"
+                    : "border-gray-300"
                     } rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                   min="0"
                   placeholder="Enter number of ratings"
@@ -2294,7 +2294,7 @@ const EditBookModal = ({
       }
 
       const response = await fetch(
-        `http://localhost:4000/api/books/${book._id}`,
+        `https://ailisher.diintech.com/api/books/${book._id}`,
         {
           method: "PUT",
           headers: {
@@ -2608,8 +2608,8 @@ const EditBookModal = ({
                   value={formData.ratingCount}
                   onChange={handleInputChange}
                   className={`w-full px-3 py-2 border ${formErrors.ratingCount
-                      ? "border-red-500"
-                      : "border-gray-300"
+                    ? "border-red-500"
+                    : "border-gray-300"
                     } rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500`}
                   min="0"
                   placeholder="Enter number of ratings"
@@ -2965,7 +2965,7 @@ const AIBooks = () => {
 
       // Fetch categories from backend
       const categoriesResponse = await fetch(
-        "http://localhost:4000/api/categories",
+        "https://ailisher.diintech.com/api/categories",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -3518,8 +3518,8 @@ const AIBooks = () => {
                     <button
                       onClick={() => toggleSubCategory(mainCategory, null)}
                       className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${!selectedSubCategories[mainCategory]
-                          ? "bg-indigo-600 text-white"
-                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        ? "bg-indigo-600 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                         }`}
                     >
                       All {mainCategory}
@@ -3531,8 +3531,8 @@ const AIBooks = () => {
                           toggleSubCategory(mainCategory, subCategory)
                         }
                         className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedSubCategories[mainCategory] === subCategory
-                            ? "bg-indigo-600 text-white"
-                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          ? "bg-indigo-600 text-white"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                           }`}
                       >
                         {subCategory}
