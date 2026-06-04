@@ -173,7 +173,7 @@ const VideoModal = ({
       const token = Cookies.get("usertoken")
 
       // Use the new video assets endpoint
-      const endpoint = `http://localhost:4000/api/video-assets/${itemType}/${itemId}/videos?isWorkbook=${isWorkbook}`
+      const endpoint = `https://ailisher.diintech.com/api/video-assets/${itemType}/${itemId}/videos?isWorkbook=${isWorkbook}`
 
       const requestData = {
         title: localVideoData.title,

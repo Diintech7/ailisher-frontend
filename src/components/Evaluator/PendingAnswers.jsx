@@ -73,7 +73,7 @@ export default function PendingAnswers() {
       const token = Cookies.get('evaluatortoken'); // Assuming you store evaluator token
       console.log(token)
       const response = await axios.put(
-        `http://localhost:4000/api/answerapis/answers/${answerId}/accept`,
+        `https://ailisher.diintech.com/api/answerapis/answers/${answerId}/accept`,
         {},
         {
           headers: {

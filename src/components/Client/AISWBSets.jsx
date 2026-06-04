@@ -45,7 +45,7 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
         return;
       }
 
-      const response = await fetch(`http://localhost:4000/api/aiswb/topic/${topicId}/sets`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/aiswb/topic/${topicId}/sets`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -93,7 +93,7 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
         return;
       }
 
-      const response = await fetch(`http://localhost:4000/api/aiswb/topic/${topicId}/sets`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/aiswb/topic/${topicId}/sets`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -137,7 +137,7 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
         toast.error('Authentication required');
         return;
       }
-      const response = await fetch(`http://localhost:4000/api/aiswb/topic/${topicId}/sets/${setToDelete}`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/aiswb/topic/${topicId}/sets/${setToDelete}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -196,7 +196,7 @@ const AISWBSets = ({ topicId, onSetSelect }) => {
         return;
       }
 
-      const response = await fetch(`http://localhost:4000/api/aiswb/topic/${topicId}/sets/${editingSet.id}`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/aiswb/topic/${topicId}/sets/${editingSet.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

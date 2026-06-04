@@ -95,13 +95,13 @@ const DataStore = ({ type }) => {
 
   const getApiEndpoint = () => {
     if (type === "book" && bookId) {
-      return `http://localhost:4000/api/datastores/book/${bookId}`
+      return `https://ailisher.diintech.com/api/datastores/book/${bookId}`
     } else if (type === "chapter" && bookId && chapterId) {
-      return `http://localhost:4000/api/datastores/chapter/${chapterId}`
+      return `https://ailisher.diintech.com/api/datastores/chapter/${chapterId}`
     } else if (type === "topic" && bookId && chapterId && topicId) {
-      return `http://localhost:4000/api/datastores/topic/${topicId}`
+      return `https://ailisher.diintech.com/api/datastores/topic/${topicId}`
     } else if (type === "subtopic" && bookId && chapterId && topicId && subtopicId) {
-      return `http://localhost:4000/api/datastores/subtopic/${subtopicId}`
+      return `https://ailisher.diintech.com/api/datastores/subtopic/${subtopicId}`
     }
     return null
   }
@@ -111,7 +111,7 @@ const DataStore = ({ type }) => {
       const token = Cookies.get("usertoken")
       if (!token) return
 
-      const response = await fetch(`http://localhost:4000/api/datastores/update-embedding-status/${itemId}`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/datastores/update-embedding-status/${itemId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -145,7 +145,7 @@ const DataStore = ({ type }) => {
 
       const itemIds = s3Items.map(item => item._id)
 
-      const response = await fetch(`http://localhost:4000/api/datastores/refresh-s3-urls`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/datastores/refresh-s3-urls`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -254,7 +254,7 @@ const DataStore = ({ type }) => {
 
     const statusPromises = pdfItems.map(async (item) => {
       try {
-        const response = await fetch(`http://localhost:4000/api/enhanced-pdf-embedding/check-embeddings/${item._id}`, {
+        const response = await fetch(`https://ailisher.diintech.com/api/enhanced-pdf-embedding/check-embeddings/${item._id}`, {
           headers: {
             ...(token && { Authorization: `Bearer ${token}` }),
           },
@@ -263,7 +263,7 @@ const DataStore = ({ type }) => {
 
         let healthData = { success: false, status: { chatAvailable: false } }
         try {
-          const healthResponse = await fetch(`http://localhost:4000/api/enhanced-pdf-chat/chat-health/${item._id}`, {
+          const healthResponse = await fetch(`https://ailisher.diintech.com/api/enhanced-pdf-chat/chat-health/${item._id}`, {
             headers: {
               ...(token && { Authorization: `Bearer ${token}` }),
             },
@@ -311,7 +311,7 @@ const DataStore = ({ type }) => {
     const token = Cookies.get("usertoken")
 
     try {
-      const response = await fetch(`http://localhost:4000/api/enhanced-pdf-embedding/check-embeddings/${itemId}`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/enhanced-pdf-embedding/check-embeddings/${itemId}`, {
         headers: {
           ...(token && { Authorization: `Bearer ${token}` }),
         },
@@ -320,7 +320,7 @@ const DataStore = ({ type }) => {
 
       let healthData = { success: false, status: { chatAvailable: false } }
       try {
-        const healthResponse = await fetch(`http://localhost:4000/api/enhanced-pdf-chat/chat-health/${itemId}`, {
+        const healthResponse = await fetch(`https://ailisher.diintech.com/api/enhanced-pdf-chat/chat-health/${itemId}`, {
           headers: {
             ...(token && { Authorization: `Bearer ${token}` }),
           },
@@ -356,7 +356,7 @@ const DataStore = ({ type }) => {
     setAIGuidelinesLoading(true)
     try {
       const token = Cookies.get('usertoken')
-      const response = await fetch(`http://localhost:4000/api/aiguidelines/${bookId}`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/aiguidelines/${bookId}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       })
       if (response.ok) {
@@ -378,7 +378,7 @@ const DataStore = ({ type }) => {
     try {
       const token = Cookies.get('usertoken')
       console.log(aiGuidelinesForm)
-      const response = await fetch(`http://localhost:4000/api/aiguidelines/${bookId}`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/aiguidelines/${bookId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -533,7 +533,7 @@ const DataStore = ({ type }) => {
       if (uploadType === "file") {
         const uploadPromises = selectedFiles.map(async (file) => {
           // Get S3 upload URL
-          const uploadUrlResponse = await fetch(`http://localhost:4000/api/datastores/upload-s3`, {
+          const uploadUrlResponse = await fetch(`https://ailisher.diintech.com/api/datastores/upload-s3`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -688,7 +688,7 @@ const DataStore = ({ type }) => {
     }
 
     try {
-      const response = await fetch(`http://localhost:4000/api/enhanced-pdf-embedding/create-embeddings/${itemId}`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/enhanced-pdf-embedding/create-embeddings/${itemId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -816,7 +816,7 @@ const DataStore = ({ type }) => {
     try {
       let response
       if (currentChatItem._id === "knowledge-base") {
-        response = await fetch(`http://localhost:4000/api/enhanced-pdf-chat/chat-book-knowledge-base/${bookId}`, {
+        response = await fetch(`https://ailisher.diintech.com/api/enhanced-pdf-chat/chat-book-knowledge-base/${bookId}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -827,7 +827,7 @@ const DataStore = ({ type }) => {
           }),
         })
       } else {
-        response = await fetch(`http://localhost:4000/api/enhanced-pdf-chat/chat/${currentChatItem._id}`, {
+        response = await fetch(`https://ailisher.diintech.com/api/enhanced-pdf-chat/chat/${currentChatItem._id}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

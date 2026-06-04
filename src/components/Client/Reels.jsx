@@ -107,7 +107,7 @@ const Reels = React.memo(function Reels() {
   };
 
   const axiosConfig = {
-    baseURL: "http://localhost:4000",
+    baseURL: "https://ailisher.diintech.com",
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",

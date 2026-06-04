@@ -42,7 +42,7 @@ export default function ImageGenerator() {
   const [lightboxUrl, setLightboxUrl] = useState('')
 
   const axiosConfig = {
-    baseURL: 'http://localhost:4000',
+    baseURL: 'https://ailisher.diintech.com',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${Cookies.get('usertoken')}`
