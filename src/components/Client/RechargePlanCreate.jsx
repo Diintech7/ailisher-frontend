@@ -8,7 +8,8 @@ const CATEGORY_OPTIONS = ['UPSC', 'BPSC', 'UPPCS','Credit-Recharge','Trial','Oth
 const TYPE_TABS = [
   { value: 'book', label: 'AIBooks' },
   { value: 'workbook', label: 'AIWorkbooks' },
-  { value: 'test', label: 'AITtests' }
+  { value: 'test', label: 'AITtests' },
+  { value: 'classroom', label: 'AIClassrooms' }
 ];
 
 const initialPlan = {
@@ -40,9 +41,10 @@ export default function RechargePlanCreate() {
   const [filterCategory, setFilterCategory] = useState('All');
   const [filterSubCategory, setFilterSubCategory] = useState('All');
   const [loading, setLoading] = useState(false);
-  const [data, setData] = useState({ book: [], workbook: [], testObjective: [], testSubjective: [] });
-  const [selected, setSelected] = useState({ book: new Set(), workbook: new Set(), testObjective: new Set(), testSubjective: new Set() });
+  const [data, setData] = useState({ book: [], workbook: [], testObjective: [], testSubjective: [], classroomExam: [], classroomSubject: [] });
+  const [selected, setSelected] = useState({ book: new Set(), workbook: new Set(), testObjective: new Set(), testSubjective: new Set(), classroomExam: new Set(), classroomSubject: new Set() });
   const [testSubTab, setTestSubTab] = useState('objective'); // 'objective' | 'subjective'
+  const [classSubTab, setClassSubTab] = useState('exam'); // 'exam' | 'subject'
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const navigate = useNavigate();
@@ -125,6 +127,36 @@ export default function RechargePlanCreate() {
         const objective = objArr.map(normalizeItem);
         const subjective = subjArr.map(normalizeItem);
         setData((prev) => ({ ...prev, testObjective: objective, testSubjective: subjective }));
+      } else if (tab === 'classroom') {
+        const res = await fetch(`${API_BASE_URL}/api/classroom-exams?syncedOnly=true`, { headers: authHeaders });
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.message || 'Failed to load classroom exams');
+        const arr = Array.isArray(body.exams) ? body.exams : [];
+        
+        const exams = arr.map(x => ({
+          id: x.exam_id,
+          name: x.name,
+          image: x.image_url || '',
+          category: x.category || 'General',
+          subCategory: 'Exam'
+        }));
+        
+        const subjects = [];
+        arr.forEach(exam => {
+          (exam.tree || []).forEach(paper => {
+            (paper.subjects || []).forEach(sub => {
+              subjects.push({
+                id: sub.subject_id,
+                name: `${sub.name} (${exam.name})`,
+                image: exam.image_url || '',
+                category: exam.category || 'General',
+                subCategory: 'Subject'
+              });
+            });
+          });
+        });
+        
+        setData((prev) => ({ ...prev, classroomExam: exams, classroomSubject: subjects }));
       }
     } catch (e) {
       setError(e.message);
@@ -164,7 +196,12 @@ export default function RechargePlanCreate() {
   };
 
   const visibleList = (() => {
-    const currentKey = activeTab === 'test' ? (testSubTab === 'objective' ? 'testObjective' : 'testSubjective') : activeTab;
+    let currentKey = activeTab;
+    if (activeTab === 'test') {
+      currentKey = testSubTab === 'objective' ? 'testObjective' : 'testSubjective';
+    } else if (activeTab === 'classroom') {
+      currentKey = classSubTab === 'exam' ? 'classroomExam' : 'classroomSubject';
+    }
     let list = data[currentKey] || [];
     
     // Filter out items that are already in the plan (only in edit mode)
@@ -195,7 +232,12 @@ export default function RechargePlanCreate() {
   })();
 
   function toggleSelect(id) {
-    const currentKey = activeTab === 'test' ? (testSubTab === 'objective' ? 'testObjective' : 'testSubjective') : activeTab;
+    let currentKey = activeTab;
+    if (activeTab === 'test') {
+      currentKey = testSubTab === 'objective' ? 'testObjective' : 'testSubjective';
+    } else if (activeTab === 'classroom') {
+      currentKey = classSubTab === 'exam' ? 'classroomExam' : 'classroomSubject';
+    }
     setSelected((prev) => {
       const next = new Set(prev[currentKey]);
       if (next.has(id)) next.delete(id); else next.add(id);
@@ -204,7 +246,12 @@ export default function RechargePlanCreate() {
   }
 
   function selectAllCurrent() {
-    const currentKey = activeTab === 'test' ? (testSubTab === 'objective' ? 'testObjective' : 'testSubjective') : activeTab;
+    let currentKey = activeTab;
+    if (activeTab === 'test') {
+      currentKey = testSubTab === 'objective' ? 'testObjective' : 'testSubjective';
+    } else if (activeTab === 'classroom') {
+      currentKey = classSubTab === 'exam' ? 'classroomExam' : 'classroomSubject';
+    }
     setSelected((prev) => {
       const next = new Set(prev[currentKey]);
       visibleList.forEach((i) => next.add(i.id));
@@ -213,9 +260,24 @@ export default function RechargePlanCreate() {
   }
 
   function clearSelectedCurrent() {
-    const currentKey = activeTab === 'test' ? (testSubTab === 'objective' ? 'testObjective' : 'testSubjective') : activeTab;
+    let currentKey = activeTab;
+    if (activeTab === 'test') {
+      currentKey = testSubTab === 'objective' ? 'testObjective' : 'testSubjective';
+    } else if (activeTab === 'classroom') {
+      currentKey = classSubTab === 'exam' ? 'classroomExam' : 'classroomSubject';
+    }
     setSelected((prev) => ({ ...prev, [currentKey]: new Set() }));
   }
+
+  const isSelected = (id) => {
+    let currentKey = activeTab;
+    if (activeTab === 'test') {
+      currentKey = testSubTab === 'objective' ? 'testObjective' : 'testSubjective';
+    } else if (activeTab === 'classroom') {
+      currentKey = classSubTab === 'exam' ? 'classroomExam' : 'classroomSubject';
+    }
+    return selected[currentKey]?.has(id) || false;
+  };
 
   async function submitPlan(e) {
     e.preventDefault();
@@ -260,12 +322,14 @@ export default function RechargePlanCreate() {
         navigate('/plans');
       } else {
         const items = [];
-        const keys = ['book', 'workbook', 'testObjective', 'testSubjective'];
+        const keys = ['book', 'workbook', 'testObjective', 'testSubjective', 'classroomExam', 'classroomSubject'];
         const typeMap = {
           book: 'book',
           workbook: 'workbook',
           testObjective: 'objective-test',
-          testSubjective: 'subjective-test'
+          testSubjective: 'subjective-test',
+          classroomExam: 'classroom-exam',
+          classroomSubject: 'classroom-subject'
         };
         for (const key of keys) {
           const map = new Map((data[key] || []).map((i) => [i.id, i.name]));
@@ -307,12 +371,14 @@ export default function RechargePlanCreate() {
   async function addSelectedItemsToPlan() {
     if (!isEdit || !planId) return;
     try {
-      const keys = ['book', 'workbook', 'testObjective', 'testSubjective'];
+      const keys = ['book', 'workbook', 'testObjective', 'testSubjective', 'classroomExam', 'classroomSubject'];
       const typeMap = {
         book: 'book',
         workbook: 'workbook',
         testObjective: 'objective-test',
-        testSubjective: 'subjective-test'
+        testSubjective: 'subjective-test',
+        classroomExam: 'classroom-exam',
+        classroomSubject: 'classroom-subject'
       };
       for (const tab of keys) {
         for (const id of selected[tab]) {
@@ -329,7 +395,7 @@ export default function RechargePlanCreate() {
         }
       }
       // Clear selection and close modal
-      setSelected({ book: new Set(), workbook: new Set(), testObjective: new Set(), testSubjective: new Set() });
+      setSelected({ book: new Set(), workbook: new Set(), testObjective: new Set(), testSubjective: new Set(), classroomExam: new Set(), classroomSubject: new Set() });
       setPickerOpen(false);
     } catch (e) {
       setError(e.message);
@@ -556,9 +622,17 @@ export default function RechargePlanCreate() {
                 }}
               >
                 <option value="All">All Categories</option>
-                {Array.from(new Set((data[activeTab] || []).map((i) => i.category))).map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
+                {(() => {
+                  let currentKey = activeTab;
+                  if (activeTab === 'test') {
+                    currentKey = testSubTab === 'objective' ? 'testObjective' : 'testSubjective';
+                  } else if (activeTab === 'classroom') {
+                    currentKey = classSubTab === 'exam' ? 'classroomExam' : 'classroomSubject';
+                  }
+                  return Array.from(new Set((data[currentKey] || []).map((i) => i.category))).map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ));
+                })()}
               </select>
               <select 
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
@@ -568,7 +642,12 @@ export default function RechargePlanCreate() {
               >
                 <option value="All">All Subcategories</option>
                 {(() => {
-                  const currentKey = activeTab === 'test' ? (testSubTab === 'objective' ? 'testObjective' : 'testSubjective') : activeTab;
+                  let currentKey = activeTab;
+                  if (activeTab === 'test') {
+                    currentKey = testSubTab === 'objective' ? 'testObjective' : 'testSubjective';
+                  } else if (activeTab === 'classroom') {
+                    currentKey = classSubTab === 'exam' ? 'classroomExam' : 'classroomSubject';
+                  }
                   const filteredItems = filterCategory === 'All' 
                     ? (data[currentKey] || [])
                     : (data[currentKey] || []).filter((i) => String(i.category).toLowerCase() === filterCategory.toLowerCase());
@@ -608,7 +687,10 @@ export default function RechargePlanCreate() {
                   setActiveTab(t.value); 
                   setFilterCategory('All');
                   setFilterSubCategory('All');
-                  if ((data[t.value] || []).length === 0) loadTab(t.value); 
+                  const needsLoad = t.value === 'classroom' 
+                    ? (data.classroomExam.length === 0 && data.classroomSubject.length === 0) 
+                    : ((data[t.value] || []).length === 0);
+                  if (needsLoad) loadTab(t.value); 
                 }}
               >
                 {t.label}
@@ -630,6 +712,7 @@ export default function RechargePlanCreate() {
                         ? 'bg-blue-600 text-white' 
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`} 
+                    type="button"
                     onClick={() => setTestSubTab('objective')}
                   >
                     Objective Tests
@@ -640,9 +723,36 @@ export default function RechargePlanCreate() {
                         ? 'bg-blue-600 text-white' 
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`} 
+                    type="button"
                     onClick={() => setTestSubTab('subjective')}
                   >
                     Subjective Tests
+                  </button>
+                </div>
+              )}
+              {activeTab === 'classroom' && (
+                <div className="mb-6 flex gap-2">
+                  <button 
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      classSubTab === 'exam' 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`} 
+                    type="button"
+                    onClick={() => setClassSubTab('exam')}
+                  >
+                    Classrooms (Exams)
+                  </button>
+                  <button 
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      classSubTab === 'subject' 
+                        ? 'bg-blue-600 text-white' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`} 
+                    type="button"
+                    onClick={() => setClassSubTab('subject')}
+                  >
+                    Classroom Subjects
                   </button>
                 </div>
               )}
@@ -657,7 +767,7 @@ export default function RechargePlanCreate() {
                     <div 
                       key={it.id} 
                       className={`border-2 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-200 cursor-pointer relative ${
-                        (activeTab === 'test' ? (testSubTab === 'objective' ? selected.testObjective.has(it.id) : selected.testSubjective.has(it.id)) : selected[activeTab].has(it.id)) 
+                        isSelected(it.id) 
                           ? 'ring-2 ring-blue-500 border-blue-500 shadow-lg' 
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
@@ -679,11 +789,11 @@ export default function RechargePlanCreate() {
                       </div>
                       <div className="absolute top-3 right-3">
                         <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                          (activeTab === 'test' ? (testSubTab === 'objective' ? selected.testObjective.has(it.id) : selected.testSubjective.has(it.id)) : selected[activeTab].has(it.id))
+                          isSelected(it.id)
                             ? 'bg-blue-600 border-blue-600' 
                             : 'bg-white border-gray-300'
                         }`}>
-                          {(activeTab === 'test' ? (testSubTab === 'objective' ? selected.testObjective.has(it.id) : selected.testSubjective.has(it.id)) : selected[activeTab].has(it.id)) && (
+                          {isSelected(it.id) && (
                             <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
                               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                             </svg>
@@ -696,7 +806,9 @@ export default function RechargePlanCreate() {
               )}
               <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-200">
                 <div className="text-sm text-gray-600">
-                  <span className="font-medium">{selected.book.size + selected.workbook.size + selected.testObjective.size + selected.testSubjective.size}</span> items selected
+                  <span className="font-medium">
+                    {selected.book.size + selected.workbook.size + selected.testObjective.size + selected.testSubjective.size + selected.classroomExam.size + selected.classroomSubject.size}
+                  </span> items selected
                 </div>
                 <div className="flex gap-3">
                   <button 
@@ -800,7 +912,10 @@ export default function RechargePlanCreate() {
                       setActiveTab(t.value); 
                       setFilterCategory('All');
                       setFilterSubCategory('All');
-                      if ((data[t.value] || []).length === 0) loadTab(t.value); 
+                      const needsLoad = t.value === 'classroom' 
+                        ? (data.classroomExam.length === 0 && data.classroomSubject.length === 0) 
+                        : ((data[t.value] || []).length === 0);
+                      if (needsLoad) loadTab(t.value); 
                     }}
                   >
                     {t.label}
@@ -858,7 +973,9 @@ export default function RechargePlanCreate() {
                     })()}
                   </select>
                   <div className="text-sm text-gray-600">
-                    <span className="font-medium">{selected.book.size + selected.workbook.size + selected.testObjective.size + selected.testSubjective.size}</span> selected
+                    <span className="font-medium">
+                      {selected.book.size + selected.workbook.size + selected.testObjective.size + selected.testSubjective.size + selected.classroomExam.size + selected.classroomSubject.size}
+                    </span> selected
                   </div>
                 </div>
               </div>
@@ -878,6 +995,7 @@ export default function RechargePlanCreate() {
                                 ? 'bg-blue-600 text-white' 
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`} 
+                            type="button"
                             onClick={() => setTestSubTab('objective')}
                           >
                             Objective Tests
@@ -888,9 +1006,38 @@ export default function RechargePlanCreate() {
                                 ? 'bg-blue-600 text-white' 
                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                             }`} 
+                            type="button"
                             onClick={() => setTestSubTab('subjective')}
                           >
                             Subjective Tests
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {activeTab === 'classroom' && (
+                      <div className="col-span-full mb-4">
+                        <div className="flex gap-2">
+                          <button 
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                              classSubTab === 'exam' 
+                                ? 'bg-blue-600 text-white' 
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`} 
+                            type="button"
+                            onClick={() => setClassSubTab('exam')}
+                          >
+                            Classrooms (Exams)
+                          </button>
+                          <button 
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                              classSubTab === 'subject' 
+                                ? 'bg-blue-600 text-white' 
+                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                            }`} 
+                            type="button"
+                            onClick={() => setClassSubTab('subject')}
+                          >
+                            Classroom Subjects
                           </button>
                         </div>
                       </div>
@@ -899,7 +1046,7 @@ export default function RechargePlanCreate() {
                       <div 
                         key={it.id} 
                         className={`border-2 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-200 cursor-pointer relative ${
-                          (activeTab === 'test' ? (testSubTab === 'objective' ? selected.testObjective.has(it.id) : selected.testSubjective.has(it.id)) : selected[activeTab].has(it.id)) 
+                          isSelected(it.id) 
                             ? 'ring-2 ring-blue-500 border-blue-500 shadow-lg' 
                             : 'border-gray-200 hover:border-gray-300'
                         }`}
@@ -921,11 +1068,11 @@ export default function RechargePlanCreate() {
                         </div>
                         <div className="absolute top-2 right-2">
                           <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                            (activeTab === 'test' ? (testSubTab === 'objective' ? selected.testObjective.has(it.id) : selected.testSubjective.has(it.id)) : selected[activeTab].has(it.id))
+                            isSelected(it.id)
                               ? 'bg-blue-600 border-blue-600' 
                               : 'bg-white border-gray-300'
                           }`}>
-                            {(activeTab === 'test' ? (testSubTab === 'objective' ? selected.testObjective.has(it.id) : selected.testSubjective.has(it.id)) : selected[activeTab].has(it.id)) && (
+                            {isSelected(it.id) && (
                               <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                               </svg>
@@ -955,7 +1102,7 @@ export default function RechargePlanCreate() {
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors" 
                 onClick={addSelectedItemsToPlan}
               >
-                Add Selected ({selected.book.size + selected.workbook.size + selected.testObjective.size + selected.testSubjective.size})
+                Add Selected ({selected.book.size + selected.workbook.size + selected.testObjective.size + selected.testSubjective.size + selected.classroomExam.size + selected.classroomSubject.size})
               </button>
             </div>
           </div>

@@ -208,8 +208,8 @@ const SidebarLayout = ({ onLogout, userRole }) => {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <div className={`bg-white shadow-lg transition-all duration-300 ease-in-out ${isExpanded ? 'w-64' : 'w-20'} relative`}>
-        <div className="flex items-center p-4 border-b border-gray-200">
+      <div className={`bg-white shadow-lg transition-all duration-300 ease-in-out ${isExpanded ? 'w-64' : 'w-20'} relative flex flex-col h-full`}>
+        <div className="flex items-center p-4 border-b border-gray-200 flex-shrink-0">
           <div 
             className="flex items-center cursor-pointer"
             onClick={() => navigate(userRole === 'admin' ? '/admin/dashboard' : '/dashboard')}
@@ -233,52 +233,56 @@ const SidebarLayout = ({ onLogout, userRole }) => {
 
         <button
           onClick={() => setIsExpanded(!isExpanded)}
-          className="absolute -right-3 top-8 rounded-full p-2 shadow-md transition-colors bg-white hover:bg-gray-100 text-gray-800"
+          className="absolute -right-3 top-8 rounded-full p-2 shadow-md transition-colors bg-white hover:bg-gray-100 text-gray-800 z-10"
         >
           {isExpanded ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
         </button>
 
-        {userRole === 'admin' && (
-          <AdminMenu
-            isExpanded={isExpanded}
-            currentPath={currentPath}
-            handleNavigate={handleNavigate}
-          />
-        )}
+        {/* Scrollable Menu Items Container */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar">
+          {userRole === 'admin' && (
+            <AdminMenu
+              isExpanded={isExpanded}
+              currentPath={currentPath}
+              handleNavigate={handleNavigate}
+            />
+          )}
 
-        {userRole === 'client' && (
-          <ClientMenu
-            isExpanded={isExpanded}
-            currentPath={currentPath}
-            handleNavigate={handleNavigate}
-          />
-        )}
+          {userRole === 'client' && (
+            <ClientMenu
+              isExpanded={isExpanded}
+              currentPath={currentPath}
+              handleNavigate={handleNavigate}
+            />
+          )}
 
-        {userRole === 'user' && (
-          <UserMenu
-            isExpanded={isExpanded}
-            currentPath={currentPath}
-            handleNavigate={handleNavigate}
-          />
-        )}
+          {userRole === 'user' && (
+            <UserMenu
+              isExpanded={isExpanded}
+              currentPath={currentPath}
+              handleNavigate={handleNavigate}
+            />
+          )}
 
-         {userRole === 'evaluator' && (
-          <EvaluatorMenu
-            isExpanded={isExpanded}
-            currentPath={currentPath}
-            handleNavigate={handleNavigate}
-          />
-        )}
+           {userRole === 'evaluator' && (
+            <EvaluatorMenu
+              isExpanded={isExpanded}
+              currentPath={currentPath}
+              handleNavigate={handleNavigate}
+            />
+          )}
 
-        {userRole === 'organization' && (
-          <OrgMenu
-            isExpanded={isExpanded}
-            currentPath={currentPath}
-            handleNavigate={handleNavigate}
-          />
-        )}
+          {userRole === 'organization' && (
+            <OrgMenu
+              isExpanded={isExpanded}
+              currentPath={currentPath}
+              handleNavigate={handleNavigate}
+            />
+          )}
+        </div>
 
-        <div className="absolute bottom-0 w-full border-t border-gray-200 p-4">
+        {/* Settings Container pinned to the bottom */}
+        <div className="border-t border-gray-200 p-4 flex-shrink-0 bg-white">
           <div className="relative">
             <div 
               onClick={handleSettingsClick}
@@ -290,7 +294,7 @@ const SidebarLayout = ({ onLogout, userRole }) => {
               )}
             </div>
             {showSettings && (
-              <div className="absolute bottom-full left-0 w-48 mb-2 py-2 rounded-lg shadow-lg bg-white text-gray-900 border border-gray-200">
+              <div className="absolute bottom-full left-0 w-48 mb-2 py-2 rounded-lg shadow-lg bg-white text-gray-900 border border-gray-200 z-50">
                 <button
                   onClick={handleProfileClick}
                   className="w-full px-4 py-2 text-left flex items-center hover:bg-gray-50 text-gray-700"

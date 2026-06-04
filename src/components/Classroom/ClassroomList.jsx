@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { RefreshCw, BookOpen, Layers, CheckCircle, AlertCircle, ArrowRight, Loader2, Search } from 'lucide-react';
+import { RefreshCw, BookOpen, Layers, CheckCircle, AlertCircle, ArrowRight, Loader2, Search, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { API_BASE_URL } from '../../config';
 
@@ -75,47 +75,59 @@ const ClassroomList = () => {
     return matchesSearch && matchesCategory;
   });
 
+  // Group filtered exams by category for grouped layout style matching AI Courses
+  const groupedExams = filteredExams.reduce((acc, exam) => {
+    const categoryName = exam.category || 'General';
+    if (!acc[categoryName]) {
+      acc[categoryName] = [];
+    }
+    acc[categoryName].push(exam);
+    return acc;
+  }, {});
+
   if (loading) {
     return (
       <div className="flex flex-col justify-center items-center h-96 space-y-4">
-        <Loader2 className="animate-spin text-blue-600" size={48} />
+        <Loader2 className="animate-spin text-indigo-600" size={48} />
         <p className="text-gray-500 font-medium">Loading Classrooms from Partner Portal...</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen p-6">
-      {/* Upper Dashboard Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 space-y-4 md:space-y-0">
+    <div className="container mx-auto px-4 py-8">
+      {/* Upper Dashboard Header (AI Courses style) */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight flex items-center">
-            <BookOpen className="mr-3 text-blue-600" size={32} />
-            Classroom Dashboard
+          <h1 className="text-3xl font-bold text-gray-800 flex items-center">
+            <BookOpen className="mr-3 text-indigo-600" size={32} />
+            AI Classrooms
           </h1>
           <p className="text-gray-600 mt-1">Manage synced classrooms and course guides from partner networks.</p>
         </div>
-        <button
-          onClick={fetchExams}
-          className="flex items-center bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-lg shadow-sm hover:bg-gray-50 transition duration-200"
-        >
-          <RefreshCw className="mr-2 text-gray-500 hover:rotate-180 transition duration-500" size={16} />
-          Refresh List
-        </button>
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={fetchExams}
+            className="flex items-center bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-md shadow-sm hover:bg-gray-50 transition duration-200 text-sm font-medium"
+          >
+            <RefreshCw className="mr-2 text-gray-500 hover:rotate-180 transition duration-500" size={16} />
+            Refresh List
+          </button>
+        </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-8 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 md:space-x-4">
+      <div className="bg-white p-4 rounded-xl border border-gray-200 mb-8 flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0 md:space-x-4 shadow-sm">
         {/* Categories Pills */}
         <div className="flex space-x-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
           {categories.map(cat => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
-              className={`px-4 py-1.5 rounded-full text-sm font-semibold transition duration-150 whitespace-nowrap ${
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition duration-150 whitespace-nowrap ${
                 activeCategory === cat
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               {cat}
@@ -131,12 +143,12 @@ const ClassroomList = () => {
             placeholder="Search classrooms..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
           />
         </div>
       </div>
 
-      {/* Classroom Cards Grid */}
+      {/* Classroom Grouped Grids */}
       {filteredExams.length === 0 ? (
         <div className="bg-white border rounded-xl p-12 text-center shadow-sm">
           <Layers className="mx-auto text-gray-300 mb-4" size={48} />
@@ -144,100 +156,116 @@ const ClassroomList = () => {
           <p className="text-gray-500 mt-1">Try resetting filters or checking internet connectivity.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredExams.map((exam) => (
-            <div
-              key={exam.exam_id}
-              className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md transition-shadow duration-200 relative group"
-            >
-              {/* Cover Image Placeholder */}
-              <div className="h-40 bg-gradient-to-br from-blue-500 to-indigo-600 relative overflow-hidden flex items-center justify-center">
-                {exam.image_url && !exam.image_url.includes('default') ? (
-                  <img
-                    src={exam.image_url.startsWith('http') ? exam.image_url : `${API_BASE_URL}${exam.image_url}`}
-                    alt={exam.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <div className="text-white text-5xl font-black opacity-20 select-none">
-                    {exam.name.substring(0, 2).toUpperCase()}
-                  </div>
-                )}
-                {/* Sync status Tag */}
-                <div className="absolute top-3 right-3">
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-bold flex items-center shadow-sm ${
-                    exam.isSynced
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {exam.isSynced ? (
-                      <>
-                        <CheckCircle className="mr-1 text-green-600" size={12} />
-                        Synced
-                      </>
-                    ) : (
-                      <>
-                        <AlertCircle className="mr-1 text-yellow-600" size={12} />
-                        Sync Required
-                      </>
-                    )}
-                  </span>
-                </div>
-              </div>
-
-              {/* Body */}
-              <div className="p-5 flex-1 flex flex-col justify-between">
-                <div>
-                  <div className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">
-                    {exam.category || 'General'}
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 line-clamp-1">{exam.name}</h3>
-                  <p className="text-gray-500 text-sm mt-2 line-clamp-3">
-                    {exam.description || 'No description provided for this classroom course.'}
-                  </p>
-                </div>
-
-                <div className="mt-6 pt-4 border-t border-gray-50 flex items-center justify-between">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleSync(exam.exam_id);
-                    }}
-                    disabled={syncingId === exam.exam_id}
-                    className={`text-xs font-semibold px-3 py-1.5 rounded-lg border flex items-center transition ${
-                      exam.isSynced
-                        ? 'border-gray-200 hover:bg-gray-50 text-gray-600'
-                        : 'border-blue-200 bg-blue-50 text-blue-600 hover:bg-blue-100'
-                    }`}
-                  >
-                    {syncingId === exam.exam_id ? (
-                      <>
-                        <Loader2 className="animate-spin mr-1" size={12} />
-                        Syncing...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="mr-1" size={12} />
-                        {exam.isSynced ? 'Re-Sync' : 'Import Exam'}
-                      </>
-                    )}
-                  </button>
-                  
-                  <button
-                    onClick={() => handleCardClick(exam)}
-                    className="flex items-center text-sm text-blue-600 font-bold hover:text-blue-800 transition"
-                  >
-                    Enter Classroom
-                    <ArrowRight className="ml-1" size={16} />
-                  </button>
-                </div>
-              </div>
+        Object.entries(groupedExams).map(([categoryName, examsList]) => (
+          <div key={categoryName} className="mb-10">
+            {/* Category Heading (AI Courses Style) */}
+            <div className="border-b border-gray-200 pb-2 mb-4">
+              <h2 className="text-xl font-bold text-gray-800">{categoryName}</h2>
             </div>
-          ))}
-        </div>
+
+            {/* Grid layout (AI Courses style: xl:grid-cols-4) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {examsList.map((exam) => (
+                <div
+                  key={exam.exam_id}
+                  className="relative bg-white rounded-lg border border-gray-200 shadow-sm p-4 flex flex-col cursor-pointer hover:shadow-md transition-shadow duration-200"
+                  onClick={() => handleCardClick(exam)}
+                >
+                  {/* Image container inside padding (AI Courses style) */}
+                  <div className="w-full h-40 rounded-md bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center overflow-hidden mb-3 relative">
+                    {exam.image_url && !exam.image_url.includes('default') ? (
+                      <img
+                        src={exam.image_url.startsWith('http') ? exam.image_url : `${API_BASE_URL}${exam.image_url}`}
+                        alt={exam.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          // Show initials placeholder on error
+                          const ph = e.target.parentNode.querySelector('.fallback-initials');
+                          if (ph) ph.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    
+                    <div 
+                      className="fallback-initials absolute inset-0 flex items-center justify-center text-white text-5xl font-black opacity-20 select-none"
+                      style={{ display: exam.image_url && !exam.image_url.includes('default') ? 'none' : 'flex' }}
+                    >
+                      {exam.name.substring(0, 2).toUpperCase()}
+                    </div>
+
+                    {/* Sync status Tag */}
+                    <div className="absolute top-2 right-2">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold flex items-center shadow-sm ${
+                        exam.isSynced
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {exam.isSynced ? (
+                          <>
+                            <CheckCircle className="mr-1 text-green-600" size={10} />
+                            Synced
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="mr-1 text-yellow-600" size={10} />
+                            Sync Required
+                          </>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Body Content */}
+                  <div className="flex-1 flex flex-col justify-between">
+                    <div>
+                      <div className="text-xs font-bold text-indigo-600 uppercase tracking-wider mb-1">
+                        {exam.category || 'General'}
+                      </div>
+                      <h3 className="text-lg font-bold text-gray-800 line-clamp-1">{exam.name}</h3>
+                      <p className="text-gray-500 text-sm mt-2 line-clamp-2">
+                        {exam.description || 'No description provided for this classroom course.'}
+                      </p>
+                    </div>
+
+                    {/* Clean Footer Divider & Actions (AI Courses style) */}
+                    <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSync(exam.exam_id);
+                        }}
+                        disabled={syncingId === exam.exam_id}
+                        className={`text-xs font-semibold px-2.5 py-1.5 rounded border flex items-center transition ${
+                          exam.isSynced
+                            ? 'border-gray-200 hover:bg-gray-50 text-gray-600'
+                            : 'border-indigo-200 bg-indigo-50 text-indigo-600 hover:bg-indigo-100'
+                        }`}
+                      >
+                        {syncingId === exam.exam_id ? (
+                          <>
+                            <Loader2 className="animate-spin mr-1 animate-duration-1000" size={10} />
+                            Syncing...
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="mr-1" size={10} />
+                            {exam.isSynced ? 'Re-Sync' : 'Import'}
+                          </>
+                        )}
+                      </button>
+                      
+                      <span className="flex items-center text-xs text-indigo-600 font-bold hover:text-indigo-800 transition">
+                        Enter Classroom
+                        <ArrowRight className="ml-1" size={14} />
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))
       )}
     </div>
   );

@@ -13,7 +13,7 @@ const UserMenu = ({ isExpanded, currentPath, handleNavigate }) => {
   ];
 
   return (
-    <div className="mt-6 mb-20">
+    <div className="mt-6 mb-6">
       {menuItems.map((item) => (
         <div
           key={item.path}

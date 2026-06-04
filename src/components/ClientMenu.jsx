@@ -1,5 +1,5 @@
 import React from 'react';
-import { Home, Book, FileText, Database, ClipboardList, Users, Wrench, MessageCircleQuestionIcon, BookCheck, TvMinimalPlay, School} from 'lucide-react';
+import { Home, Book, FileText, Database, ClipboardList, Users, Wrench, MessageCircleQuestionIcon, BookCheck, TvMinimalPlay, School, ShoppingCart} from 'lucide-react';
 
 const ClientMenu = ({ isExpanded, currentPath, handleNavigate }) => {
   const menuItems = [
@@ -8,7 +8,7 @@ const ClientMenu = ({ isExpanded, currentPath, handleNavigate }) => {
     { path: '/ai-workbook', name: 'AI Workbook', icon: <FileText size={20} /> },
     { path: '/ai-tests', name: 'AI Tests', icon: <BookCheck size={20} /> },
     { path: '/ai-courses', name: 'AI Courses', icon: <TvMinimalPlay size={20} /> },
-    { path: '/classroom', name: 'Classroom', icon: <School size={20} /> },
+    { path: '/classroom', name: 'AI Classroom', icon: <School size={20} /> },
     { path: '/question-bank', name: 'Question Bank', icon: <MessageCircleQuestionIcon size={20} /> },
     { path: '/my-question', name: 'My Question', icon: <MessageCircleQuestionIcon size={20} /> },
     { path: '/datastore', name: 'Datastore', icon: <Database size={20} /> },
@@ -18,11 +18,12 @@ const ClientMenu = ({ isExpanded, currentPath, handleNavigate }) => {
     // { path: '/chats', name: 'Chats', icon: <MessageSquare size={20} /> },
     // { path: '/conversations', name: 'Conversations', icon: <MessageCircle size={20} /> },
     { path: '/plans', name: 'Plans', icon: <ClipboardList size={20} /> },
+    { path: '/orders', name: 'Orders', icon: <ShoppingCart size={20} /> },
     { path: '/users', name: 'Users', icon: <Users size={20} /> },
   ];
 
   return (
-    <div className="mt-6 mb-20">
+    <div className="mt-6 mb-6">
       {menuItems.map((item) => (
         <div
           key={item.path}
