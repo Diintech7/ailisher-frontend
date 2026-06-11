@@ -58,6 +58,8 @@ import ClassroomDetail from './components/Classroom/ClassroomDetail';
 import ClassroomSubjectDetail from './components/Classroom/ClassroomSubjectDetail';
 import ClassroomChapterDetail from './components/Classroom/ClassroomChapterDetail';
 import ClassroomSubtopicDetail from './components/Classroom/ClassroomSubtopicDetail';
+import AiPyqs from './components/Classroom/AiPyqs';
+import AiCurrentAffairs from './components/Classroom/AiCurrentAffairs';
 
 const UserApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -249,6 +251,8 @@ const UserApp = () => {
                 <Route path="/classroom/:examId/papers/:paperId/subjects/:subjectId" element={<ClassroomSubjectDetail />} />
                 <Route path="/classroom/:examId/papers/:paperId/subjects/:subjectId/chapters/:chapterId" element={<ClassroomChapterDetail />} />
                 <Route path="/classroom/:examId/papers/:paperId/subjects/:subjectId/chapters/:chapterId/topics/:topicId" element={<ClassroomSubtopicDetail />} />
+                <Route path="/ai-pyqs" element={<AiPyqs />} />
+                <Route path="/ai-current-affairs" element={<AiCurrentAffairs />} />
               </>
             )}
             {userRole === 'user' && (

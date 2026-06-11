@@ -16,6 +16,7 @@ const SidebarLayout = ({ onLogout, userRole }) => {
   const [Email,setEmail] = useState ('');
   const [businessName, setBusinessName] = useState('');
   const [businessLogo, setBusinessLogo] = useState('');
+  const [allowedFeatures, setAllowedFeatures] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -80,6 +81,7 @@ const SidebarLayout = ({ onLogout, userRole }) => {
           console.log("userData",userData)
           setBusinessName(userData.businessName || 'Client Dashboard');
           setBusinessLogo(userData.businessLogo || '');
+          setAllowedFeatures(userData.allowedFeatures || null);
         } else {
           setBusinessName('Ailisher');
         }
@@ -111,13 +113,15 @@ const SidebarLayout = ({ onLogout, userRole }) => {
         if (data.success && data.user) {
           setBusinessName(data.user.businessName || 'Client Dashboard');
           setBusinessLogo(data.user.businessLogo || '');
+          setAllowedFeatures(data.user.allowedFeatures || null);
           
           // Update the user cookie with business info
           const currentUserData = JSON.parse(Cookies.get('user') || '{}');
           const updatedUserData = {
             ...currentUserData,
             businessName: data.user.businessName,
-            businessLogo: data.user.businessLogo
+            businessLogo: data.user.businessLogo,
+            allowedFeatures: data.user.allowedFeatures
           };
           Cookies.set('user', JSON.stringify(updatedUserData), { expires: 7 });
         }
@@ -253,6 +257,7 @@ const SidebarLayout = ({ onLogout, userRole }) => {
               isExpanded={isExpanded}
               currentPath={currentPath}
               handleNavigate={handleNavigate}
+              allowedFeatures={allowedFeatures}
             />
           )}
 

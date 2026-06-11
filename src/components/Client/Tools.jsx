@@ -13,11 +13,24 @@ import {
   Layout,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import Cookies from "js-cookie";
 
 export default function Tools() {
   const [activeTab, setActiveTab] = useState("tools");
 
   const navigate = useNavigate();
+
+  // Retrieve allowedFeatures from user cookie
+  const userCookie = Cookies.get("user");
+  let allowedFeatures = null;
+  if (userCookie) {
+    try {
+      const userData = JSON.parse(userCookie);
+      allowedFeatures = userData.allowedFeatures;
+    } catch (e) {
+      console.error("Error parsing user cookie in Tools page:", e);
+    }
+  }
 
   // Handle navigation when activeTab changes
   useEffect(() => {
@@ -45,6 +58,7 @@ export default function Tools() {
       icon: Megaphone,
       color: "bg-blue-500",
       description: "Create campaigns and track performance",
+      featureKey: "toolMarketing"
     },
     {
       id: "reels",
@@ -52,6 +66,7 @@ export default function Tools() {
       icon: Video,
       color: "bg-purple-500",
       description: "Create and manage video content",
+      featureKey: "toolReels"
     },
     {
       id: "chats",
@@ -59,6 +74,7 @@ export default function Tools() {
       icon: MessageCircle,
       color: "bg-green-500",
       description: "Manage customer conversations",
+      featureKey: "toolChats"
     },
     {
       id: "ai-agents",
@@ -66,6 +82,7 @@ export default function Tools() {
       icon: Bot,
       color: "bg-orange-500",
       description: "Automate customer support",
+      featureKey: "toolAiAgents"
     },
     {
       id: "whatsapp",
@@ -73,6 +90,7 @@ export default function Tools() {
       icon: MessageSquare,
       color: "bg-green-600",
       description: "WhatsApp Business integration",
+      featureKey: "toolWhatsapp"
     },
     {
       id: "telegram",
@@ -80,6 +98,7 @@ export default function Tools() {
       icon: Send,
       color: "bg-blue-600",
       description: "Telegram bot management",
+      featureKey: "toolTelegram"
     },
     {
       id: "image-generator",
@@ -87,6 +106,7 @@ export default function Tools() {
       icon: Image,
       color: "bg-blue-600",
       description: "Image generator",
+      featureKey: "toolImageGenerator"
     },
     {
       id: "category-management",
@@ -94,6 +114,7 @@ export default function Tools() {
       icon: List,
       color: "bg-red-500",
       description: "Category management",
+      featureKey: "toolCategoryManagement"
     },
     {
       id: "notification",
@@ -101,6 +122,7 @@ export default function Tools() {
       icon: Bell,
       color: "bg-pink-500",
       description: "notification",
+      featureKey: "toolNotification"
     },
     {
       id: "app-banners",
@@ -108,28 +130,36 @@ export default function Tools() {
       icon: Layout,
       color: "bg-indigo-600",
       description: "Manage app screen banners",
+      featureKey: "toolAppBanners"
     },
   ];
 
-  const renderToolsGrid = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
-      {tools.map((tool) => (
-        <div
-          key={tool.id}
-          onClick={() => setActiveTab(tool.id)}
-          className={`${tool.color} p-6 rounded-lg cursor-pointer transform transition-all duration-200 hover:scale-105 hover:shadow-lg text-white`}
-        >
-          <div className="flex items-center space-x-4">
-            <tool.icon className="w-8 h-8" />
-            <div>
-              <h3 className="text-xl font-bold">{tool.title}</h3>
-              <p className="text-sm opacity-90">{tool.description}</p>
+  const renderToolsGrid = () => {
+    const filteredTools = tools.filter((tool) => {
+      if (!allowedFeatures) return true;
+      return allowedFeatures[tool.featureKey] !== false;
+    });
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 p-6">
+        {filteredTools.map((tool) => (
+          <div
+            key={tool.id}
+            onClick={() => setActiveTab(tool.id)}
+            className={`${tool.color} p-6 rounded-lg cursor-pointer transform transition-all duration-200 hover:scale-105 hover:shadow-lg text-white`}
+          >
+            <div className="flex items-center space-x-4">
+              <tool.icon className="w-8 h-8" />
+              <div>
+                <h3 className="text-xl font-bold">{tool.title}</h3>
+                <p className="text-sm opacity-90">{tool.description}</p>
+              </div>
             </div>
           </div>
-        </div>
-      ))}
-    </div>
-  );
+        ))}
+      </div>
+    );
+  };
 
   const renderContent = () => {
     switch (activeTab) {

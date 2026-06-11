@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import Cookies from 'js-cookie';
-import { User, Activity, Award, BookOpen, ShoppingCart, Clock, TrendingUp, Calendar, CheckCircle, XCircle, ArrowLeft, Gift, BarChart3 } from 'lucide-react';
+import { User, Activity, Award, BookOpen, ShoppingCart, Clock, TrendingUp, Calendar, CheckCircle, XCircle, ArrowLeft, Gift, BarChart3, Eye, Download, Printer, FileText } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
 
 function useQuery() {
@@ -28,6 +29,10 @@ export default function UserDetail() {
   const [analyticsData, setAnalyticsData] = useState(null);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [analyticsError, setAnalyticsError] = useState(null);
+
+  // Invoice state variables
+  const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -124,6 +129,33 @@ export default function UserDetail() {
   const answers = data?.answers || {};
   const library = data?.library || {};
   const purchases = data?.purchases || {};
+
+  const getInvoiceItemDetails = (invoice) => {
+    if (!invoice) return { name: 'Item', type: '' };
+    if (invoice.planId && invoice.planId.name) {
+      return {
+        name: invoice.planId.name,
+        type: 'Plan Subscription'
+      };
+    }
+    if (invoice.workbookIds && invoice.workbookIds.length > 0) {
+      return {
+        name: invoice.workbookIds.map(w => {
+          const parts = [];
+          if (w.title) parts.push(w.title);
+          if (w.subject) {
+            parts.push(`(Subject: ${w.subject})`);
+          }
+          return parts.join(' ');
+        }).join(', '),
+        type: 'Workbook'
+      };
+    }
+    return {
+      name: 'Credit Recharge',
+      type: 'Credits'
+    };
+  };
 
   const stats = [
     { label: 'Total Submissions', value: answers.totalSubmissions || 0, icon: Activity, color: 'blue' },
@@ -276,10 +308,37 @@ export default function UserDetail() {
                   {purchases.lastPurchase && (
                     <div className="mt-6 bg-slate-50 rounded-xl p-6 border border-slate-200">
                       <h4 className="font-semibold text-slate-900 mb-4">Latest Purchase Details</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <InfoCard label="Amount" value={`₹${purchases.lastPurchase.amount}`} variant="light" />
                         <InfoCard label="Gateway" value={purchases.lastPurchase.gatewayName} variant="light" />
                         <InfoCard label="Payment Mode" value={purchases.lastPurchase.paymentMode} variant="light" />
+                        <InfoCard label="Date & Time" value={new Date(purchases.lastPurchase.createdAt).toLocaleString('en-GB', { day: 'numeric', month: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true }).toLowerCase()} variant="light" />
+                      </div>
+                      <div className="flex gap-4 mt-6 border-t border-slate-200 pt-4">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedInvoice(purchases.lastPurchase);
+                            setInvoiceModalOpen(true);
+                          }}
+                          className="px-4 py-2 text-sm font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-xl hover:bg-indigo-100 transition-colors flex items-center gap-2"
+                        >
+                          <Eye size={16} />
+                          View Invoice
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedInvoice(purchases.lastPurchase);
+                            setTimeout(() => {
+                              window.print();
+                            }, 100);
+                          }}
+                          className="px-4 py-2 text-sm font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-xl hover:bg-emerald-100 transition-colors flex items-center gap-2"
+                        >
+                          <Download size={16} />
+                          Download Invoice
+                        </button>
                       </div>
                     </div>
                   )}
@@ -444,6 +503,219 @@ export default function UserDetail() {
             </div>
           </div>
         )}
+
+        {/* Printable Invoice Area (Hidden on screen, shown on print) */}
+        {selectedInvoice && createPortal(
+          <div id="printable-invoice-area" className="hidden print:block p-8 bg-white text-slate-800" style={{ fontFamily: 'sans-serif' }}>
+            <div className="flex justify-between items-start border-b border-slate-300 pb-6 mb-6">
+              <div>
+                <h1 className="text-3xl font-black text-indigo-600 tracking-tight">mAIns</h1>
+                <p className="text-xs text-slate-500 font-medium -mt-1">A unit of Mobishaala Edutech Pvt. Ltd.</p>
+                <p className="text-xs text-slate-500 font-medium">GSTIN: 29AALCM4268L1ZQ</p>
+                <p className="text-sm text-slate-500 mt-1">Digital Learning Platform Invoice</p>
+              </div>
+              <div className="text-right">
+                <h2 className="text-xl font-bold text-slate-900">INVOICE</h2>
+                <p className="text-sm text-slate-500 mt-1">Invoice ID: INV-{selectedInvoice.orderId}</p>
+                <p className="text-sm text-slate-500">Date: {new Date(selectedInvoice.createdAt).toLocaleString('en-GB', { day: 'numeric', month: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true }).toLowerCase()}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-8 mb-8">
+              <div>
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Billed To</h3>
+                <p className="text-sm font-bold text-slate-900">{profile.name || 'Student'}</p>
+                <p className="text-xs text-slate-500 mt-1">Phone: {selectedInvoice.customerPhone || user.mobile || 'N/A'}</p>
+                <p className="text-xs text-slate-500">Email: {selectedInvoice.customerEmail || user.email || 'N/A'}</p>
+              </div>
+              <div className="text-right">
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Payment Details</h3>
+                <p className="text-sm text-slate-900"><span className="font-semibold">Gateway:</span> {selectedInvoice.gatewayName || 'PAYTM'}</p>
+                <p className="text-sm text-slate-900"><span className="font-semibold">Payment Mode:</span> {selectedInvoice.paymentMode || 'UPI'}</p>
+                <p className="text-sm text-slate-900"><span className="font-semibold">Status:</span> SUCCESS (PAID)</p>
+              </div>
+            </div>
+
+            <table className="w-full border-collapse border border-slate-200 mb-8">
+              <thead>
+                <tr className="bg-slate-50">
+                  <th className="border border-slate-200 px-4 py-2 text-left text-xs font-bold text-slate-500 uppercase">Item Description</th>
+                  <th className="border border-slate-200 px-4 py-2 text-center text-xs font-bold text-slate-500 uppercase">Qty</th>
+                  <th className="border border-slate-200 px-4 py-2 text-right text-xs font-bold text-slate-500 uppercase">Unit Price</th>
+                  <th className="border border-slate-200 px-4 py-2 text-right text-xs font-bold text-slate-500 uppercase">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-900">
+                    {getInvoiceItemDetails(selectedInvoice).name} ({getInvoiceItemDetails(selectedInvoice).type})
+                  </td>
+                  <td className="border border-slate-200 px-4 py-3 text-sm text-center text-slate-600">1</td>
+                  <td className="border border-slate-200 px-4 py-3 text-sm text-right text-slate-600">₹{(Number(selectedInvoice.amount) / 1.18).toFixed(2)}</td>
+                  <td className="border border-slate-200 px-4 py-3 text-sm text-right font-bold text-slate-900">₹{(Number(selectedInvoice.amount) / 1.18).toFixed(2)}</td>
+                </tr>
+                <tr className="bg-slate-50">
+                  <td colSpan="3" className="border border-slate-200 px-4 py-2 text-right text-sm font-bold text-slate-700">Subtotal:</td>
+                  <td className="border border-slate-200 px-4 py-2 text-right text-sm font-semibold text-slate-800">₹{(Number(selectedInvoice.amount) / 1.18).toFixed(2)}</td>
+                </tr>
+                <tr className="bg-slate-50">
+                  <td colSpan="3" className="border border-slate-200 px-4 py-2 text-right text-sm font-bold text-slate-700">GST (18%):</td>
+                  <td className="border border-slate-200 px-4 py-2 text-right text-sm font-semibold text-slate-800">₹{(Number(selectedInvoice.amount) - (Number(selectedInvoice.amount) / 1.18)).toFixed(2)}</td>
+                </tr>
+                <tr className="bg-slate-50">
+                  <td colSpan="3" className="border border-slate-200 px-4 py-2 text-right text-sm font-bold text-slate-700">Total Paid (Incl. GST):</td>
+                  <td className="border border-slate-200 px-4 py-2 text-right text-sm font-black text-indigo-600">₹{Number(selectedInvoice.amount).toFixed(2)}</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div className="text-center text-xs text-slate-400 mt-12 border-t border-slate-200 pt-6">
+              Thank you for purchasing with us. If you have any questions, please contact support.
+            </div>
+          </div>,
+          document.body
+        )}
+
+        {/* View Invoice Modal */}
+        {invoiceModalOpen && selectedInvoice && (
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
+              {/* Modal Header */}
+              <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                <div className="flex items-center gap-2 text-indigo-600 font-bold">
+                  <FileText className="w-5 h-5" />
+                  <span>Invoice Preview</span>
+                </div>
+                <button
+                  onClick={() => setInvoiceModalOpen(false)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Modal Body (Invoice details) */}
+              <div className="p-8 max-h-[70vh] overflow-y-auto">
+                <div className="flex justify-between items-start border-b border-slate-200 pb-6 mb-6">
+                  <div>
+                    <h3 className="text-2xl font-black text-indigo-600">mAIns</h3>
+                    <p className="text-xs text-slate-500 font-medium -mt-1">A unit of Mobishaala Edutech Pvt. Ltd.</p>
+                    <p className="text-xs text-slate-500 font-medium">GSTIN: 29AALCM4268L1ZQ</p>
+                    <p className="text-xs text-slate-500 mt-1">Invoice ID: INV-{selectedInvoice.orderId}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                      PAID
+                    </span>
+                    <p className="text-xs text-slate-500 mt-2">Date: {new Date(selectedInvoice.createdAt).toLocaleString('en-GB', { day: 'numeric', month: 'numeric', year: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true }).toLowerCase()}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6 mb-8">
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Billed To</h4>
+                    <p className="text-sm font-bold text-slate-900">{profile.name || 'Student'}</p>
+                    <p className="text-xs text-slate-500 mt-1">Phone: {selectedInvoice.customerPhone || user.mobile || 'N/A'}</p>
+                    <p className="text-xs text-slate-500">Email: {selectedInvoice.customerEmail || user.email || 'N/A'}</p>
+                  </div>
+                  <div className="text-right">
+                    <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Payment Info</h4>
+                    <p className="text-xs text-slate-600"><span className="font-semibold">Gateway:</span> {selectedInvoice.gatewayName || 'PAYTM'}</p>
+                    <p className="text-xs text-slate-600 mt-1"><span className="font-semibold">Mode:</span> {selectedInvoice.paymentMode || 'UPI'}</p>
+                  </div>
+                </div>
+
+                <table className="w-full border-collapse border border-slate-200 rounded-xl overflow-hidden">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Item</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase w-16">Qty</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Price</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    <tr>
+                      <td className="px-4 py-4 text-sm font-semibold text-slate-900">
+                        {getInvoiceItemDetails(selectedInvoice).name} ({getInvoiceItemDetails(selectedInvoice).type})
+                      </td>
+                      <td className="px-4 py-4 text-sm text-center text-slate-600">1</td>
+                      <td className="px-4 py-4 text-sm text-right text-slate-600">₹{(Number(selectedInvoice.amount) / 1.18).toFixed(2)}</td>
+                      <td className="px-4 py-4 text-sm text-right font-bold text-slate-900">₹{(Number(selectedInvoice.amount) / 1.18).toFixed(2)}</td>
+                    </tr>
+                    <tr className="bg-slate-50/50">
+                      <td colSpan="3" className="px-4 py-2 text-right text-xs font-semibold text-slate-500">Subtotal:</td>
+                      <td className="px-4 py-2 text-right text-xs font-semibold text-slate-700">₹{(Number(selectedInvoice.amount) / 1.18).toFixed(2)}</td>
+                    </tr>
+                    <tr className="bg-slate-50/50">
+                      <td colSpan="3" className="px-4 py-2 text-right text-xs font-semibold text-slate-500">GST (18%):</td>
+                      <td className="px-4 py-2 text-right text-xs font-semibold text-slate-700">₹{(Number(selectedInvoice.amount) - (Number(selectedInvoice.amount) / 1.18)).toFixed(2)}</td>
+                    </tr>
+                    <tr className="bg-slate-50/50 border-t border-slate-200">
+                      <td colSpan="3" className="px-4 py-3 text-right text-sm font-bold text-slate-700">Total Paid:</td>
+                      <td className="px-4 py-3 text-right text-sm font-bold text-indigo-600">₹{Number(selectedInvoice.amount).toFixed(2)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-3">
+                <button
+                  onClick={() => setInvoiceModalOpen(false)}
+                  className="px-4 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 transition-colors"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => {
+                    setTimeout(() => {
+                      window.print();
+                    }, 50);
+                  }}
+                  className="px-5 py-2.5 text-sm font-semibold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors flex items-center gap-2 shadow-lg shadow-indigo-600/20"
+                >
+                  <Printer className="w-4 h-4" />
+                  Print / Save PDF
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* CSS Print Styles */}
+        <style dangerouslySetInnerHTML={{ __html: `
+          @media print {
+            @page {
+              size: auto;
+              margin: 0mm;
+            }
+            body, html {
+              background: white !important;
+              color: black !important;
+              margin: 0 !important;
+              padding: 0 !important;
+            }
+            #root {
+              display: none !important;
+            }
+            #printable-invoice-area {
+              display: block !important;
+              visibility: visible !important;
+              position: absolute !important;
+              left: 0 !important;
+              top: 0 !important;
+              width: 100% !important;
+              margin: 0 !important;
+              padding: 20mm !important;
+              background: white !important;
+              box-sizing: border-box !important;
+            }
+            #printable-invoice-area * {
+              visibility: visible !important;
+            }
+          }
+        `}} />
       </div>
     </div>
   );

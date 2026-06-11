@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Upload, Loader2, Check, Copy, Eye, EyeOff } from 'lucide-react';
 
 import Cookies from 'js-cookie';
 import { API_BASE_URL } from '../../config';
 
-const AddClientModal = ({ isOpen, onClose, onClientAdded }) => {
+const AddClientModal = ({ isOpen, onClose, onClientAdded, mode, clientData }) => {
   const [formData, setFormData] = useState({
     businessName: '',
     businessOwnerName: '',
@@ -20,7 +20,27 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded }) => {
     businessLogo: '',
     businessWebsite: '',
     businessYoutubeChannel: '',
-    turnOverRange: ''
+    turnOverRange: '',
+    allowedFeatures: {
+      aiBooks: true,
+      aiWorkbook: true,
+      aiTests: true,
+      aiCourses: true,
+      aiClassroom: true,
+      questionBank: true,
+      myQuestion: true,
+      datastore: true,
+      toolMarketing: true,
+      toolReels: true,
+      toolChats: true,
+      toolAiAgents: true,
+      toolWhatsapp: true,
+      toolTelegram: true,
+      toolImageGenerator: true,
+      toolCategoryManagement: true,
+      toolNotification: true,
+      toolAppBanners: true
+    }
   });
 
   const [loading, setLoading] = useState(false);
@@ -31,6 +51,93 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [copied, setCopied] = useState({ userId: false, password: false });
   const [countdown, setCountdown] = useState(0);
+  const [showToolsSettings, setShowToolsSettings] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (mode === 'edit' && clientData) {
+        setFormData({
+          businessName: clientData.businessName || '',
+          businessOwnerName: clientData.businessOwnerName || '',
+          email: clientData.email || '',
+          businessNumber: clientData.businessNumber || '',
+          businessGSTNumber: clientData.businessGSTNumber || '',
+          businessPANNumber: clientData.businessPANNumber || '',
+          businessMobileNumber: clientData.businessMobileNumber || '',
+          businessCategory: clientData.businessCategory || '',
+          businessAddress: clientData.businessAddress || '',
+          city: clientData.city || '',
+          pinCode: clientData.pinCode || '',
+          businessLogo: clientData.businessLogo || '',
+          businessWebsite: clientData.businessWebsite || '',
+          businessYoutubeChannel: clientData.businessYoutubeChannel || '',
+          turnOverRange: clientData.turnOverRange || '',
+          allowedFeatures: clientData.allowedFeatures || {
+            aiBooks: true,
+            aiWorkbook: true,
+            aiTests: true,
+            aiCourses: true,
+            aiClassroom: true,
+            questionBank: true,
+            myQuestion: true,
+            datastore: true,
+            toolMarketing: true,
+            toolReels: true,
+            toolChats: true,
+            toolAiAgents: true,
+            toolWhatsapp: true,
+            toolTelegram: true,
+            toolImageGenerator: true,
+            toolCategoryManagement: true,
+            toolNotification: true,
+            toolAppBanners: true
+          }
+        });
+      } else {
+        setFormData({
+          businessName: '',
+          businessOwnerName: '',
+          email: '',
+          businessNumber: '',
+          businessGSTNumber: '',
+          businessPANNumber: '',
+          businessMobileNumber: '',
+          businessCategory: '',
+          businessAddress: '',
+          city: '',
+          pinCode: '',
+          businessLogo: '',
+          businessWebsite: '',
+          businessYoutubeChannel: '',
+          turnOverRange: '',
+          allowedFeatures: {
+            aiBooks: true,
+            aiWorkbook: true,
+            aiTests: true,
+            aiCourses: true,
+            aiClassroom: true,
+            questionBank: true,
+            myQuestion: true,
+            datastore: true,
+            toolMarketing: true,
+            toolReels: true,
+            toolChats: true,
+            toolAiAgents: true,
+            toolWhatsapp: true,
+            toolTelegram: true,
+            toolImageGenerator: true,
+            toolCategoryManagement: true,
+            toolNotification: true,
+            toolAppBanners: true
+          }
+        });
+      }
+      setError('');
+      setSuccess(null);
+      setShowCredentials(false);
+      setShowPassword(false);
+    }
+  }, [isOpen, mode, clientData]);
 
   const businessCategories = [
     'Technology',
@@ -243,8 +350,12 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded }) => {
       const token = Cookies.get('admintoken');
       console.log('Admin token:', token); // Debug log
 
-      const response = await fetch('https://ailisher.diintech.com/api/admin/clients', {
-        method: 'POST',
+      const url = mode === 'edit'
+        ? `${API_BASE_URL}/api/admin/clients/${clientData._id}`
+        : 'http://localhost:4000/api/admin/clients';
+
+      const response = await fetch(url, {
+        method: mode === 'edit' ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -256,22 +367,29 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded }) => {
       console.log('API Response:', result); // Debug log
 
       if (result.success) {
-        setSuccess(result);
-        setShowCredentials(true);
+        if (mode === 'edit') {
+          if (onClientAdded) {
+            onClientAdded();
+          }
+          onClose();
+        } else {
+          setSuccess(result);
+          setShowCredentials(true);
 
-        // Call parent function to refresh client list
-        if (onClientAdded) {
-          onClientAdded();
+          // Call parent function to refresh client list
+          if (onClientAdded) {
+            onClientAdded();
+          }
+
+          // Start countdown to auto-close
+          startCountdown();
         }
-
-        // Start countdown to auto-close
-        startCountdown();
       } else {
-        setError(result.message || 'Failed to create client');
+        setError(result.message || (mode === 'edit' ? 'Failed to update client' : 'Failed to create client'));
       }
     } catch (error) {
-      console.error('Create client error:', error);
-      setError(error.message || 'Failed to create client');
+      console.error('Submit client error:', error);
+      setError(error.message || (mode === 'edit' ? 'Failed to update client' : 'Failed to create client'));
     } finally {
       setLoading(false);
     }
@@ -400,7 +518,9 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded }) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-gray-900">Add New Client</h2>
+          <h2 className="text-xl font-semibold text-gray-900">
+            {mode === 'edit' ? 'Edit Client' : 'Add New Client'}
+          </h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600"
@@ -689,6 +809,111 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded }) => {
             </select>
           </div>
 
+          {/* Feature Access Settings */}
+          <div className="mt-8 pt-6 border-t">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 font-bold">Feature Access Control</h3>
+            
+            {/* Compulsory features (Always On) */}
+            <div className="mb-6 bg-blue-50 p-4 rounded border border-blue-200">
+              <span className="text-sm font-bold text-blue-800 block mb-2">Compulsory Features (Always On for All Clients)</span>
+              <div className="flex flex-wrap gap-2">
+                {['Overview Dashboard', 'Plans Management', 'Orders History', 'Users Management'].map(feature => (
+                  <span key={feature} className="px-3 py-1 bg-white border border-blue-300 text-blue-700 text-xs font-semibold rounded-full">
+                    ✓ {feature}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* General optional features */}
+            <div className="mb-6">
+              <span className="text-sm font-bold text-gray-700 block mb-3">General Optional Features</span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {[
+                  { key: 'aiBooks', label: 'AI Books' },
+                  { key: 'aiWorkbook', label: 'AI Workbook' },
+                  { key: 'aiTests', label: 'AI Tests' },
+                  { key: 'aiCourses', label: 'AI Courses' },
+                  { key: 'aiClassroom', label: 'AI Classroom' },
+                  { key: 'questionBank', label: 'Question Bank' },
+                  { key: 'myQuestion', label: 'My Question' },
+                  { key: 'datastore', label: 'Datastore' }
+                ].map(feature => (
+                  <label key={feature.key} className="flex items-center space-x-3 bg-gray-50 p-3 rounded border hover:bg-gray-100 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.allowedFeatures ? formData.allowedFeatures[feature.key] !== false : true}
+                      onChange={(e) => {
+                        const currentFeatures = formData.allowedFeatures || {};
+                        setFormData(prev => ({
+                          ...prev,
+                          allowedFeatures: {
+                            ...currentFeatures,
+                            [feature.key]: e.target.checked
+                          }
+                        }));
+                      }}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <span className="text-sm font-medium text-gray-700">{feature.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Tools Sub-features (Collapsible Dropdown) */}
+            <div className="border rounded mb-6">
+              <button
+                type="button"
+                onClick={() => setShowToolsSettings(!showToolsSettings)}
+                className="w-full flex justify-between items-center p-4 bg-gray-50 hover:bg-gray-100 font-bold text-gray-800 rounded-t"
+              >
+                <span>Tools Sub-Features ({[
+                  'toolMarketing', 'toolReels', 'toolChats', 'toolAiAgents',
+                  'toolWhatsapp', 'toolTelegram', 'toolImageGenerator',
+                  'toolCategoryManagement', 'toolNotification', 'toolAppBanners'
+                ].filter(key => formData.allowedFeatures ? formData.allowedFeatures[key] !== false : true).length} Enabled)</span>
+                <span>{showToolsSettings ? '▲ Hide Settings' : '▼ Manage Tools Features'}</span>
+              </button>
+              
+              {showToolsSettings && (
+                <div className="p-4 border-t grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 bg-white">
+                  {[
+                    { key: 'toolMarketing', label: 'Marketing' },
+                    { key: 'toolReels', label: 'Reels' },
+                    { key: 'toolChats', label: 'Chats' },
+                    { key: 'toolAiAgents', label: 'AI Agents' },
+                    { key: 'toolWhatsapp', label: 'WhatsApp' },
+                    { key: 'toolTelegram', label: 'Telegram' },
+                    { key: 'toolImageGenerator', label: 'Image Generator' },
+                    { key: 'toolCategoryManagement', label: 'Category Management' },
+                    { key: 'toolNotification', label: 'Notification' },
+                    { key: 'toolAppBanners', label: 'App Banners' }
+                  ].map(feature => (
+                    <label key={feature.key} className="flex items-center space-x-3 bg-gray-50 p-3 rounded border hover:bg-gray-100 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.allowedFeatures ? formData.allowedFeatures[feature.key] !== false : true}
+                        onChange={(e) => {
+                          const currentFeatures = formData.allowedFeatures || {};
+                          setFormData(prev => ({
+                            ...prev,
+                            allowedFeatures: {
+                              ...currentFeatures,
+                              [feature.key]: e.target.checked
+                            }
+                          }));
+                        }}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <span className="text-sm font-medium text-gray-700">{feature.label}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Form Actions */}
           <div className="flex justify-end space-x-4 mt-8 pt-6 border-t">
             <button
@@ -707,10 +932,10 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded }) => {
               {loading ? (
                 <>
                   <Loader2 className="animate-spin h-4 w-4 mr-2" />
-                  Creating...
+                  {mode === 'edit' ? 'Saving...' : 'Creating...'}
                 </>
               ) : (
-                'Create Client'
+                mode === 'edit' ? 'Save Changes' : 'Create Client'
               )}
             </button>
           </div>

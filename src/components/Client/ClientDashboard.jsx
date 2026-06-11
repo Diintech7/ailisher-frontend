@@ -1,16 +1,37 @@
 import React, { useState } from 'react';
 import { FiUsers, FiBookOpen, FiMessageSquare, FiActivity, FiDatabase, FiCpu } from 'react-icons/fi';
+import Cookies from 'js-cookie';
+import { useNavigate } from 'react-router-dom';
 
 const ClientDashboard = () => {
   const [period, setPeriod] = useState('week');
+  const navigate = useNavigate();
+
+  // Retrieve allowedFeatures from user cookie
+  const userCookie = Cookies.get('user');
+  let allowedFeatures = null;
+  if (userCookie) {
+    try {
+      const userData = JSON.parse(userCookie);
+      allowedFeatures = userData.allowedFeatures;
+    } catch (e) {
+      console.error('Error parsing user cookie in dashboard:', e);
+    }
+  }
   
   // Static placeholder data
   const stats = [
-    { id: 1, name: 'Users', value: '12', icon: <FiUsers className="text-blue-500" size={24} />, change: '+3', status: 'increase' },
-    { id: 2, name: 'AI Books', value: '5', icon: <FiBookOpen className="text-green-500" size={24} />, change: '+1', status: 'increase' },
-    { id: 3, name: 'Conversations', value: '126', icon: <FiMessageSquare className="text-purple-500" size={24} />, change: '+22', status: 'increase' },
+    { id: 1, name: 'Users', featureKey: 'users', value: '12', icon: <FiUsers className="text-blue-500" size={24} />, change: '+3', status: 'increase' },
+    { id: 2, name: 'AI Books', featureKey: 'aiBooks', value: '5', icon: <FiBookOpen className="text-green-500" size={24} />, change: '+1', status: 'increase' },
+    { id: 3, name: 'Conversations', featureKey: 'myQuestion', value: '126', icon: <FiMessageSquare className="text-purple-500" size={24} />, change: '+22', status: 'increase' },
     { id: 4, name: 'Usage Minutes', value: '542', icon: <FiActivity className="text-red-500" size={24} />, change: '-15', status: 'decrease' },
   ];
+
+  const filteredStats = stats.filter(stat => {
+    if (!stat.featureKey) return true;
+    if (!allowedFeatures) return true;
+    return allowedFeatures[stat.featureKey] !== false;
+  });
 
   const recentActivity = [
     { id: 1, user: 'John Doe', action: 'completed a test', time: '2 hours ago', resource: 'Physics 101' },
@@ -21,12 +42,18 @@ const ClientDashboard = () => {
   ];
 
   const usageData = [
-    { category: 'AI Books', percentage: 35 },
-    { category: 'Conversations', percentage: 25 },
-    { category: 'Workbooks', percentage: 20 },
-    { category: 'Tests', percentage: 15 },
+    { category: 'AI Books', featureKey: 'aiBooks', percentage: 35 },
+    { category: 'Conversations', featureKey: 'myQuestion', percentage: 25 },
+    { category: 'Workbooks', featureKey: 'aiWorkbook', percentage: 20 },
+    { category: 'Tests', featureKey: 'aiTests', percentage: 15 },
     { category: 'Other', percentage: 5 },
   ];
+
+  const filteredUsageData = usageData.filter(item => {
+    if (!item.featureKey) return true;
+    if (!allowedFeatures) return true;
+    return allowedFeatures[item.featureKey] !== false;
+  });
 
   return (
     <div className="p-6">
@@ -66,8 +93,8 @@ const ClientDashboard = () => {
       </div>
       
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat) => (
+      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${filteredStats.length} gap-6 mb-8`}>
+        {filteredStats.map((stat) => (
           <div key={stat.id} className="bg-white rounded-lg shadow p-6">
             <div className="flex justify-between items-center mb-4">
               <div className="p-3 rounded-full bg-gray-100">{stat.icon}</div>
@@ -112,7 +139,7 @@ const ClientDashboard = () => {
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">Resource Usage</h2>
           <div className="space-y-4">
-            {usageData.map((item) => (
+            {filteredUsageData.map((item) => (
               <div key={item.category}>
                 <div className="flex justify-between text-sm mb-1">
                   <span className="text-gray-600">{item.category}</span>
@@ -132,22 +159,24 @@ const ClientDashboard = () => {
           <div className="mt-8">
             <h2 className="text-lg font-semibold text-gray-800 mb-4">Quick Access</h2>
             <div className="grid grid-cols-2 gap-4">
-              <button className="p-4 bg-gray-50 hover:bg-gray-100 rounded-lg flex flex-col items-center justify-center transition-all">
-                <FiBookOpen className="text-blue-500 mb-2" size={20} />
-                <span className="text-sm text-gray-700">AI Books</span>
-              </button>
-              <button className="p-4 bg-gray-50 hover:bg-gray-100 rounded-lg flex flex-col items-center justify-center transition-all">
-                <FiDatabase className="text-green-500 mb-2" size={20} />
-                <span className="text-sm text-gray-700">Datastore</span>
-              </button>
-              <button className="p-4 bg-gray-50 hover:bg-gray-100 rounded-lg flex flex-col items-center justify-center transition-all">
-                <FiCpu className="text-purple-500 mb-2" size={20} />
-                <span className="text-sm text-gray-700">AI Agents</span>
-              </button>
-              <button className="p-4 bg-gray-50 hover:bg-gray-100 rounded-lg flex flex-col items-center justify-center transition-all">
-                <FiUsers className="text-red-500 mb-2" size={20} />
-                <span className="text-sm text-gray-700">Users</span>
-              </button>
+              {[
+                { name: 'AI Books', featureKey: 'aiBooks', icon: <FiBookOpen className="text-blue-500 mb-2" size={20} />, path: '/ai-books' },
+                { name: 'Datastore', featureKey: 'datastore', icon: <FiDatabase className="text-green-500 mb-2" size={20} />, path: '/datastore' },
+                { name: 'Tools', featureKey: 'tools', icon: <FiCpu className="text-purple-500 mb-2" size={20} />, path: '/tools' },
+                { name: 'Users', featureKey: 'users', icon: <FiUsers className="text-red-500 mb-2" size={20} />, path: '/users' }
+              ]
+                .filter(item => !allowedFeatures || allowedFeatures[item.featureKey] !== false)
+                .map(item => (
+                  <button
+                    key={item.name}
+                    onClick={() => navigate(item.path)}
+                    className="p-4 bg-gray-50 hover:bg-gray-100 rounded-lg flex flex-col items-center justify-center transition-all"
+                  >
+                    {item.icon}
+                    <span className="text-sm text-gray-700">{item.name}</span>
+                  </button>
+                ))
+              }
             </div>
           </div>
         </div>

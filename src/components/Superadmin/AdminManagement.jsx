@@ -31,11 +31,22 @@ const AdminManagement = ({ onAdminLogin }) => {
     confirmPassword: ''
   });
 
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedAdmin, setSelectedAdmin] = useState(null);
+  const [editAdminData, setEditAdminData] = useState({ name: '', email: '', password: '', confirmPassword: '', assignedClients: [] });
+
   const getAdmins = async () => {
     try {
       setIsLoading(true);
+      const token = localStorage.getItem('superadmintoken');
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
       const response = await fetch(
-        `${API_BASE_URL}/api/superadmin/getadmins`
+        `${API_BASE_URL}/api/superadmin/getadmins`,
+        { headers }
       );
       const data = await response.json();
       console.log(data);
@@ -47,9 +58,9 @@ const AdminManagement = ({ onAdminLogin }) => {
     }
   };
 
-  const deleteadmin = async(id) => {
+  const deleteadmin = async (id) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('superadmintoken');
       if (!token) {
         throw new Error('No authentication token found');
       }
@@ -61,9 +72,9 @@ const AdminManagement = ({ onAdminLogin }) => {
           'Authorization': `Bearer ${token}`
         }
       });
-      
+
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.message || 'Failed to delete admin');
       }
@@ -91,12 +102,12 @@ const AdminManagement = ({ onAdminLogin }) => {
         return;
       }
 
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('superadmintoken');
       if (!token) {
         throw new Error('No authentication token found');
       }
 
-      const response = await fetch(`${API_BASE_URL}/superadmin/registeradmin`, {
+      const response = await fetch(`${API_BASE_URL}/api/superadmin/registeradmin`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -110,7 +121,7 @@ const AdminManagement = ({ onAdminLogin }) => {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.message || 'Failed to create admin');
       }
@@ -134,7 +145,7 @@ const AdminManagement = ({ onAdminLogin }) => {
   const handleAdminLogin = (loginData) => {
     // Close the modal
     setShowLoginModal(false);
-    
+
     // Call the parent's login handler
     onAdminLogin(loginData);
   };
@@ -210,19 +221,79 @@ const AdminManagement = ({ onAdminLogin }) => {
   const handleDropdownClick = (itemId, action, itemData) => {
     setShowDropdownMenu(null);
     if (action === 'edit') {
-      // Handle edit action
-      console.log('Edit item:', itemId, itemData);
+      setSelectedAdmin(itemData.data);
+      const assigned = clientsList
+        ? clientsList
+            .filter(client => client.assignedAdmins && client.assignedAdmins.includes(itemData.data._id))
+            .map(client => client._id)
+        : [];
+      setEditAdminData({
+        name: itemData.data.name,
+        email: itemData.data.email,
+        password: '',
+        confirmPassword: '',
+        assignedClients: assigned
+      });
+      setShowEditModal(true);
     } else if (action === 'delete') {
       confirmDeleteAdmin(itemId);
     } else if (action === 'view') {
-      // Handle view action
-      console.log('View item:', itemId, itemData);
+      setSelectedAdmin(itemData.data);
+      setShowViewModal(true);
+    }
+  };
+
+  const handleEditAdminSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (editAdminData.password !== editAdminData.confirmPassword) {
+        alert('Passwords do not match');
+        return;
+      }
+
+      const token = localStorage.getItem('superadmintoken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const updatePayload = {
+        name: editAdminData.name,
+        email: editAdminData.email,
+        assignedClients: editAdminData.assignedClients
+      };
+
+      if (editAdminData.password) {
+        updatePayload.password = editAdminData.password;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/superadmin/admin/${selectedAdmin._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(updatePayload)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to update admin');
+      }
+
+      setShowEditModal(false);
+      await getAdmins();
+      await getClientsList();
+      alert('Admin updated successfully');
+    } catch (error) {
+      console.error('Error updating admin:', error);
+      alert(error.message || 'Failed to update admin. Please try again.');
     }
   };
 
   // Filter admins based on search term
-  const filteredAdmins = admins ? 
-    admins.filter(admin => 
+  const filteredAdmins = admins ?
+    admins.filter(admin =>
       admin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       admin.email.toLowerCase().includes(searchTerm.toLowerCase())
     ) : [];
@@ -233,8 +304,32 @@ const AdminManagement = ({ onAdminLogin }) => {
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
+  const [clientsList, setClientsList] = useState([]);
+
+  const getClientsList = async () => {
+    try {
+      const token = localStorage.getItem('superadmintoken');
+      if (!token) return;
+      const response = await fetch(
+        `${API_BASE_URL}/api/superadmin/getclients`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+      const data = await response.json();
+      if (data.success && data.data) {
+        setClientsList(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+    }
+  };
+
   useEffect(() => {
     getAdmins();
+    getClientsList();
   }, []);
 
   // Close dropdown when clicking outside
@@ -274,6 +369,13 @@ const AdminManagement = ({ onAdminLogin }) => {
         .animate-slideUp {
           animation: slideUp 0.3s ease-out;
         }
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
       `}</style>
 
       {/* Add Admin Modal */}
@@ -291,7 +393,7 @@ const AdminManagement = ({ onAdminLogin }) => {
                     <p className="text-purple-100 text-sm">Create a new admin account</p>
                   </div>
                 </div>
-                <button 
+                <button
                   className="text-white hover:text-purple-200 transition-colors duration-200 p-2 rounded-lg hover:bg-white/10"
                   onClick={() => setShowAddAdminModal(false)}
                 >
@@ -309,7 +411,7 @@ const AdminManagement = ({ onAdminLogin }) => {
                     placeholder="Enter admin's full name"
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
                     value={newAdmin.name}
-                    onChange={(e) => setNewAdmin({...newAdmin, name: e.target.value})}
+                    onChange={(e) => setNewAdmin({ ...newAdmin, name: e.target.value })}
                   />
                 </div>
                 <div>
@@ -320,7 +422,7 @@ const AdminManagement = ({ onAdminLogin }) => {
                     placeholder="Enter admin's email"
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
                     value={newAdmin.email}
-                    onChange={(e) => setNewAdmin({...newAdmin, email: e.target.value})}
+                    onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })}
                   />
                 </div>
                 <div>
@@ -331,7 +433,7 @@ const AdminManagement = ({ onAdminLogin }) => {
                     placeholder="Enter secure password"
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
                     value={newAdmin.password}
-                    onChange={(e) => setNewAdmin({...newAdmin, password: e.target.value})}
+                    onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })}
                   />
                 </div>
                 <div>
@@ -342,7 +444,7 @@ const AdminManagement = ({ onAdminLogin }) => {
                     placeholder="Confirm the password"
                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
                     value={newAdmin.confirmPassword}
-                    onChange={(e) => setNewAdmin({...newAdmin, confirmPassword: e.target.value})}
+                    onChange={(e) => setNewAdmin({ ...newAdmin, confirmPassword: e.target.value })}
                   />
                 </div>
                 <div className="flex space-x-3 pt-4">
@@ -381,7 +483,7 @@ const AdminManagement = ({ onAdminLogin }) => {
                     <p className="text-purple-100 text-sm">Access admin account</p>
                   </div>
                 </div>
-                <button 
+                <button
                   className="text-white hover:text-purple-200 transition-colors duration-200 p-2 rounded-lg hover:bg-white/10"
                   onClick={() => setShowLoginModal(false)}
                 >
@@ -403,7 +505,7 @@ const AdminManagement = ({ onAdminLogin }) => {
                   </div>
                 </div>
               )}
-              <LoginForm userType="admin" onLogin={handleAdminLogin} switchToRegister={() => {}} />
+              <LoginForm userType="admin" onLogin={handleAdminLogin} switchToRegister={() => { }} />
             </div>
           </div>
         </div>
@@ -455,6 +557,184 @@ const AdminManagement = ({ onAdminLogin }) => {
         </div>
       )}
 
+      {/* View Admin Details Modal */}
+      {showViewModal && selectedAdmin && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-black/50 z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md relative animate-slideUp">
+            <div className="bg-gradient-to-r from-purple-600 to-purple-700 rounded-t-2xl p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                    <FaEye className="text-white text-lg" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold">Admin Details</h2>
+                    <p className="text-purple-100 text-sm">Profile information</p>
+                  </div>
+                </div>
+                <button 
+                  className="text-white hover:text-purple-200 transition-colors duration-200 p-2 rounded-lg hover:bg-white/10"
+                  onClick={() => setShowViewModal(false)}
+                >
+                  <FaTimes size={20} />
+                </button>
+              </div>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="bg-gray-50 p-4 rounded-xl space-y-3">
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Full Name</span>
+                  <p className="text-lg font-bold text-gray-800">{selectedAdmin.name}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Email Address</span>
+                  <p className="text-gray-700 font-medium">{selectedAdmin.email}</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Role</span>
+                  <p className="text-gray-700 font-medium capitalize">Admin</p>
+                </div>
+                <div>
+                  <span className="text-xs font-semibold text-gray-400 uppercase">Created At</span>
+                  <p className="text-gray-700 font-medium">{formatDate(selectedAdmin.createdAt)}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowViewModal(false)}
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-xl font-semibold transition-colors duration-200"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Admin Modal */}
+      {showEditModal && selectedAdmin && (
+        <div className="fixed inset-0 backdrop-blur-sm bg-black/50 z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg relative max-h-[90vh] overflow-y-auto no-scrollbar animate-slideUp">
+            <div className="bg-gradient-to-r from-purple-600 to-purple-700 rounded-t-2xl p-6 text-white sticky top-0 z-10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                    <FaEdit className="text-white text-lg" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold">Edit Admin</h2>
+                    <p className="text-purple-100 text-sm">Update admin profile details</p>
+                  </div>
+                </div>
+                <button 
+                  className="text-white hover:text-purple-200 transition-colors duration-200 p-2 rounded-lg hover:bg-white/10"
+                  onClick={() => setShowEditModal(false)}
+                >
+                  <FaTimes size={20} />
+                </button>
+              </div>
+            </div>
+            <div className="p-6">
+              <form onSubmit={handleEditAdminSubmit} className="space-y-6">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Enter admin's full name"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                    value={editAdminData.name}
+                    onChange={(e) => setEditAdminData({ ...editAdminData, name: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="Enter admin's email"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                    value={editAdminData.email}
+                    onChange={(e) => setEditAdminData({ ...editAdminData, email: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">New Password (Optional)</label>
+                  <input
+                    type="password"
+                    placeholder="Enter new password (optional)"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                    value={editAdminData.password}
+                    onChange={(e) => setEditAdminData({ ...editAdminData, password: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Confirm New Password (Optional)</label>
+                  <input
+                    type="password"
+                    placeholder="Confirm new password (optional)"
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                    value={editAdminData.confirmPassword}
+                    onChange={(e) => setEditAdminData({ ...editAdminData, confirmPassword: e.target.value })}
+                  />
+                </div>
+
+                {/* Client Access Mapping */}
+                <div className="bg-gray-50 rounded-xl p-4">
+                  <h3 className="text-base font-semibold text-gray-800 mb-4 flex items-center">
+                    <FaUserShield className="mr-2 text-purple-600" />
+                    Assign Clients (Access Control)
+                  </h3>
+                  {clientsList.length === 0 ? (
+                    <p className="text-sm text-gray-500">No clients available to assign.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto no-scrollbar p-1 bg-gray-50">
+                      {clientsList.map((client) => {
+                        const isAssigned = editAdminData.assignedClients && editAdminData.assignedClients.includes(client._id);
+                        return (
+                          <label key={client._id} className="flex items-center space-x-3 bg-white p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-purple-50/30 transition-all duration-150">
+                            <input
+                              type="checkbox"
+                              className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                              checked={isAssigned}
+                              onChange={() => {
+                                const newAssigned = isAssigned
+                                  ? editAdminData.assignedClients.filter(id => id !== client._id)
+                                  : [...(editAdminData.assignedClients || []), client._id];
+                                setEditAdminData({ ...editAdminData, assignedClients: newAssigned });
+                              }}
+                            />
+                            <div className="text-sm">
+                              <p className="font-semibold text-gray-800">{client.name}</p>
+                              <p className="text-xs text-gray-500">{client.businessName || 'No Business Name'}</p>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    className="flex-1 px-4 py-3 text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors duration-200 font-semibold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 bg-gradient-to-r from-purple-600 to-purple-700 text-white py-3 px-4 rounded-xl hover:from-purple-700 hover:to-purple-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
+                  >
+                    Save Changes
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Admin Management Table */}
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
         {/* Header */}
@@ -464,7 +744,7 @@ const AdminManagement = ({ onAdminLogin }) => {
               <h3 className="text-2xl font-bold text-gray-800 mb-2">Admin Management</h3>
               <p className="text-gray-600">Manage and monitor admin users</p>
             </div>
-            <button 
+            <button
               className="group bg-gradient-to-r from-purple-600 to-purple-700 text-white px-6 py-3 rounded-xl hover:from-purple-700 hover:to-purple-800 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center space-x-2"
               onClick={() => setShowAddAdminModal(true)}
             >
@@ -485,7 +765,7 @@ const AdminManagement = ({ onAdminLogin }) => {
             </div>
           </div>
         </div>
-        
+
         {/* Table */}
         <div className="overflow-x-auto">
           {isLoading ? (
@@ -520,13 +800,13 @@ const AdminManagement = ({ onAdminLogin }) => {
                           <p className="text-sm text-gray-500">Admin since {formatDate(admin.createdAt)}</p>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-center space-x-4">
                         <span className="px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full flex items-center">
                           <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
                           Active
                         </span>
-                        
+
                         {/* Three-dot menu */}
                         <div className="relative">
                           <button
@@ -535,11 +815,11 @@ const AdminManagement = ({ onAdminLogin }) => {
                           >
                             <FaEllipsisV />
                           </button>
-                          
+
                           {showDropdownMenu === admin._id && (
                             <div className="dropdown-menu absolute right-0 top-10 w-48 bg-white rounded-xl shadow-lg border border-gray-200 py-2 z-50">
                               <button
-                                onClick={() => handleDropdownClick(admin._id, 'view', {type: 'admin', data: admin})}
+                                onClick={() => handleDropdownClick(admin._id, 'view', { type: 'admin', data: admin })}
                                 className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
                               >
                                 <FaEye className="text-blue-500" />
@@ -553,7 +833,7 @@ const AdminManagement = ({ onAdminLogin }) => {
                                 <span>Login as Admin</span>
                               </button>
                               <button
-                                onClick={() => handleDropdownClick(admin._id, 'edit', {type: 'admin', data: admin})}
+                                onClick={() => handleDropdownClick(admin._id, 'edit', { type: 'admin', data: admin })}
                                 className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
                               >
                                 <FaEdit className="text-green-500" />
@@ -561,7 +841,7 @@ const AdminManagement = ({ onAdminLogin }) => {
                               </button>
                               <hr className="my-1" />
                               <button
-                                onClick={() => handleDropdownClick(admin._id, 'delete', {type: 'admin', data: admin})}
+                                onClick={() => handleDropdownClick(admin._id, 'delete', { type: 'admin', data: admin })}
                                 className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50 flex items-center space-x-2"
                               >
                                 <FaTrash className="text-red-500" />

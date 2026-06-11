@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { RefreshCw, BookOpen, Layers, CheckCircle, AlertCircle, ArrowRight, Loader2, Search, Image as ImageIcon } from 'lucide-react';
+import { RefreshCw, BookOpen, Layers, CheckCircle, AlertCircle, ArrowRight, Loader2, Search, Image as ImageIcon, Plus, X } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { API_BASE_URL } from '../../config';
 
@@ -12,8 +12,41 @@ const ClassroomList = () => {
   const [syncingId, setSyncingId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [addingExam, setAddingExam] = useState(false);
+  const [newExam, setNewExam] = useState({
+    name: '',
+    category: '',
+    description: '',
+    image_url: ''
+  });
   const navigate = useNavigate();
   const token = Cookies.get('usertoken');
+
+  const handleAddExam = async (e) => {
+    e.preventDefault();
+    if (!newExam.name) {
+      toast.error('Exam name is required');
+      return;
+    }
+    try {
+      setAddingExam(true);
+      const response = await axios.post(`${API_BASE_URL}/api/classroom-exams`, newExam, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data && response.data.success) {
+        toast.success('Exam created successfully!');
+        setShowAddModal(false);
+        setNewExam({ name: '', category: '', description: '', image_url: '' });
+        fetchExams();
+      }
+    } catch (err) {
+      console.error('Failed to create exam:', err);
+      toast.error(err.response?.data?.message || 'Failed to create exam');
+    } finally {
+      setAddingExam(false);
+    }
+  };
 
   const fetchExams = async () => {
     try {
@@ -106,6 +139,13 @@ const ClassroomList = () => {
           <p className="text-gray-600 mt-1">Manage synced classrooms and course guides from partner networks.</p>
         </div>
         <div className="flex flex-wrap gap-3">
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md shadow-sm transition duration-200 text-sm font-semibold"
+          >
+            <Plus className="mr-2" size={16} />
+            Add Exam
+          </button>
           <button
             onClick={fetchExams}
             className="flex items-center bg-white text-gray-700 border border-gray-300 px-4 py-2 rounded-md shadow-sm hover:bg-gray-50 transition duration-200 text-sm font-medium"
@@ -266,6 +306,82 @@ const ClassroomList = () => {
             </div>
           </div>
         ))
+      )}
+      {/* Create Exam Modal Dialog */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl p-6 relative">
+            <button
+              onClick={() => setShowAddModal(false)}
+              className="absolute top-4 right-4 p-1.5 text-gray-400 hover:text-gray-700 transition"
+            >
+              <X size={20} />
+            </button>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Add New Classroom Exam</h3>
+            <form onSubmit={handleAddExam} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">
+                  Exam Name
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. NEET, IIT JEE Main"
+                  value={newExam.name}
+                  onChange={(e) => setNewExam({ ...newExam, name: e.target.value })}
+                  className="w-full px-3.5 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">
+                  Category
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Engineering, Medical"
+                  value={newExam.category}
+                  onChange={(e) => setNewExam({ ...newExam, category: e.target.value })}
+                  className="w-full px-3.5 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">
+                  Description
+                </label>
+                <textarea
+                  placeholder="Provide brief details about this exam..."
+                  value={newExam.description}
+                  onChange={(e) => setNewExam({ ...newExam, description: e.target.value })}
+                  className="w-full px-3.5 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm h-24 resize-none"
+                />
+              </div>
+              <div className="flex justify-end space-x-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+                  disabled={addingExam}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={addingExam || !newExam.name.trim()}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow disabled:opacity-50 flex items-center"
+                >
+                  {addingExam ? (
+                    <>
+                      <Loader2 className="animate-spin mr-1.5" size={14} />
+                      Adding...
+                    </>
+                  ) : (
+                    'Add Exam'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

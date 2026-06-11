@@ -31,6 +31,7 @@ const ClientManagement = () => {
   const [showAddClientModal, setShowAddClientModal] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(null);
   const [mode, setMode] = useState("create");
+  const [selectedClient, setSelectedClient] = useState(null);
   const navigate = useNavigate();
 
   const handleconfig = (id) => {
@@ -197,7 +198,11 @@ const ClientManagement = () => {
         <h1 className="text-2xl font-bold text-gray-800">Client Management</h1>
         <button
           className="bg-blue-600 text-white px-4 py-2 rounded-md flex items-center hover:bg-blue-700 transition-colors"
-          onClick={() => {setShowAddClientModal(true);setMode("create")}}
+          onClick={() => {
+            setSelectedClient(null);
+            setMode("create");
+            setShowAddClientModal(true);
+          }}
         >
           <UserPlus size={16} className="mr-2" />
           Add New Client
@@ -366,7 +371,12 @@ const ClientManagement = () => {
                                   <button
                                     className="block px-4 py-2 text-sm text-blue-600 hover:bg-gray-100 w-full text-left flex items-center"
                                     title="Edit client"
-                                    onClick={() => {setShowAddClientModal(true);setMode("edit")}}
+                                    onClick={() => {
+                                      setSelectedClient(client);
+                                      setMode("edit");
+                                      setShowAddClientModal(true);
+                                      setDropdownOpen(null);
+                                    }}
                                   >
                                     <Edit size={16} className="mr-2" />
                                     Edit Client
@@ -398,9 +408,13 @@ const ClientManagement = () => {
 
       <AddClientModal
         isOpen={showAddClientModal}
-        onClose={() => setShowAddClientModal(false)}
+        onClose={() => {
+          setShowAddClientModal(false);
+          setSelectedClient(null);
+        }}
         onClientAdded={handleClientAdded}
         mode={mode}
+        clientData={selectedClient}
       />
     </div>
   );

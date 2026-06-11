@@ -24,7 +24,7 @@ const QRCodeModal = ({ isOpen, onClose, bookId, bookTitle }) => {
         return;
       }
 
-      const response = await fetch(`https://ailisher.diintech.com/api/qrcode/books/${bookId}`, {
+      const response = await fetch(`http://localhost:4000/api/qrcode/books/${bookId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

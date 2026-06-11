@@ -60,7 +60,7 @@ const BookCourses = () => {
           navigate('/login');
           return;
         }
-        const response = await fetch(`https://ailisher.diintech.com/api/books/${bookId}`, {
+        const response = await fetch(`http://localhost:4000/api/books/${bookId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -128,7 +128,7 @@ const BookCourses = () => {
     if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl;
     }
-    return `https://ailisher.diintech.com/${imageUrl}`;
+    return `http://localhost:4000/${imageUrl}`;
   };
 
   const getVideoThumbnail = (videoUrl) => {

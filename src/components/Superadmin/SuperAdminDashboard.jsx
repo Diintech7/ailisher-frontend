@@ -94,7 +94,12 @@ const SuperAdminDashboard = ({ user, onLogout }) => {
   const getAdmins = useCallback(async () => {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/superadmin/getadmins`
+        `${API_BASE_URL}/api/superadmin/getadmins`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
       );
       const data = await response.json();
       console.log(data);
@@ -102,12 +107,17 @@ const SuperAdminDashboard = ({ user, onLogout }) => {
     } catch (error) {
       console.log(error);
     }
-  }, []);
+  }, [token]);
 
   const getClients = useCallback(async () => {
     try {
       const response = await fetch(
-        `${API_BASE_URL}/api/superadmin/getclients`
+        `${API_BASE_URL}/api/superadmin/getclients`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
       );
       const data = await response.json();
       console.log(data);
@@ -115,7 +125,7 @@ const SuperAdminDashboard = ({ user, onLogout }) => {
     } catch (error) {
       console.log(error);
     }
-  }, []);
+  }, [token]);
 
   const getOrganizations = useCallback(async () => {
     try {

@@ -4,8 +4,8 @@ import { Plus, Trash2, Edit, Image as ImageIcon, Loader2, AlertTriangle, Book, S
 import { ToastContainer, toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
 
-// const API_BASE_URL = 'https://ailisher.diintech.com';
-const API_BASE_URL = 'https://ailisher.diintech.com';
+// const API_BASE_URL = 'http://localhost:4000';
+const API_BASE_URL = 'http://localhost:4000';
 
 
 const initialForm = {

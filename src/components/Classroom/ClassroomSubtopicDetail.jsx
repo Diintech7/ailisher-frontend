@@ -229,7 +229,8 @@ const ClassroomSubtopicDetail = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen p-6">
-      {/* Back Button */}
+      <div className="max-w-7xl mx-auto">
+        {/* Back Button */}
       <button
         onClick={() => navigate(`/classroom/${examId}/papers/${paperId}/subjects/${subjectId}/chapters/${chapterId}`)}
         className="flex items-center text-gray-600 hover:text-blue-600 mb-6 transition font-semibold"
@@ -323,14 +324,14 @@ const ClassroomSubtopicDetail = () => {
                 )}
               </div>
 
-              {/* Tabs Navigation */}
-              <div className="flex border-b border-gray-100 mb-6">
+              {/* Tabs Navigation (Premium Pill Switcher) */}
+              <div className="bg-gray-100 p-1.5 rounded-xl flex space-x-1 mb-6 w-fit border border-gray-200/50">
                 <button
                   onClick={() => setActiveTab('notes')}
-                  className={`pb-3 px-4 font-bold text-sm flex items-center border-b-2 transition ${
+                  className={`px-5 py-2 rounded-lg font-bold text-sm flex items-center transition-all duration-200 ${
                     activeTab === 'notes'
-                      ? 'border-blue-600 text-blue-600'
-                      : 'border-transparent text-gray-400 hover:text-gray-600'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
                   <FileText size={16} className="mr-2" />
@@ -338,10 +339,10 @@ const ClassroomSubtopicDetail = () => {
                 </button>
                 <button
                   onClick={() => setActiveTab('reels')}
-                  className={`pb-3 px-4 font-bold text-sm flex items-center border-b-2 transition ${
+                  className={`px-5 py-2 rounded-lg font-bold text-sm flex items-center transition-all duration-200 ${
                     activeTab === 'reels'
-                      ? 'border-blue-600 text-blue-600'
-                      : 'border-transparent text-gray-400 hover:text-gray-600'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
                   }`}
                 >
                   <Video size={16} className="mr-2" />
@@ -447,7 +448,7 @@ const ClassroomSubtopicDetail = () => {
                   <div className="space-y-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {reels.map((reel, index) => (
-                        <div key={index} className="bg-gray-50 rounded-2xl border border-gray-250 overflow-hidden flex flex-col p-4">
+                        <div key={index} className="bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden flex flex-col p-4">
                           {/* Video Player */}
                           <div className="aspect-[9/16] w-full max-w-[240px] mx-auto rounded-xl overflow-hidden shadow-md bg-black relative mb-4">
                             <video
@@ -650,6 +651,7 @@ const ClassroomSubtopicDetail = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };
