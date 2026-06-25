@@ -352,7 +352,7 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded, mode, clientData }) =>
 
       const url = mode === 'edit'
         ? `${API_BASE_URL}/api/admin/clients/${clientData._id}`
-        : 'http://localhost:4000/api/admin/clients';
+        : 'https://ailisher.diintech.com/api/admin/clients';
 
       const response = await fetch(url, {
         method: mode === 'edit' ? 'PUT' : 'POST',
@@ -812,7 +812,7 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded, mode, clientData }) =>
           {/* Feature Access Settings */}
           <div className="mt-8 pt-6 border-t">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 font-bold">Feature Access Control</h3>
-            
+
             {/* Compulsory features (Always On) */}
             <div className="mb-6 bg-blue-50 p-4 rounded border border-blue-200">
               <span className="text-sm font-bold text-blue-800 block mb-2">Compulsory Features (Always On for All Clients)</span>
@@ -875,7 +875,7 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded, mode, clientData }) =>
                 ].filter(key => formData.allowedFeatures ? formData.allowedFeatures[key] !== false : true).length} Enabled)</span>
                 <span>{showToolsSettings ? '▲ Hide Settings' : '▼ Manage Tools Features'}</span>
               </button>
-              
+
               {showToolsSettings && (
                 <div className="p-4 border-t grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 bg-white">
                   {[

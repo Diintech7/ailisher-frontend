@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { RefreshCw, BookOpen, Layers, CheckCircle, AlertCircle, ArrowRight, Loader2, Search, Image as ImageIcon, Plus, X } from 'lucide-react';
+import { RefreshCw, BookOpen, Layers, CheckCircle, AlertCircle, ArrowRight, Loader2, Search, Image as ImageIcon, Plus, X, Edit, Trash2, History } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { API_BASE_URL } from '../../config';
 
@@ -20,6 +20,24 @@ const ClassroomList = () => {
     description: '',
     image_url: ''
   });
+
+  // Edit Exam Modal State
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingExamId, setEditingExamId] = useState('');
+  const [editExamForm, setEditExamForm] = useState({
+    name: '',
+    category: '',
+    description: '',
+    image_url: ''
+  });
+  const [updatingExam, setUpdatingExam] = useState(false);
+
+  // History Modal State
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [historyExamsList, setHistoryExamsList] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyExamName, setHistoryExamName] = useState('');
+
   const navigate = useNavigate();
   const token = Cookies.get('usertoken');
 
@@ -45,6 +63,80 @@ const ClassroomList = () => {
       toast.error(err.response?.data?.message || 'Failed to create exam');
     } finally {
       setAddingExam(false);
+    }
+  };
+
+  const handleEditExamClick = (e, exam) => {
+    e.stopPropagation();
+    setEditingExamId(exam.exam_id);
+    setEditExamForm({
+      name: exam.name || '',
+      category: exam.category || '',
+      description: exam.description || '',
+      image_url: exam.image_url || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateExam = async (e) => {
+    e.preventDefault();
+    if (!editExamForm.name) {
+      toast.error('Exam name is required');
+      return;
+    }
+    try {
+      setUpdatingExam(true);
+      const response = await axios.put(`${API_BASE_URL}/api/classroom-exams/${editingExamId}`, editExamForm, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data && response.data.success) {
+        toast.success('Exam updated successfully!');
+        setShowEditModal(false);
+        fetchExams();
+      }
+    } catch (err) {
+      console.error('Failed to update exam:', err);
+      toast.error('Failed to update exam');
+    } finally {
+      setUpdatingExam(false);
+    }
+  };
+
+  const handleDeleteExam = async (e, examId) => {
+    e.stopPropagation();
+    if (!window.confirm('Are you sure you want to delete this Classroom Exam? This will delete all cached papers, subjects, chapters, and topics.')) return;
+    try {
+      const response = await axios.delete(`${API_BASE_URL}/api/classroom-exams/${examId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data && response.data.success) {
+        toast.success('Exam deleted successfully!');
+        fetchExams();
+      }
+    } catch (err) {
+      console.error('Failed to delete exam:', err);
+      toast.error('Failed to delete exam');
+    }
+  };
+
+  const handleViewHistory = async (e, exam) => {
+    e.stopPropagation();
+    setHistoryExamName(exam.name);
+    setHistoryExamsList([]);
+    setShowHistoryModal(true);
+    try {
+      setHistoryLoading(true);
+      const res = await axios.get(`${API_BASE_URL}/api/classroom-exams/${exam.exam_id}/history`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data && res.data.success) {
+        setHistoryExamsList(res.data.history || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch study history:', err);
+      toast.error('Failed to load study history logs');
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
@@ -212,7 +304,30 @@ const ClassroomList = () => {
                   onClick={() => handleCardClick(exam)}
                 >
                   {/* Image container inside padding (AI Courses style) */}
-                  <div className="w-full h-40 rounded-md bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center overflow-hidden mb-3 relative">
+                  <div className="w-full h-40 rounded-md bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center overflow-hidden mb-3 relative animate-in fade-in duration-200">
+                    <div className="absolute top-2 left-2 flex items-center space-x-1 z-10 bg-white/85 backdrop-blur-sm p-1 rounded-md shadow-sm">
+                      <button
+                        onClick={(e) => handleEditExamClick(e, exam)}
+                        className="p-1 rounded text-gray-700 hover:text-indigo-600 hover:bg-white transition"
+                        title="Edit Exam"
+                      >
+                        <Edit size={12} />
+                      </button>
+                      <button
+                        onClick={(e) => handleViewHistory(e, exam)}
+                        className="p-1 rounded text-gray-700 hover:text-green-600 hover:bg-white transition"
+                        title="Study History"
+                      >
+                        <History size={12} />
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteExam(e, exam.exam_id)}
+                        className="p-1 rounded text-gray-700 hover:text-red-600 hover:bg-white transition"
+                        title="Delete Exam"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
                     {exam.image_url && !exam.image_url.includes('default') ? (
                       <img
                         src={exam.image_url.startsWith('http') ? exam.image_url : `${API_BASE_URL}${exam.image_url}`}
@@ -380,6 +495,143 @@ const ClassroomList = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Exam Modal Dialog */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl p-6 relative">
+            <button
+              onClick={() => setShowEditModal(false)}
+              className="absolute top-4 right-4 p-1.5 text-gray-400 hover:text-gray-700 transition"
+            >
+              <X size={20} />
+            </button>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Edit Classroom Exam</h3>
+            <form onSubmit={handleUpdateExam} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">
+                  Exam Name
+                </label>
+                <input
+                  type="text"
+                  value={editExamForm.name}
+                  onChange={(e) => setEditExamForm({ ...editExamForm, name: e.target.value })}
+                  className="w-full px-3.5 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">
+                  Category
+                </label>
+                <input
+                  type="text"
+                  value={editExamForm.category}
+                  onChange={(e) => setEditExamForm({ ...editExamForm, category: e.target.value })}
+                  className="w-full px-3.5 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">
+                  Description
+                </label>
+                <textarea
+                  value={editExamForm.description}
+                  onChange={(e) => setEditExamForm({ ...editExamForm, description: e.target.value })}
+                  className="w-full px-3.5 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm h-24 resize-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">
+                  Image URL
+                </label>
+                <input
+                  type="text"
+                  value={editExamForm.image_url}
+                  onChange={(e) => setEditExamForm({ ...editExamForm, image_url: e.target.value })}
+                  className="w-full px-3.5 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
+              <div className="flex justify-end space-x-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+                  disabled={updatingExam}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={updatingExam || !editExamForm.name.trim()}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow disabled:opacity-50 flex items-center"
+                >
+                  {updatingExam ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Study History Modal Dialog */}
+      {showHistoryModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-xl overflow-hidden shadow-2xl p-6 relative flex flex-col max-h-[85vh]">
+            <button
+              onClick={() => setShowHistoryModal(false)}
+              className="absolute top-4 right-4 p-1.5 text-gray-400 hover:text-gray-700 transition"
+            >
+              <X size={20} />
+            </button>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Study Progress History</h3>
+            <p className="text-xs text-indigo-600 font-semibold mb-4 uppercase tracking-wider">Exam: {historyExamName}</p>
+            
+            <div className="flex-1 overflow-y-auto no-scrollbar space-y-3 pr-1">
+              {historyLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <RefreshCw className="animate-spin text-indigo-600" size={32} />
+                </div>
+              ) : historyExamsList.length === 0 ? (
+                <div className="text-center text-gray-500 py-12">
+                  <Layers className="mx-auto text-gray-300 mb-2" size={36} />
+                  <p className="text-sm font-medium">No study progress sessions recorded yet.</p>
+                </div>
+              ) : (
+                historyExamsList.map((item, idx) => (
+                  <div key={idx} className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                    <div>
+                      <h4 className="font-bold text-gray-800 text-sm">{item.subtopic_name || 'Subtopic Session'}</h4>
+                      <p className="text-xs text-gray-400 mt-1">Date: {new Date(item.date || item.created_at).toLocaleDateString()}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded">
+                        {item.time_spent_minutes || 0} mins read
+                      </span>
+                      {item.quiz_score !== undefined && (
+                        <span className="px-2.5 py-1 bg-green-50 text-green-700 text-xs font-bold rounded">
+                          Quiz: {item.quiz_score}%
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+            
+            <div className="flex justify-end pt-4 border-t mt-4">
+              <button
+                type="button"
+                onClick={() => setShowHistoryModal(false)}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-semibold"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -353,7 +353,7 @@ const SidebarLayout = ({ onLogout, userRole }) => {
             </div>
           </div>
         </div>
-        <div className="flex-1 overflow-auto p-8 text-gray-900">
+        <div className="flex-1 overflow-auto p-8 text-gray-900 no-scrollbar">
           <Outlet />
         </div>
       </div>

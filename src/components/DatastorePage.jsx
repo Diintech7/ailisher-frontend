@@ -195,7 +195,7 @@ const DatastoreContent = () => {
         throw new Error('Authentication token not found');
       }
 
-      const response = await axios.get('http://localhost:4000/api/datastore', {
+      const response = await axios.get('https://ailisher.diintech.com/api/datastore', {
         headers: {
           Authorization: `Bearer ${token}`,
         }
@@ -237,7 +237,7 @@ const DatastoreContent = () => {
         uploadType = 'pdf';
       }
 
-      const presignedRes = await axios.post('http://localhost:4000/api/r2/presigned-upload', {
+      const presignedRes = await axios.post('https://ailisher.diintech.com/api/r2/presigned-upload', {
         folder: `datastore_${uploadType}s`,
         filename: file.name,
         contentType: file.type || 'application/octet-stream'
@@ -313,7 +313,7 @@ const DatastoreContent = () => {
         }
       }
 
-      const response = await axios.post('http://localhost:4000/api/datastore', requestData, {
+      const response = await axios.post('https://ailisher.diintech.com/api/datastore', requestData, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -342,7 +342,7 @@ const DatastoreContent = () => {
     try {
       const token = Cookies.get('usertoken');
 
-      await axios.delete(`http://localhost:4000/api/datastore/${id}`, {
+      await axios.delete(`https://ailisher.diintech.com/api/datastore/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

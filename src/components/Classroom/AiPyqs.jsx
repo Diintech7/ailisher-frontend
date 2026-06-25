@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { HelpCircle, RefreshCw, ChevronLeft, Search, BookOpen, Film, Play, X, CheckCircle, HelpCircle as QuestionIcon, Plus, Upload, Trash2, Cpu } from 'lucide-react';
+import { HelpCircle, RefreshCw, ChevronLeft, Search, BookOpen, Film, Play, X, CheckCircle, HelpCircle as QuestionIcon, Plus, Upload, Trash2, Cpu, Edit, Sparkles, MessageSquare, Send, Mic, Volume2 } from 'lucide-react';
 import { API_BASE_URL } from '../../config';
 import { toast } from 'react-toastify';
 
@@ -28,6 +28,27 @@ const AiPyqs = () => {
   const [file, setFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isGeneratingScript, setIsGeneratingScript] = useState(false);
+
+  // Edit Set State
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editSetName, setEditSetName] = useState('');
+  const [editSetYear, setEditSetYear] = useState('');
+  const [editSetDescription, setEditSetDescription] = useState('');
+  const [isUpdatingSet, setIsUpdatingSet] = useState(false);
+
+  // Overview Report
+  const [overview, setOverview] = useState('');
+  const [overviewLoading, setOverviewLoading] = useState(false);
+
+  // Chatbot State
+  const [chatMessage, setChatMessage] = useState('');
+  const [chatHistory, setChatHistory] = useState([]);
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatSessionId, setChatSessionId] = useState('');
+  const [isVectorizing, setIsVectorizing] = useState(false);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [showChatDrawer, setShowChatDrawer] = useState(false);
 
   const token = Cookies.get('usertoken');
 
@@ -59,6 +80,9 @@ const AiPyqs = () => {
     setSearchTerm('');
     setExpandedExplanations({});
     setFile(null);
+    setOverview('');
+    setChatHistory([]);
+    setChatSessionId('');
     
     try {
       // Fetch Questions
@@ -66,7 +90,12 @@ const AiPyqs = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (questionsRes.data && questionsRes.data.success) {
-        setQuestions(questionsRes.data.questions || []);
+        const fetchedQuestions = questionsRes.data.questions || [];
+        setQuestions(fetchedQuestions);
+        setSelectedSet(prev => ({
+          ...prev,
+          question_count: fetchedQuestions.length
+        }));
       }
 
       // Fetch Reels
@@ -152,6 +181,254 @@ const AiPyqs = () => {
     }
   };
 
+  const handleUpdateSet = async (e) => {
+    e.preventDefault();
+    if (!editSetName.trim()) return;
+    try {
+      setIsUpdatingSet(true);
+      const res = await axios.put(`${API_BASE_URL}/api/classroom-exams/pyq-sets/${selectedSet.pyq_set_id}`, {
+        name: editSetName,
+        year: editSetYear ? parseInt(editSetYear) : null,
+        description: editSetDescription
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data && res.data.success) {
+        toast.success('PYQ Set updated successfully!');
+        setSelectedSet({ ...selectedSet, name: editSetName, year: editSetYear, description: editSetDescription });
+        setShowEditModal(false);
+        fetchPyqSets();
+      }
+    } catch (err) {
+      console.error('Error updating set:', err);
+      toast.error('Failed to update set');
+    } finally {
+      setIsUpdatingSet(false);
+    }
+  };
+
+  const openEditModal = () => {
+    setEditSetName(selectedSet.name || '');
+    setEditSetYear(selectedSet.year || '');
+    setEditSetDescription(selectedSet.description || '');
+    setShowEditModal(true);
+  };
+
+  const handleDeleteSet = async () => {
+    if (!window.confirm('Are you sure you want to delete this PYQ set? This will delete all parsed questions and video reels.')) return;
+    try {
+      const res = await axios.delete(`${API_BASE_URL}/api/classroom-exams/pyq-sets/${selectedSet.pyq_set_id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data && res.data.success) {
+        toast.success('PYQ Set deleted successfully!');
+        handleBack();
+        fetchPyqSets();
+      }
+    } catch (err) {
+      console.error('Error deleting set:', err);
+      toast.error('Failed to delete set');
+    }
+  };
+
+  const handleResetSet = async () => {
+    if (!window.confirm('Are you sure you want to reset this PYQ Set? All parsed questions and reels will be cleared.')) return;
+    try {
+      const res = await axios.post(`${API_BASE_URL}/api/classroom-exams/pyq-sets/${selectedSet.pyq_set_id}/reset`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data && res.data.success) {
+        toast.success('PYQ Set reset successfully!');
+        setSelectedSet(prev => ({
+          ...prev,
+          question_count: 0
+        }));
+        handleSetClick(selectedSet);
+      }
+    } catch (err) {
+      console.error('Error resetting set:', err);
+      toast.error('Failed to reset PYQ set');
+    }
+  };
+
+  const handleDeleteQuestion = async (questionId) => {
+    if (!window.confirm('Are you sure you want to delete this question?')) return;
+    try {
+      const res = await axios.delete(`${API_BASE_URL}/api/classroom-exams/pyq-sets/questions/${questionId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data && res.data.success) {
+        toast.success('Question deleted successfully!');
+        setQuestions(prev => {
+          const updated = prev.filter(q => q.question_id !== questionId);
+          setSelectedSet(selected => ({
+            ...selected,
+            question_count: updated.length
+          }));
+          return updated;
+        });
+      }
+    } catch (err) {
+      console.error('Error deleting question:', err);
+      toast.error('Failed to delete question');
+    }
+  };
+
+  const handleGenerateOverview = async () => {
+    try {
+      setOverviewLoading(true);
+      const res = await axios.post(`${API_BASE_URL}/api/classroom-exams/pyq-sets/${selectedSet.pyq_set_id}/generate-overview`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data && res.data.success) {
+        toast.success('AI overview generated successfully!');
+        setSelectedSet(prev => ({ ...prev, overview_generated: true }));
+        setOverview(res.data.overview || 'AI Overview analysis compiled.');
+      }
+    } catch (err) {
+      console.error('Error generating overview:', err);
+      toast.error('Failed to generate overview report');
+    } finally {
+      setOverviewLoading(false);
+    }
+  };
+
+  const handleVectorize = async () => {
+    try {
+      setIsVectorizing(true);
+      toast.info('Training AI Chatbot on this set. Please wait...', { autoClose: 3000 });
+      const res = await axios.post(`${API_BASE_URL}/api/classroom-exams/pyq-sets/${selectedSet.pyq_set_id}/vectorize`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data && res.data.success) {
+        toast.success('AI Chatbot trained successfully!');
+        setSelectedSet(prev => ({ ...prev, overview_generated: true }));
+      }
+    } catch (err) {
+      console.error('Error vectorizing set:', err);
+      toast.error('Failed to train AI Chatbot');
+    } finally {
+      setIsVectorizing(false);
+    }
+  };
+
+  const fetchChatHistory = async () => {
+    try {
+      setIsHistoryLoading(true);
+      const res = await axios.get(`${API_BASE_URL}/api/classroom-exams/pyq-sets/${selectedSet.pyq_set_id}/chat/history`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data && res.data.success) {
+        setChatHistory(res.data.history || []);
+        if (res.data.session_id) setChatSessionId(res.data.session_id);
+      }
+    } catch (err) {
+      console.error('Error fetching chat history:', err);
+    } finally {
+      setIsHistoryLoading(false);
+    }
+  };
+
+  const handleSendChat = async (e, speechText = '') => {
+    if (e) e.preventDefault();
+    const finalMsg = speechText || chatMessage;
+    if (!finalMsg.trim()) return;
+    
+    const userMsg = { role: 'user', message: finalMsg, created_at: new Date().toISOString() };
+    setChatHistory(prev => [...prev, userMsg]);
+    if (!speechText) setChatMessage('');
+    
+    try {
+      setChatLoading(true);
+      const res = await axios.post(`${API_BASE_URL}/api/classroom-exams/pyq-sets/${selectedSet.pyq_set_id}/chat`, {
+        question: finalMsg,
+        session_id: chatSessionId
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data && res.data.success) {
+        const botMsg = { role: 'assistant', message: res.data.reply || res.data.message || res.data.answer, created_at: new Date().toISOString() };
+        setChatHistory(prev => [...prev, botMsg]);
+        if (res.data.session_id) setChatSessionId(res.data.session_id);
+      }
+    } catch (err) {
+      console.error('Error in chat:', err);
+      toast.error('AI Chatbot failed to respond');
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  const handleStartListening = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      toast.error('Speech recognition not supported in this browser');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'en-IN';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event) => {
+      const speechToText = event.results[0][0].transcript;
+      if (speechToText.trim()) {
+        handleSendChat(null, speechToText);
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Speech recognition error:', event.error);
+      toast.error('Voice input failed. Check microphone permissions.');
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+  };
+
+  const handlePlayTTS = (text) => {
+    try {
+      if (window.currentAudio) {
+        window.currentAudio.pause();
+      }
+      const audioUrl = `${API_BASE_URL}/api/classroom-exams/tts/speak?text=${encodeURIComponent(text)}&voice=alloy`;
+      const audio = new Audio(audioUrl);
+      window.currentAudio = audio;
+      audio.play().catch(err => {
+        console.error('Failed to play TTS audio:', err);
+        toast.error('Unable to play voice response');
+      });
+    } catch (err) {
+      console.error('TTS Playback Error:', err);
+    }
+  };
+
+  const handleClearChatHistory = async () => {
+    if (!window.confirm('Clear all chat messages?')) return;
+    try {
+      const res = await axios.delete(`${API_BASE_URL}/api/classroom-exams/pyq-sets/${selectedSet.pyq_set_id}/chat/history`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.data && res.data.success) {
+        toast.success('Chat history cleared!');
+        setChatHistory([]);
+        setChatSessionId('');
+      }
+    } catch (err) {
+      console.error('Error clearing chat history:', err);
+      toast.error('Failed to clear history');
+    }
+  };
+
   const handleDeleteReel = async (reelId) => {
     if (!window.confirm('Are you sure you want to delete this reel?')) return;
     try {
@@ -179,6 +456,8 @@ const AiPyqs = () => {
     setSelectedSet(null);
     setQuestions([]);
     setReels([]);
+    setShowChatDrawer(false);
+    if (window.currentAudio) window.currentAudio.pause();
   };
 
   // Filter questions by search term
@@ -278,15 +557,47 @@ const AiPyqs = () => {
                 <ChevronLeft size={20} className="text-gray-600" />
               </button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-800">{selectedSet.name}</h1>
+                <div className="flex items-center space-x-2">
+                  <h1 className="text-2xl font-bold text-gray-800">{selectedSet.name}</h1>
+                  <button
+                    onClick={openEditModal}
+                    className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-indigo-600 transition"
+                    title="Edit Set Info"
+                  >
+                    <Edit size={16} />
+                  </button>
+                  <button
+                    onClick={handleResetSet}
+                    className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-amber-600 transition"
+                    title="Reset Questions"
+                  >
+                    <RefreshCw size={16} />
+                  </button>
+                  <button
+                    onClick={handleDeleteSet}
+                    className="p-1 hover:bg-gray-100 rounded text-gray-500 hover:text-red-600 transition"
+                    title="Delete Set"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
                 <p className="text-sm text-indigo-600 font-semibold mt-0.5 flex items-center">
-                  Total {selectedSet.question_count || 0} questions parsed by AI
+                  Total {selectedSet.question_count || 0} questions parsed by AI {selectedSet.year ? `| Year: ${selectedSet.year}` : ''}
                 </p>
               </div>
             </div>
 
             {/* Actions & Tab Selectors */}
             <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={handleGenerateOverview}
+                disabled={overviewLoading || questions.length === 0}
+                className="flex items-center bg-indigo-50 text-indigo-600 hover:bg-indigo-100 px-4 py-2 rounded-lg text-sm font-semibold transition disabled:opacity-50"
+              >
+                <Sparkles size={16} className="mr-1.5" />
+                {overviewLoading ? 'Analyzing Overview...' : 'AI Overview Report'}
+              </button>
+
               <button
                 onClick={handleGenerateScript}
                 disabled={isGeneratingScript || questions.length === 0}
@@ -319,6 +630,17 @@ const AiPyqs = () => {
                   <Film size={16} className="mr-2" />
                   Video Reels ({reels.length})
                 </button>
+                <button
+                  onClick={() => { setShowChatDrawer(true); fetchChatHistory(); }}
+                  className={`flex items-center px-4 py-2 text-sm font-semibold rounded-md transition ${
+                    showChatDrawer
+                      ? 'bg-white text-indigo-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  <MessageSquare size={16} className="mr-2" />
+                  AI Chatbot
+                </button>
               </div>
             </div>
           </div>
@@ -343,6 +665,19 @@ const AiPyqs = () => {
               </button>
             </form>
           </div>
+
+          {/* AI Overview Analysis Display */}
+          {(overview || selectedSet.overview) && (
+            <div className="bg-indigo-50/40 border border-indigo-100 rounded-xl p-5 mb-6 shadow-sm">
+              <h3 className="text-sm font-bold text-indigo-800 mb-2 flex items-center">
+                <Sparkles size={16} className="mr-1.5" />
+                AI Topic breakdown Analysis Overview:
+              </h3>
+              <p className="text-gray-700 text-sm leading-relaxed whitespace-pre-line font-medium italic">
+                {overview || selectedSet.overview}
+              </p>
+            </div>
+          )}
 
           {/* Loader for Details */}
           {detailLoading ? (
@@ -374,8 +709,15 @@ const AiPyqs = () => {
               ) : (
                 <div className="space-y-6">
                   {filteredQuestions.map((q, idx) => (
-                    <div key={q.question_id} className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition">
-                      <div className="flex items-start space-x-3">
+                    <div key={q.question_id} className="relative bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition">
+                      <button
+                        onClick={() => handleDeleteQuestion(q.question_id)}
+                        className="absolute top-4 right-4 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
+                        title="Delete Question"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                      <div className="flex items-start space-x-3 pr-8">
                         <span className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-sm">
                           Q{idx + 1}
                         </span>
@@ -549,6 +891,76 @@ const AiPyqs = () => {
         </div>
       )}
 
+      {/* 3.1 Edit PYQ Set Modal dialog */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl p-6 relative">
+            <button
+              onClick={() => setShowEditModal(false)}
+              className="absolute top-4 right-4 p-1.5 text-gray-400 hover:text-gray-700 transition"
+            >
+              <X size={20} />
+            </button>
+            <h3 className="text-lg font-bold text-gray-900 mb-4">Edit PYQ Set</h3>
+            <form onSubmit={handleUpdateSet} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">
+                  Set Name
+                </label>
+                <input
+                  type="text"
+                  value={editSetName}
+                  onChange={(e) => setEditSetName(e.target.value)}
+                  className="w-full px-3.5 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">
+                  Year
+                </label>
+                <input
+                  type="number"
+                  placeholder="e.g. 2025"
+                  value={editSetYear}
+                  onChange={(e) => setEditSetYear(e.target.value)}
+                  className="w-full px-3.5 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">
+                  Description
+                </label>
+                <textarea
+                  placeholder="e.g. Past Year Paper analysis for State PSC..."
+                  value={editSetDescription}
+                  onChange={(e) => setEditSetDescription(e.target.value)}
+                  rows={3}
+                  className="w-full px-3.5 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm resize-none"
+                />
+              </div>
+              <div className="flex justify-end space-x-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50"
+                  disabled={isUpdatingSet}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdatingSet || !editSetName.trim()}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow disabled:opacity-50"
+                >
+                  {isUpdatingSet ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* 4. Video Player Modal overlay */}
       {selectedReel && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -586,6 +998,163 @@ const AiPyqs = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Chatbot Drawer Overlay */}
+      {showChatDrawer && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-end">
+          <div className="bg-white h-full w-full max-w-md shadow-2xl flex flex-col relative animate-slide-in animate-duration-200">
+            {/* Header */}
+            <div className="p-4 border-b flex justify-between items-center bg-slate-50">
+              <div>
+                <h3 className="font-bold text-gray-800 text-base flex items-center">
+                  <MessageSquare className="mr-2 text-indigo-600" size={18} />
+                  Chat with {selectedSet.name} AI Guide
+                </h3>
+                <p className="text-[10px] text-gray-400 font-semibold mt-0.5">AI assistant powered by paper context</p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={handleVectorize}
+                  disabled={isVectorizing || questions.length === 0}
+                  className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition border ${
+                    isVectorizing
+                      ? 'bg-indigo-50 border-indigo-100 text-indigo-400 cursor-not-allowed'
+                      : 'bg-white border-gray-200 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200'
+                  }`}
+                  title="Train AI Chatbot on this set"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isVectorizing ? 'animate-spin' : ''}`} />
+                  <span>{isVectorizing ? 'Training...' : 'Train AI'}</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setShowChatDrawer(false);
+                    if (window.currentAudio) window.currentAudio.pause();
+                  }}
+                  className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-150 transition"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            {/* Chat messages area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50 flex flex-col no-scrollbar">
+              {!selectedSet.overview_generated && chatHistory.length === 0 ? (
+                <div className="flex flex-col justify-center items-center h-full flex-1 text-center py-8">
+                  <Cpu className="text-gray-300 mb-4" size={48} />
+                  <h3 className="text-lg font-bold text-gray-800">AI Chatbot Training Required</h3>
+                  <p className="text-gray-500 max-w-sm mt-1 mb-6 text-sm">
+                    Train the chatbot on this PYQ set questions and context PDF to start asking doubts.
+                  </p>
+                  <button
+                    onClick={handleVectorize}
+                    disabled={isVectorizing || questions.length === 0}
+                    className="flex items-center bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold shadow disabled:opacity-50 transition"
+                  >
+                    <Sparkles className="mr-2" size={16} />
+                    {isVectorizing ? 'Training AI Chatbot...' : 'Train AI Chatbot'}
+                  </button>
+                </div>
+              ) : isHistoryLoading ? (
+                <div className="flex justify-center items-center h-full flex-1">
+                  <RefreshCw className="animate-spin text-indigo-600" size={24} />
+                </div>
+              ) : chatHistory.length === 0 ? (
+                <div className="flex flex-col justify-center items-center h-full flex-1 text-center text-gray-400 py-8">
+                  <MessageSquare size={36} className="mb-2 opacity-55 text-indigo-500" />
+                  <p className="text-xs font-bold text-gray-700">No chat history</p>
+                  <p className="text-[10px] text-gray-400 mt-1 max-w-[240px]">Ask any doubt or get explanations about subjects, chapters, and topics of this paper.</p>
+                </div>
+              ) : (
+                chatHistory.map((msg, mIdx) => (
+                  <div
+                    key={mIdx}
+                    className={`flex items-start gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    {msg.role === 'assistant' && (
+                      <button
+                        onClick={() => handlePlayTTS(msg.message)}
+                        className="p-1.5 bg-white border border-gray-200 rounded-lg text-gray-500 hover:text-indigo-600 hover:bg-slate-50 transition shadow-sm mt-1 flex-shrink-0"
+                        title="Speak response"
+                      >
+                        <Volume2 size={14} />
+                      </button>
+                    )}
+                    <div
+                      className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-line shadow-sm ${
+                        msg.role === 'user'
+                          ? 'bg-indigo-600 text-white rounded-br-none'
+                          : 'bg-white text-gray-800 border rounded-bl-none'
+                      }`}
+                    >
+                      <p>{msg.message}</p>
+                      <span className={`text-[9px] block text-right mt-1.5 opacity-60 ${
+                        msg.role === 'user' ? 'text-indigo-100' : 'text-gray-400'
+                      }`}>
+                        {new Date(msg.created_at || new Date()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+              {chatLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-white text-gray-800 border px-4 py-3 rounded-2xl rounded-bl-none shadow-sm flex items-center space-x-1">
+                    <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-bounce"></span>
+                    <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-bounce delay-100"></span>
+                    <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-bounce delay-200"></span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Input form footer */}
+            {(selectedSet.overview_generated || chatHistory.length > 0) && (
+              <div className="p-4 border-t bg-white flex flex-col gap-2">
+                <form onSubmit={(e) => handleSendChat(e)} className="flex gap-2 items-center">
+                  <button
+                    type="button"
+                    onClick={handleStartListening}
+                    className={`p-2.5 rounded-xl border flex items-center justify-center transition flex-shrink-0 ${
+                      isListening
+                        ? 'bg-red-50 text-red-600 border-red-200 animate-pulse'
+                        : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'
+                    }`}
+                    title="Voice Input (Speech-to-Text)"
+                  >
+                    <Mic size={16} />
+                  </button>
+                  <input
+                    type="text"
+                    placeholder="Ask AI Guide about this paper..."
+                    value={chatMessage}
+                    onChange={(e) => setChatMessage(e.target.value)}
+                    disabled={chatLoading}
+                    className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                  />
+                  <button
+                    type="submit"
+                    disabled={chatLoading || !chatMessage.trim()}
+                    className="bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition flex items-center justify-center"
+                  >
+                    <Send size={16} />
+                  </button>
+                </form>
+                {chatHistory.length > 0 && (
+                  <button
+                    onClick={handleClearChatHistory}
+                    className="text-[11px] font-bold text-red-500 hover:text-red-700 flex items-center justify-center mt-1 transition self-center"
+                  >
+                    <Trash2 size={12} className="mr-1" />
+                    Clear Chat History
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

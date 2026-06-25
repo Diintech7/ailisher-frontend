@@ -84,7 +84,7 @@ const EvaluatorsManagement = () => {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch('http://localhost:4000/api/evaluators', {
+      const response = await fetch('https://ailisher.diintech.com/api/evaluators', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -117,7 +117,7 @@ const EvaluatorsManagement = () => {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`http://localhost:4000/api/evaluators/${evaluatorId}`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/evaluators/${evaluatorId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -154,7 +154,7 @@ const EvaluatorsManagement = () => {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch('http://localhost:4000/api/admin/clients', {
+      const response = await fetch('https://ailisher.diintech.com/api/admin/clients', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -184,7 +184,7 @@ const EvaluatorsManagement = () => {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch('http://localhost:4000/api/admin/users', {
+      const response = await fetch('https://ailisher.diintech.com/api/admin/users', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -212,7 +212,7 @@ const EvaluatorsManagement = () => {
   //       throw new Error('Not authenticated');
   //     }
 
-  //     const response = await fetch('http://localhost:4000/api/admin/withdrawals', {
+  //     const response = await fetch('https://ailisher.diintech.com/api/admin/withdrawals', {
   //       headers: {
   //         'Authorization': `Bearer ${token}`
   //       }
@@ -248,10 +248,10 @@ const EvaluatorsManagement = () => {
   //     if (!token) throw new Error('Not authenticated');
 
   //     const [approvedRes, rejectedRes] = await Promise.all([
-  //       fetch('http://localhost:4000/api/admin/verified-kyc', {
+  //       fetch('https://ailisher.diintech.com/api/admin/verified-kyc', {
   //         headers: { 'Authorization': `Bearer ${token}` }
   //       }),
-  //       fetch('http://localhost:4000/api/admin/rejected-kyc', {
+  //       fetch('https://ailisher.diintech.com/api/admin/rejected-kyc', {
   //         headers: { 'Authorization': `Bearer ${token}` }
   //       })
   //     ]);
@@ -403,7 +403,7 @@ const EvaluatorsManagement = () => {
         status: 'PENDING'
       };
 
-      const response = await fetch('http://localhost:4000/api/evaluators', {
+      const response = await fetch('https://ailisher.diintech.com/api/evaluators', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -459,7 +459,7 @@ const EvaluatorsManagement = () => {
           throw new Error('Not authenticated');
         }
 
-        const response = await fetch(`http://localhost:4000/api/evaluators/${evaluatorId}`, {
+        const response = await fetch(`https://ailisher.diintech.com/api/evaluators/${evaluatorId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -508,7 +508,7 @@ const EvaluatorsManagement = () => {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`http://localhost:4000/api/evaluators/${selectedEvaluator._id}`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/evaluators/${selectedEvaluator._id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -575,7 +575,7 @@ const EvaluatorsManagement = () => {
         mobile: approveFormData.mobile
       });
 
-      const response = await fetch('http://localhost:4000/api/clients/CLI677117YN7N/mobile/evaluations/addexistinguserasevaluator', {
+      const response = await fetch('https://ailisher.diintech.com/api/clients/CLI677117YN7N/mobile/evaluations/addexistinguserasevaluator', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -659,7 +659,7 @@ const EvaluatorsManagement = () => {
         throw new Error('Not authenticated');
       }
 
-      const baseUrl = `http://localhost:4000/api/admin/evaluators/${kycTargetEvaluator._id}/kyc`;
+      const baseUrl = `https://ailisher.diintech.com/api/admin/evaluators/${kycTargetEvaluator._id}/kyc`;
       const endpoint = kycAction === 'verify' ? `${baseUrl}/verify` : `${baseUrl}/reject`;
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -696,7 +696,7 @@ const EvaluatorsManagement = () => {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`http://localhost:4000/api/evaluators/${evaluatorId}/verify`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/evaluators/${evaluatorId}/verify`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -774,7 +774,7 @@ const EvaluatorsManagement = () => {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`http://localhost:4000/api/evaluators/${evaluatorId}/togglestatus`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/evaluators/${evaluatorId}/togglestatus`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

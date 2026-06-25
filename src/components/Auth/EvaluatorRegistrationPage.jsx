@@ -54,7 +54,7 @@ const EvaluatorRegistrationPage = ({ onAuthSuccess }) => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:4000/api/evaluators/register', {
+      const response = await fetch('https://ailisher.diintech.com/api/evaluators/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

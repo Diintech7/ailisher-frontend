@@ -61,7 +61,7 @@ const CreateSetModal = ({
       const token = Cookies.get("usertoken")
 
       // Use the new subjective assets endpoint
-      const endpoint = `http://localhost:4000/api/subjective-assets/${itemType}/${itemId}/question-sets`
+      const endpoint = `https://ailisher.diintech.com/api/subjective-assets/${itemType}/${itemId}/question-sets`
 
       const response = await axios.post(
         endpoint,

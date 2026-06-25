@@ -20,7 +20,7 @@ const CreditAccount = () => {
     setLoading(true);
     try {
       const response = await axios.get(
-        "http://localhost:4000/api/admin/credit-account",
+        "https://ailisher.diintech.com/api/admin/credit-account",
         {
           headers: {
             Authorization: `Bearer ${Cookies.get("admintoken")}`,
@@ -232,7 +232,7 @@ const CreditAccount = () => {
                       <td className="py-2 sm:py-3 px-2 sm:px-4">{userName}</td>
                       <td className="py-2 sm:py-3 px-2 sm:px-4">{account.mobile}</td>
                       <td className="py-2 sm:py-3 px-2 sm:px-4 text-center whitespace-nowrap">{account._id}</td>
-                      <td className="py-2 sm:py-3 px-2 sm:px-4 text-center">{account.client.businessName}</td>
+                      <td className="py-2 sm:py-3 px-2 sm:px-4 text-center">{account.client?.businessName || "No Client"}</td>
                       <td className="py-2 sm:py-3 px-2 sm:px-4 text-right">{account.balance}</td>
                       <td className="py-2 sm:py-3 px-2 sm:px-4 text-center">
                         <span

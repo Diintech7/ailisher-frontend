@@ -57,7 +57,7 @@ const WorkbookItem = ({ workbook, onClick, onEdit, onUpdateWorkbook, onToggleEna
   const handleDeleteWorkbook = async (id) => {
     const token = Cookies.get('usertoken');
 
-    const res = await fetch(`http://localhost:4000/api/workbooks/${id}`, {
+    const res = await fetch(`https://ailisher.diintech.com/api/workbooks/${id}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -98,7 +98,7 @@ const WorkbookItem = ({ workbook, onClick, onEdit, onUpdateWorkbook, onToggleEna
         });
       }
       console.log(options)
-      const response = await fetch(`http://localhost:4000/api/workbooks/${workbook._id}/highlight`, options);
+      const response = await fetch(`https://ailisher.diintech.com/api/workbooks/${workbook._id}/highlight`, options);
       const data = await response.json();
       console.log(data)
       if (data.success) {
@@ -132,7 +132,7 @@ const WorkbookItem = ({ workbook, onClick, onEdit, onUpdateWorkbook, onToggleEna
           endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() // 7 days from now
         });
       }
-      const response = await fetch(`http://localhost:4000/api/workbooks/${workbook._id}/trending`, options);
+      const response = await fetch(`https://ailisher.diintech.com/api/workbooks/${workbook._id}/trending`, options);
       const data = await response.json();
       if (data.success) {
         toast.success(data.message || 'Trending status updated');
@@ -388,7 +388,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
   const refreshCategories = async () => {
     try {
       const token = Cookies.get("usertoken");
-      const res = await fetch("http://localhost:4000/api/categories", {
+      const res = await fetch("https://ailisher.diintech.com/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await res.json();
@@ -413,7 +413,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
     try {
       setCreatingCategory(true);
       const token = Cookies.get("usertoken");
-      const res = await fetch("http://localhost:4000/api/categories", {
+      const res = await fetch("https://ailisher.diintech.com/api/categories", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -450,7 +450,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
       setCreatingSubcategory(true);
       const token = Cookies.get("usertoken");
       // Need category id; fetch categories and find the current mainCategory
-      const listRes = await fetch("http://localhost:4000/api/categories", {
+      const listRes = await fetch("https://ailisher.diintech.com/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await listRes.json();
@@ -462,7 +462,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
         return;
       }
       const res = await fetch(
-        `http://localhost:4000/api/categories/${currentCat._id}/subcategories`,
+        `https://ailisher.diintech.com/api/categories/${currentCat._id}/subcategories`,
         {
           method: "POST",
           headers: {
@@ -632,7 +632,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
       let coverImageKey = null;
       if (coverImage) {
         // Get presigned URL
-        const uploadUrlResponse = await fetch('http://localhost:4000/api/workbooks/cover-upload-url', {
+        const uploadUrlResponse = await fetch('https://ailisher.diintech.com/api/workbooks/cover-upload-url', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -698,7 +698,7 @@ const AddWorkbookModal = ({ isOpen, onClose, onAdd, currentUser, categoryMapping
         workbookData.isForSale = false;
       }
       // Send to backend
-      const response = await fetch('http://localhost:4000/api/workbooks', {
+      const response = await fetch('https://ailisher.diintech.com/api/workbooks', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -1101,7 +1101,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
   const refreshCategories = async () => {
     try {
       const token = Cookies.get("usertoken");
-      const res = await fetch("http://localhost:4000/api/categories", {
+      const res = await fetch("https://ailisher.diintech.com/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await res.json();
@@ -1126,7 +1126,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
     try {
       setCreatingCategory(true);
       const token = Cookies.get("usertoken");
-      const res = await fetch("http://localhost:4000/api/categories", {
+      const res = await fetch("https://ailisher.diintech.com/api/categories", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1163,7 +1163,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
       setCreatingSubcategory(true);
       const token = Cookies.get("usertoken");
       // Need category id; fetch categories and find the current mainCategory
-      const listRes = await fetch("http://localhost:4000/api/categories", {
+      const listRes = await fetch("https://ailisher.diintech.com/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await listRes.json();
@@ -1175,7 +1175,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
         return;
       }
       const res = await fetch(
-        `http://localhost:4000/api/categories/${currentCat._id}/subcategories`,
+        `https://ailisher.diintech.com/api/categories/${currentCat._id}/subcategories`,
         {
           method: "POST",
           headers: {
@@ -1315,7 +1315,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
 
       if (coverImage) {
         try {
-          const uploadUrlResponse = await fetch('http://localhost:4000/api/workbooks/cover-upload-url', {
+          const uploadUrlResponse = await fetch('https://ailisher.diintech.com/api/workbooks/cover-upload-url', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -1442,7 +1442,7 @@ const EditBookModal = ({ isOpen, onClose, onEdit, book, currentUser, categoryMap
         bookData.isForSale = false;
       }
 
-      const response = await fetch(`http://localhost:4000/api/workbooks/${book._id}`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/workbooks/${book._id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -2148,7 +2148,7 @@ const AIWorkbook = () => {
   const refreshCategories = async () => {
     try {
       const token = Cookies.get("usertoken");
-      const res = await fetch("http://localhost:4000/api/categories", {
+      const res = await fetch("https://ailisher.diintech.com/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await res.json();
@@ -2176,7 +2176,7 @@ const AIWorkbook = () => {
       }
       // Fetch categories from backend
       const categoriesResponse = await fetch(
-        "http://localhost:4000/api/categories",
+        "https://ailisher.diintech.com/api/categories",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -2205,7 +2205,7 @@ const AIWorkbook = () => {
       });
 
 
-      const response = await fetch('http://localhost:4000/api/workbooks', {
+      const response = await fetch('https://ailisher.diintech.com/api/workbooks', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -2309,7 +2309,7 @@ const AIWorkbook = () => {
         toast.error('Authentication required');
         return;
       }
-      const response = await fetch(`http://localhost:4000/api/workbooks/${workbookId}`, {
+      const response = await fetch(`https://ailisher.diintech.com/api/workbooks/${workbookId}`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${token}`,

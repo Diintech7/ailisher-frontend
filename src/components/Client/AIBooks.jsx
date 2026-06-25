@@ -1065,7 +1065,7 @@ const AddBookModal = ({
         try {
           // Get presigned URL
           const uploadUrlResponse = await fetch(
-            "http://localhost:4000/api/books/cover-upload-url",
+            "https://ailisher.diintech.com/api/books/cover-upload-url",
             {
               method: "POST",
               headers: {
@@ -1174,7 +1174,7 @@ const AddBookModal = ({
 
       console.log("Sending book data:", bookData);
 
-      const response = await fetch("http://localhost:4000/api/books", {
+      const response = await fetch("https://ailisher.diintech.com/api/books", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -2294,7 +2294,7 @@ const EditBookModal = ({
       }
 
       const response = await fetch(
-        `http://localhost:4000/api/books/${book._id}`,
+        `https://ailisher.diintech.com/api/books/${book._id}`,
         {
           method: "PUT",
           headers: {
@@ -2965,7 +2965,7 @@ const AIBooks = () => {
 
       // Fetch categories from backend
       const categoriesResponse = await fetch(
-        "http://localhost:4000/api/categories",
+        "https://ailisher.diintech.com/api/categories",
         {
           headers: {
             Authorization: `Bearer ${token}`,
