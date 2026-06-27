@@ -484,7 +484,7 @@ export default function EvaluatedAnswers() {
     try {
       const token = Cookies.get("evaluatortoken");
       const response = await axios.get(
-        `https://ailisher.diintech.com/api/answerapis/answers/evaluator/evaluated`,
+        `http://localhost:4000/api/answerapis/answers/evaluator/evaluated`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

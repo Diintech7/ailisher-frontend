@@ -51,7 +51,7 @@ export default function EvaluatorReview() {
   const [imageModalOpen, setImageModalOpen] = useState(false);
   const [activeImage, setActiveImage] = useState(null);
 
-  const API_BASE_URL = 'https://ailisher.diintech.com';
+  const API_BASE_URL = 'http://localhost:4000';
 
   const fetchReviews = async (type, page = 1) => {
     setLoading(prev => ({ ...prev, [type]: true }));

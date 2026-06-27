@@ -27,7 +27,7 @@ export default function OrganizationDashboard() {
           setClientStats({ total: 0, active: 0, inactive: 0, pending: 0, recent: 0 });
           return;
         }
-        const response = await axios.get('https://ailisher.diintech.com/api/organizations/clients', {
+        const response = await axios.get('http://localhost:4000/api/organizations/clients', {
           headers: { Authorization: `Bearer ${token}` },
         });
         const clients = Array.isArray(response.data?.data) ? response.data.data : [];

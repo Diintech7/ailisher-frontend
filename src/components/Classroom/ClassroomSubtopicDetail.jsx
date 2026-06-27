@@ -359,6 +359,10 @@ const ClassroomSubtopicDetail = () => {
               {exam?.name}
             </span>
             <span>/</span>
+            <span className="cursor-pointer hover:text-blue-600" onClick={() => navigate(`/classroom/${examId}/papers/${paperId}`)}>
+              {paper?.name || 'Paper'}
+            </span>
+            <span>/</span>
             <span className="cursor-pointer hover:text-blue-600" onClick={() => navigate(`/classroom/${examId}/papers/${paperId}/subjects/${subjectId}`)}>
               {subject?.name}
             </span>

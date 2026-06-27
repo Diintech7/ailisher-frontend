@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { RefreshCw, BookOpen, Layers, CheckCircle, AlertCircle, ArrowRight, Loader2, Search, Image as ImageIcon, Plus, X, Edit, Trash2, History } from 'lucide-react';
+import { RefreshCw, BookOpen, Layers, CheckCircle, AlertCircle, ArrowRight, Loader2, Search, Image as ImageIcon, Plus, X, Edit, Trash2, History, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { API_BASE_URL } from '../../config';
 
@@ -28,9 +28,15 @@ const ClassroomList = () => {
     name: '',
     category: '',
     description: '',
-    image_url: ''
+    image_url: '',
+    image_url_1_1: '',
+    image_url_9_16: '',
+    image_url_16_9: ''
   });
   const [updatingExam, setUpdatingExam] = useState(false);
+  const [uploadingExam11, setUploadingExam11] = useState(false);
+  const [uploadingExam916, setUploadingExam916] = useState(false);
+  const [uploadingExam169, setUploadingExam169] = useState(false);
 
   // History Modal State
   const [showHistoryModal, setShowHistoryModal] = useState(false);
@@ -73,9 +79,45 @@ const ClassroomList = () => {
       name: exam.name || '',
       category: exam.category || '',
       description: exam.description || '',
-      image_url: exam.image_url || ''
+      image_url: exam.image_url || '',
+      image_url_1_1: exam.image_url_1_1 || '',
+      image_url_9_16: exam.image_url_9_16 || '',
+      image_url_16_9: exam.image_url_16_9 || ''
     });
     setShowEditModal(true);
+  };
+
+  const handleUploadExamImage = async (field, file) => {
+    if (!file) return;
+    const ratioLabel = field.replace('image_', '');
+    const setter = ratioLabel === '1_1' ? setUploadingExam11 : ratioLabel === '9_16' ? setUploadingExam916 : setUploadingExam169;
+    
+    try {
+      setter(true);
+      const formData = new FormData();
+      formData.append(field, file);
+      
+      const response = await axios.post(`${API_BASE_URL}/api/classroom-exams/exams/${editingExamId}/images`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      if (response.data && response.data.success) {
+        toast.success(`Image (${ratioLabel.replace('_', ':')}) uploaded successfully!`);
+        const newUrl = response.data.urls[`image_url_${ratioLabel}`];
+        setEditExamForm(prev => ({
+          ...prev,
+          [`image_url_${ratioLabel}`]: newUrl
+        }));
+      }
+    } catch (err) {
+      console.error(`Failed to upload ${ratioLabel} image:`, err);
+      toast.error(`Failed to upload ${ratioLabel} image`);
+    } finally {
+      setter(false);
+    }
   };
 
   const handleUpdateExam = async (e) => {
@@ -116,6 +158,29 @@ const ClassroomList = () => {
     } catch (err) {
       console.error('Failed to delete exam:', err);
       toast.error('Failed to delete exam');
+    }
+  };
+
+  const handleToggleStatus = async (e, exam) => {
+    e.stopPropagation();
+    const updatedStatus = exam.isEnabled !== false ? false : true;
+    try {
+      const response = await axios.put(`${API_BASE_URL}/api/classroom-exams/${exam.exam_id}`, {
+        name: exam.name,
+        category: exam.category,
+        description: exam.description,
+        image_url: exam.image_url,
+        isEnabled: updatedStatus
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (response.data && response.data.success) {
+        toast.success(`Exam ${updatedStatus ? 'enabled' : 'disabled'} successfully!`);
+        fetchExams();
+      }
+    } catch (err) {
+      console.error('Failed to toggle exam status:', err);
+      toast.error('Failed to toggle exam status');
     }
   };
 
@@ -300,7 +365,9 @@ const ClassroomList = () => {
               {examsList.map((exam) => (
                 <div
                   key={exam.exam_id}
-                  className="relative bg-white rounded-lg border border-gray-200 shadow-sm p-4 flex flex-col cursor-pointer hover:shadow-md transition-shadow duration-200"
+                  className={`relative bg-white rounded-lg border border-gray-200 shadow-sm p-4 flex flex-col cursor-pointer hover:shadow-md transition-shadow duration-200 ${
+                    exam.isEnabled === false ? 'opacity-65 bg-gray-50/80' : ''
+                  }`}
                   onClick={() => handleCardClick(exam)}
                 >
                   {/* Image container inside padding (AI Courses style) */}
@@ -312,6 +379,17 @@ const ClassroomList = () => {
                         title="Edit Exam"
                       >
                         <Edit size={12} />
+                      </button>
+                      <button
+                        onClick={(e) => handleToggleStatus(e, exam)}
+                        className={`p-1 rounded transition ${
+                          exam.isEnabled !== false
+                            ? 'text-green-600 hover:text-green-700 hover:bg-white'
+                            : 'text-gray-400 hover:text-gray-50 hover:bg-white'
+                        }`}
+                        title={exam.isEnabled !== false ? 'Disable Exam' : 'Enable Exam'}
+                      >
+                        {exam.isEnabled !== false ? <Eye size={12} /> : <EyeOff size={12} />}
                       </button>
                       <button
                         onClick={(e) => handleViewHistory(e, exam)}
@@ -546,7 +624,7 @@ const ClassroomList = () => {
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-700 mb-1.5 uppercase tracking-wider">
-                  Image URL
+                  Image URL (Default)
                 </label>
                 <input
                   type="text"
@@ -555,6 +633,84 @@ const ClassroomList = () => {
                   className="w-full px-3.5 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
                   placeholder="https://example.com/image.jpg"
                 />
+              </div>
+
+              {/* Custom Aspect Ratios Uploader */}
+              <div className="border-t border-gray-100 pt-4 mt-4">
+                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Aspect Ratio Images (R2 Storage)</h4>
+                <div className="grid grid-cols-3 gap-3">
+                  {/* 1:1 Square Ratio */}
+                  <div className="flex flex-col items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-150 h-40">
+                    <span className="text-[10px] font-bold text-gray-650">1:1 Square</span>
+                    <div className="w-16 h-16 bg-gray-200 border border-gray-300 rounded flex items-center justify-center overflow-hidden relative shadow-inner">
+                      {uploadingExam11 ? (
+                        <Loader2 className="animate-spin text-indigo-650" size={18} />
+                      ) : editExamForm.image_url_1_1 ? (
+                        <img src={editExamForm.image_url_1_1} alt="1:1" className="w-full h-full object-cover" />
+                      ) : (
+                        <ImageIcon className="text-gray-400" size={20} />
+                      )}
+                    </div>
+                    <label className="cursor-pointer bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 text-[10px] font-bold px-2 py-1 rounded shadow-sm text-center w-full transition">
+                      {uploadingExam11 ? 'Uploading...' : 'Choose File'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleUploadExamImage('image_1_1', e.target.files[0])}
+                        disabled={uploadingExam11}
+                      />
+                    </label>
+                  </div>
+
+                  {/* 9:16 Portrait Ratio */}
+                  <div className="flex flex-col items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-150 h-40">
+                    <span className="text-[10px] font-bold text-gray-650">9:16 Portrait</span>
+                    <div className="w-10 h-16 bg-gray-200 border border-gray-300 rounded flex items-center justify-center overflow-hidden relative shadow-inner">
+                      {uploadingExam916 ? (
+                        <Loader2 className="animate-spin text-indigo-650" size={18} />
+                      ) : editExamForm.image_url_9_16 ? (
+                        <img src={editExamForm.image_url_9_16} alt="9:16" className="w-full h-full object-cover" />
+                      ) : (
+                        <ImageIcon className="text-gray-400" size={20} />
+                      )}
+                    </div>
+                    <label className="cursor-pointer bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 text-[10px] font-bold px-2 py-1 rounded shadow-sm text-center w-full transition">
+                      {uploadingExam916 ? 'Uploading...' : 'Choose File'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleUploadExamImage('image_9_16', e.target.files[0])}
+                        disabled={uploadingExam916}
+                      />
+                    </label>
+                  </div>
+
+                  {/* 16:9 Landscape Ratio */}
+                  <div className="flex flex-col items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-150 h-40">
+                    <span className="text-[10px] font-bold text-gray-650">16:9 Banner</span>
+                    <div className="w-18 h-10 bg-gray-200 border border-gray-300 rounded flex items-center justify-center overflow-hidden relative shadow-inner my-3">
+                      {uploadingExam169 ? (
+                        <Loader2 className="animate-spin text-indigo-650" size={18} />
+                      ) : editExamForm.image_url_16_9 ? (
+                        <img src={editExamForm.image_url_16_9} alt="16:9" className="w-full h-full object-cover" />
+                      ) : (
+                        <ImageIcon className="text-gray-400" size={20} />
+                      )}
+                    </div>
+                    <label className="cursor-pointer bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 text-[10px] font-bold px-2 py-1 rounded shadow-sm text-center w-full transition">
+                      {uploadingExam169 ? 'Uploading...' : 'Choose File'}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleUploadExamImage('image_16_9', e.target.files[0])}
+                        disabled={uploadingExam169}
+                      />
+                    </label>
+                  </div>
+                </div>
               </div>
               <div className="flex justify-end space-x-3 pt-2">
                 <button

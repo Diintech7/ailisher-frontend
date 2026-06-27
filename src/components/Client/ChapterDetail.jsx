@@ -148,8 +148,8 @@ const AddTopicModal = ({ isOpen, onClose, bookId, chapterId, workbookId, onAdd }
 
       // Determine the correct API endpoint based on context
       const topicsEndpoint = isWorkbook
-        ? `https://ailisher.diintech.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics`
-        : `https://ailisher.diintech.com/api/books/${bookId}/chapters/${chapterId}/topics`;
+        ? `http://localhost:4000/api/workbooks/${workbookId}/chapters/${chapterId}/topics`
+        : `http://localhost:4000/api/books/${bookId}/chapters/${chapterId}/topics`;
 
       console.log('Sending topic creation request with:', {
         url: topicsEndpoint,
@@ -344,8 +344,8 @@ const EditChapterModal = ({ isOpen, onClose, bookId, workbookId, chapter, onUpda
 
       // Determine the correct API endpoint based on context
       const updateEndpoint = isWorkbook
-        ? `https://ailisher.diintech.com/api/workbooks/${workbookId}/chapters/${chapter._id}`
-        : `https://ailisher.diintech.com/api/books/${bookId}/chapters/${chapter._id}`;
+        ? `http://localhost:4000/api/workbooks/${workbookId}/chapters/${chapter._id}`
+        : `http://localhost:4000/api/books/${bookId}/chapters/${chapter._id}`;
 
       console.log('Updating chapter via:', { updateEndpoint, isWorkbook });
 
@@ -558,8 +558,8 @@ const ChapterDetail = () => {
 
         // Determine the API endpoints based on whether it's a workbook or regular book
         const baseEndpoint = isWorkbook
-          ? `https://ailisher.diintech.com/api/workbooks/${workbookId}/chapters/${chapterId}`
-          : `https://ailisher.diintech.com/api/books/${bookId}/chapters/${chapterId}`;
+          ? `http://localhost:4000/api/workbooks/${workbookId}/chapters/${chapterId}`
+          : `http://localhost:4000/api/books/${bookId}/chapters/${chapterId}`;
 
         // For workbook topics, we should try to fetch the chapter first since
         // the topics endpoint might not be fully implemented on the backend
@@ -590,8 +590,8 @@ const ChapterDetail = () => {
         // Now try to fetch topics, but be more lenient with errors
         try {
           const topicsEndpoint = isWorkbook
-            ? `https://ailisher.diintech.com/api/workbooks/${workbookId}/chapters/${chapterId}/topics`
-            : `https://ailisher.diintech.com/api/books/${bookId}/chapters/${chapterId}/topics`;
+            ? `http://localhost:4000/api/workbooks/${workbookId}/chapters/${chapterId}/topics`
+            : `http://localhost:4000/api/books/${bookId}/chapters/${chapterId}/topics`;
 
           console.log('Attempting to fetch topics from:', { topicsEndpoint, isWorkbook });
 
@@ -736,8 +736,8 @@ const ChapterDetail = () => {
 
       // Determine the appropriate endpoint based on context
       const deleteEndpoint = isWorkbook
-        ? `https://ailisher.diintech.com/api/workbooks/${workbookId}/chapters/${chapterId}`
-        : `https://ailisher.diintech.com/api/books/${bookId}/chapters/${chapterId}`;
+        ? `http://localhost:4000/api/workbooks/${workbookId}/chapters/${chapterId}`
+        : `http://localhost:4000/api/books/${bookId}/chapters/${chapterId}`;
 
       console.log('Deleting chapter via:', { deleteEndpoint, isWorkbook });
 

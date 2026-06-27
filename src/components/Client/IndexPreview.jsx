@@ -18,7 +18,7 @@ const uploadToS3 = async (file, title) => {
     if (!token) throw new Error('Authentication required');
 
     // Request presigned URL
-    const presignRes = await fetch(`https://ailisher.diintech.com/api/datastores/upload-s3`, {
+    const presignRes = await fetch(`http://localhost:4000/api/datastores/upload-s3`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1626,7 +1626,7 @@ const IndexPreview = ({
       const uploadedPDFs = await Promise.all(uploadPromises);
 
       // Now save to backend
-      const saveResponse = await fetch(`https://ailisher.diintech.com/api/books/${bookId}/save-split-pdfs`, {
+      const saveResponse = await fetch(`http://localhost:4000/api/books/${bookId}/save-split-pdfs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

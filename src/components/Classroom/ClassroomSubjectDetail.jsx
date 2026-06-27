@@ -165,11 +165,11 @@ const ClassroomSubjectDetail = () => {
       <div className="max-w-4xl mx-auto">
         {/* Back Button */}
         <button
-          onClick={() => navigate(`/classroom/${examId}`)}
+          onClick={() => navigate(`/classroom/${examId}/papers/${paperId}`)}
           className="flex items-center text-gray-600 hover:text-blue-600 mb-6 transition font-semibold"
         >
           <ArrowLeft className="mr-2" size={18} />
-          Back to Papers
+          Back to Paper Details
         </button>
 
         {/* Breadcrumbs / Header */}
@@ -212,7 +212,9 @@ const ClassroomSubjectDetail = () => {
                     {exam?.name}
                   </span>
                   <span>/</span>
-                  <span className="truncate">{paper?.name}</span>
+                  <span className="cursor-pointer hover:text-blue-600 truncate" onClick={() => navigate(`/classroom/${examId}/papers/${paperId}`)}>
+                    {paper?.name || 'Paper'}
+                  </span>
                 </div>
                 
                 <div className="flex justify-between items-start gap-4">

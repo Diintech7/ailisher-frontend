@@ -6,7 +6,7 @@ const ClientMenu = ({ isExpanded, currentPath, handleNavigate, allowedFeatures }
 
   // Sync state if current path is one of the sub-items
   useEffect(() => {
-    if (currentPath === '/classroom' || currentPath === '/ai-pyqs' || currentPath === '/ai-current-affairs') {
+    if (currentPath === '/classroom' || currentPath === '/ai-pyqs' || currentPath === '/ai-current-affairs' || currentPath === '/ai-classroom-test') {
       setIsClassroomOpen(true);
     }
   }, [currentPath]);
@@ -23,9 +23,10 @@ const ClientMenu = ({ isExpanded, currentPath, handleNavigate, allowedFeatures }
       icon: <School size={20} />,
       isDropdown: true,
       subItems: [
-        { path: '/classroom', name: 'Prelims(PT) Test Series' },
+        { path: '/classroom', name: 'AI Video' },
         { path: '/ai-pyqs', name: 'AI PYQs' },
-        { path: '/ai-current-affairs', name: 'AI Current Affairs' }
+        { path: '/ai-current-affairs', name: 'AI Current Affairs' },
+        { path: '/ai-classroom-test', name: 'AI Test' }
       ]
     },
     { path: '/question-bank', name: 'Question Bank', featureKey: 'questionBank', icon: <MessageCircleQuestionIcon size={20} /> },
@@ -59,7 +60,7 @@ const ClientMenu = ({ isExpanded, currentPath, handleNavigate, allowedFeatures }
     <div className="mt-6 mb-6">
       {filteredItems.map((item) => {
         if (item.isDropdown) {
-          const isChildActive = currentPath === '/classroom' || currentPath === '/ai-pyqs' || currentPath === '/ai-current-affairs';
+          const isChildActive = currentPath === '/classroom' || currentPath === '/ai-pyqs' || currentPath === '/ai-current-affairs' || currentPath === '/ai-classroom-test';
           return (
             <div key={item.name} className="flex flex-col">
               <div

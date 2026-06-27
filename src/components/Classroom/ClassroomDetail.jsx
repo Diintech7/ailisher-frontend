@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Cookies from 'js-cookie';
-import { RefreshCw, ArrowLeft, Layers, Calendar, ChevronRight, FileText, Loader2, Plus, X, Edit, Trash2, MessageSquare, Send, Mic, Volume2 } from 'lucide-react';
+import { RefreshCw, ArrowLeft, Calendar, FileText, Loader2, Plus, X, Edit, Trash2, Eye, EyeOff, Image as ImageIcon } from 'lucide-react';
 import { toast } from 'react-toastify';
 import { API_BASE_URL } from '../../config';
 
@@ -16,35 +16,19 @@ const ClassroomDetail = () => {
   const navigate = useNavigate();
   const token = Cookies.get('usertoken');
 
-  // CRUD Modal State
-  const [showAddSubjectModal, setShowAddSubjectModal] = useState(false);
-  const [selectedPaperId, setSelectedPaperId] = useState(null);
-  const [newSubjectName, setNewSubjectName] = useState('');
-  const [newSubjectColor, setNewSubjectColor] = useState('#6366f1'); // Indigo color default
-  const [newSubjectImageUrl, setNewSubjectImageUrl] = useState('');
-  const [submittingSubject, setSubmittingSubject] = useState(false);
+  // Add Paper Modal State
+  const [showAddPaperModal, setShowAddPaperModal] = useState(false);
+  const [newPaperName, setNewPaperName] = useState('');
+  const [submittingPaper, setSubmittingPaper] = useState(false);
 
-  // Edit Subject Modal State
-  const [showEditSubjectModal, setShowEditSubjectModal] = useState(false);
-  const [editingSubjectPaperId, setEditingSubjectPaperId] = useState(null);
-  const [editingSubjectId, setEditingSubjectId] = useState(null);
-  const [editSubjectForm, setEditSubjectForm] = useState({
-    name: '',
-    color: '#6366f1',
-    image_url: ''
-  });
-  const [updatingSubject, setUpdatingSubject] = useState(false);
-
-  // Chatbot Drawer State
-  const [showChatModal, setShowChatModal] = useState(false);
-  const [chatPaper, setChatPaper] = useState(null);
-  const [chatHistory, setChatHistory] = useState([]);
-  const [chatMessage, setChatMessage] = useState('');
-  const [chatLoading, setChatLoading] = useState(false);
-  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
-  const [chatSessionId, setChatSessionId] = useState('');
-  const [isListening, setIsListening] = useState(false);
-  const [isVectorizing, setIsVectorizing] = useState(false);
+  // Edit Paper Modal State
+  const [showEditPaperModal, setShowEditPaperModal] = useState(false);
+  const [selectedPaper, setSelectedPaper] = useState(null);
+  const [editPaperName, setEditPaperName] = useState('');
+  const [updatingPaper, setUpdatingPaper] = useState(false);
+  const [uploadingPaper11, setUploadingPaper11] = useState(false);
+  const [uploadingPaper916, setUploadingPaper916] = useState(false);
+  const [uploadingPaper169, setUploadingPaper169] = useState(false);
 
   const fetchPapersAndSubjects = async () => {
     try {
@@ -65,7 +49,7 @@ const ClassroomDetail = () => {
         const papersList = papersRes.data.papers || [];
         setPapers(papersList);
 
-        // 3. Fetch subjects for each paper
+        // 3. Fetch subjects for each paper to get count
         const tempSubjectsMap = {};
         for (const paper of papersList) {
           try {
@@ -113,183 +97,16 @@ const ClassroomDetail = () => {
     }
   };
 
-  const handleOpenPaperChat = async (paper) => {
-    setChatPaper(paper);
-    setShowChatModal(true);
-    setChatHistory([]);
-    setChatSessionId('');
-    
-    try {
-      setIsHistoryLoading(true);
-      const res = await axios.get(`${API_BASE_URL}/api/classroom-exams/papers/${paper.paper_id}/chat/history`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.data && res.data.success) {
-        setChatHistory(res.data.history || []);
-        if (res.data.session_id) setChatSessionId(res.data.session_id);
-      }
-    } catch (err) {
-      console.error('Error fetching paper chat history:', err);
-    } finally {
-      setIsHistoryLoading(false);
-    }
-  };
-
-  const handleSendPaperChat = async (e, directMessage = null) => {
-    if (e && e.preventDefault) e.preventDefault();
-    const finalMsg = directMessage || chatMessage;
-    if (!finalMsg.trim()) return;
-    
-    const userMsg = { role: 'user', message: finalMsg, created_at: new Date().toISOString() };
-    setChatHistory(prev => [...prev, userMsg]);
-    setChatMessage('');
-    
-    try {
-      setChatLoading(true);
-      const res = await axios.post(`${API_BASE_URL}/api/classroom-exams/papers/${chatPaper.paper_id}/chat`, {
-        question: finalMsg,
-        session_id: chatSessionId
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.data && res.data.success) {
-        const botReply = res.data.reply || res.data.message || res.data.answer;
-        const botMsg = { role: 'assistant', message: botReply, created_at: new Date().toISOString() };
-        setChatHistory(prev => [...prev, botMsg]);
-        if (res.data.session_id) setChatSessionId(res.data.session_id);
-
-        // Auto-play voice output if the query was triggered by voice input
-        if (directMessage) {
-          handlePlayTTS(botReply);
-        }
-      }
-    } catch (err) {
-      console.error('Error sending message:', err);
-      toast.error('AI Chatbot failed to respond');
-    } finally {
-      setChatLoading(false);
-    }
-  };
-
-  const handleVectorizePaper = async () => {
-    if (!chatPaper) return;
-    try {
-      setIsVectorizing(true);
-      toast.info('Training AI Chatbot on this paper. Please wait...', { autoClose: 3000 });
-      const res = await axios.post(`${API_BASE_URL}/api/classroom-exams/papers/${chatPaper.paper_id}/vectorize`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.data && res.data.success) {
-        toast.success('AI Chatbot trained successfully!');
-      } else {
-        toast.success('AI Chatbot trained successfully!');
-      }
-    } catch (err) {
-      console.error('Error vectorizing paper:', err);
-      toast.error('Failed to train AI Chatbot');
-    } finally {
-      setIsVectorizing(false);
-    }
-  };
-
-  const handleClearPaperChatHistory = async () => {
-    if (!window.confirm('Clear all chat messages for this paper?')) return;
-    try {
-      const res = await axios.delete(`${API_BASE_URL}/api/classroom-exams/papers/${chatPaper.paper_id}/chat/history`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.data && res.data.success) {
-        toast.success('Chat history cleared!');
-        setChatHistory([]);
-        setChatSessionId('');
-      }
-    } catch (err) {
-      console.error('Error clearing chat history:', err);
-      toast.error('Failed to clear history');
-    }
-  };
-
-  const handleStartListening = () => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      toast.error('Speech recognition not supported in this browser');
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'en-IN';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-
-    recognition.onstart = () => {
-      setIsListening(true);
-    };
-
-    recognition.onresult = (event) => {
-      const speechToText = event.results[0][0].transcript;
-      if (speechToText.trim()) {
-        handleSendPaperChat(null, speechToText);
-      }
-    };
-
-    recognition.onerror = (event) => {
-      console.error('Speech recognition error:', event.error);
-      toast.error('Voice input failed. Check microphone permissions.');
-      setIsListening(false);
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
-    recognition.start();
-  };
-
-  const handlePlayTTS = (text) => {
-    try {
-      if (window.currentAudio) {
-        window.currentAudio.pause();
-      }
-      const audioUrl = `${API_BASE_URL}/api/classroom-exams/tts/speak?text=${encodeURIComponent(text)}&voice=alloy`;
-      const audio = new Audio(audioUrl);
-      window.currentAudio = audio;
-      audio.play().catch(err => {
-        console.error('Failed to play TTS audio:', err);
-        toast.error('Unable to play voice response');
-      });
-    } catch (err) {
-      console.error('TTS Playback Error:', err);
-    }
-  };
-
-  const fetchSubjectsForPaper = async (paperId) => {
-    try {
-      const subRes = await axios.get(`${API_BASE_URL}/api/classroom-exams/${examId}/papers/${paperId}/subjects`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (subRes.data && subRes.data.success) {
-        setSubjectsMap(prev => ({
-          ...prev,
-          [paperId]: subRes.data.subjects || []
-        }));
-      }
-    } catch (err) {
-      console.error(`Error fetching subjects for paper ${paperId}:`, err);
-    }
-  };
-
-  const handleCreateSubject = async (e) => {
+  const handleCreatePaper = async (e) => {
     e.preventDefault();
-    if (!newSubjectName.trim()) return;
+    if (!newPaperName.trim()) return;
 
     try {
-      setSubmittingSubject(true);
+      setSubmittingPaper(true);
       const response = await axios.post(
-        `${API_BASE_URL}/api/classroom-exams/${examId}/papers/${selectedPaperId}/subjects`,
+        `${API_BASE_URL}/api/classroom-exams/${examId}/papers`,
         {
-          name: newSubjectName,
-          color: newSubjectColor,
-          image_url: newSubjectImageUrl
+          name: newPaperName
         },
         {
           headers: { Authorization: `Bearer ${token}` }
@@ -297,88 +114,153 @@ const ClassroomDetail = () => {
       );
 
       if (response.data && response.data.success) {
-        toast.success('Subject created successfully!');
-        setNewSubjectName('');
-        setNewSubjectColor('#6366f1');
-        setNewSubjectImageUrl('');
-        setShowAddSubjectModal(false);
-        // Refresh subjects for this paper
-        await fetchSubjectsForPaper(selectedPaperId);
+        toast.success('Paper created successfully!');
+        setNewPaperName('');
+        setShowAddPaperModal(false);
+        await fetchPapersAndSubjects();
       }
     } catch (err) {
-      console.error('Failed to create subject:', err);
-      toast.error(err.response?.data?.message || 'Failed to create subject');
+      console.error('Failed to create paper:', err);
+      toast.error(err.response?.data?.message || 'Failed to create paper');
     } finally {
-      setSubmittingSubject(false);
+      setSubmittingPaper(false);
     }
   };
 
-  const handleEditSubjectClick = (e, paperId, subject) => {
+  const handleEditPaperClick = (e, paper) => {
     e.stopPropagation();
-    setEditingSubjectPaperId(paperId);
-    setEditingSubjectId(subject.subject_id);
-    setEditSubjectForm({
-      name: subject.name || '',
-      color: subject.color || '#6366f1',
-      image_url: subject.image_url || ''
-    });
-    setShowEditSubjectModal(true);
+    setSelectedPaper(paper);
+    setEditPaperName(paper.name);
+    setShowEditPaperModal(true);
   };
 
-  const handleUpdateSubject = async (e) => {
+  const handleUploadPaperImage = async (field, file) => {
+    if (!file || !selectedPaper) return;
+    const ratioLabel = field.replace('image_', '');
+    const setter = ratioLabel === '1_1' ? setUploadingPaper11 : ratioLabel === '9_16' ? setUploadingPaper916 : setUploadingPaper169;
+    
+    try {
+      setter(true);
+      const formData = new FormData();
+      formData.append(field, file);
+      
+      const response = await axios.post(`${API_BASE_URL}/api/classroom-exams/papers/${selectedPaper.paper_id}/images`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      
+      if (response.data && response.data.success) {
+        toast.success(`Image (${ratioLabel.replace('_', ':')}) uploaded successfully!`);
+        const newUrl = response.data.urls[`image_url_${ratioLabel}`];
+        setSelectedPaper(prev => ({
+          ...prev,
+          [`image_url_${ratioLabel}`]: newUrl
+        }));
+      }
+    } catch (err) {
+      console.error(`Failed to upload ${ratioLabel} image:`, err);
+      toast.error(`Failed to upload ${ratioLabel} image`);
+    } finally {
+      setter(false);
+    }
+  };
+
+  const handleUpdatePaper = async (e) => {
     e.preventDefault();
-    if (!editSubjectForm.name.trim()) return;
+    if (!editPaperName.trim() || !selectedPaper) return;
+
     try {
-      setUpdatingSubject(true);
-      const response = await axios.put(`${API_BASE_URL}/api/classroom-exams/subjects/${editingSubjectId}`, editSubjectForm, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      setUpdatingPaper(true);
+      const response = await axios.put(
+        `${API_BASE_URL}/api/classroom-exams/papers/${selectedPaper.paper_id}`,
+        {
+          name: editPaperName
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
       if (response.data && response.data.success) {
-        toast.success('Subject updated successfully!');
-        setShowEditSubjectModal(false);
-        fetchSubjectsForPaper(editingSubjectPaperId);
+        toast.success('Paper updated successfully!');
+        setShowEditPaperModal(false);
+        setSelectedPaper(null);
+        setEditPaperName('');
+        await fetchPapersAndSubjects();
       }
     } catch (err) {
-      console.error('Failed to update subject:', err);
-      toast.error('Failed to update subject');
+      console.error('Failed to update paper:', err);
+      toast.error(err.response?.data?.message || 'Failed to update paper');
     } finally {
-      setUpdatingSubject(false);
+      setUpdatingPaper(false);
     }
   };
 
-  const handleDeleteSubject = async (e, paperId, subjectId) => {
+  const handleDeletePaper = async (e, paperId) => {
     e.stopPropagation();
-    if (!window.confirm('Are you sure you want to delete this Subject? This will remove all nested Chapters, Topics, and Subtopics.')) return;
+    if (!window.confirm('Are you sure you want to delete this Paper? This will delete all nested Subjects, Chapters, and Topics.')) return;
+
     try {
-      const response = await axios.delete(`${API_BASE_URL}/api/classroom-exams/subjects/${subjectId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await axios.delete(
+        `${API_BASE_URL}/api/classroom-exams/papers/${paperId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
       if (response.data && response.data.success) {
-        toast.success('Subject deleted successfully!');
-        fetchSubjectsForPaper(paperId);
+        toast.success('Paper deleted successfully!');
+        await fetchPapersAndSubjects();
       }
     } catch (err) {
-      console.error('Failed to delete subject:', err);
-      toast.error('Failed to delete subject');
+      console.error('Failed to delete paper:', err);
+      toast.error('Failed to delete paper');
     }
   };
 
-  const handleSubjectClick = (paperId, subjectId) => {
-    navigate(`/classroom/${examId}/papers/${paperId}/subjects/${subjectId}`);
+  const handleTogglePaperStatus = async (e, paperId) => {
+    e.stopPropagation();
+    try {
+      const response = await axios.patch(
+        `${API_BASE_URL}/api/classroom-exams/papers/${paperId}/status`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      if (response.data && response.data.success) {
+        toast.success(response.data.message || 'Status toggled successfully');
+        setPapers(prevPapers => 
+          prevPapers.map(p => 
+            p.paper_id === paperId ? { ...p, isEnabled: response.data.isEnabled } : p
+          )
+        );
+      }
+    } catch (err) {
+      console.error('Failed to toggle status:', err);
+      toast.error('Failed to toggle status');
+    }
+  };
+
+  const handlePaperClick = (paperId) => {
+    navigate(`/classroom/${examId}/papers/${paperId}`);
   };
 
   if (loading) {
     return (
       <div className="flex flex-col justify-center items-center h-96 space-y-4">
         <Loader2 className="animate-spin text-indigo-600" size={48} />
-        <p className="text-gray-500 font-medium">Loading classroom subjects...</p>
+        <p className="text-gray-500 font-medium">Loading classroom papers...</p>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Back Button (AI Courses Style) */}
+      {/* Back Button */}
       <button
         onClick={() => navigate('/classroom')}
         className="text-indigo-600 hover:text-indigo-700 flex items-center mb-6 font-medium transition"
@@ -387,9 +269,9 @@ const ClassroomDetail = () => {
         <span>Back to Dashboard</span>
       </button>
 
-      {/* Exam Profile Banner (AI Courses style with Left cover image) */}
+      {/* Exam Profile Banner */}
       {exam && (
-        <div className="bg-white rounded-xl shadow-md border border-gray-150 p-6 mb-8">
+        <div className="bg-white rounded-xl shadow-md border border-gray-150 p-6 mb-8 animate-in fade-in slide-in-from-top-4 duration-300">
           <div className="flex flex-col md:flex-row gap-6 md:gap-8">
             {/* Left Cover image placeholder */}
             <div className="md:w-1/4 lg:w-1/5 flex-shrink-0">
@@ -432,191 +314,173 @@ const ClassroomDetail = () => {
                   Synced at: {new Date(exam.synced_at).toLocaleString()}
                 </div>
                 
-                <button
-                  onClick={handleForceSync}
-                  disabled={syncing}
-                  className="flex items-center bg-indigo-600 text-white font-semibold px-4 py-2 rounded-md shadow-sm hover:bg-indigo-700 transition disabled:opacity-50 text-sm"
-                >
-                  <RefreshCw className={`mr-2 ${syncing ? 'animate-spin' : ''}`} size={14} />
-                  Sync Now
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowAddPaperModal(true)}
+                    className="flex items-center bg-white text-indigo-600 border border-indigo-200 font-semibold px-4 py-2 rounded-md shadow-sm hover:bg-indigo-50 transition text-sm"
+                  >
+                    <Plus className="mr-2" size={14} />
+                    Add Paper
+                  </button>
+                  <button
+                    onClick={handleForceSync}
+                    disabled={syncing}
+                    className="flex items-center bg-indigo-600 text-white font-semibold px-4 py-2 rounded-md shadow-sm hover:bg-indigo-700 transition disabled:opacity-50 text-sm"
+                  >
+                    <RefreshCw className={`mr-2 ${syncing ? 'animate-spin' : ''}`} size={14} />
+                    Sync Now
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Tree Section (Papers) */}
-      <div className="space-y-8">
+      {/* Grid Section (Papers) */}
+      <div>
+        <h2 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
+          <FileText className="text-indigo-600 mr-2" size={20} />
+          Classroom Papers
+        </h2>
+
         {papers.length === 0 ? (
           <div className="bg-white border border-gray-200 rounded-xl p-12 text-center shadow-sm">
-            <Layers className="mx-auto text-gray-300 mb-4" size={48} />
+            <FileText className="mx-auto text-gray-300 mb-4" size={48} />
             <h3 className="text-lg font-bold text-gray-800">No Synced Papers found</h3>
-            <p className="text-gray-500 mt-1">Please click "Sync Now" to reload data from partner networks.</p>
+            <p className="text-gray-500 mt-1">Please add a paper or click "Sync Now" to reload data.</p>
           </div>
         ) : (
-          papers.map((paper) => (
-            <div key={paper.paper_id} className="space-y-4">
-              {/* Paper header */}
-              <div className="flex justify-between items-center border-b border-gray-250 pb-2">
-                <div className="flex items-center space-x-2">
-                  <FileText className="text-gray-400" size={20} />
-                  <h2 className="text-xl font-bold text-gray-800">{paper.name}</h2>
-                  <span className="text-xs text-gray-400">({subjectsMap[paper.paper_id]?.length || 0} Subjects synced)</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => handleOpenPaperChat(paper)}
-                    className="flex items-center text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-bold px-3 py-1.5 rounded-md transition duration-200 border border-indigo-100 shadow-sm"
-                  >
-                    <MessageSquare size={14} className="mr-1" />
-                    AI Chatbot
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedPaperId(paper.paper_id);
-                      setShowAddSubjectModal(true);
-                    }}
-                    className="flex items-center text-xs bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-3 py-1.5 rounded-md transition duration-200 shadow-sm"
-                  >
-                    <Plus size={14} className="mr-1" />
-                    Add Subject
-                  </button>
-                </div>
-              </div>
-
-              {/* Subjects Grid (AI Courses style columns) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {(subjectsMap[paper.paper_id] || []).map((subject) => (
-                  <div
-                    key={subject.subject_id}
-                    className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden cursor-pointer flex flex-col justify-between group relative"
-                    style={{ borderLeft: `4px solid ${subject.color || '#6366f1'}` }}
-                  >
-                    {/* Hover actions panel */}
-                    <div className="absolute top-2 right-2 z-10 flex space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {papers.map((paper) => {
+              const subjectCount = subjectsMap[paper.paper_id]?.length || 0;
+              return (
+                <div
+                  key={paper.paper_id}
+                  onClick={() => handlePaperClick(paper.paper_id)}
+                  className={`bg-white rounded-xl border p-5 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all duration-200 cursor-pointer flex flex-col justify-between group relative ${
+                    paper.isEnabled === false ? 'opacity-70 bg-gray-50/50' : ''
+                  }`}
+                  style={{ borderLeft: `4px solid ${paper.isEnabled === false ? '#d1d5db' : '#6366f1'}` }}
+                >
+                  {/* Image/Cover container inside paper card */}
+                  <div className="w-full h-40 rounded-md bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center overflow-hidden mb-4 relative animate-in fade-in duration-200">
+                    {/* Floating Actions overlay */}
+                    <div className="absolute top-2 right-2 flex items-center space-x-1 z-10 bg-white/85 backdrop-blur-sm p-1.5 rounded-lg shadow-sm onClick-bubble" onClick={(e) => e.stopPropagation()}>
+                      {/* Status Toggle Button */}
                       <button
-                        onClick={(e) => handleEditSubjectClick(e, paper.paper_id, subject)}
-                        className="p-1.5 bg-white border border-gray-200 rounded-md text-gray-500 hover:text-indigo-600 shadow-sm transition"
-                        title="Edit Subject"
+                        onClick={(e) => handleTogglePaperStatus(e, paper.paper_id)}
+                        className={`p-1 border rounded-md transition duration-200 ${
+                          paper.isEnabled !== false 
+                            ? 'bg-emerald-50 border-emerald-200 text-emerald-600 hover:bg-emerald-100' 
+                            : 'bg-gray-100 border-gray-250 text-gray-400 hover:bg-gray-200'
+                        }`}
+                        title={paper.isEnabled !== false ? "Disable Paper (Hides from App)" : "Enable Paper"}
                       >
-                        <Edit size={14} />
+                        {paper.isEnabled !== false ? <Eye size={13} /> : <EyeOff size={13} />}
                       </button>
+
+                      {/* Edit Button */}
                       <button
-                        onClick={(e) => handleDeleteSubject(e, paper.paper_id, subject.subject_id)}
-                        className="p-1.5 bg-white border border-gray-200 rounded-md text-gray-500 hover:text-red-600 shadow-sm transition"
-                        title="Delete Subject"
+                        onClick={(e) => handleEditPaperClick(e, paper)}
+                        className="p-1 bg-white border border-gray-200 rounded-md text-gray-500 hover:text-indigo-600 hover:bg-gray-50 shadow-sm transition"
+                        title="Edit Paper"
                       >
-                        <Trash2 size={14} />
+                        <Edit size={13} />
+                      </button>
+
+                      {/* Delete Button */}
+                      <button
+                        onClick={(e) => handleDeletePaper(e, paper.paper_id)}
+                        className="p-1 bg-white border border-gray-200 rounded-md text-gray-500 hover:text-red-650 hover:bg-red-50 shadow-sm transition"
+                        title="Delete Paper"
+                      >
+                        <Trash2 size={13} />
                       </button>
                     </div>
 
-                    <div onClick={() => handleSubjectClick(paper.paper_id, subject.subject_id)}>
-                      {/* Cover Image Container */}
-                      <div className="h-48 bg-slate-100 relative overflow-hidden flex items-center justify-center border-b border-gray-100">
-                        {subject.image_url ? (
-                          <img
-                            src={subject.image_url.startsWith('http') ? subject.image_url : `${API_BASE_URL}${subject.image_url}`}
-                            alt={subject.name}
-                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                              e.target.nextSibling.style.display = 'flex';
-                            }}
-                          />
-                        ) : null}
-                        <div
-                          className="absolute inset-0 flex items-center justify-center text-gray-400 font-extrabold text-3xl opacity-20 select-none uppercase"
-                          style={{ display: subject.image_url ? 'none' : 'flex' }}
-                        >
-                          {subject.name.substring(0, 2)}
-                        </div>
-                      </div>
-
-                      <div className="p-5">
-                        <h3 className="text-lg font-bold text-gray-800 group-hover:text-indigo-600 transition truncate">
-                          {subject.name}
-                        </h3>
-                        
-                        {/* Structure Stats */}
-                        <div className="grid grid-cols-3 gap-2 mt-4 text-center">
-                          <div className="bg-slate-50 p-2 rounded-lg border border-gray-100">
-                            <div className="text-sm font-bold text-gray-700">{subject.chapter_count || 0}</div>
-                            <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">Chapters</div>
-                          </div>
-                          <div className="bg-slate-50 p-2 rounded-lg border border-gray-100">
-                            <div className="text-sm font-bold text-gray-700">{subject.topic_count || 0}</div>
-                            <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">Topics</div>
-                          </div>
-                          <div className="bg-slate-50 p-2 rounded-lg border border-gray-100">
-                            <div className="text-sm font-bold text-gray-700">{subject.subtopic_count || 0}</div>
-                            <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">Notes</div>
-                          </div>
-                        </div>
-                      </div>
+                    {(paper.image_url_16_9 || paper.image_url_1_1 || paper.image_url_9_16 || paper.image_url) ? (
+                      <img
+                        src={
+                          (paper.image_url_16_9 || paper.image_url_1_1 || paper.image_url_9_16 || paper.image_url).startsWith('http')
+                            ? (paper.image_url_16_9 || paper.image_url_1_1 || paper.image_url_9_16 || paper.image_url)
+                            : `${API_BASE_URL}${paper.image_url_16_9 || paper.image_url_1_1 || paper.image_url_9_16 || paper.image_url}`
+                        }
+                        alt={paper.name}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          const ph = e.target.parentNode.querySelector('.fallback-initials');
+                          if (ph) ph.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    
+                    <div 
+                      className="fallback-initials absolute inset-0 flex items-center justify-center text-white text-5xl font-black opacity-20 select-none"
+                      style={{ display: (paper.image_url_16_9 || paper.image_url_1_1 || paper.image_url_9_16 || paper.image_url) ? 'none' : 'flex' }}
+                    >
+                      {paper.name.substring(0, 2).toUpperCase()}
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          ))
+
+                  {/* Body Content */}
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-800 group-hover:text-indigo-600 transition line-clamp-2">
+                      {paper.name}
+                    </h3>
+                    
+                    <div className="flex items-center mt-3 gap-2 flex-wrap">
+                      <span className="text-xs font-semibold bg-indigo-50 text-indigo-600 px-2.5 py-0.5 rounded-full">
+                        Synced
+                      </span>
+                      {paper.isEnabled === false && (
+                        <span className="text-xs font-semibold bg-gray-100 text-gray-500 px-2.5 py-0.5 rounded-full">
+                          Disabled
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Footer / Stats info */}
+                  <div className="mt-5 pt-4 border-t border-gray-100 flex justify-between items-center text-xs text-gray-450 font-medium">
+                    <span>Subjects: {subjectCount}</span>
+                    <span className="text-indigo-600 group-hover:translate-x-1 transition-transform duration-200 font-semibold flex items-center">
+                      View Subjects &rarr;
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
 
-      {/* CRUD Add Subject Modal */}
-      {showAddSubjectModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl border border-gray-250 relative">
+      {/* Add Paper Modal */}
+      {showAddPaperModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl border border-gray-250 relative animate-in fade-in zoom-in-95 duration-200">
             <button
               onClick={() => {
-                setShowAddSubjectModal(false);
-                setNewSubjectName('');
-                setNewSubjectImageUrl('');
+                setShowAddPaperModal(false);
+                setNewPaperName('');
               }}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition"
             >
               <X size={20} />
             </button>
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Create New Subject</h3>
-            <form onSubmit={handleCreateSubject}>
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Create New Paper</h3>
+            <form onSubmit={handleCreatePaper}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Subject Name</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Paper Name</label>
                   <input
                     type="text"
                     required
-                    value={newSubjectName}
-                    onChange={(e) => setNewSubjectName(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-                    placeholder="e.g., Physics, Organic Chemistry"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Theme Color</label>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="color"
-                      value={newSubjectColor}
-                      onChange={(e) => setNewSubjectColor(e.target.value)}
-                      className="w-10 h-10 border border-gray-200 rounded-lg cursor-pointer p-0 bg-transparent"
-                    />
-                    <input
-                      type="text"
-                      value={newSubjectColor}
-                      onChange={(e) => setNewSubjectColor(e.target.value)}
-                      className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-mono"
-                      placeholder="#6366f1"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Image URL</label>
-                  <input
-                    type="text"
-                    value={newSubjectImageUrl}
-                    onChange={(e) => setNewSubjectImageUrl(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-                    placeholder="e.g., https://example.com/physics.jpg"
+                    value={newPaperName}
+                    onChange={(e) => setNewPaperName(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-250 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                    placeholder="e.g., General Studies Paper 1"
                   />
                 </div>
               </div>
@@ -624,9 +488,8 @@ const ClassroomDetail = () => {
                 <button
                   type="button"
                   onClick={() => {
-                    setShowAddSubjectModal(false);
-                    setNewSubjectName('');
-                    setNewSubjectImageUrl('');
+                    setShowAddPaperModal(false);
+                    setNewPaperName('');
                   }}
                   className="px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition"
                 >
@@ -634,11 +497,11 @@ const ClassroomDetail = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={submittingSubject}
+                  disabled={submittingPaper}
                   className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition disabled:opacity-50 flex items-center"
                 >
-                  {submittingSubject && <Loader2 className="animate-spin mr-1.5" size={14} />}
-                  Create Subject
+                  {submittingPaper && <Loader2 className="animate-spin mr-1.5" size={14} />}
+                  Create Paper
                 </button>
               </div>
             </form>
@@ -646,216 +509,135 @@ const ClassroomDetail = () => {
         </div>
       )}
 
-      {/* CRUD Edit Subject Modal */}
-      {showEditSubjectModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl border border-gray-250 relative">
+      {/* Edit Paper Modal */}
+      {showEditPaperModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-xl border border-gray-250 relative animate-in fade-in zoom-in-95 duration-200">
             <button
-              onClick={() => setShowEditSubjectModal(false)}
+              onClick={() => {
+                setShowEditPaperModal(false);
+                setSelectedPaper(null);
+                setEditPaperName('');
+              }}
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition"
             >
               <X size={20} />
             </button>
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Edit Subject</h3>
-            <form onSubmit={handleUpdateSubject}>
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Edit Paper</h3>
+            <form onSubmit={handleUpdatePaper}>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Subject Name</label>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Paper Name</label>
                   <input
                     type="text"
                     required
-                    value={editSubjectForm.name}
-                    onChange={(e) => setEditSubjectForm({ ...editSubjectForm, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-                    placeholder="e.g., Physics"
+                    value={editPaperName}
+                    onChange={(e) => setEditPaperName(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-250 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                    placeholder="e.g., General Studies Paper 1"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Theme Color</label>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="color"
-                      value={editSubjectForm.color}
-                      onChange={(e) => setEditSubjectForm({ ...editSubjectForm, color: e.target.value })}
-                      className="w-10 h-10 border border-gray-200 rounded-lg cursor-pointer p-0 bg-transparent"
-                    />
-                    <input
-                      type="text"
-                      value={editSubjectForm.color}
-                      onChange={(e) => setEditSubjectForm({ ...editSubjectForm, color: e.target.value })}
-                      className="flex-1 px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-mono"
-                      placeholder="#6366f1"
-                    />
+
+                {/* Custom Aspect Ratios Uploader */}
+                <div className="border-t border-gray-100 pt-4 mt-4">
+                  <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Aspect Ratio Images (R2 Storage)</h4>
+                  <div className="grid grid-cols-3 gap-3">
+                    {/* 1:1 Square Ratio */}
+                    <div className="flex flex-col items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-150 h-40">
+                      <span className="text-[10px] font-bold text-gray-655">1:1 Square</span>
+                      <div className="w-16 h-16 bg-gray-200 border border-gray-300 rounded flex items-center justify-center overflow-hidden relative shadow-inner">
+                        {uploadingPaper11 ? (
+                          <Loader2 className="animate-spin text-indigo-655" size={18} />
+                        ) : selectedPaper && selectedPaper.image_url_1_1 ? (
+                          <img src={selectedPaper.image_url_1_1} alt="1:1" className="w-full h-full object-cover" />
+                        ) : (
+                          <ImageIcon className="text-gray-400" size={20} />
+                        )}
+                      </div>
+                      <label className="cursor-pointer bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 text-[10px] font-bold px-2 py-1 rounded shadow-sm text-center w-full transition">
+                        {uploadingPaper11 ? 'Uploading...' : 'Choose File'}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleUploadPaperImage('image_1_1', e.target.files[0])}
+                          disabled={uploadingPaper11}
+                        />
+                      </label>
+                    </div>
+
+                    {/* 9:16 Portrait Ratio */}
+                    <div className="flex flex-col items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-150 h-40">
+                      <span className="text-[10px] font-bold text-gray-655">9:16 Portrait</span>
+                      <div className="w-10 h-16 bg-gray-200 border border-gray-300 rounded flex items-center justify-center overflow-hidden relative shadow-inner">
+                        {uploadingPaper916 ? (
+                          <Loader2 className="animate-spin text-indigo-655" size={18} />
+                        ) : selectedPaper && selectedPaper.image_url_9_16 ? (
+                          <img src={selectedPaper.image_url_9_16} alt="9:16" className="w-full h-full object-cover" />
+                        ) : (
+                          <ImageIcon className="text-gray-400" size={20} />
+                        )}
+                      </div>
+                      <label className="cursor-pointer bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 text-[10px] font-bold px-2 py-1 rounded shadow-sm text-center w-full transition">
+                        {uploadingPaper916 ? 'Uploading...' : 'Choose File'}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleUploadPaperImage('image_9_16', e.target.files[0])}
+                          disabled={uploadingPaper916}
+                        />
+                      </label>
+                    </div>
+
+                    {/* 16:9 Landscape Ratio */}
+                    <div className="flex flex-col items-center justify-between p-2 bg-gray-50 rounded-lg border border-gray-150 h-40">
+                      <span className="text-[10px] font-bold text-gray-655">16:9 Banner</span>
+                      <div className="w-18 h-10 bg-gray-200 border border-gray-300 rounded flex items-center justify-center overflow-hidden relative shadow-inner my-3">
+                        {uploadingPaper169 ? (
+                          <Loader2 className="animate-spin text-indigo-655" size={18} />
+                        ) : selectedPaper && selectedPaper.image_url_16_9 ? (
+                          <img src={selectedPaper.image_url_16_9} alt="16:9" className="w-full h-full object-cover" />
+                        ) : (
+                          <ImageIcon className="text-gray-400" size={20} />
+                        )}
+                      </div>
+                      <label className="cursor-pointer bg-white hover:bg-gray-100 border border-gray-300 text-gray-700 text-[10px] font-bold px-2 py-1 rounded shadow-sm text-center w-full transition">
+                        {uploadingPaper169 ? 'Uploading...' : 'Choose File'}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleUploadPaperImage('image_16_9', e.target.files[0])}
+                          disabled={uploadingPaper169}
+                        />
+                      </label>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1">Image URL</label>
-                  <input
-                    type="text"
-                    value={editSubjectForm.image_url}
-                    onChange={(e) => setEditSubjectForm({ ...editSubjectForm, image_url: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-                    placeholder="e.g., https://example.com/physics.jpg"
-                  />
                 </div>
               </div>
               <div className="mt-6 flex justify-end space-x-3">
                 <button
                   type="button"
-                  onClick={() => setShowEditSubjectModal(false)}
+                  onClick={() => {
+                    setShowEditPaperModal(false);
+                    setSelectedPaper(null);
+                    setEditPaperName('');
+                  }}
                   className="px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={updatingSubject}
+                  disabled={updatingPaper}
                   className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 transition disabled:opacity-50 flex items-center"
                 >
-                  {updatingSubject && <Loader2 className="animate-spin mr-1.5" size={14} />}
+                  {updatingPaper && <Loader2 className="animate-spin mr-1.5" size={14} />}
                   Save Changes
                 </button>
               </div>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* Paper Chatbot Drawer Overlay */}
-      {showChatModal && chatPaper && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-end">
-          <div className="bg-white h-full w-full max-w-md shadow-2xl flex flex-col relative animate-slide-in animate-duration-200">
-            {/* Header */}
-            <div className="p-4 border-b flex justify-between items-center bg-slate-50">
-              <div>
-                <h3 className="font-bold text-gray-800 text-base flex items-center">
-                  <MessageSquare className="mr-2 text-indigo-600" size={18} />
-                  Chat with {chatPaper.name} AI
-                </h3>
-                <p className="text-[10px] text-gray-400 font-semibold mt-0.5">AI assistant powered by paper context</p>
-              </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={handleVectorizePaper}
-                  disabled={isVectorizing}
-                  className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition border ${
-                    isVectorizing
-                      ? 'bg-indigo-50 border-indigo-100 text-indigo-400 cursor-not-allowed'
-                      : 'bg-white border-gray-200 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-200'
-                  }`}
-                  title="Train AI Chatbot on this paper"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${isVectorizing ? 'animate-spin' : ''}`} />
-                  <span>{isVectorizing ? 'Training...' : 'Train AI'}</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setShowChatModal(false);
-                    if (window.currentAudio) window.currentAudio.pause();
-                  }}
-                  className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-150 transition"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-            </div>
-
-            {/* Chat messages area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50 flex flex-col">
-              {isHistoryLoading ? (
-                <div className="flex justify-center items-center h-full flex-1">
-                  <Loader2 className="animate-spin text-indigo-600" size={24} />
-                </div>
-              ) : chatHistory.length === 0 ? (
-                <div className="flex flex-col justify-center items-center h-full flex-1 text-center text-gray-400 py-8">
-                  <MessageSquare size={36} className="mb-2 opacity-55 text-indigo-500" />
-                  <p className="text-xs font-bold text-gray-700">No chat history</p>
-                  <p className="text-[10px] text-gray-400 mt-1 max-w-[240px]">Ask any doubt or get explanations about subjects, chapters, and topics of this paper.</p>
-                </div>
-              ) : (
-                chatHistory.map((msg, mIdx) => (
-                  <div
-                    key={mIdx}
-                    className={`flex items-start gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                  >
-                    {msg.role === 'assistant' && (
-                      <button
-                        onClick={() => handlePlayTTS(msg.message)}
-                        className="p-1.5 bg-white border border-gray-200 rounded-lg text-gray-500 hover:text-indigo-600 hover:bg-slate-50 transition shadow-sm mt-1 flex-shrink-0"
-                        title="Speak response"
-                      >
-                        <Volume2 size={14} />
-                      </button>
-                    )}
-                    <div
-                      className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-line shadow-sm ${
-                        msg.role === 'user'
-                          ? 'bg-indigo-600 text-white rounded-br-none'
-                          : 'bg-white text-gray-800 border rounded-bl-none'
-                      }`}
-                    >
-                      <p>{msg.message}</p>
-                      <span className={`text-[9px] block text-right mt-1.5 opacity-60 ${
-                        msg.role === 'user' ? 'text-indigo-100' : 'text-gray-400'
-                      }`}>
-                        {new Date(msg.created_at || new Date()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                  </div>
-                ))
-              )}
-              {chatLoading && (
-                <div className="flex justify-start">
-                  <div className="bg-white text-gray-800 border px-4 py-3 rounded-2xl rounded-bl-none shadow-sm flex items-center space-x-1">
-                    <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-bounce"></span>
-                    <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-bounce delay-75"></span>
-                    <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full animate-bounce delay-150"></span>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Footer / Input form */}
-            <div className="p-4 border-t bg-white flex flex-col gap-2">
-              <form onSubmit={handleSendPaperChat} className="flex gap-2 items-center">
-                <button
-                  type="button"
-                  onClick={handleStartListening}
-                  className={`p-2.5 rounded-xl border flex items-center justify-center transition flex-shrink-0 ${
-                    isListening
-                      ? 'bg-red-50 text-red-600 border-red-200 animate-pulse'
-                      : 'bg-gray-50 text-gray-500 border-gray-200 hover:bg-gray-100'
-                  }`}
-                  title="Voice Input (Speech-to-Text)"
-                >
-                  <Mic size={16} />
-                </button>
-                <input
-                  type="text"
-                  placeholder="Type your question about the paper..."
-                  value={chatMessage}
-                  onChange={(e) => setChatMessage(e.target.value)}
-                  disabled={chatLoading}
-                  className="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-                />
-                <button
-                  type="submit"
-                  disabled={chatLoading || !chatMessage.trim()}
-                  className="bg-indigo-600 text-white px-4 py-2 rounded-xl hover:bg-indigo-700 disabled:opacity-50 transition flex items-center justify-center"
-                >
-                  <Send size={16} />
-                </button>
-              </form>
-              {chatHistory.length > 0 && (
-                <button
-                  onClick={handleClearPaperChatHistory}
-                  className="text-[11px] font-bold text-red-500 hover:text-red-700 flex items-center justify-center mt-1 transition self-center"
-                >
-                  <Trash2 size={12} className="mr-1" />
-                  Clear Chat History
-                </button>
-              )}
-            </div>
           </div>
         </div>
       )}

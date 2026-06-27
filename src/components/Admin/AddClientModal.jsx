@@ -352,7 +352,7 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded, mode, clientData }) =>
 
       const url = mode === 'edit'
         ? `${API_BASE_URL}/api/admin/clients/${clientData._id}`
-        : 'https://ailisher.diintech.com/api/admin/clients';
+        : 'http://localhost:4000/api/admin/clients';
 
       const response = await fetch(url, {
         method: mode === 'edit' ? 'PUT' : 'POST',

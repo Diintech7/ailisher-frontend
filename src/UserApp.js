@@ -55,11 +55,13 @@ import SubmissionsPage from './components/Client/SubmissionsDrawer';
 // Classroom Sync imports
 import ClassroomList from './components/Classroom/ClassroomList';
 import ClassroomDetail from './components/Classroom/ClassroomDetail';
+import ClassroomPaperDetail from './components/Classroom/ClassroomPaperDetail';
 import ClassroomSubjectDetail from './components/Classroom/ClassroomSubjectDetail';
 import ClassroomChapterDetail from './components/Classroom/ClassroomChapterDetail';
 import ClassroomSubtopicDetail from './components/Classroom/ClassroomSubtopicDetail';
 import AiPyqs from './components/Classroom/AiPyqs';
 import AiCurrentAffairs from './components/Classroom/AiCurrentAffairs';
+import AiClassroomTest from './components/Classroom/AiClassroomTest';
 
 const UserApp = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -248,11 +250,13 @@ const UserApp = () => {
                 {/* Classroom Feature Routes */}
                 <Route path="/classroom" element={<ClassroomList />} />
                 <Route path="/classroom/:examId" element={<ClassroomDetail />} />
+                <Route path="/classroom/:examId/papers/:paperId" element={<ClassroomPaperDetail />} />
                 <Route path="/classroom/:examId/papers/:paperId/subjects/:subjectId" element={<ClassroomSubjectDetail />} />
                 <Route path="/classroom/:examId/papers/:paperId/subjects/:subjectId/chapters/:chapterId" element={<ClassroomChapterDetail />} />
                 <Route path="/classroom/:examId/papers/:paperId/subjects/:subjectId/chapters/:chapterId/topics/:topicId" element={<ClassroomSubtopicDetail />} />
                 <Route path="/ai-pyqs" element={<AiPyqs />} />
                 <Route path="/ai-current-affairs" element={<AiCurrentAffairs />} />
+                <Route path="/ai-classroom-test" element={<AiClassroomTest />} />
               </>
             )}
             {userRole === 'user' && (
