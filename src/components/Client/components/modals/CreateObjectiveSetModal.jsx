@@ -60,7 +60,7 @@ const CreateObjectiveSetModal = ({
       const itemId = getItemId()
 
       // Use the new objective assets endpoint
-      const endpoint = `http://localhost:4000/api/objective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
+      const endpoint = `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/objective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
 
       const response = await axios.post(
         endpoint,

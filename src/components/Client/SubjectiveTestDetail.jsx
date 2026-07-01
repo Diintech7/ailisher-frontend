@@ -55,7 +55,7 @@ export default function SubjectiveTestDetail() {
     try {
       setLoading(true);
       const response = await axios.get(
-        `http://localhost:4000/api/subjectivetest-questions/${testId}`,
+        `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/subjectivetest-questions/${testId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -64,7 +64,7 @@ export default function SubjectiveTestDetail() {
       setTestDetails(response.data.questions);
 
       const testResponse = await axios.get(
-        `http://localhost:4000/api/subjectivetests/${testId}`,
+        `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/subjectivetests/${testId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -150,7 +150,7 @@ export default function SubjectiveTestDetail() {
         return false;
       }
       const res = await fetch(
-        `http://localhost:4000/api/subjectivetest-questions/${testId}`,
+        `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/subjectivetest-questions/${testId}`,
         {
           method: "POST",
           headers: {
@@ -184,7 +184,7 @@ export default function SubjectiveTestDetail() {
       const questionId = editedQuestion.id || editedQuestion._id;
       const { id, _id, ...questionBody } = editedQuestion;
       const res = await fetch(
-        `http://localhost:4000/api/subjectivetest-questions/${questionId}`,
+        `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/subjectivetest-questions/${questionId}`,
         {
           method: "PUT",
           headers: {
@@ -217,7 +217,7 @@ export default function SubjectiveTestDetail() {
         return;
       }
       const res = await fetch(
-        `http://localhost:4000/api/subjectivetest-questions/${questionId}`,
+        `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/subjectivetest-questions/${questionId}`,
         {
           method: "DELETE",
           headers: {

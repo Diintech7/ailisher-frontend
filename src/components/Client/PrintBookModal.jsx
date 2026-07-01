@@ -106,7 +106,7 @@ const PrintBookModal = ({ isOpen, onClose, bookId, chapters = [], bookTitle }) =
       }
 
       const pdfPromises = chapterIds.map(async (chapterId) => {
-        const endpoint = `http://localhost:4000/api/datastores/chapter/${chapterId}`
+        const endpoint = `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/datastores/chapter/${chapterId}`
         const response = await fetch(endpoint, {
           headers: { Authorization: `Bearer ${token}` },
         })
@@ -142,7 +142,7 @@ const PrintBookModal = ({ isOpen, onClose, bookId, chapters = [], bookTitle }) =
         return
       }
 
-      const endpoint = `http://localhost:4000/api/qrcode/books/${bookId}/chapters/${chapterId}`
+      const endpoint = `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/qrcode/books/${bookId}/chapters/${chapterId}`
       const response = await fetch(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
       })

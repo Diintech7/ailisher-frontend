@@ -59,7 +59,7 @@ const VideosTab = ({ videos, setShowVideoModal, onDeleteVideo }) => {
   const handleVideoView = async (videoId) => {
     try {
       const token = Cookies.get("usertoken")
-      await axios.post(`http://localhost:4000/api/video-assets/videos/${videoId}/view`, {}, {
+      await axios.post(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/video-assets/videos/${videoId}/view`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       })
     } catch (error) {

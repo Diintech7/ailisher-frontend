@@ -15,7 +15,7 @@ const AdminLoginPage = ({ onAuthSuccess }) => {
 
     try {
       // Make API call to your backend
-      const response = await fetch('http://localhost:4000/api/admin/login', {
+      const response = await fetch((process.env.REACT_APP_API_URL || 'http://localhost:4000') + '/api/admin/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

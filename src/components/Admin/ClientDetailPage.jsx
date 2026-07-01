@@ -30,7 +30,7 @@ const ClientDetailPage = () => {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`http://localhost:4000/api/admin/clients/${clientId}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/admin/clients/${clientId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -67,7 +67,7 @@ const ClientDetailPage = () => {
         throw new Error('Not authenticated');
       }
 
-      const response = await fetch(`http://localhost:4000/api/admin/login-as-client/${clientId}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/admin/login-as-client/${clientId}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

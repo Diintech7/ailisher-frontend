@@ -14,11 +14,11 @@ const BookChaptersQRView = () => {
       setLoading(true);
       try {
         // Fetch book details
-        const bookResponse = await fetch(`http://localhost:4000/api/books/${bookId}`);
+        const bookResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/books/${bookId}`);
         const bookData = await bookResponse.json();
 
         // Fetch chapters
-        const chaptersResponse = await fetch(`http://localhost:4000/api/books/${bookId}/chapters`);
+        const chaptersResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/books/${bookId}/chapters`);
         const chaptersData = await chaptersResponse.json();
 
         if (bookData.success) {
@@ -53,7 +53,7 @@ const BookChaptersQRView = () => {
     }
 
     // Otherwise, assume it's a relative path and prepend the backend URL
-    return `http://localhost:4000/${imageUrl}`;
+    return `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/${imageUrl}`;
   };
 
   if (loading) {

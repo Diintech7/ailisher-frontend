@@ -20,7 +20,7 @@ const CreditAccount = () => {
     setLoading(true);
     try {
       const response = await axios.get(
-        "http://localhost:4000/api/admin/credit-account",
+        (process.env.REACT_APP_API_URL || 'http://localhost:4000') + "/api/admin/credit-account",
         {
           headers: {
             Authorization: `Bearer ${Cookies.get("admintoken")}`,

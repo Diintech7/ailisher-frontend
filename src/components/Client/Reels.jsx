@@ -107,7 +107,7 @@ const Reels = React.memo(function Reels() {
   };
 
   const axiosConfig = {
-    baseURL: "http://localhost:4000",
+    baseURL: (process.env.REACT_APP_API_URL || 'http://localhost:4000'),
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",

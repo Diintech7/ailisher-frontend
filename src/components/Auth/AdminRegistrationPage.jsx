@@ -39,7 +39,7 @@ const AdminRegistrationPage = ({ onAuthSuccess }) => {
 
     try {
       // Make API call to your backend
-      const response = await fetch('http://localhost:4000/api/admin/register', {
+      const response = await fetch((process.env.REACT_APP_API_URL || 'http://localhost:4000') + '/api/admin/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

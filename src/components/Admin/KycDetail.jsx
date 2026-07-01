@@ -30,7 +30,7 @@ export default function KycDetail() {
       const token = Cookies.get('admintoken');
       if (!token) throw new Error('Not authenticated');
 
-      const res = await fetch(`http://localhost:4000/api/admin/${endpointForTab(tab)}`, {
+      const res = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/admin/${endpointForTab(tab)}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Failed to fetch KYC list');
@@ -61,7 +61,7 @@ export default function KycDetail() {
       setDetailOpen(true);
       const token = Cookies.get('admintoken');
       if (!token) throw new Error('Not authenticated');
-      const res = await fetch(`http://localhost:4000/api/evaluators/${id}`, {
+      const res = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/evaluators/${id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Failed to fetch evaluator');

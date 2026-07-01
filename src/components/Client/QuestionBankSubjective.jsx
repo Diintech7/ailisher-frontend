@@ -58,7 +58,7 @@ export default function QuestionBankSubjective() {
     try {
       setLoading(true);
       const response = await axios.get(
-        `http://localhost:4000/api/questionbank/${questionBankId}`,
+        `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/questionbank/${questionBankId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -76,7 +76,7 @@ export default function QuestionBankSubjective() {
     try {
       setLoading(true);
       const response = await axios.get(
-        `http://localhost:4000/api/questionbank/${questionBankId}/questions`,
+        `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/questionbank/${questionBankId}/questions`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -119,7 +119,7 @@ export default function QuestionBankSubjective() {
       };
 
       const res = await axios.post(
-        `http://localhost:4000/api/questionbank/${questionBankId}/questions`,
+        `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/questionbank/${questionBankId}/questions`,
         payload,
         {
           headers: {

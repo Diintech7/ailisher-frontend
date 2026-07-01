@@ -46,20 +46,20 @@ const SummaryModal = ({
       // Determine endpoint based on item type
       if (itemType === "book") {
         endpoint = isWorkbook
-          ? `http://localhost:4000/api/assets/${workbookId}/summaries`
-          : `http://localhost:4000/api/assets/${bookId}/summaries`
+          ? `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/assets/${workbookId}/summaries`
+          : `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/assets/${bookId}/summaries`
       } else if (itemType === "chapter") {
         endpoint = isWorkbook
-          ? `http://localhost:4000/api/assets/${workbookId}/chapters/${chapterId}/summaries`
-          : `http://localhost:4000/api/assets/${bookId}/chapters/${chapterId}/summaries`
+          ? `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/assets/${workbookId}/chapters/${chapterId}/summaries`
+          : `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/assets/${bookId}/chapters/${chapterId}/summaries`
       } else if (itemType === "topic") {
         endpoint = isWorkbook
-          ? `http://localhost:4000/api/assets/${workbookId}/chapters/${chapterId}/topics/${topicId}/summaries`
-          : `http://localhost:4000/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}/summaries`
+          ? `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/assets/${workbookId}/chapters/${chapterId}/topics/${topicId}/summaries`
+          : `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}/summaries`
       } else if (itemType === "subtopic") {
         endpoint = isWorkbook
-          ? `http://localhost:4000/api/assets/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}/summaries`
-          : `http://localhost:4000/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}/summaries`
+          ? `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/assets/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}/summaries`
+          : `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}/summaries`
       }
 
       const response = await axios.post(

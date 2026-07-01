@@ -66,7 +66,7 @@ const ImageUploadModal = ({ isOpen, onClose, questionId, onSubmissionComplete })
           });
           formData.append('questionId', questionId);
 
-          const response = await fetch('http://localhost:4000/api/aiswb/submissions', {
+          const response = await fetch((process.env.REACT_APP_API_URL || 'http://localhost:4000') + '/api/aiswb/submissions', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`

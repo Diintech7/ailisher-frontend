@@ -53,7 +53,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
   const fetchDefaultFramework = async () => {
     try {
       const token = Cookies.get('token');
-      const response = await fetch('http://localhost:4000/api/aiswb/default-evaluation-framework', {
+      const response = await fetch((process.env.REACT_APP_API_URL || 'http://localhost:4000') + '/api/aiswb/default-evaluation-framework', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -196,7 +196,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
   const handleDeleteExistingPdf = async (pdfKey) => {
     try {
       const token = Cookies.get('usertoken');
-      const response = await fetch(`http://localhost:4000/api/aiswb/questions/${editingQuestion.id}/pdf/delete`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/aiswb/questions/${editingQuestion.id}/pdf/delete`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -401,7 +401,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
             for (const file of pdfFiles) {
               try {
                 // 1) Get presigned URL
-                const presignRes = await fetch(`http://localhost:4000/api/aiswb/questions/${editingQuestion.id}/pdf/presign`, {
+                const presignRes = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/aiswb/questions/${editingQuestion.id}/pdf/presign`, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
@@ -431,7 +431,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
                 }
 
                 // 3) Attach key to question
-                const attachRes = await fetch(`http://localhost:4000/api/aiswb/questions/${editingQuestion.id}/pdf/attach`, {
+                const attachRes = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/aiswb/questions/${editingQuestion.id}/pdf/attach`, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
@@ -477,7 +477,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
             for (const file of pdfFiles) {
               try {
                 // 1) Get presigned URL
-                const presignRes = await fetch(`http://localhost:4000/api/aiswb/questions/${createdId}/pdf/presign`, {
+                const presignRes = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/aiswb/questions/${createdId}/pdf/presign`, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',
@@ -507,7 +507,7 @@ const AddAISWBModal = ({ isOpen, onClose, onAddQuestion, onEditQuestion, editing
                 }
 
                 // 3) Attach key to question
-                const attachRes = await fetch(`http://localhost:4000/api/aiswb/questions/${createdId}/pdf/attach`, {
+                const attachRes = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/aiswb/questions/${createdId}/pdf/attach`, {
                   method: 'POST',
                   headers: {
                     'Content-Type': 'application/json',

@@ -125,7 +125,7 @@ const ChatApplication = () => {
 
       // In a real implementation, you would use fetch like this:
       /*
-      const response = await fetch(`http://localhost:4000/api/chat`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

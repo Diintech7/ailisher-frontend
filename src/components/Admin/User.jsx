@@ -33,7 +33,7 @@ export default function User() {
         return;
       }
 
-      const response = await fetch('http://localhost:4000/api/admin/userprofile', {
+      const response = await fetch((process.env.REACT_APP_API_URL || 'http://localhost:4000') + '/api/admin/userprofile', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'

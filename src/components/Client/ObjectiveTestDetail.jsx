@@ -486,7 +486,7 @@ export default function ObjectiveTestDetail() {
         solution: formData.solution,
       };
       const res = await fetch(
-        `http://localhost:4000/api/objectivetest-questions/${testId}`,
+        `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/objectivetest-questions/${testId}`,
         {
           method: "POST",
           headers: {
@@ -534,7 +534,7 @@ export default function ObjectiveTestDetail() {
         solution: formData.solution,
       };
       const res = await fetch(
-        `http://localhost:4000/api/objectivetest-questions/${questionId}`,
+        `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/objectivetest-questions/${questionId}`,
         {
           method: "PUT",
           headers: {

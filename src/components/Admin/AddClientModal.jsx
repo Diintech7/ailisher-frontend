@@ -352,7 +352,7 @@ const AddClientModal = ({ isOpen, onClose, onClientAdded, mode, clientData }) =>
 
       const url = mode === 'edit'
         ? `${API_BASE_URL}/api/admin/clients/${clientData._id}`
-        : 'http://localhost:4000/api/admin/clients';
+        : (process.env.REACT_APP_API_URL || 'http://localhost:4000') + '/api/admin/clients';
 
       const response = await fetch(url, {
         method: mode === 'edit' ? 'PUT' : 'POST',

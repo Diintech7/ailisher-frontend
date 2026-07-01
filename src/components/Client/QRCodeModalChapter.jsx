@@ -24,7 +24,7 @@ const QRCodeModalChapter = ({ isOpen, onClose, bookId, chapterId, chapterTitle }
         return;
       }
 
-      const response = await fetch(`http://localhost:4000/api/qrcode/books/${bookId}/chapters/${chapterId}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/qrcode/books/${bookId}/chapters/${chapterId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

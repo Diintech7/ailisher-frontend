@@ -66,13 +66,13 @@ const DatastoreItemsList = () => {
 
       let endpoint = '';
       if (type === 'book') {
-        endpoint = `http://localhost:4000/api/datastores/book/${id}/items`;
+        endpoint = `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/datastores/book/${id}/items`;
       } else if (type === 'chapter') {
-        endpoint = `http://localhost:4000/api/datastores/chapter/${id}/items`;
+        endpoint = `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/datastores/chapter/${id}/items`;
       } else if (type === 'topic') {
-        endpoint = `http://localhost:4000/api/datastores/topic/${id}/items`;
+        endpoint = `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/datastores/topic/${id}/items`;
       } else {
-        endpoint = `http://localhost:4000/api/datastores/book/${id}/items`;
+        endpoint = `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/datastores/book/${id}/items`;
 
       }
 

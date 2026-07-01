@@ -100,7 +100,7 @@ const IsolatedObjectiveModal = ({ isOpen, onClose, onSubmit, initialQuestion = n
       if (initialQuestion) {
         // Update existing question
         const response = await axios.put(
-          `http://localhost:4000/api/objective-assets/questions/${initialQuestion._id}`,
+          `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/objective-assets/questions/${initialQuestion._id}`,
           {
             question: cleanedQuestions[0].question,
             options: cleanedQuestions[0].options,
@@ -115,7 +115,7 @@ const IsolatedObjectiveModal = ({ isOpen, onClose, onSubmit, initialQuestion = n
       } else {
         // Create new questions
         const response = await axios.post(
-          `http://localhost:4000/api/objective-assets/question-sets/${currentSet._id}/questions`,
+          `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/objective-assets/question-sets/${currentSet._id}/questions`,
           {
             questions: cleanedQuestions.map((q) => ({
               question: q.question,

@@ -140,29 +140,29 @@ const AssetView = () => {
         }
 
         // Use the new endpoints for videos, PYQs, subjective questions, and objective questions
-        const videosEndpoint = `http://localhost:4000/api/video-assets/${itemType}/${itemId}/videos?isWorkbook=${isWorkbook}`
-        const pyqsEndpoint = `http://localhost:4000/api/pyq-assets/${itemType}/${itemId}/pyqs?isWorkbook=${isWorkbook}`
-        const subjectiveEndpoint = `http://localhost:4000/api/subjective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
-        const objectiveEndpoint = `http://localhost:4000/api/objective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
+        const videosEndpoint = `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/video-assets/${itemType}/${itemId}/videos?isWorkbook=${isWorkbook}`
+        const pyqsEndpoint = `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/pyq-assets/${itemType}/${itemId}/pyqs?isWorkbook=${isWorkbook}`
+        const subjectiveEndpoint = `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/subjective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
+        const objectiveEndpoint = `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/objective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
 
         // Determine endpoint based on item type for summaries
         let baseEndpoint = ""
         if (itemType === "book") {
           baseEndpoint = isWorkbook
-            ? `http://localhost:4000/api/workbooks/${workbookId}`
-            : `http://localhost:4000/api/assets/${bookId}`
+            ? `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/workbooks/${workbookId}`
+            : `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/assets/${bookId}`
         } else if (itemType === "chapter") {
           baseEndpoint = isWorkbook
-            ? `http://localhost:4000/api/workbooks/${workbookId}/chapters/${chapterId}`
-            : `http://localhost:4000/api/assets/${bookId}/chapters/${chapterId}`
+            ? `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/workbooks/${workbookId}/chapters/${chapterId}`
+            : `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/assets/${bookId}/chapters/${chapterId}`
         } else if (itemType === "topic") {
           baseEndpoint = isWorkbook
-            ? `http://localhost:4000/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}`
-            : `http://localhost:4000/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}`
+            ? `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}`
+            : `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}`
         } else if (itemType === "subtopic") {
           baseEndpoint = isWorkbook
-            ? `http://localhost:4000/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
-            : `http://localhost:4000/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
+            ? `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/workbooks/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
+            : `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
         }
 
         // Fetch all assets in parallel
@@ -204,20 +204,20 @@ const AssetView = () => {
 
         if (itemType === "book") {
           endpoint = isWorkbook
-            ? `http://localhost:4000/api/assets/${workbookId}`
-            : `http://localhost:4000/api/assets/${bookId}`
+            ? `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/assets/${workbookId}`
+            : `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/assets/${bookId}`
         } else if (itemType === "chapter") {
           endpoint = isWorkbook
-            ? `http://localhost:4000/api/assets/${workbookId}/chapters/${chapterId}`
-            : `http://localhost:4000/api/assets/${bookId}/chapters/${chapterId}`
+            ? `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/assets/${workbookId}/chapters/${chapterId}`
+            : `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/assets/${bookId}/chapters/${chapterId}`
         } else if (itemType === "topic") {
           endpoint = isWorkbook
-            ? `http://localhost:4000/api/assets/${workbookId}/chapters/${chapterId}/topics/${topicId}`
-            : `http://localhost:4000/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}`
+            ? `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/assets/${workbookId}/chapters/${chapterId}/topics/${topicId}`
+            : `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}`
         } else if (itemType === "subtopic") {
           endpoint = isWorkbook
-            ? `http://localhost:4000/api/assets/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
-            : `http://localhost:4000/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
+            ? `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/assets/${workbookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
+            : `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/assets/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`
         }
 
         const response = await fetch(endpoint, {
@@ -283,7 +283,7 @@ const AssetView = () => {
       return imageUrl
     }
 
-    return `http://localhost:4000/${imageUrl}`
+    return `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/${imageUrl}`
   }
 
   const handleImageError = () => {
@@ -300,7 +300,7 @@ const AssetView = () => {
     try {
       // Refetch the updated question sets after successful submission
       const token = Cookies.get("usertoken")
-      const subjectiveEndpoint = `http://localhost:4000/api/subjective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
+      const subjectiveEndpoint = `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/subjective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
 
       const response = await axios.get(subjectiveEndpoint, {
         headers: { Authorization: `Bearer ${token}` }
@@ -330,7 +330,7 @@ const AssetView = () => {
     try {
       // Refetch the updated question sets after successful submission
       const token = Cookies.get("usertoken")
-      const objectiveEndpoint = `http://localhost:4000/api/objective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
+      const objectiveEndpoint = `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/objective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
 
       const response = await axios.get(objectiveEndpoint, {
         headers: { Authorization: `Bearer ${token}` }
@@ -356,14 +356,14 @@ const AssetView = () => {
 
     try {
       const token = Cookies.get("usertoken")
-      const endpoint = `http://localhost:4000/api/subjective-assets/questions/${deletingQuestion._id}`
+      const endpoint = `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/subjective-assets/questions/${deletingQuestion._id}`
 
       await axios.delete(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
       })
 
       // Refetch the question sets to update the UI
-      const subjectiveEndpoint = `http://localhost:4000/api/subjective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
+      const subjectiveEndpoint = `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/subjective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
       const response = await axios.get(subjectiveEndpoint, {
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -404,14 +404,14 @@ const AssetView = () => {
 
     try {
       const token = Cookies.get("usertoken")
-      const endpoint = `http://localhost:4000/api/objective-assets/questions/${deletingObjectiveQuestion._id}`
+      const endpoint = `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/objective-assets/questions/${deletingObjectiveQuestion._id}`
 
       await axios.delete(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
       })
 
       // Refetch the question sets to update the UI
-      const objectiveEndpoint = `http://localhost:4000/api/objective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
+      const objectiveEndpoint = `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/objective-assets/${itemType}/${itemId}/question-sets?isWorkbook=${isWorkbook}`
       const response = await axios.get(objectiveEndpoint, {
         headers: { Authorization: `Bearer ${token}` }
       })
@@ -440,7 +440,7 @@ const AssetView = () => {
   const handleDeleteVideo = async (videoId) => {
     try {
       const token = Cookies.get("usertoken")
-      const endpoint = `http://localhost:4000/api/video-assets/videos/${videoId}`
+      const endpoint = `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/video-assets/videos/${videoId}`
 
       await axios.delete(endpoint, {
         headers: { Authorization: `Bearer ${token}` },
@@ -459,7 +459,7 @@ const AssetView = () => {
   const handleDeletePYQ = async (pyqId) => {
     try {
       const token = Cookies.get("usertoken")
-      const endpoint = `http://localhost:4000/api/pyq-assets/pyqs/${pyqId}`
+      const endpoint = `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/pyq-assets/pyqs/${pyqId}`
 
       await axios.delete(endpoint, {
         headers: { Authorization: `Bearer ${token}` },

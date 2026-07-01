@@ -37,7 +37,7 @@ const AITests = () => {
     try {
       // Fetch categories from backend
       const categoriesResponse = await fetch(
-        "http://localhost:4000/api/categories",
+        (process.env.REACT_APP_API_URL || 'http://localhost:4000') + "/api/categories",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -58,10 +58,10 @@ const AITests = () => {
 
       setCategoryMappings(transformedCategories);
       const [objectiveResponse, subjectiveResponse] = await Promise.all([
-        axios.get('http://localhost:4000/api/objectivetests', {
+        axios.get((process.env.REACT_APP_API_URL || 'http://localhost:4000') + '/api/objectivetests', {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        axios.get('http://localhost:4000/api/subjectivetests', {
+        axios.get((process.env.REACT_APP_API_URL || 'http://localhost:4000') + '/api/subjectivetests', {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -81,8 +81,8 @@ const AITests = () => {
   const handleCreateTest = async (testData) => {
     try {
       const endpoint = activeTab === 'objective'
-        ? 'http://localhost:4000/api/objectivetests'
-        : 'http://localhost:4000/api/subjectivetests';
+        ? (process.env.REACT_APP_API_URL || 'http://localhost:4000') + '/api/objectivetests'
+        : (process.env.REACT_APP_API_URL || 'http://localhost:4000') + '/api/subjectivetests';
 
       const response = await axios.post(endpoint, testData, {
         headers: { Authorization: `Bearer ${token}` }
@@ -101,8 +101,8 @@ const AITests = () => {
     try {
       console.log(testData)
       const endpoint = activeTab === 'objective'
-        ? `http://localhost:4000/api/objectivetests/${editingTest._id}`
-        : `http://localhost:4000/api/subjectivetests/${editingTest._id}`;
+        ? `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/objectivetests/${editingTest._id}`
+        : `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/subjectivetests/${editingTest._id}`;
 
       const response = await axios.put(endpoint, testData, {
         headers: { Authorization: `Bearer ${token}` }
@@ -123,8 +123,8 @@ const AITests = () => {
 
     try {
       const endpoint = activeTab === 'objective'
-        ? `http://localhost:4000/api/objectivetests/${deletingTest._id}`
-        : `http://localhost:4000/api/subjectivetests/${deletingTest._id}`;
+        ? `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/objectivetests/${deletingTest._id}`
+        : `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/subjectivetests/${deletingTest._id}`;
 
       await axios.delete(endpoint, {
         headers: { Authorization: `Bearer ${token}` }
@@ -377,8 +377,8 @@ const AITests = () => {
   const toggleEnabled = async (test, type) => {
     try {
       const endpoint = type === 'objective'
-        ? `http://localhost:4000/api/objectivetests/${test._id}`
-        : `http://localhost:4000/api/subjectivetests/${test._id}`;
+        ? `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/objectivetests/${test._id}`
+        : `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/subjectivetests/${test._id}`;
       const response = await axios.patch(endpoint, { isEnabled: !test.isEnabled }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -703,7 +703,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
 
   const refreshCategories = async () => {
     try {
-      const res = await fetch("http://localhost:4000/api/categories", {
+      const res = await fetch((process.env.REACT_APP_API_URL || 'http://localhost:4000') + "/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await res.json();
@@ -726,7 +726,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
     }
     try {
       setCreatingCategory(true);
-      const res = await fetch("http://localhost:4000/api/categories", {
+      const res = await fetch((process.env.REACT_APP_API_URL || 'http://localhost:4000') + "/api/categories", {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -757,7 +757,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
     }
     try {
       setCreatingSubcategory(true);
-      const listRes = await fetch("http://localhost:4000/api/categories", {
+      const listRes = await fetch((process.env.REACT_APP_API_URL || 'http://localhost:4000') + "/api/categories", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const list = await listRes.json();
@@ -766,7 +766,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
         toast.error('Select a valid category first');
         return;
       }
-      const res = await fetch(`http://localhost:4000/api/categories/${currentCat._id}/subcategories`, {
+      const res = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/categories/${currentCat._id}/subcategories`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -852,7 +852,7 @@ const TestModal = ({ isOpen, onClose, onSubmit, test, type, categoryMappings = {
 
       // Get presigned URL for upload
       const response = await axios.post(
-        `http://localhost:4000/api/${type === 'objective' ? 'objectivetests' : 'subjectivetests'}/upload-image`,
+        `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/${type === 'objective' ? 'objectivetests' : 'subjectivetests'}/upload-image`,
         {
           fileName: file.name,
           contentType: file.type

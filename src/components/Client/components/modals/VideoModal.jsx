@@ -173,7 +173,7 @@ const VideoModal = ({
       const token = Cookies.get("usertoken")
 
       // Use the new video assets endpoint
-      const endpoint = `http://localhost:4000/api/video-assets/${itemType}/${itemId}/videos?isWorkbook=${isWorkbook}`
+      const endpoint = `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/video-assets/${itemType}/${itemId}/videos?isWorkbook=${isWorkbook}`
 
       const requestData = {
         title: localVideoData.title,

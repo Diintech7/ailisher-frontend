@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost:4000/api/clients/CLI677117YN7N/mobile';
+const BASE_URL = (process.env.REACT_APP_API_URL || 'http://localhost:4000') + '/api/clients/CLI677117YN7N/mobile';
 
 export const userAnswerService = {
   // Get all answers for a question
@@ -214,7 +214,7 @@ export const userAnswerService = {
   // New function to fetch pending reviews
   getPendingReviews: async () => {
     try {
-      const response = await axios.get('http://localhost:4000/api/review/pending');
+      const response = await axios.get((process.env.REACT_APP_API_URL || 'http://localhost:4000') + '/api/review/pending');
       console.log('Pending Reviews Response:', response.data);
       return response.data;
     } catch (error) {

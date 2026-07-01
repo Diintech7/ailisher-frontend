@@ -13,7 +13,7 @@ const SubTopicViewer = () => {
     const fetchSubtopicData = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`http://localhost:4000/api/qrcode/book-data/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`);
+        const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/qrcode/book-data/${bookId}/chapters/${chapterId}/topics/${topicId}/subtopics/${subtopicId}`);
         const data = await response.json();
 
         if (data.success) {
@@ -42,7 +42,7 @@ const SubTopicViewer = () => {
       return imageUrl;
     }
 
-    return `http://localhost:4000/${imageUrl}`;
+    return `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/${imageUrl}`;
   };
 
   // Get file icon based on file type

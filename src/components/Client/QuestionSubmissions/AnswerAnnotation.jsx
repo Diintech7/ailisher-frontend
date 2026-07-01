@@ -5,7 +5,7 @@ import axios from "axios"
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: "http://localhost:4000/api",
+  baseURL: (process.env.REACT_APP_API_URL || 'http://localhost:4000') + "/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -1652,7 +1652,7 @@ const AnswerAnnotation = ({ submission, onClose, onSave }) => {
       if (!submission?.question?._id) return;
       try {
         const res = await axios.get(
-          `http://localhost:4000/api/aiswb/questions/${submission.question._id}`
+          `${process.env.REACT_APP_API_URL || 'http://localhost:4000'}/api/aiswb/questions/${submission.question._id}`
         );
         if (res.data && res.data.data && res.data.data.modalAnswer) {
           setModalAnswer(res.data.data.modalAnswer);
